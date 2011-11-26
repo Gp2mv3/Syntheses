@@ -1,5 +1,5 @@
-formules-physique.pdf: formules-physique.tex
-	pdflatex formules-physique.tex
+formules-physique.pdf: elec.tex
+	pdflatex elec.tex
 
 clean:
 	@rm ./*.aux
