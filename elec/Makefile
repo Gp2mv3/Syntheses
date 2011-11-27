@@ -5,5 +5,5 @@ release: elec.pdf
 	cp elec.pdf ../release
 
 clean:
-	@rm ./*.aux
-	@rm ./*.log
+	@$(RM) ./*.aux
+	@$(RM) ./*.log

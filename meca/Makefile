@@ -5,5 +5,5 @@ release: meca.pdf
 	cp meca.pdf ../release
 
 clean:
-	@rm ./*.aux
-	@rm ./*.log
+	@$(RM) ./*.aux
+	@$(RM) ./*.log
