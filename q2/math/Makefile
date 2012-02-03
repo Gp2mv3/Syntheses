@@ -54,7 +54,7 @@ export LC_ALL		?= C
 #
 # If you specify sources here, all other files with the same suffix
 # will be treated as if they were _include_ files.
-onlysources.tex	?= elec.tex
+onlysources.tex	?= math.tex
 #onlysources.tex.sh	?=
 #onlysources.tex.pl	?=
 #onlysources.tex.py	?=
@@ -3890,5 +3890,5 @@ endef
 #
 # vim: noet sts=0 sw=8 ts=8
 
-release: elec.pdf
-	cp elec.pdf ../releases
+release: math.pdf
+	cp math.pdf ../../releases/q2/math_q2.pdf
