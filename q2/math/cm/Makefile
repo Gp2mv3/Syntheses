@@ -3891,4 +3891,4 @@ endef
 # vim: noet sts=0 sw=8 ts=8
 
 release: math.pdf
-	cp math.pdf ../../releases/q2/math_q2.pdf
+	cp math.pdf ../../../releases/q2/math/math_q2.pdf
