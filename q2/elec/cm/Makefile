@@ -1,6 +1,9 @@
+# You can change the pdf viewer to your preferred
+# one by commenting every line beginning by
+# `PDFVIEWER' except the one with your pdf viewer
+PDFVIEWER=evince
+#PDFVIEWER=okular
 #PDFVIEWER=xpdf
-#PDFVIEWER=evince
-PDFVIEWER=okular
 ROOT=../../..
 MAIN_NAME=elec
 QUADRI=q2
@@ -8,12 +11,17 @@ EXTENTION=pdf # EXT is already taken by LaTeX.mk
 PATH_TO_PDF=releases/$(QUADRI)/$(MAIN_NAME)
 PDF_NAME=$(MAIN_NAME)_$(QUADRI).$(EXTENTION)
 
+# If you want the pdf to be opened by your preferred pdf viewer
+# after `$ make', comment the following line and uncomment the
+# line after
+#default: $(MAIN_NAME).pdf
+default: show
 
-
-#Didn't find LaTeX.mk so I've chage the "default" makefile
-
-default: 
+# If you want a more complete Makefile, install the `latex-make' package,
+# comment the 2 following lines and uncomment the line after
+$(MAIN_NAME).pdf: $(MAIN_NAME).tex
 	pdflatex $(MAIN_NAME).tex
+#include LaTeX.mk
 
 show: $(MAIN_NAME).$(EXTENTION)
 	$(PDFVIEWER) $(MAIN_NAME).$(EXTENTION) 2> /dev/null &
