@@ -3891,4 +3891,4 @@ endef
 # vim: noet sts=0 sw=8 ts=8
 
 release: elec.pdf
-	cp elec.pdf ../../releases/q1/elec_q1.pdf
+	cp elec.pdf ../../../q1/elec_q1.pdf

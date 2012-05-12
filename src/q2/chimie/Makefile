@@ -4,11 +4,11 @@
 PDFVIEWER=evince
 #PDFVIEWER=okular
 #PDFVIEWER=xpdf
-ROOT=../../..
-MAIN_NAME=meca
+ROOT=../../../..
+MAIN_NAME=chimie
 QUADRI=q2
 EXTENTION=pdf # EXT is already taken by LaTeX.mk
-PATH_TO_PDF=releases/$(QUADRI)/$(MAIN_NAME)
+PATH_TO_PDF=$(QUADRI)/$(MAIN_NAME)
 PDF_NAME=$(MAIN_NAME)_$(QUADRI).$(EXTENTION)
 
 # If you want the pdf to be opened by your preferred pdf viewer
