@@ -4,7 +4,7 @@
 PDFVIEWER=evince
 #PDFVIEWER=okular
 #PDFVIEWER=xpdf
-ROOT=../../../..
+ROOT=../../..
 MAIN_NAME=elec
 QUADRI=q2
 EXTENTION=pdf # EXT is already taken by LaTeX.mk
