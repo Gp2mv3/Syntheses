@@ -12,12 +12,12 @@ PDF_NAME=$(MAIN_NAME)_$(QUADRI).$(EXTENTION)
 # If you want the pdf to be opened by your preferred pdf viewer
 # after `$ make', comment the following line and uncomment the
 # line after
-default: $(MAIN_NAME).$(EXTENTION)
-#default: show
+#default: $(MAIN_NAME).$(EXTENTION)
+default: show
 
 # If you want a more complete Makefile, install the `latex-make' package,
 # comment the 2 following lines and uncomment the line after
-$(MAIN_NAME).$(EXTENTION): $(MAIN_NAME).tex
+$(MAIN_NAME).$(EXTENTION): $(MAIN_NAME).tex ../../lib.tex
 	pdflatex $(MAIN_NAME).tex
 #include LaTeX.mk
 
