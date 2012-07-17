@@ -18,7 +18,7 @@ default: show
 # If you want a more complete Makefile, install the `latex-make' package,
 # comment the 2 following lines and uncomment the line after
 $(MAIN_NAME).$(EXTENTION): $(MAIN_NAME).tex ../../lib.tex
-	pdflatex $(MAIN_NAME).tex
+	pdflatex -shell-escape -enable-write18 $(MAIN_NAME).tex
 #include LaTeX.mk
 
 show: $(MAIN_NAME).$(EXTENTION)
