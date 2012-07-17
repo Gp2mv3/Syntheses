@@ -12,8 +12,10 @@ PDF_NAME=$(MAIN_NAME)_$(QUADRI).$(EXTENTION)
 # If you want the pdf to be opened by your preferred pdf viewer
 # after `$ make', comment the following line and uncomment the
 # line after
-#default: $(MAIN_NAME).$(EXTENTION)
-default: show
+default: all
+#default: show
+
+all: $(MAIN_NAME).$(EXTENTION)
 
 # If you want a more complete Makefile, install the `latex-make' package,
 # comment the 2 following lines and uncomment the line after
@@ -26,3 +28,11 @@ show: $(MAIN_NAME).$(EXTENTION)
 
 release: $(MAIN_NAME).$(EXTENTION)
 	cp $(MAIN_NAME).$(EXTENTION) $(ROOT)/$(PATH_TO_PDF)/$(PDF_NAME)
+
+addpdf: release
+	git add $(ROOT)/$(PATH_TO_PDF)/$(PDF_NAME)
+
+addtex:
+	git add $(MAIN_NAME).tex
+
+add: addpdf addtex
