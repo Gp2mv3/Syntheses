@@ -1,13 +1,14 @@
 # You can change the pdf viewer to your preferred
 # one by commenting every line beginning by
 # `PDFVIEWER' except the one with your pdf viewer
-PDFVIEWER=evince
-#PDFVIEWER=okular
-#PDFVIEWER=xpdf
+PDFVIEWER=evince # GNOME
+#PDFVIEWER=okular # KDE
+#PDFVIEWER=xpdf # lightweight
+#PDFVIEWER=open # Mac OS
 ROOT=../../..
-EXTENTION=pdf # EXT is already taken by LaTeX.mk
+EXT=pdf
 PATH_TO_PDF=$(QUADRI)/$(MAIN_NAME)
-PDF_NAME=$(MAIN_NAME)_$(QUADRI).$(EXTENTION)
+PDF_NAME=$(MAIN_NAME)_$(QUADRI).$(EXT)
 
 # If you want the pdf to be opened by your preferred pdf viewer
 # after `$ make', comment the following line and uncomment the
@@ -15,19 +16,19 @@ PDF_NAME=$(MAIN_NAME)_$(QUADRI).$(EXTENTION)
 default: all
 #default: show
 
-all: $(MAIN_NAME).$(EXTENTION)
+all: $(MAIN_NAME).$(EXT)
 
-# If you want a more complete Makefile, install the `latex-make' package,
-# comment the 2 following lines and uncomment the line after
-$(MAIN_NAME).$(EXTENTION): $(MAIN_NAME).tex ../../lib.tex
+$(MAIN_NAME).$(EXT): $(MAIN_NAME).tex ../../lib.tex
 	pdflatex -shell-escape -enable-write18 $(MAIN_NAME).tex
-#include LaTeX.mk
 
-show: $(MAIN_NAME).$(EXTENTION)
-	$(PDFVIEWER) $(MAIN_NAME).$(EXTENTION) 2> /dev/null &
+clean:
+	$(RM) *.aux *.log *.out
 
-release: $(MAIN_NAME).$(EXTENTION)
-	cp $(MAIN_NAME).$(EXTENTION) $(ROOT)/$(PATH_TO_PDF)/$(PDF_NAME)
+show: $(MAIN_NAME).$(EXT)
+	$(PDFVIEWER) $(MAIN_NAME).$(EXT) 2> /dev/null &
+
+release: $(MAIN_NAME).$(EXT)
+	cp $(MAIN_NAME).$(EXT) $(ROOT)/$(PATH_TO_PDF)/$(PDF_NAME)
 
 addpdf: release
 	git add $(ROOT)/$(PATH_TO_PDF)/$(PDF_NAME)
