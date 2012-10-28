@@ -17,26 +17,35 @@
 basicstyle=\rm\footnotesize,keywordstyle=\bfseries\color{dkred},frame=single,
 commentstyle=\color{gray}=small, stringstyle=\color{dkgreen}}
 
+\newcommand{\java}{\emph{Java}}
+
 \part{Instructions, expressions et variables}
 
 \section{Instructions}
 Un programme est composé principalement d'instructions qu'il exécute l'une à la
 suite de l'autre.
 
-Chaque instruction se termine par un \verb|;|, on les met tout le temps
+Chaque instruction se termine par un \verb|;|, on les écrit tout le temps
 une par ligne pour aider à la lecture du programme mais le compilateur
-pourrait comprendre le programme s'il n'était que sur une seule ligne.
+pourrait comprendre le programme s'ils n'étaient que sur une seule ligne.
 
-On regroupe parfois des instructions par bloc avec des accolades
+\subsection{Blocs d'instruction}
+Certaines structures de \java{} (comme le \verb|if|) demandent un bloc.
+Un bloc, c'est simplement un regroupement d'instruction.
+On le délimite avec des accolades
 (\verb|{| et \verb|}|).
 \begin{lstlisting}
 {
-  instruction1;
-  instruction2;
+  <instruction_1>;
+  <instruction_2>;
   ...
-  instructionn;
+  <instruction_n>;
 }
 \end{lstlisting}
+
+\paragraph{Portée des variables}
+Les variables déclarées dans un bloc ne sont pas accessibles à l'extérieur
+du bloc.
 
 \section{Expressions}
 
@@ -49,12 +58,12 @@ Chaque expression est évaluée lors de l'exécution du programme.
 Dans un programme, on utilise des variables comme en mathématiques.
 Par contre, en informatique, les variables peuvent changer de valeur.
 
-Chaque variable a un type et en Java, on ne peut pas changer son type.
+Chaque variable a un type et en \java{}, on ne peut pas changer son type.
 
 Pour créer une variable, il faut lui donner un type et ce type ne changera
 plus par la suite.
 \subsection{Types}
-Il y a deux sortes de type en Java, les types primitifs et les classes.
+Il y a deux sortes de type en \java{}, les types primitifs et les classes.
 
 Il y a 8 types primitifs mais les plus importants sont les
 \begin{itemize}
@@ -124,7 +133,7 @@ On peut modifier la valeur d'une variable à tout moment du programme en lui
 assignant la valeur d'une expression. Il faut bien évidemment que la valeur
 de l'expression soit du même type. La syntaxe est la suivante
 \begin{lstlisting}
-foobar = expression;
+foobar = <expression>;
 \end{lstlisting}
 
 Il est important de remarquer que le \verb|=| de l'assignation n'est pas le
@@ -136,6 +145,102 @@ foobar = foobar + 1;
 Dans ce cas ci, il est important d'insister sur l'ordre à l'exécution.
 On évalue d'abord le membre de droite qui n'est rien d'autre qu'une expression
 puis on assigne cette valeur dans le membre de droite.
+
+\subsubsection{Casting}
+Supposons que \verb|a| soit de type \verb|<type_a>| et \verb|b| soit de type
+\verb|<type_b>| et qu'on veuille assigner à \verb|a| la valeur de \verb|b|.
+
+Si \verb|<type_a>| et \verb|<type_b>| ne sont pas les mêmes, on a deux
+possibilités.
+\begin{itemize}
+  \item Soit on fait un \emph{cast explicite}, c'est à dire qu'on
+    spécifie à \java{} qu'on veut transformer la valeur de \verb|b| pour
+    qu'elle ait le type \verb|<type_a>|. La syntaxe est la suivante
+    \begin{lstlisting}
+(<type_a>) b
+    \end{lstlisting}
+    Évidemment, ça ne marche pas pour n'importe quel type.
+    On peut caster n'importe quel type primitif dans n'importe quel type
+    primitif mais on ne peut pas caster un type primitif dans un objet ni
+    le contraire (sauf entre les types primitifs et leur classe wrapper comme
+    \verb|int| et \verb|Integer|).
+    Par contre, on peut caster un objet dans un autre si et seulement si,
+    l'un hérite de l'autre ou le contraire.
+  \item Soit on fait un \emph{cast implicite}, comme son nom l'indique,
+    on ne dit rien à \java{} mais il effectue tout de même un cast.
+    Entre type primitifs, en règle générale,
+    \java{} fait un cast quand il ne perd pas de précision.
+    Les casts se faisant implicitement sont donc
+    \begin{itemize}
+      \item \verb|char| à \verb|int|;
+      \item \verb|int| à \verb|double|;
+      \item \verb|int| à \verb|Integer| et vice versa;
+      \item \verb|char| à \verb|Character| et vice versa;
+      \item \verb|double| à \verb|Double| et vice versa;
+      \item \verb|boolean| à \verb|Boolean| et vice versa;
+      \item \verb|<class_1>| à \verb|<class_2>| si \verb|<class_1>|
+        hérite de \verb|<class_2>|.
+    \end{itemize}
+    Sans parler des \verb|byte|, \verb|short| et \verb|float|.
+    De plus, il y a une relation de transitivité entre les casts
+    implicites, c'est à dire que si on sait caster implicitement
+    \verb|<type_1>| dans \verb|<type_2>| et
+    \verb|<type_2>| dans \verb|<type_3>|, on sait caster implicitement
+    \verb|<type_1>| dans \verb|<type_3>|.
+\end{itemize}
+
+\paragraph{Casting et héritage}
+\label{sec:cast_class}
+On a vu qu'on pouvait caster des objet dans une classe parente.
+Mais quand on fait cela, on ne sait évidemment plus appeler ses méthodes
+spécifiques que la classe parente n'a pas.
+Grâce au keyword \verb|instanceof|, on peut néanmoins recaster l'objet
+dans la classe de départ en vérifiant que c'est bien une instance de cette
+classe.
+Par exemple, on peut implémenter la méthode \verb|equals| comme suit
+\begin{lstlisting}
+public class Foo {
+  int data;
+  public Foo (int data) {
+    this.data = data;
+  }
+  public boolean equals (Object o) {
+    if (o instanceof Foo) {
+      Foo foo = (Foo) o;
+      return this.data == foo.data;
+    }
+    return false;
+  }
+}
+\end{lstlisting}
+Ainsi, ça permet de donner comme argument à \verb|equals| un objet de
+n'importe quel classe car toute classe hérite de \verb|Object|.
+
+\subsubsection{Les constantes}
+En informatique, on aime bien se donner des règles supplémentaires à respecter
+qui sont vérifiées par le compilateur pour diminuer le plus possible les
+chances que notre programme compile mais ne fonctionne pas.
+
+Pour cela, il est possible de spécifier que des variables sont constantes.
+Dès qu'on voudra modifier leur valeur, le code ne compilera pas.
+
+Pour cela, à la création de la variable, on ajoute le keyword \verb|final|
+de la manière suivante.
+\begin{lstlisting}
+final <type> <name>[ = <expression>];
+\end{lstlisting}
+Si on ne donne pas \verb| = <expression>|, on peut encore lui faire une
+assignation.
+Ça permet d'initialiser les variables dans le constructeur en fonction
+de ses paramètres.
+
+\paragraph{Assignation de la même valeur}
+En fait, on le droit d'assigner une valeur à une constante autant de
+fois qu'on veut, tant que cette valeur est la même que celle de la constante
+ou que la contante n'a pas encore été initialisée.
+
+\paragraph{Convention}
+Par convention, on écrit tout le temps les constantes en majuscule.
 
 \subsubsection{Les raccourcis}
 Certaines assignations sont très courrantes, elles possèdent donc un raccourcis.
@@ -227,21 +332,85 @@ Seulement, il existe des moyens de passez outre cet ordre.
 \paragraph{Les conditions}
 Une condition est toute expression s'évaluant en \verb|boolean|.
 
+\section{Bloc, instruction ou structure de contrôle ?}
+\label{sec:bloci}
+Ce qui est magique avec les stuctures de contrôle, c'est qu'elles permettent
+de manipuler, non plus des variables, mais carrément des instructions !
+Elles permettent de déterminer si certaines instructions vont être exécutées
+en fonction de la valeur d'une condition.
+
+Comme on veut parfois appliquer cela sur plusieurs instructions,
+on dit que ces structures conditionnelles s'appliquent sur
+des blocs d'instructions.
+Seulement, on peut aussi donner une seule instruction où même directement
+une structure de contrôle sans les mettre dans un bloc (sans accolade).
+
+En fait, on si on ne leur donne pas un bloc mais directement des instructions,
+ces structures prennent la première instruction.
+
+Attention néanmoins car la pratique de donner une instruction au lieu d'un
+bloc à ces structures, bien qu'acceptée par \java{}, n'enchante pas
+tous les programmeurs.
+En effet, elle ajoute souvent de l'ambiguïté et rappelle donc pour beaucoup
+du temps perdu à débugger.
+
+Pour illustrer cela, remarquez que, contrairement aux apparences,
+\begin{lstlisting}
+if (a_number % another_number == 0)
+  amount_of_divisors++;
+  is_prime = false;
+\end{lstlisting}
+est équivalent à
+\begin{lstlisting}
+if (a_number % another_number == 0) {
+  amount_of_divisors++;
+}
+is_prime = false;
+\end{lstlisting}
+et non à
+\begin{lstlisting}
+if (a_number % another_number == 0) {
+  amount_of_divisors++;
+  is_prime = false;
+}
+\end{lstlisting}
+
 \section{Les structures conditionnelles}
 Il est possible d'exécuter un bloc d'instruction seulement si une condition
 est vraie.
 \begin{lstlisting}
-if (condition) bloc
+if (<condition>) <bloc>
 \end{lstlisting}
 Le bloc sera exécuté seulement si la condition vaut \verb|true|.
 
 Il est possible de demander d'exécuter un autre bloc si la condition est fausse.
 \begin{lstlisting}
-if (condition) bloc1
-else bloc2
+if (<condition>) <bloc_1>
+else <bloc_2>
 \end{lstlisting}
 Si la condition vaut \verb|true|, le premier bloc sera exécuté, sinon, le
 second bloc sera exécuté.
+
+\subsection{Quid des else if ?}
+Rappelons-nous (voir Section~\ref{sec:bloci}) qu'à la place d'un bloc,
+on peut donner une structure de contrôle.
+On peut donc dire que
+\begin{lstlisting}
+if (<condition_1>) <bloc_1>
+else if (<condition_2>) <bloc_2>
+else <bloc_3>
+\end{lstlisting}
+est équivalent à
+\begin{lstlisting}
+if (<condition_1>) <bloc_1>
+else {
+  if (<condition_2>) <bloc_2>
+  else <bloc_3>
+}
+\end{lstlisting}
+
+Les \verb|else if| ne sont donc pas vraiment un nouveau concept lorsqu'on
+connait les \verb|else| et les \verb|if|.
 
 \section{Les boucles}
 Une boucle exécute un bloc \emph{tant que} la condition est vraie.
@@ -251,8 +420,318 @@ Sinon, le programme poursuit son court.
 
 La syntaxe est fort semblable au \verb|if|.
 \begin{lstlisting}
-while (condition) bloc
+while (<condition>) <bloc>
 \end{lstlisting}
+
+\subsection{Les boucles for}
+Lorsqu'on veut itérer une opération, souvent, on a un itérateur qu'on
+initialise avant la boucle et qu'on incrémente après chaque boucle.
+\begin{lstlisting}
+<init>;
+while (condition) {
+  ...
+  <inc>;
+}
+\end{lstlisting}
+
+La boucle \verb|for| permet d'écrire ça de façon plus condensée
+\begin{lstlisting}
+for (<init>; <condition>; <inc>) {
+  ...
+}
+\end{lstlisting}
+
+\begin{itemize}
+  \item \verb|<init>| peut être nimporte quelle instruction mais si elle crée
+    des variables, ces dernières seront locales au \verb|for|.
+  \item \verb|<inc>| peut être n'importe quelle instruction, ça peut même
+    contenir plusieurs instruction séparées par des virgules mais cette
+    pratique n'est pas appréciée par tout le monde.
+\end{itemize}
+Le fait que les variables déclarées dans \verb|<init>| est assez pratique car
+souvent, on y déclare des variables dont on aura pas besoin après le \verb|for|.
+C'est souvent des variables qui nous permettent de parcourir un tableau,
+c'est pourquoi on les appelle des itérateurs.
+
+\part{Les tableaux}
+Le tableau de \java{} est une structure de donnée assez intéressante.
+Elle permet de stocker un nombre fixe de variables de même type
+ou héritant d'une même classe (Voir Section~\ref{sec:cast_class}).
+
+\section{Création de tableaux}
+Une variable ne contient jamais un tableau en lui même,
+tout comme les objects, elle contient une référence vers un tableau.
+À sa création, elle vaut \verb|null|.
+
+Pour créer un tableau, un utilise le keyword \verb|new|.
+Il crée un nouveau tableau et renvoit sa référence.
+
+\subsection{Création de tableau à une dimension}
+On utilise la syntaxe suivante
+\footnote{Ici, les \\ devant les [, ] servent à dire que ce n'est
+pas de crochets pour dire que c'est optionnel mais vraiment des
+crochets qu'il faut mettre.}
+\begin{lstlisting}
+<type>\[\] <name> = new <type>\[<length>\];
+\end{lstlisting}
+
+Par exemple, pour faire un tableau qu'on nomme \verb|tab| de 42 \verb|int|,
+on écrit
+\begin{lstlisting}
+int[] tab = new int[42];
+\end{lstlisting}
+
+\subsection{Création de tableau à plusieurs dimension}
+On fait un tableau à plus d'une dimension en faisant des tableaux de tableau.
+Par exemple, si dans chaque case d'un tableau à 2 éléments, on met un
+tableau de \verb|int| à 4 éléments, on a une matrice $2 \times 4$.
+Ça s'écrit
+\begin{lstlisting}
+int[][] matrix = new int[2][4];
+\end{lstlisting}
+
+\section{Manipulation de tableau}
+Lorsqu'on a créé un tableau, on peut changer ses valeurs (sauf si c'est un
+tableau de constante bien entendu) ou juste y accéder.
+
+Il faut cependant savoir qu'en informatique, on commence à compter à partir
+de 0, donc la \verb|n|\ieme{} case est à l'indice \verb|n-1|.
+
+Pour obtenir la 21\ieme{} case du tableau \verb|tab|, il faut donc faire
+\begin{lstlisting}
+tab[21]
+\end{lstlisting}
+
+Pour assigner à la 2\ieme{} colonne de la 1\iere{} ligne de \verb|matrix|
+la valeur 42, il faut écrire
+\begin{lstlisting}
+matrix[0][1] = 42;
+\end{lstlisting}
+
+\subsection{Taille de tableau}
+La taille d'un tableau est son nombre d'éléments.
+Elle est fixe.
+Pour obtenir la taille du tableau \verb|tab|, on fait
+\begin{lstlisting}
+tab.length
+\end{lstlisting}
+et ça vaudrait 2.
+
+Si on voulait le nombre de colonnes d'une matrice, il suffit de demander
+le nombre d'élément de n'importe quelle ligne (s'il y en a au moins une !).
+\begin{lstlisting}
+matrix[0].length
+\end{lstlisting}
+Mais dans la plupart des cas,
+on peut juste redemander la longueur pour chaque ligne.
+
+\subsection{Exemples}
+Pour illustrer cela, voici comment faire une méthode qui fait la somme des
+éléments d'un tableau de \verb|int| à deux dimension.
+\begin{lstlisting}
+public static int sumMatrix (int[][] matrix) {
+  sum = 0;
+  for (int i = 0; i < matrix.length; i++) {
+    for (int j = 0; j < matrix[i].length; j++) {
+      sum += matrix[i][j];
+    }
+  }
+  return sum;
+}
+\end{lstlisting}
+
+Et voici une méthode qui fait la copie d'un tableau.
+En effet, quand on fait une assignation d'un tableau avec la valeur d'un autre
+tableau, on fait une copie de la référence mais le tableau reste le même !
+\begin{lstlisting}
+public static int arrayCopy (int[] array) {
+  int[] copy = new int[array.length];
+  for (int i = 0; i < array.length; i++) {
+    copy[i] = array[i];
+  }
+  return copy;
+}
+\end{lstlisting}
+
+\part{Les classes}
+\section{La portée}
+Les variables et les méthodes ont une certaine portée, c'est à dire
+qu'on ne peut pas y accéder depuis n'importe où.
+
+À chaque fois qu'on défini une méthode ou une variable de classe ou
+d'instance, on doit lui attribuer une portée.
+
+Il existe 3 portées différentes
+\begin{itemize}
+  \item \verb|public|: peut être accédé depuis n'importe quelle
+    classe et n'importe quel object.
+  \item \verb|protected|: peut être accédé depuis toute classe ou object
+    qui hérite de la classe en question.
+  \item \verb|private|: peut être accédé uniquement depuis la classe
+    en question et ses instances.
+\end{itemize}
+
+De plus, on ne peut pas accéder à une variable ou méthode d'instance
+depuis une méthode de classe.
+
+Pour spécifier la portée d'une variable ou d'une méthode, on rajoute
+keywork \verb|public|, \verb|protected| ou \verb|private| en fonction
+de la portée au début de sa définition.
+
+En anglais, portée se dit \emph{scope}.
+
+\section{Variables et méthodes}
+Dans une classe, on peut définir des variables et des méthodes.
+Ces derniers peuvent être soit statiques, soit non-statiques.
+\begin{itemize}
+  \item Statiques: ce sont les méthodes et variables de classe.
+    Elles sont dans la classe uniquement pour des raisons de portée.
+    Les variables statiques ne sont créées qu'une seule fois même si
+    42 instances de la classe sont créées.
+    C'est pourquoi les constantes sont souvent statiques.
+  \item Non-statiques: ce sont les méthodes et variables d'instance.
+    De nouvelles variables est créée à chaque création d'instance de
+    la classe.
+    Les variables d'instance référencées dans les méthodes d'instance
+    sont celles spécifique de l'object en question.
+\end{itemize}
+
+Pour spécifier si une variable ou une méthode est statique,
+on ajoute le keyword \verb|static|
+à la suite du keyword pour la portée.
+Si le keyword n'est pas présent, elle est non-statique.
+
+\subsection{Méthodes}
+Une méthode est comme une fonction mathématique, on lui donne des
+argument et elle renvoit une valeur en fonction de ces arguments.
+
+\subsubsection{Définition de méthode}
+Pour définir une méthode, on doit spécifier le type de la valeur
+qu'elle renvoit ainsi que le type de chacun des paramètres et le nom
+avec lesquels on les référencera à l'intérieur de la méthode.
+La syntaxe est la suivante
+\begin{lstlisting}
+<scope> <return_type> <name> (<type_1> <param_1>, ...) bloc
+\end{lstlisting}
+Cette ligne (sans le \verb|bloc|) est appelée la \emph{signature} de la méthode.
+\begin{itemize}
+  \item \verb|<scope>| est la portée de la méthode. Il peut être
+    suivit par d'autres keywords.
+  \item \verb|<return_type>| est le type de la valeur retournée par
+    la méthode.
+    Si la méthode ne retourne rien, \verb|<return_type>| vaut \verb|void|.
+  \item \verb|<name>| est le nom de la méthode.
+  \item \verb|<type_i>| est le type du \verb|i|\ieme{} paramètre et
+    \verb|<param_i>| est son nom.
+
+    \verb|<type_i> <param_i>| est appelé le \emph{paramètre formel}.
+  \item \verb|bloc| est un bloc d'instruction doté d'un keyword supplémentaire:
+    \verb|return|. Sa syntaxe est la suivante
+    \begin{lstlisting}
+    return <expression>;
+    \end{lstlisting}
+    \verb|return| termine la méthode immédiatement
+    (même s'il restait des instructions à exécuter) et
+    renvoie \verb|<expression>| comme valeur de retour de la méthode.
+    \begin{itemize}
+      \item
+        Si \verb|<return_type>| vaut \verb|void|, on peut quand même
+        arrêter l'exécution de la méthode avec l'instruction \verb|return;|
+      \item
+        Si \verb|<return_type>| ne vaut pas void,
+        le compilateur doit pouvoir s'assurer qu'il pourra toujours
+        trouver quoi retourner sinon, le code ne compilera pas.
+        Par exemple, si, un \verb|return| est dans une structure de contrôle
+        et pas après, il doit alors y en avoir un dans chaque embranchement
+        et le \verb|else| doit être présent.
+        Par exemple,
+        \begin{lstlisting}
+public static double div (double a, double b) {
+  if (b != 0) {
+    return a / b;
+  }
+}
+        \end{lstlisting}
+        ne compilera pas.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Appel de méthode}
+Pour appeler une méthode, il faut utiliser la syntaxe suivante
+\footnote{[ et ] sont là pour indiquer que c'est optionnel.}
+\begin{lstlisting}
+[<locator>.]<name>(<arg_1>, ...)
+\end{lstlisting}
+On peut remarquer que l'appel d'une méthode est une \emph{expression}
+dont le type est le type de retour de la méthode en question.
+Si elle retourne \verb|void|, on ne peut pas demander ce que revoit cette
+expression car elle ne renvoit rien.
+\begin{itemize}
+  \item \verb|<locator>| dépend du cas dans lequel on est
+    \begin{itemize}
+      \item Si on veut accéder à une méthode de classe extérieure à la classe
+        dans laquelle on est, il vaut le nom de cette classe.
+        Si on est dans la classe en question, \verb|<locator>.| est optionnel.
+      \item Si on veut accéder à une méthode d'instance, il vaut le nom
+        de la variable référençant cet objet.
+        Si on est dans l'objet en question, \verb|<locator>.| est optionnel ou
+        on utilise le keyword \verb|this| pour obtenir la référence vers
+        l'objet.
+    \end{itemize}
+  \item \verb|name| est le nom de la méthode.
+  \item \verb|<arg_i>| est une \emph{expression} qui donne la valeur
+    du \verb|i|\ieme{} argument de la méthode.
+    Ça équivaut à faire une assignation
+    \begin{lstlisting}
+    <type_i> <param_i> = <arg_i>;
+    \end{lstlisting}
+    à la différence que le type auquel est évalué de l'expression
+    \verb|<arg_i>| sert à déterminer quelle fonction est appelée.
+
+    \verb|<arg_i>| est appelé le \emph{paramètre effectif}.
+    \paragraph{Attention} Comme c'est une assignation,
+    si \verb|<arg_i>| est une variable, \verb|<param_i>| sera une copie de
+    cette variable !
+    Dès lors, changer \verb|<param_i>| ne change pas la valeur de
+    \verb|<arg_i>|.
+    Attention néanmoins car si \verb|<arg_i>| est la référence vers
+    un object, c'est la référence qui est copiée, pas l'objet !
+\end{itemize}
+\java{} va localiser la fonction à appeler en grâce au \verb|<locator>|,
+au \verb|<name>| et au type des \verb|<arg_i>| (dans l'ordre dans lequels ils
+sont !).
+
+\subsection{Variables}
+La syntaxe pour utiliser les variables dans une classe est la même
+que celle des méthodes sauf qu'on ne donne pas d'arguments.
+On la définit comme suit
+\begin{lstlisting}
+<scope> <return_type> <name>[ = <expression>];
+\end{lstlisting}
+où l'initialisation avec \verb|<expression>| est optionnelle.
+Elle s'utilise dans une expression comme suit
+\begin{lstlisting}
+[<locator>.]<name>
+\end{lstlisting}
+Et on lui fait une assignation comme suit
+\begin{lstlisting}
+[<locator>.]<name> = <expression>;
+\end{lstlisting}
+
+\java{} distingue les variables des méthodes au fait qu'on ne mette pas
+de parenthèses.
+Par exemple,
+\begin{lstlisting}
+x.length
+\end{lstlisting}
+c'est la variable \verb|length| de l'objet \verb|x| et
+\begin{lstlisting}
+x.length()
+\end{lstlisting}
+c'est la méthode \verb|length| qui ne prend pas d'argument de l'objet \verb|x|.
+
+%TODO:Objet vs instance:
+% on ne peut pas dire objet d'une classe mais on peut dire instance d'une classe
 
 \appendix
 \section{Écrire, compiler et exécuter}
@@ -266,7 +745,7 @@ Un \textbf{IDE} (\textbf{I}ntegrated \textbf{D}evelopment \textbf{E}nvironment)
 fourni un éditeur de texte et des boutons pour compiler et exécuter.
 Tout ça avec une interface graphique.
 
-Pour Java, on peut citer notamment
+Pour \java{}, on peut citer notamment
 \begin{itemize}
   \item Eclipse;
   \item Netbeans;
@@ -364,7 +843,7 @@ Notez que l'ordre entre les fichiers \verb|.java| n'a aucune importance.
 
 \subsubsection{Exécuter}
 À nouveau, ouvrez un terminal et positionnez le dans le fichier \verb|src/|.
-Il dire à {\em Java} dans quelle classe se trouve la méthode \verb|main|.
+Il faut dire à \java{} dans quelle classe se trouve la méthode \verb|main|.
 Dans notre cas, c'est dans la classe \verb|Foo|.
 Dès lors, exécutez la commande suivante:
 \begin{lstlisting}[language={sh}, morekeywords={java}]
