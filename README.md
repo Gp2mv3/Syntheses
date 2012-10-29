@@ -10,9 +10,8 @@ Pour de plus amples informations, voir le [wiki](https://github.com/Gp2mv3/Synth
 Utilisation
 -----------
 ### Télécharger les synthèses
-Supposons que vous vouliez télécharger la synthèse de `math` de `q2`.
-Cliquez sur `q2`, sur `math`, puis sur `math_q2.pdf` et ensuite sur `View Raw`.
-Votre navigateur est normalement en train de la télécharger.
+Les *.pdf* des synthèses sont disponibles
+[ici](https://www.dropbox.com/sh/mglnckwio1ug5x0/BgESQh2X2a).
 
 ### Compiler
 Il y a des **Makefile** à côté des *.tex*, ils servent à les compiler en *.pdf*.
