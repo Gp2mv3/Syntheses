@@ -2,7 +2,8 @@
 
 # Update all the pdf (usefull when updating lib.tex)
 
-arr=("elec math meca" "chimie elec math meca philo", "physique math chimie")
+arr=("elec info math meca" "chimie elec math meca philo"
+"chimie info math physique")
 for i in ${!arr[*]}; do
 	let "q = i + 1"
 	cd "q$q"
@@ -10,7 +11,7 @@ for i in ${!arr[*]}; do
 		cd $j
 		make all
 		touch "$j.tex"
-		make addpdf
+		make all
 		cd ..
 	done
 	cd ..
