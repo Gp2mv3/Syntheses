@@ -22,13 +22,13 @@ $(MAIN_NAME).$(EXT): $(MAIN_NAME).tex ../../lib.tex
 	pdflatex -shell-escape -enable-write18 $(MAIN_NAME).tex
 
 clean:
-	$(RM) *.aux *.log *.out
+	$(RM) *.aux *.log *.out *.toc
 
 show: $(MAIN_NAME).$(EXT)
 	$(PDFVIEWER) $(MAIN_NAME).$(EXT) 2> /dev/null &
 
 release: $(MAIN_NAME).$(EXT)
-	cp $(MAIN_NAME).$(EXT) $(ROOT)/$(PATH_TO_PDF)/$(PDF_NAME)
+	cd ../..; ./update_dropbox.sh $(QUADRI) $(MAIN_NAME)
 
 addpdf: release
 	git add $(ROOT)/$(PATH_TO_PDF)/$(PDF_NAME)
