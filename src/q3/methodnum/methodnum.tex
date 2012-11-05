@@ -1,0 +1,449 @@
+\input{../../lib.tex}
+
+% cfr http://en.wikibooks.org/wiki/LaTeX/Colors
+\usepackage{color}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+
+\usepackage{appendix}
+
+\theoremstyle{definition}
+\newtheorem{mydef}{Définition}
+\newtheorem{mynota}[mydef]{Notation}
+\newtheorem{myprop}[mydef]{Propriétés}
+\newtheorem{myrem}[mydef]{Remarque}
+\newtheorem{myform}[mydef]{Formules}
+\newtheorem{mycorr}[mydef]{Corrolaire}
+\newtheorem{mytheo}[mydef]{Théorème}
+
+\usepackage{listings}
+\usepackage{numprint}
+
+\hypertitle{Méthodes numériques}{3}{1104}{Benoît Legat}{Benoît Legat}
+
+\definecolor{dkgreen}{rgb}{0.25,0.7,0.35}
+\definecolor{dkred}{rgb}{0.7,0,0}
+\lstset{language={octave},numbers=left,numberstyle=\tiny\color{gray},
+basicstyle=\rm\footnotesize,keywordstyle=\bfseries\color{dkred},frame=single,
+commentstyle=\color{gray}=small, stringstyle=\color{dkgreen}}
+
+\newcommand{\matlab}{\emph{Matlab}}
+\newcommand{\octave}{\emph{GNU/Octave}}
+\newcommand{\qtoctave}{\emph{QtOctave}}
+\newcommand{\keyword}{mot clef}
+
+\begin{mydef}
+  On dit qu'une fonction $f(h)$ est un grand ordre de $h^n$ au voisinage
+  de 0 s'il existe une constante $C$ telle que
+  \[ |f(h)| \leq C |h^n| \]
+  au voisinage de 0.
+  On écrit alors $f(h) = \bigoh(h^n)$.
+\end{mydef}
+
+\part{Approximation numérique}
+Soit une fonction $u(x)$.
+Le problème d'approximation correspond à trouver une fonction
+$u^h(x)$ qui approxime la fonction $u(x)$.
+
+Cette approximation est faite à l'aide de \emph{fonctions de base} $\phi_j(x)$.
+On cherche à approximer $u(x)$ avec une combinaison linéaire des $\phi_j(x)$
+\[ u(x) \approx u^h(x) = \sum_{j=1}^n a_j \phi_j(x). \]
+
+On définit l'\emph{erreur d'approximation} $e^h(x) \eqdef u(x) - u^h(x)$.
+On définit également l'\emph{ordre} d'une approximation comme étant l'ordre de
+l'erreur $e^h(x)$.
+
+\section{Interpolation}
+Une interpolation est une approximation passant par certains points de $u(x)$.
+
+Soit $(X_i, U_i)$ avec $i = 0, 1, 2, \ldots, n$ ces points.
+En prenant $\phi_j(x) = x^j$, ça donne un système linéaire à résoudre.
+On voit que la matrice des coefficients du système est régulière.
+Ce qui nous donne le théorème suivant.
+\begin{mytheo}
+  Il existe un et un seul polynôme d'interpolation de degré $n$ passant
+  par $n+1$ points d'abscisses distinctes.
+\end{mytheo}
+
+\subsection{Formule d'interpolation de Lagrange}
+Au lieu de résoudre le système précédent, la formule d'interpolation
+de Lagrange nous permet d'obtenir directement cet unique polynôme
+d'interpolation.
+
+Il suffit de prendre $a_j = U_j$ et
+\[
+  \phi_j(x) = \frac{\prod_{i \neq j} (x - X_i)}
+  {\prod_{i \neq j} (X_j - X_i)}
+\]
+
+\subsection{Erreur d'interpolation}
+L'erreur d'interpolation du polynôme de Lagrange peut être calculée
+par le Théorème~\ref{thm:error}.
+\begin{mytheo}
+  \label{thm:error}
+  Soit $X_0 < X_1 < \ldots < X_n$ les abscisses des points d'interpolation.
+  Si la fonction $u(x)$ est définie sur l'intervalle $[X_0, X_n]$ et qu'elle
+  est $(n+1)$ fois dérivable sur $]X_0, X_n[$, alors pour tout
+  $x \in ]X_0, X_n[$, il existe $\xi(x) \in ]X_0, X_n[$ tel que
+  \[ e^h(x) = \frac{u^{(n+1)}(\xi(x))}{(n+1)!}
+  \prod_{i=0}^n (x - X_i). \]
+  $e^h(x)$ est donc d'ordre $n+1$, $e^h(x) = \bigoh(h^{n+1})$.
+\end{mytheo}
+
+\subsection{Les abscisses de Chebyshev}
+On peut réduire l'erreur maximale en essayant de la répartir le plus possible.
+Comme c'est au bord qu'il y a le plus d'erreur, l'idée serait de mettre
+plus de points au bord.
+Pour cela, il suffit d'utiliser les abscisses de Chebyshev
+\[ X_i = \cos\left(\frac{(2i+1)\pi}{2(n+1)}\right) \]
+
+\subsection{Les splines cubiques}
+Au lieu de chercher un polynôme passant par tous les points, l'idée des
+splines cubiques est de prendre un polynôme différent entre chaque pair
+de points adjacents.
+
+On définit donc $n$ polynômes cubiques $u^{h_i}$, chacun entre son
+interval $[X_{i-1}, X_i]$.
+On peut déterminer les coefficients grâce à $4n-2$ équations
+\begin{itemize}
+  \item Passer par tous les points: $2n$ équations;
+  \item Dérivées premières et secondes égales aux points $X_i$
+    pour deux polynômes $u^{h_i}$ adjacents: $2n-2$ équations.
+\end{itemize}
+
+Comme on a $4n$ coefficients à déterminer, on peut rajouter deux contraintes.
+On les rajoute souvent sur $u^{h_1}(x)$ en $X_0$ et sur $u^{h_n}(x)$ en $X_n$
+ou sur leurs dérivées en ces points.
+
+\section{Approximation}
+Il est parfois préférable de ne pas imposer que sa fonction passe par tous les
+points, dans ce cas, on a plus une interpolation.
+
+\subsection{Approximation au sens des moindres carrés}
+Il y a 2 cas, soit on connait $n+1$ points de $u(x)$, soit on
+connait carrément $u(x)$ entre $a$ et $b$.
+L'analyse de ces cas est assez semblable, pour passer du second au premier,
+il suffit de discrétiser les intégrales en somme sur les points qu'on connnait.
+Faisons donc uniquement l'analyse dans le deuxième cas.
+
+On cherche donc à minimiser
+\[ \int_a^b \left(e^h(x)\right)^2 \dif x =
+\int_a^b \left(u(x) - u^h(x)\right)^2 \dif x \]
+
+Seulement, on remarque qu'en définissant le produit scalaire
+$<f, g> = \int_a^b fg \dif x$, ce qu'on doit minimiser devient
+\[ \left\|e^h(x)\right\| = \left\|u(x) - u^h(x)\right\| \]
+
+C'est à dire qu'on cherche une fonction $u^h(x)$ dans l'espace euclidien
+formé par les combinaisons linéaires des fonctions $\phi_j(x)$ qui soit
+à une distance minimale de $u(x)$ selon le produit vectoriel défini pour
+cet espace.
+
+$u^h(x)$ est donc la projection orthogonale de $u(x)$ dans cet espace.
+$e^h(x)$ est donc orthogonal à cet espace.
+D'où $<\phi_k, e^h> = 0$ pour $k = 0, 1, \ldots, n$.
+Ce qui nous permet de trouver que
+\[ \sum_{j=0}^n \left(a_j \int_a^b \phi_k(x) \phi_j(x) \dif x\right)
+= \int_a^b \phi_k(x) u(x) \dif x. \]
+
+En prenant des $\phi_j$ orthogonaux comme $\phi_j(x) = \cos((j+1)x)$.
+On peut calculer $a_j$ plus facilement en projettant $u$ sur $\phi_j$.
+Attention néanmoins car si les $\phi_j$ sont orthonaux,
+ils ne sont pas nécessairement orthonormés !
+On a donc
+\[ a_j = \frac{1}{\pi} <u, \phi_j> =
+\frac{1}{\pi} \int_{-\pi}^{\pi} u(x) \cos((j+1)x) \dif x. \]
+
+\subsection{Les B-splines et les NURBS}
+Les B-splines et les NURBS servent à faire une approximation
+de $n+1$ points $(X_i, Y_i)$.
+Cette approximation est paramètrée en fonction de $t$.
+On donne alors $n+1$ noeuds
+\[ T_0 \leq T_1 \leq \ldots T_n. \]
+On voit ici, qu'on se permet de mettre plusieurs noeuds au même $t$.
+
+\section{Les fonctions B-splines}
+Une fonction B-spline est définie comme suit
+\[ B_i^p(t) = \frac{t-T_i}{T_{i+p}-T_i} B_i^{p-1}(t)
++ \frac{T_{i+1+p} - t}{T_{i+1+p} - T_{i+1}}B_{i+1}^{p-1}(t) \]
+où, si un dénominateur s'annule, on met le terme à 0.
+
+L'initialisation est la suivante
+\[ B_i^0(t) = \left\{\begin{array}{ll}
+1 & \text{si }t \in [T_i, T_{i+1}[\\
+0 & \text{sinon.}\end{array}\right. \]
+
+On peut déduire de cette définition le théorème suivant
+\begin{mytheo}
+  \label{thm:sumbspline1}
+  À l'exclusion des $p$ premiers et $p$ derniers intervalles,
+  la somme des B-splines vaut l'unité.
+  \[ \sum_{i=0}^{n-p-1} B_i^p(t) = 1 \]
+  où $T_p \leq t < T_{n-p}$.
+\end{mytheo}
+
+On peut ensuite calculer l'approximation avec la formule suivante
+\[ (x^h(t), y^h(t)) = \sum_{i=0}^{n-p-1} B_i^p(t) (X_i, Y_i) \]
+
+\section{Les NURBS (Non-Uniform Rational B-splines)}
+Pour être capable de représenter exactement certaines formes telles
+que les coniques, on a rajouté la possibilité de rajouter des poids $W_i$.
+La formule de l'approximation devient alors
+\[ (x^h(t), y^h(t)) =
+\frac{\sum_{i=0}^{n-p-1}W_iB_i^p(t)(X_i, Y_i)}
+{\sum_{i=0}^{n-p-1}W_iB_i^p(t)} \]
+
+En se rappelant du Théorème~\ref{thm:sumbspline1}, on voit
+qu'une B-spline est le cas particulier des NURBS où tous les $W_i$ valent 1.
+
+\part{Intégration numérique}
+Soit une fonction $u(x)$.
+Une intégrale classique recquière la primitive de $u(x)$.
+Seulement, cette méthode est souvent assez fastidieuse à effectuer
+numériquement.
+
+L'intégration numérique se fait à partir de différents points $X_i$ auquels
+on donne un poids $w_i$ et de la formule suivante
+\[ \int_a^b u(x) \dif x = I \approx I^h = \sum_{i=1}^m w_i u(X_i). \]
+Si $X_0 = a$ et $X_m = b$, on dit que la méthode est \emph{fermée},
+sinon, on dit qu'elle est \emph{ouverte}.
+
+On définit l'\emph{erreur d'intégration} $E^h \eqdef I - I^h$.
+On définit également le \emph{degré de précision} d'une méthode d'intégration
+numérique comme le plus grand entier $d$ tel que pour tout polynôme de degré
+inférieur où égal à $d$, $E^h = 0$.
+
+Sans perte de généralité, on peut toujours se ramener à une intégrale
+entre l'intervale $[-1, 1]$, il suffit, pour cela d'utiliser un changement
+de variable
+\[ I = \int_a^b u(x) \dif x =
+\frac{b-a}{2} \int_{-1}^1 u(x(\xi)) \dif \xi \]
+
+Par exemple, si $u(x) = x^2$, $a = 0$ et $b = 1$,
+on a $x(\xi) = \frac{\xi+1}{2}$ et donc $\dif x = \frac{1}{2}\dif \xi$ d'où
+\[ \int_0^1 x^2 \dif x =
+\frac{1}{2}\int_{-1}^1 \left(\frac{\xi+1}{2}\right)^2 \dif \xi \]
+
+On va donc se limiter par la suite à l'intégration de fonction entre $-1$ et 1.
+
+\section{Newton-Cotes: Méthodes à pas égaux}
+La méthode de Newton-Cotes revient à calculer l'intégrale de $u^h$ au lieu
+de $u$ qui est son interpolation par des points équidistants.
+\[ I^h = \int_{-1}^1 u^h(x) \dif x =
+\sum_{i=0}^m u(X_i) \int_{-1}^1 \phi_i(x) \dif x \]
+On a donc $w_i = \int_{-1}^1 \phi_i(x) \dif x$.
+Comme ils ne dépendent pas de $u$, on peut les calculer à priori.
+
+On remarque que si $u$ est un polynôme de degré $m$, $E^h = 0$.
+Mais comme $\int_{-1}^1 x^{2n+1} \dif x = 0$ $\forall n \in \mathbb{N}$,
+si $m$ est pair et que $u$ est un polynôme de degré $m+1$,
+on a aussi $E^h = 0$.
+
+On a donc le tableau suivant où $d$ est le degré de précision de la méthode
+\begin{center}
+  \begin{tabular}{|c|c|c|}
+    \hline
+    $m$ & Nom de la méthode & $d$\\
+    \hline
+    1 & Trapèzes & 1\\
+    2 & Simpson & 3\\
+    3 & Simpson $\frac{3}{8}$ & 3\\
+    4 & Boole & 5\\
+    \hline
+  \end{tabular}
+\end{center}
+
+\subsection{Méthodes composites}
+On a des méthodes efficaces pour calculer l'intégrale sur plusieurs
+intervales juxtaposés mais si on augmente trop $m$, on aura le même problème
+que pour l'interpolation, l'erreur deviendra très importante pour un bon
+nombre de $u$.
+
+L'idée est donc de séparer l'intervalle à intégrer en un certain nombre
+de fois $m$ intervalles qu'on intégrera séparément.
+
+Pour cela, il est intéressant de calculer l'expression des $w_i$
+en fonction de $h$, l'écart entre deux abscisses consécutives.
+On a pour les méthodes avec $m = 1, 2, 4$, respectivement,
+\begin{align*}
+  \int_{-h/2}^{h/2}u(x)\dif x & =
+  \frac{h}{2} \left(U_{-h/2} + U_{h/2}\right)
+  -\frac{h^3}{12}u^{(2)}(\xi)\\
+  \int_{-h}^{h}u(x)\dif x & =
+  \frac{h}{3} \left(U_{-h} + 4 U_0 + U_{h}\right)
+  -\frac{h^5}{90}u^{(4)}(\xi)\\
+  \int_{-2h}^{2h}u(x)\dif x & =
+  \frac{2h}{45}
+  \left(7U_{-2h} + 32U_{-h} +12U_0 + 32U_{h} + 7U_{2h}\right)
+  -\frac{8h^7}{945}u^{(6)}(\xi)
+\end{align*}
+\paragraph{Attention}
+Dans les équations précédentes, $h = (b-a), \frac{b-a}{2}, \frac{b-a}{4}$
+respectivement où $b-a$ est la longueur du sous l'intervalle.
+
+\subsection{Erreur d'interpolation}
+On peut calculer l'erreur d'interpolation et obtenir les relations suivantes
+pour, respectivement, $m = 1, 2, 4$
+\begin{align*}
+  |E^h| & \leq \frac{C_2(b-a)}{12}h^2\\
+  |E^h| & \leq \frac{C_4(b-a)}{180}h^4\\
+  |E^h| & \leq \frac{2C_6(b-a)}{945}h^6
+\end{align*}
+où $C_i$ est une borne de $|u^{(i)}(x)|$.
+
+\section{Gauss-Legendre: Méthodes à pas inégaux}
+Avec la méthode de Newton-Cotes, on sait, avec $n+1$ points, avoir
+un degré de précision $d = n$ ou même $d = n+1$ si $n$ est pair.
+
+Seulement, en se laissant $n+1$ degrés de libertés supplémentaires
+qui sont les choix des abscisses, on peut atteindre
+un degré de précision $d = 2n+1$.
+
+C'est d'ailleurs la méthode utilisée pour calculer ces points.
+On les prend de telle sorte que tout polynôme de degré $\leq 2n+1$ est
+intégré parfaitement.
+
+Ça nous donne le système de $2n+2$ équations suivant à résoudre
+pour trouver les $X_i$ et les $w_i$.
+\begin{align*}
+  \sum_{i=0}^n w_i X_i^{2j} & = \frac{2}{2j+1}\\
+  \sum_{i=0}^n w_i X_i^{2j+1} & = 0
+\end{align*}
+pour $j = 0, \ldots, n$.
+
+Ce qui donne
+\[
+  \begin{array}{|c|c|c|}
+    \hline
+    n+1 & X_0, \ldots, X_n & w_0, \ldots, w_n\\
+    \hline
+    1 & 0 & 2\\
+    2 & -\np{0.58}, \np{0.58} & 1, 1\\
+    3 & -\np{0.77}, 0, \np{0.77} & \np{0.56}, \np{0.89}, \np{0.56}\\
+    \hline
+  \end{array}
+\]
+
+\section{Méthodes récursives}
+\subsection{Extrapolation de Richardson}
+Supposons qu'on connaisse $f(x)$ pour un certain nombre d'abscisse en
+suite géométrique. On supposera ici que la raison vaut $\frac{1}{2}$.
+On sait extrapoler la valeur de $f(0)$.
+
+Supposons donc qu'on connaisse
+$f(h), f\left(\frac{h}{2}\right), \ldots, f\left(\frac{h}{2^n}\right)$.
+Posons
+$F_{i, j}$ tels que $F_{i, 0} = f\left(\frac{h}{2^i}\right)$ et
+\[ F_{i, j} = \frac{2^j F_{i, j-1} - F_{i-1, j-1}}{2^j - 1} \]
+
+$F_{n, n}$ est une extrapolation d'ordre
+$\bigoh\left(h^{n+1}\right)$ de $f(0)$.
+
+\subsection{Méthode de Romberg}
+Soit $f(h) = I^h$, l'intégrale exacte est $f(0)$.
+On peut donc utiliser Richardson en calculant
+$I^h$ avec la méthode des trapèze.
+C'est ce qu'on appelle la méthode de Romberg.
+
+Cependant, $E^h$ n'a pas de terme d'ordre impair, on peut donc passer
+une étape sur deux dans Richardson.
+On utilise donc la méthode adaptée suivante pour la récurrence
+\[ I_{i, j} = \frac{2^{2j} I_{i, j-1} - I_{i-1, j-1}}{2^{2j} - 1} \]
+$I - I_{n, n}$ est alors de grand ordre $\bigoh\left(h^{2(n+1)}\right)$.
+
+\part{Dérivation numérique}
+Taylor nous permet, avec un peu d'astuce, d'obtenir des
+expressions pour les dérivées de $u$.
+Sans perte de généralité, on va les calculer autour de 0.
+
+\subsubsection{Différences centrées}
+Les différences centrées sont des différences faisant
+intervenir $U_{-h}$ à chaque fois qu'elles font intervenir $U_{h}$.
+L'avantages c'est que, dans Taylor, tous les termes d'ordre impair
+se suppriment et on peut obtenir un degré plus élevé
+\begin{align*}
+  u'(0) & \approx \frac{U_h - U_{-h}}{2h} & \bigoh(h^2)\\
+  & \approx \frac{-U_{2h} + 8U_h - 8U_{-h} + U_{-2h}}{12h} & \bigoh(h^4)
+\end{align*}
+
+\subsubsection{Différences unilatérales}
+Les différences unilatérales sont moins efficaces que les différences
+centrées et sont utilisées quand on ne sait calculer des valeurs qu'avant 
+ou qu'après 0.
+
+\paragraph{Différences amont}
+\begin{align*}
+  u'(0) & \approx \frac{3U_0 - 4U_{-h} + U_{-2h}}{2h} & \bigoh(h^2)
+\end{align*}
+
+\paragraph{Différences aval}
+\begin{align*}
+  u'(0) & \approx \frac{-3U_0 + 4U_{h} - U_{2h}}{2h} & \bigoh(h^2)
+\end{align*}
+
+\paragraph{Attention}
+Ces méthodes souffrent cruellement des erreurs d'arrondi
+car au plus $h$ est petit, au plus $U_h - U_{-h} \ll U_h$.
+
+\subsection{Extrapolation de Richardson}
+On peut appliquer Richardson pour continuer à gagner en précision
+en évitant de prendre des $h$ trop petits et d'avoir des erreurs d'arrondi.
+
+\subsubsection{Différences centrées}
+Pour les différences centrées, on sait que l'erreur ne comporte
+pas de termes avec des puissances impairs de $h$.
+
+Dès lors, il faut utiliser l'adaptation de Romberg.
+\[ D_{i, j} = \frac{2^{2j}D_{i,j-1} - D_{i-1,j-1}}{2^{2j}-1} \]
+$D_{n, n}$ sera alors de grand ordre $\bigoh(h^{2(n+1)})$
+
+\annexe
+\section{Installation et utilisation de \matlab{} ou de \octave{}}
+Pour ce cours, il vous est nécessaire d'obtenir soit \matlab{},
+soit \octave{} qui est un clone libre
+\footnote{Voir la définition de Free Software:
+  \url{https://www.gnu.org/philosophy/free-sw.html}.}
+de \matlab{}.
+
+\subsection{Installation}
+\subsubsection{Sous GNU/Linux}
+\paragraph{\matlab{}}
+Voir le wiki de votre distribution, par exemple,
+pour Debian/Ubuntu, lisez
+\url{https://help.ubuntu.com/community/MATLAB} et pour
+Arch Linux, lisez
+\url{https://wiki.archlinux.org/index.php/Matlab}.
+
+Vous pouvez aussi visitez la roadmap pour voir si votre version est
+supportée \url{http://www.mathworks.nl/support/sysreq/roadmap.html}.
+
+\paragraph{\octave{}}
+Il se trouve dans les repos officiels de votre package manager.
+
+Sur Ubuntu, par exemple, entrez juste \verb|octave| dans la barre de
+recherche du Ubuntu Sofware Center.
+
+Vous pouvez aussi installer \qtoctave{} pour avoir une interface graphique
+comme pour \matlab.
+
+\subsection{Utilisation}
+Comme le language est interprété, vous pouvez directement
+utiliser l'interpréteur et écrire votre programme ligne par ligne.
+C'est très utile pour tester des fonctions et appeler l'aide.
+Par exemple, si vous voulez savoir comment utiliser la fonction
+\lstinline|foo|, entrez dans l'interpréteur
+\begin{lstlisting}
+help foo
+\end{lstlisting}
+
+Vous pouvez aussi écrire des script et des fonctions.
+Pour les fonctions, vous devez les enregistrer dans un fichier
+qui a le même nom et l'extension \verb|.m|.
+Par exemple, si vous écrivez la fonction \lstinline|foo|, vous devez
+l'enregister dans le fichier \verb|foo.m|.
+Si vous appelez l'aide de votre fonction
+\begin{lstlisting}
+help foo
+\end{lstlisting}
+ça affichera les premières lignes de commentaire du fichier \verb|foo.m|.
+
+\end{document}
