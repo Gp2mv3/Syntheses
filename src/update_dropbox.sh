@@ -102,10 +102,10 @@ for i in ${!clients[*]}; do
   out_root=${out_roots[$i]}
   official=${officials[$i]}
   for quadri in $quadris; do
-    if [ `is_in $quadri` == "1" ]; then
+    if [ `is_in "q$quadri" "$*"` == "1" ]; then
       i=0
       for in_name in $in_names; do
-        if [ `is_in $in_name "$*"` == "1" ]; then
+        if [ `is_in "$in_name" "$*"` == "1" ]; then
           in=`input $quadri $in_name $i`
           out=`output $quadri $in_name $i`
           if [ "x$out" == "x" ]; then
