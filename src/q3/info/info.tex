@@ -1,0 +1,1071 @@
+\input{../../lib.tex}
+
+% TODO
+% Garbage collection in semantique
+% terminal in proc
+
+\hypertitle{Informatique}{3}{1402}
+{Benoît Legat et Lucas Nyssens}
+{Benoît Legat \and Lucas Nyssens}
+
+\lstset{language={Oz}}
+
+\newcommand{\st}{\mathrm{ST}}
+\newcommand{\ce}{\mathrm{CE}}
+\newcommand{\mozart}{Mozart}
+
+\part{Programmation en \oz{}}
+\section{Programmation déclarative}
+La programmation déclarative est une programmation
+dans laquelle les variables sont à affectation unique et
+dans laquelle on écrit plutôt des fonctions récursives à la place
+de boucles.
+
+Le grand avantage de ce paradigme est qu'il reste déterministe,
+même avec de la concurrence.
+
+\section{Syntaxe et sémantique}
+\subsection{Syntaxe et language noyau}
+La syntaxe, c'est la définition de ce qui peut être écrit.
+Lors de la création d'un language, on a envie que la syntaxe soit
+stricte car c'est plus simple d'implémenter le language ainsi mais
+pour l'utilisateur, c'est plus rapide d'écrire avec une syntaxe
+moins stricte.
+
+Une manière de faire pour palier ce problème est la création
+d'un language noyau dont la syntaxe est un sous-ensemble de celle
+du language.
+
+La définition du language est plus simple via ce language noyau et
+tous les éléments du language peuvent être défini à partir du language noyau.
+
+\subsection{Sémantique}
+La sémantique, c'est la description de ce que fait chaque élément
+du language.
+Comme tout le language peut être défini à partir du language noyau,
+il suffit de définir la sémantique du language noyau et on défini toute
+la sémantique.
+Par contre, il faut traduire son programme en language noyau
+si on veut analyser sa sémantique.
+
+En \oz{}, la sémantique se fait à l'aide d'une machine virtuelle.
+Cette machine virtuelle est un tuple constitué de l'ensemble des
+threads, de la mémoire à affectation unique $\sigma$ et de la mémoire
+à affectation multiple $\mu$
+\[ (\{\st_1, \ldots, \st_n\}, \sigma, \mu). \]
+Chaque thread est représenté par une pile $\st_i$ consitué de couples
+$(\verb|<s>|, \ce)$ où $\ce$ est l'environnement contextuel
+de l'instruction \lstinline|<s>|
+\[ \st_i = [(\verb|<s>|_1, \ce_1), \ldots, (\verb|<s>|_n, \ce_n)]. \]
+
+La machine abstraite répète indéfiniment la même action jusqu'à ce
+que toutes les piles soient vides ou qu'elle soit bloquée à cause du
+dataflow (voir section~\ref{sec:dataflow}).
+Durant cette action, elle choisit une pile.
+Ce choix n'est pas arbitraire mais dépend de l'OS (Operating System) dans
+lequel \mozart{} s'exécute.
+Elle prend l'instruction au sommet de la pile $\verb|<s>|_1$ et l'exécute
+avec comme environnement contextuel $\ce_1$.
+Cette exécution dépend de l'instruction en question.
+La sémantique des différentes instruction est donnée dans la suite de cette
+synthèse.
+
+Si on fait de la programmation déclarative, il y a plus de mémoire à
+affectation multiple
+\[ (\{\st_1, \ldots, \st_n\}, \sigma) \]
+et si on ne fait pas de concurrence, il n'y a qu'une seule pile
+\[ (\st, \sigma, \mu). \]
+La programmation déclarative non concurrente a donc une machine abstraite
+plus simple à utiliser
+\[ (\st, \sigma). \]
+
+\section{Instructions et expressions}
+\label{sec:sv}
+\oz{} fait une différence fondamentale entre expression et instruction.
+D'ailleurs, en language noyau, les seules ``lignes''
+qu'il accepte sont les instructions.
+Si on prend le language complet,
+il y a une exception car
+la dernière instruction d'une fonction doit être une expression.
+
+Par exemple, si on essaie d'exécuter la ligne
+\begin{lstlisting}
+3
+\end{lstlisting}
+\oz{} nous dit
+\begin{lstlisting}
+%** expression at statement position
+\end{lstlisting}
+car il s'attend à ce que 3 soit une instruction.
+
+Si on essaie d'appeler \lstinline{Foo} défini comme suit
+\begin{lstlisting}
+proc {Hello}
+  {Browse 'Hello world'}
+end
+fun {Foo}
+  {Hello}
+end
+\end{lstlisting}
+\oz{} nous dit
+\begin{lstlisting}
+%** illegal arity in application
+%**
+%** Arity found:          1
+%** Expected:             0
+%** Application (names):  {Hello _}
+%** Application (values): {<P/0> _<optimized>}
+\end{lstlisting}
+car comme \lstinline|Foo| est une fonction,
+et que \lstinline|{Hello}| est la dernière ligne qu'il exécute,
+il s'attend à ce que \lstinline|Hello| soit une fonction
+et non une procédure.
+En language noyau, les fonction sont des procédures avec un argument
+en plus donc il veut donner un argument en plus à \lstinline|Hello|
+mais \lstinline{Hello} ne prend pas d'argument d'où le
+``\lstinline{illegal arity}''.
+
+Comme vu plus haut,
+\oz{} n'a aucune exception à cela seulement en language noyau.
+Par exemple,
+\begin{lstlisting}
+A = 1
+\end{lstlisting}
+peut-être utilisé comme expression et comme instruction.
+En effet, du sucre syntaxique nous permet d'écrire
+\begin{lstlisting}
+B = A = 1
+\end{lstlisting}
+Seulement, en language noyau, ça doit être écrit
+\begin{lstlisting}
+B = A
+A = 1
+\end{lstlisting}
+
+\subsection{Composition séquentielle}
+Dans le language noyau, on parle toujours d'\emph{une} instruction
+alors qu'en soit, parfois, on pourrait en mettre plusieurs.
+Pour permettre celà, on rajoute la définition de composition séquentielle.
+On dit qu'une instruction, ça peut être deux instruction.
+Pour celà, on rajoute dans la syntaxe du language noyau
+\begin{lstlisting}
+<s> ::= <s>_1 <s>_2
+       | ...
+\end{lstlisting}
+où \lstinline|...| est constitué des autres syntaxes que peut prendre
+une instruction.
+
+Évidemment, 3 instructions par la composition séquentielle, c'est
+aussi une seule instruction mais il faut effectuer deux compositions
+séquentielle pour cela.
+
+Cette définition est utile pour la sémantique.
+Analysons la sémantique d'une composition séquentielle de l'instruction
+\lstinline|<s>_1 <s>_2| d'environnement contextuel $\ce$.
+La machine virtuelle va ajouté \lstinline|<s>_2| dans la pile
+avec l'environnement contextuel $\ce$ puis il va ajouter
+\lstinline|<s>_1| avec l'environnement contextuel $\ce$.
+
+Par exemple, la machine virtuelle transformera
+\begin{lstlisting}
+([(A = 1
+   B = A + 1
+   C = A + B, CE), ...], s)
+\end{lstlisting}
+en
+\begin{lstlisting}
+([(A = 1, CE),
+  (B = A + 1
+   C = A + B, CE), ...], s)
+\end{lstlisting}
+puis en
+\begin{lstlisting}
+([(A = 1, CE),
+  (B = A + 1, CE),
+  (C = A + B, CE), ...], s)
+\end{lstlisting}
+
+\subsection{L'instruction qui ne fait rien}
+La syntaxe de \oz{} est plutôt stricte sur certains points.
+Quand elle dit qu'elle veut une instruction, elle veut
+soit une seule instruction, soit plusieurs car on peut considérer
+que c'est une seule instruction avec la composition séquentielle mais
+pas zéro instructions !
+
+Par exemple
+\begin{lstlisting}
+if D \= 0 then
+  F = N / D
+else
+end
+\end{lstlisting}
+n'est pas syntaxiquement valide.
+Ça pose réellement problème car en language noyau,
+on ne peut pas omettre le \lstinline|else| (voir section~\ref{sec:if}).
+
+\oz{} a donc une instruction qui ne fait rien, le \lstinline|skip|.
+\begin{lstlisting}
+if D \= 0 then
+  F = N / D
+end
+\end{lstlisting}
+s'écrit donc en language noyau
+\begin{lstlisting}
+local NotZero in
+  NotZero = D \= 0
+  if NotZero then
+    F = N / D
+  else
+    skip
+  end
+end
+\end{lstlisting}
+La sémantique du \lstinline|skip| est assez simple.
+On le retire tout simplement de la pile sans rien faire.
+
+\section{Variables}
+Les variables en \oz{} sont à affectation unique,
+quand elle sont à affectation multiple, on ne les appelle plus des variables
+mais des cellules.
+
+\subsection{Déclaration}
+\label{sec:dec}
+Pour créer une variable ou une cellule,
+il faut d'abord créer un identificateur avec \lstinline|declare| ou un
+\lstinline|local|.
+
+\subsubsection{Le \keyword{} declare}
+Il y a deux manière d'utiliser un \lstinline|declare|.
+\begin{itemize}
+  \item
+    La première
+    \begin{lstlisting}
+declare <v>_1 <v>_2 ... <v>_n in
+<s>
+    \end{lstlisting}
+    où les identificateurs \lstinline|<v>_i| sont créés
+    avec une variable en mémoire associée.
+
+  \item
+    La seconde est un sucre syntaxique.
+    \begin{lstlisting}
+declare
+<s>
+    \end{lstlisting}
+    \oz{} va lister tous les identificateurs utilisés dans \lstinline|<s>|
+    qui ne sont pas dans l'environnement contextuel
+    et va réécrire le code en language noyau en mettant un \lstinline|in|
+    avec ces identificateurs avant.
+    Par exemple,
+    \begin{lstlisting}
+declare
+A = 1
+B = A + 1
+    \end{lstlisting}
+    va se réécrire
+    \begin{lstlisting}
+declare A B in
+A = 1
+B = A + 1
+    \end{lstlisting}
+    en language noyau.
+\end{itemize}
+On peut remarquer que le \lstinline|declare| ne termine
+pas par un \lstinline|end| mais par la fin du fichier (ou de la région
+sélectionnée dans \mozart{}).
+En effet, il est soit terminé par un autre \lstinline|declare|, soit par
+une fin de fichier.
+
+\subsubsection{Le \keyword{} local}
+\lstinline|local| permet, tout comme le \lstinline|declare| de créer
+des identificateurs mais lui peut-être terminé par un \lstinline|end|.
+Du coup, le \lstinline|declare| ne s'utilise souvent qu'une seule fois en
+début de fichier alors que le \lstinline|local| s'utilise un peu partout.
+
+Sa syntaxe dans le language noyau est la suivante
+\begin{lstlisting}
+local <x> in <s> end
+\end{lstlisting}
+Pour définir sa sémantique, supposons que l'environnement du \lstinline|local|
+était $\ce_1$.
+Il ajoute \lstinline|(<s>, CE_2)| au dessus de sa pile d'instructions avec
+$\ce_2 = \ce_1 + \{\verb|<x>| \to x\}$ où
+$x$ est la variable en mémoire créée avec
+\lstinline|<x>|.
+On ajoute d'ailleurs $x$ à la mémoire, $\sigma' = \sigma \cup \{x\}$.
+
+\subsection{Assignation}
+Une variable peut avoir deux états (rien à voir avec les cellules)
+\begin{itemize}
+  \item Non assignée, c'est quand la variable en mémoire n'a pas encore
+    de valeur, on peut alors lui assigner n'importe quelle valeur;
+  \item Assignée, c'est quand la variable en mémoire a déjà une valeur.
+    Dans ce cas, on peut lui assigner une valeur si et seulement si
+    c'est la même valeur que celle qu'il a déjà.
+\end{itemize}
+
+La syntaxe dans le language noyau d'une assignation est la suivante
+\begin{lstlisting}
+<x> = <v>
+\end{lstlisting}
+mais le language rend l'assignation symétrique.
+
+Sémantiquement, la machine virtuelle assigne juste \lstinline|<v>| à
+la variable en mémoire associée à \lstinline|<x>| dans
+l'environnement contextuel.
+
+Par exemple, dans
+\begin{lstlisting}
+local X Y in
+  X = 1
+  Y = 2
+  local X in
+    X = Y
+  end
+end
+\end{lstlisting}
+à la ligne 5, on a
+\[ ([(X=Y, \{X\to x', Y\to y\})], \{x=1, x', y=2\}) \]
+et la machine virtuelle transforme ça en
+\[ ([], \{x=1, x'=2, y=2\}). \]
+
+\section{Cellules}
+Le concept d'objet est basé sur le fait qu'une fonction,
+qu'on appelle alors \emph{méthode},
+s'exécute avec un certain contexte.
+Ce concept serait bien pauvre si ce contexte était constitué de constantes.
+
+Tout comme en \java{}, en \oz{}, on sait créer des variables qui ne sont
+pas constantes. On appelle ça des cellules.
+
+\subsection{Création des cellules}
+Pour créer des cellules,
+on utilise la fonction \lstinline|NewCell|.
+Par exemple,
+\begin{lstlisting}
+A = {NewCell 0}
+\end{lstlisting}
+Crée une nouvelle cellule avec comme valeur
+\lstinline|0| et l'assigne à \lstinline|A|.
+En language noyau, ça donne
+\begin{lstlisting}
+local B in
+  B = 0
+  {NewCell B A}
+end
+\end{lstlisting}
+Au niveau de la sémantique, il devrait déjà y avoir \lstinline|A->a|
+dans $\ce{}$ et \lstinline|a| dans $\sigma$.
+Après le \lstinline|local|, la composition séquentielle
+et le \lstinline|B = 0|, on arrive à
+(en considérant qu'on utilise pas de concurrence)
+\[ ([(\verb|{NewCell B A}|, \{A\to a, B\to b, \ldots\}), \ldots],
+\{a, b = 0, \ldots\}, \mu). \]
+Après \lstinline|{NewCell B A}|, on aura
+\[ \sigma = \{a = \xi, b = 0, \ldots\} \]
+et
+\[ \mu = \{a:b, \ldots\}. \]
+$\xi$ est appelé le \emph{nom} de \lstinline|A|.
+
+\subsection{Lecture d'une cellule}
+L'instruction
+\lstinline|A = B|
+où \lstinline|B| est une cellule,
+n'affecte pas à \lstinline|A| le contenu de \lstinline|B| mais leur donne
+le même nom donc si on fait après \lstinline|A := 1|,
+le contenu de \lstinline|B| sera changé aussi.
+
+Pour lire le contenu d'une cellule, il faut utiliser \lstinline|@|
+Dans l'exemple précédent, l'expression \lstinline|@A| vaut \lstinline|b|,
+c'est à dire 0.
+
+\subsection{Écriture d'une cellule}
+Pour écrire dans une cellule, il faut utiliser \lstinline|:=|.
+Par exemple, à la ligne 4 de
+\begin{lstlisting}
+A = 0
+B = 2
+C = {NewCell A}
+C := B
+C := @C + 1
+\end{lstlisting}
+la machine virtuelle change la mémoire à affectation multiple
+de \lstinline|{c:a,...}| à \lstinline|{c:b,...}|.
+
+La ligne 5 s'écrirait en language noyau en % FIXME
+\begin{lstlisting}
+local D E F in
+  D = @C
+  E = 1
+  F = D + E
+  C := F
+end
+\end{lstlisting}
+Pour la ligne 5, la machine virtuelle changerait la mémoire
+à affectation multiple $\mu$ de
+\lstinline|{c:b, ...}| à \lstinline|{c:f, ...}| où la mémoire
+à affectation unique $\sigma$ vaut
+\lstinline|{a=0, b=2, c=|$\xi$\lstinline|, d = 2, e = 1, f = 3}|.
+
+
+\section{Enregistrements, Tuples et Listes}
+%      '|'
+%      / \
+%    42   nil
+\subsection{Enregistrements}
+Un enregistrement est constitué d'une étiquette, de champs et
+d'une variable associée à chaque champ.
+La syntaxe est la suivante
+\begin{lstlisting}
+<lit>(<f>_1:<x>_1 ... <f>_n:<x>_n)
+\end{lstlisting}
+où \lstinline|<lit>| est l'étiquette,
+les \lstinline|<f>_i| sont les champs et
+les \lstinline|<x>_i| sont les variables associées.
+
+Lors de la création d'un enregistrement,
+on peut ne pas donner de champ à une variable.
+\oz{} donnera $i$ comme champ à la $i\ieme{}$ variable sans champ.
+Si il existe déjà un champ $i$, \oz{} ne voudra pas fonctionner.
+
+\subsection{Tuples}
+Un tuple est un enregistrement dont les champ sont tous les entiers de
+1 à $n$ pour un certain $n$.
+
+\subsection{Listes}
+Les listes ont une définition récursive.
+C'est soit l'atome \lstinline|nil|,
+soit un tuple d'étiquette \lstinline$'|'$ et de deux champ dont le
+deuxième vaut une liste.
+
+Par exemple,
+\begin{lstlisting}
+'|'(chien(nom:'Milou') '|'(chient(nom:'Idefix') nil))
+\end{lstlisting}
+est une liste.
+On peut l'écrire de façon plus condensée en \oz{} de la manière suivante
+\begin{lstlisting}
+chien(nom:'Milou')|(chient(nom:'Idefix')|nil)
+\end{lstlisting}
+on peut même l'écrire
+\begin{lstlisting}
+[chien(nom:'Milou') chient(nom:'Idefix')]
+\end{lstlisting}
+
+\section{Structures conditionnelles}
+%
+%  /\  _____
+% /??\/true
+% \??/\_____
+%  \/  false
+Il y a deux types de structures conditionnelles en \oz{},
+le \lstinline|if|, et le \lstinline|case|.
+
+\subsection{Structures conditionnelles par conditions}
+\label{sec:if}
+La syntaxe en language noyau du \lstinline|if| est la
+suivante
+\begin{lstlisting}
+if <x> then
+  <s>_1
+else
+  <s>_2
+end
+\end{lstlisting}
+où \lstinline|<x>| doit être de type \lstinline|boolean|.
+D'un point de vue sémantique, supposons qu'on soit à
+\[ ([(1-5,\ce),...], \sigma) \]
+la machine abstraite va regarder la valeur de \lstinline|<x>|,
+si elle vaut \lstinline|true|, alors, ça devient
+\[ ([(2,\ce),...], \sigma) \]
+sinon, ça devient
+\[ ([(4,\ce),...], \sigma). \]
+
+Au point de vue du language,
+on peut donner une expression comme condition,
+on est pas obligé d'avoir un \lstinline|else|
+et on peut même utiliser des \lstinline|elseif|.
+Par exemple,
+\begin{lstlisting}
+if L == oz orelse L == haskell then
+  Declaratif = true
+  ObjetOriented = true
+elseif L == java orelse L == 'C++' then
+  Declaratif = false
+  ObjetOriented = true
+elseif L == 'C' then
+  Declaratif = false
+  ObjetOriented = false
+end
+\end{lstlisting}
+est syntaxiquement correct.
+
+\subsection{Manipulation de boolean}
+Le type \lstinline|boolean| est constitué d'\lstinline|atom| qui valent
+soit \lstinline|true|, soit \lstinline|false|.
+Pour les manipuler, on a les 3 méthodes
+\lstinline|Not|, \lstinline|And| et \lstinline|Or| ainsi que les deux
+\keyword s \lstinline|orelse| et \lstinline|andthen|.
+La méthode \lstinline|Not| est simple, elle inverse le boolean.
+C'est l'équivalent de l'opérateur logique $\lnot$.
+
+Les méthodes \lstinline|And| et \lstinline|Or| semblent faire
+la même chose que \lstinline|orelse| et \lstinline|andthen| mais il y a
+une différence importante.
+
+Prenons comme exemple, un fonction qui détermine
+si \lstinline|B| est un diviseur de \lstinline|A|.
+En utilisant \lstinline|andthen|, ça donne
+\begin{lstlisting}
+fun {DivisorOf B A}
+  B \= 0 andthen (A mod B) == 0
+end
+\end{lstlisting}
+On sait que si \lstinline|B| vaut 0,
+\lstinline|A mod B| donne une erreur.
+Seulement, avec \lstinline|andthen|,
+\oz{} est malin et si \lstinline|B \= 0| vaut \lstinline|false|,
+il se dit que quelque soit la valeur de \lstinline|(A mod B) == 0|,
+l'expression totale vaudra \lstinline|false| et donc il ne l'évaluera
+même pas.
+En fait, en s'approchant du language noyau, ça devient
+\begin{lstlisting}
+fun {DivisorOf B A}
+  if B \= 0 then
+    (A mod B) == 0
+  else
+    false
+  end
+end
+\end{lstlisting}
+
+Ce n'est pas le cas de la méthode \lstinline|And| qui est simplement
+un appel de méthode.
+Comme les deux expressions sont des arguments,
+il faut les évaluer avant de les passer en argument.
+\begin{lstlisting}
+fun {DivisorOf B A}
+  {And B \= 0 (A mod B) == 0}
+end
+\end{lstlisting}
+devient donc, en s'approchant du language noyau,
+\begin{lstlisting}
+fun {DivisorOf B A}
+  local C D in
+    C = B \= 0
+    D = (A mod B) == 0
+    {And C D}
+  end
+end
+\end{lstlisting}
+où \lstinline|(A mod B) == 0| est évaluée dans tous les cas.
+
+Il y a une différence semblable entre l'expression
+\lstinline|A orelse B| et l'expression \lstinline|{Or A B}|.
+En effet, si \lstinline|A| vaut \lstinline|true|, dans le cas
+du \lstinline|orelse|, \lstinline|B| n'est même pas évalué
+alors que dans le cas du \lstinline|Or|, il est évalué.
+
+\subsection{Structures conditionnelles par pattern matching}
+Les \lstinline|if| sont bien pratiques pour comparer des nombres
+mais quand il faut comparer des enregistrements, des tuples ou des listes,
+c'est bien plus pratique de faire du pattern matching.
+
+Pour faire du pattern matching,
+il faut proposer un expression en partie construite et laisser
+des variables pour les parties qu'on veut savoir
+Par exemple, si on veut savoir le nom des personnes ayant comme prénom Jean,
+il faut utiliser une clause avec \lstinline|personne(nom:Name prenom:Jean)|.
+
+On rassemble les clause dans un case qui a la syntaxe suivante
+\begin{lstlisting}
+case <x>
+of <clause>_1 then
+  <s>_1
+[] <clause>_2 then
+  <s>_2
+...
+[] <clause>_n then
+  <s>_n
+else
+  <s>_{n+1}
+end
+\end{lstlisting}
+Notons, qu'ici le \lstinline|else| n'est pas obligatoire même dans
+le language noyau.
+Du point de vue sémantique, soit $\ce$ l'environnement contextuel
+du \lstinline|case|, la machine abstraite va trouver
+la première clause qui correspond à \lstinline|<x>|.
+\begin{itemize}
+  \item Si elle n'en
+    trouve pas, elle va juste ajouter \lstinline|<s>_{n+1}| avec $\ce{}$ comme
+    environnement contextuel;
+  \item Sinon, elle créer une variable pour chaque variable
+    de la clause qu'il ne connaissait pas (disons $X$ et $Y$)
+    et va rajouter l'instruction correspondante \lstinline|<s>_i| au sommet
+    de la pile avec comme environnement contextuel
+    $\ce + \{X\to x, Y\to y\}$ et il va rajouter $x$ et $y$ dans la mémoire
+    la valeur associée qu'il y avait dans \lstinline|<x>|.
+\end{itemize}
+
+Prenons un exemple.
+\begin{lstlisting}
+case P
+of personne(nom:Name prenom:'Jean') then
+   {Browse Name}
+[] personne(nom:'Dupont' prenom:Fname) then
+   {Browse Fname}
+[] chien(nom:'Milou') then
+   {Browse 'Bonjour Milou, comment va Tintin ?'}
+end
+\end{lstlisting}
+Ici, si \lstinline|P| vaut
+\lstinline|personne(nom:'Dupont' prenom:'Jean')|.
+Il n'y a que la première clause qui sera exécutée.
+On passera de
+\[ ([(1-8,\ce), \ldots], \sigma) \]
+en
+\[ ([(3,\ce+\{\verb|Name|\to\verb|name|\}), \ldots],
+\sigma\cup\{\verb|name|=\verb|'Dupont'|\}). \]
+
+\section{Fonctions et procédures}
+%   __               _ __  _ __ ___   ___
+%  / _|_   _ _ __   | '_ \| '__/ _ \ / __|
+% | |_| | | | '_ \  | |_) | | | (_) | (__
+% |  _| |_| | | | | | .__/|_|  \___/ \___|
+% |_|  \__,_|_| |_| |_|
+\subsection{Procédures}
+Une procédure en \oz{},
+c'est une instruction
+(qui peut être constituée de plusieurs instructions
+par la composition séquentielle)
+qui dépend de paramètres.
+
+\subsubsection{Définition d'une procédure}
+La syntaxe en language noyau est la suivante
+\begin{lstlisting}
+proc {<x> <x>_1 <x>_2 ... <x>_n}
+  <s>
+end
+\end{lstlisting}
+mais ça peut aussi être écrit
+\begin{lstlisting}
+<x> = proc {$ <x>_1 <x>_2 ... <x>_n}
+  <s>
+end
+\end{lstlisting}
+mais cette écriture ne fait pas partie du language noyau.
+
+La sémantique est la même que pour l'assignation de variable sauf qu'ici,
+la valeur est \lstinline|(proc {$ <x>_1 <x>_2 ... <x>_n} <s> end,CE)|
+où $\ce$ est l'environnement auxquels on ne garde que les identificateurs
+libres, c'est à dire les identificateurs qui sont déclarés avant la
+procédure et qu'on utilise dans la procédure.
+
+Il faut bien évidemment déclarer la variable \lstinline|<x>|
+avec un \lstinline|declare| ou un \lstinline|local|
+(voir section~\ref{sec:dec})
+tout comme une variable à laquelle on assigne un entier.
+
+Donc, par exemple, avec les lignes de 3 à 5 de
+\begin{lstlisting}
+local Answer in
+  Answer = 42
+  proc {GetAnswer X}
+    X = Answer
+  end
+end
+\end{lstlisting}
+on passe de
+\[
+  ([(3-5, \{\verb|GetAnswer|\to\verb|getAnswer|,
+  \verb|Answer|\to\verb|42|,\ldots\}),\ldots],\newline
+  \{\verb|getAnswer|,\ldots\})
+\]
+en
+\[ ([\ldots],
+\{\verb|getAnswer|=(\verb|proc {$ X} 4 end|,
+\{\verb|Answer|\to\verb|42|\}),
+\ldots\}). \]
+On remarque que dans l'environnement contextuel de la cellule en mémoire,
+on a gardé que \lstinline|Answer|, on a pas gardé les $\ldots$ car on utilisait
+que \lstinline|Answer| ni \lstinline|getAnswer| car on ne faisait pas
+de récursion ni même \lstinline|X|.
+
+\subsection{Fonctions}
+Les fonctions ne sont pas définies dans le language noyau.
+Ce sont juste des procédures qui renvoient une valeur.
+La syntaxe est la suivante
+\begin{lstlisting}
+fun {<x> <x>_1 <x>_2 ... <x>_n)
+  <s> <v>
+| <v>
+end
+\end{lstlisting}
+C'est à dire que le corps de la fonction est soit constitué par une
+instruction (ou plusieurs par la composition séquentielle)
+suivie d'une expression, soit par une expression seule.
+\footnote{Je n'aurais pas pu juste mettre \lstinline|<v>| en supposant
+qu'il existe une composition
+séquentielle \lstinline|<v> = <s> <v>'| car c'est faux car en language
+noyau, il n'y a que des intructions, les expressions sont obligées de faire
+partie d'une intruction (voir section~\ref{sec:sv}).}
+
+Sa traduction en language noyau est
+\begin{lstlisting}
+proc {<x> <x>_1 <x>_2 ... <x>_n <x>_{n+1})
+  <s> <x>_{n+1} = <v>
+| <x>_{n+1} = <v>
+end
+\end{lstlisting}
+
+\subsection{Boucle for}
+La boucle \lstinline|for|, c'est du pur sucre syntaxique,
+elle a deux formes.
+La première,
+\begin{lstlisting}
+for <x> in <v> do <s> end
+\end{lstlisting}
+où \lstinline|<v>| doit être une liste.
+La traduction en procédure est
+\begin{lstlisting}
+local
+  proc {Loop L}
+    case L of <x>|T then
+      <s>
+      {Loop T}
+    else skip end
+  end
+in
+  {Loop <v>}
+end
+\end{lstlisting}
+La deuxième,
+\begin{lstlisting}
+for <x> in <int>_1...<int>_2 do <s> end
+\end{lstlisting}
+La traduction en procédure est
+\begin{lstlisting}
+local
+  N = <int>_2
+  proc {Loop I}
+    if I =< N
+      <s>
+      {Loop I+1}
+    else skip end
+  end
+in
+  {Loop <int>_1}
+end
+\end{lstlisting}
+
+
+\section{Concurrence}
+\subsection{Concurrence}
+%TODO
+\subsection{Dataflow}
+\label{sec:dataflow}
+%TODO
+
+\section{Programmation orientée objet}
+%TODO
+
+\part{Définitions} % FIXME
+
+\begin{description}
+  \item[Identificateur]
+    Nom introduit sur le clavier. Commence avec une majuscule.
+
+  \item[Variable en mémoire]
+    Partie de la mémoire dans le système, caché au programmeur.
+    Représenté avec des minuscules.
+
+  \item[Environnement]
+    Fonction qui prend un identificateur et renvoie une variable.
+    Il fait correspondre chaque identificateur
+    à une variable en mémoire (et sa valeur).
+    Un même identificateur peut correspondre
+    à différentes variables en différents endroits du programme.
+
+  \item[Portée lexicale]
+    Partie d'un programme pour laquelle l'identificateur
+    correspond à la même variable en mémoire.
+
+  \item[Identificateur libre]
+    C'est l'identificateur compris
+    dans l'environnement contextuel d'une procédure,
+    c'est-à-dire les identificateurs qui ne sont pas dans la définition
+    de la procédure et qui ne sont pas déclarés dans la procédure.
+
+  \item[Invariant]
+    C'est une formule logique qui est vraie à chaque appel récursif.
+    Il contient des informations globales
+    (qui ne changent pas avec l'exécution ($n$))
+    et locales (qui changent à chaque appel ($i$ et $a$)).
+    Exemple:
+    fonction qui calcule la $n\ieme{}$ puissance de $x$.
+    Un invariant est $x^n = x^ia$.
+
+  \item[Accumulateur]
+    Se référer au principe des vases communiquant.
+    Dans l'exemple précédent, l'accumulateur est $a$.
+
+  \item[Récursion terminale]
+    Une fonction est récursive terminale,
+    si l'appel récursif est la dernière instruction à exécuter
+    dans le corps de la fonction.
+    Ainsi la taille de la pile d'instruction
+    (cfr Sémantique) reste constante au fil des appels récursifs.
+
+  \item[Spécification]
+    C'est une formule mathématique,
+    ça n'a rien à voir avec le langage de programmation.
+    Exemple:
+    définition de $x^n$. $x^0=1$; $x^{2n+1}=x\cdot x^{2n}$; $x^{2n} = (x^n)^2$.
+
+  \item[Liste]
+    Structure composée soit d'une liste vide (\lstinline|nil|),
+    soit d'un élément suivi d'une autre liste.
+
+  \item[Pattern matching]
+    C'est la correspondance des formes.
+    Il s'agit d'une succession de clauses.
+    Une clause est exécutée,
+    si la forme de l'élément dans l'instruction \lstinline|case| correspond à
+    ce qui est compris dans la clause.
+    La forme correspond si l'étiquette (label) et les arguments correspondent.
+    Si c'est le cas,
+    les identificateurs de la forme sont affectés aux parties correspondantes.
+    Les clauses sont testées dans l'ordre textuel.
+    La première à correspondre est exécutée et pas les autres.
+
+  \item[Tuple]
+    Structure composée d'une étiquette (label) et d'un nombre fini de champs.
+    Les champs sont numérotés à partir de 1.
+
+  \item[Enregistrement ou Record]
+    Semblable à un Tuple, mais dont on peut définir le nom des champs.
+    Les champs dont on n'a pas défini le nom sont numérotés à partir de 1.
+    Deux champs ne peuvent pas avoir le même nom.
+
+    Liste $\subset$ Tuple $\subset$ Record
+
+  \item[Arbre]
+    Il s'agit soit d'un nœud (Record) ou d'une feuille (\lstinline|leaf|).
+    Chaque nœud comporte un ou plusieurs sous arbres (branches).
+    Un arbre binaire est un arbre dont chaque nœud a deux branches.
+    Un arbre est ordonné si, pour chaque nœud,
+    la clé de leurs sous arbres de gauche (resp. droite)
+    sont inférieures (supérieures) à la clé du nœud.
+
+  \item[Sémantique]
+    C'est ce que fait l'implémentation du langage de l'ordinateur.
+    Il s'agit du modèle précis de l'exécution du langage de programmation.
+    On l'utilise pour vérifier que le programme répond
+    bien aux spécifications (souvent par preuve inductive).
+
+  \item[Machine abstraite]
+    Construction mathématique qui modélise l'exécution
+    (ce sont les concepts utilisés pour effectuer
+    la sémantique sur un programme).
+    \begin{itemize}
+      \item mémoire à affectation unique : variable et valeur (la valeur d'une variable ne change pas)
+        $\sigma = \{ x=10, y=2, c=\xi\}$
+
+      \item mémoire à affectation multiple : contenu des cellules
+        $\mu = \{c:x\}$
+
+      \item environnement:
+        $E= \{ X\rightarrow x, Y \rightarrow y\}$
+
+      \item instruction sémantique: instruction + son environnement
+        $(<s>,E)$
+
+      \item pile sémantique: pile d'instructions sémantiques
+        $\st=[(<s_1>,E_1), \ldots, (<s_n>,E_n)]$
+
+      \item exécution : séquence d'états d'exécution
+        $(\st_1,\sigma_1)\rightarrow(\st_2,\sigma_2)\rightarrow
+        \ldots \rightarrow(\st_n,\sigma_n)$
+    \end{itemize}
+
+  \item[Quelques règles de sémantique]
+
+    Etat initial: $\st_0 =([(<s>,E=\emptyset)],\sigma_0=\emptyset)$
+
+    A la fin: $ST_n =([],\sigma_n)$
+
+    Environnement: adjonction $E_2 = E_1 \cup \{X\rightarrow x\}$
+    sauf pour les appels de fonction: restriction à l'environnement contextuel.
+
+    Composition séquentielle: $([(<s>,E)],\sigma)
+    \rightarrow ([(<s_1>,E),(<s_2>,E)],\sigma)$
+
+    Procédure en mémoire:
+    $p = ($\lstinline|proc(|\$ \lstinline|X1 X2 \ldots) <s> end|$, \ce)$
+
+  \item[Argument formel]
+    Arguments dans la définition d'une procédure.
+    Exemple:
+    \lstinline|P = proc(|\$ \lstinline|X1 X2)|
+    \lstinline|X1| et \lstinline|X2| sont des arguments formels.
+
+  \item[Environnement contextuel]
+    Environnement propre à une certaine procédure.
+    Il fait le lien entre, uniquement,
+    les identificateurs libres et leur variable en mémoire.
+
+  \item[Cellule]
+    C'est un conteneur avec une identité constante et un contenu variable.
+    L'identité est le nom ou adresse de la cellule.
+    Le contenu est associé à une variable qui est constante,
+    mais la variable peut être remplacée par une autre.
+    Il y a égalité entre deux cellules si ce sont les mêmes.
+
+    Exemple : $\sigma = \{x=10, c=\xi\}$ et $\mu = \{c:x\}$
+    Nous avons que $\xi$ est l'identité de \lstinline|C|, son contenu est $x$.
+
+    En langage noyau, la construction d'une cellule est de la manière suivante:
+    \lstinline|{NewCell I C}| ($\Leftrightarrow$ \lstinline|C = {NewCell I}|)
+
+  \item[Modularité]
+    On dit qu'un système (ou programme) est \emph{modulaire} si des mises
+    à jour dans une partie du système n'obligent pas de changer le reste.
+    L'état est bénéfique pour la modularité.
+
+  \item[Encapsulation]
+    A compléter. % TODO
+
+  \item[Abstraction]
+    A compléter. % TODO
+
+  \item[Polymorphisme]
+    Une méthode est polymorphe si elle peut prendre
+    des arguments différents et faire la même chose dans chacun des cas.
+    Une telle méthode est reprise dans la définition d'une interface en java.
+
+  \item[Héritage]
+    Lorsqu'une classe \lstinline|A| hérite d'une classe \lstinline|B|,
+    \lstinline|A| prend la définition de \lstinline|B|
+    comme base (méthodes et attributs)
+    et peut réécrire les méthodes de \lstinline|B| ou en ajouter.
+
+  \item[Super-Classe]
+    \lstinline|B| est une super-classe de \lstinline|A|
+    si \lstinline|B| est dans la
+    déclaration \lstinline|from| de \lstinline|A|
+    ou est une super-classe d'une classe
+    qui est dans la déclaration \lstinline|from| de \lstinline|A|.
+
+  \item[Objet]
+    Ensemble des procédures visibles (\lstinline|methode|) qui
+    ont accès à un état caché dans une cellule (\lstinline|attribut|).
+
+  \item[Classe]
+    Séparation entre définition d'objet et création.
+
+  \item[Lien Dynamique]
+    \lstinline|self| A utiliser par défaut,
+    fait référence à l'objet qui appelle la méthode.
+
+  \item[Lien Statique]
+    Un appel
+    \lstinline|SuperClasse,methode|
+    dans une classe \lstinline|A|
+    fait appel à la méthode décrite dans la classe \lstinline|SuperClasse|
+    qui doit être une super-classe de \lstinline|A|.
+    À utiliser uniquement pour la redéfinition d'une méthode
+    déjà définie dans une super-classe.
+
+  \item[Concurrence]
+    Exécution de plusieurs activités au même temps.
+    Elles peuvent communiquer (passer des informations de l'une à l'autre)
+    et synchroniser (une activité attend une autre).
+
+  \item[Exécution en Dataflow]
+    Si on utilise une variable non initialisée,
+    l'exécution attend qu'elle le soit.
+    \lstinline|Browse| utilise un \lstinline|thread|,
+    il actualise l'affichage quand un identificateur est lié.
+
+  \item[Fil Thread]
+    C'est une activité, une séquence d'instructions en exécution.
+    Chaque fil est indépendant des autres,
+    c'est-à-dire qu'il n'y a pas d'ordre entre eux.
+    Deux fils communiquent s'ils partagent les mêmes variables.
+
+  \item[Ordre total]
+    Tous les états d'exécution d'un même fil font un ordre total.
+    Dans un programme séquentiel (non concurrent), il existe un seul fil,
+    l'ordre total décrit l'ordre entre chaque paire d'états.
+
+  \item[Ordre partiel]
+    Les états d'exécution du programme complet (s'il est concurrent)
+    sont dans un ordre partiel.
+    On ne connaît pas l'ordre d'exécution entre un état d'un fil
+    et un autre d'un autre fil, ce pour chaque paire d'états du programme.
+
+  \item[Non déterminisme]
+    Ça apparait lorsqu'on utilise la concurrence avec les cellules.
+    Absolument à éviter à cause de l'ordre partiel.
+    Un programme concurrent est non déterministe
+    si le résultat final n'est pas déterministe.
+
+  \item[Flot]
+    C'est une liste dont l'extrémité est une variable non liée.
+    Ça sert comme canal de communication entre deux fils (agents).
+
+  \item[Agent]
+    Activité concurrente qui utilise un ou
+    plusieurs canaux de communication (flots).
+
+  \item[Producteur]
+    Agent qui génère un flot de données.
+    (Fonction utile: \lstinline|{Delay 1000}|
+    met l'exécution en pause pendant une seconde).
+
+  \item[Consommateur]
+    Agent qui lit un flot de données. Généralement les affichent.
+\end{description}
+
+
+\annexe
+\section{Installation et utilisation}
+\subsection{Installation}
+\subsubsection{Sous GNU/Linux}
+Sous Debian/Ubuntu, voir le wiki communautaire d'Ubuntu
+\begin{itemize}
+  \item
+    \url{https://help.ubuntu.com/community/Mozart}.
+\end{itemize}
+
+Pour les autres distribution, voir les liens suivant sur le site officiel
+\begin{itemize}
+  \item
+    \url{http://www.mozart-oz.org/download/view.cgi?action=rpm&version=1.4.0};
+  \item
+    \url{http://www.mozart-oz.org/documentation/install/node2.html#chapter.rpm}.
+\end{itemize}
+
+\subsection{Utilisation}
+\mozart{} est juste un plugin pour l'éditeur de texte GNU/Emacs.
+Ce dernier est une éditeur de texte libre extrèmement puissant et complet.
+Vous ne connaitrez sans doute jamais toutes ses fonctionnalités.
+
+Pour pouvez par exemple essayer de taper \verb|M-x tetris| ou
+\verb|M-x doctor| (\verb|M-x| signifie \verb|Alt + X|).
+
+Néanmoins, pour développer en Oz, les fonctions utiles se trouvent
+dans le sous-menu \emph{oz} de GNU/Emacs.
+
+Voici les principales, données pour les régions mais elles sont pareilles
+pour une ligne ou un buffer.
+\begin{description}
+  \item[Indent] Indente automatiquement la région sélectionnée.
+  \item[Comment] Met la région sélectionnée en commentaire.
+  \item[Core Syntax] Traduit la région sélectionnée en language noyau.
+  \item[Feed Region] Exécute la région sélectionnée.
+  \item[Halt Oz] Interrompt l'exécution en cours.
+\end{description}
+
+\end{document}
