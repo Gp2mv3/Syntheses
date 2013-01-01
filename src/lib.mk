@@ -1,10 +1,11 @@
 # You can change the pdf viewer to your preferred
 # one by commenting every line beginning by
 # `PDFVIEWER' except the one with your pdf viewer
-PDFVIEWER=evince # GNOME
+#PDFVIEWER=evince # GNOME
 #PDFVIEWER=okular # KDE
 #PDFVIEWER=xpdf # lightweight
-#PDFVIEWER=open # Mac OS
+PDFVIEWER=xdg-open # Default pdf viewer - GNU/Linux
+#PDFVIEWER=open # Default pdf viewer - Mac OS
 ROOT=../../..
 EXT=pdf
 PATH_TO_PDF=$(QUADRI)/$(MAIN_NAME)
@@ -13,8 +14,8 @@ PDF_NAME=$(MAIN_NAME)_$(QUADRI).$(EXT)
 # If you want the pdf to be opened by your preferred pdf viewer
 # after `$ make', comment the following line and uncomment the
 # line after
-default: all
-#default: show
+#default: all
+default: show
 
 all: $(MAIN_NAME).$(EXT)
 
