@@ -1,14 +1,12 @@
 \input{../../lib.tex}
 
-% TODO
-% Garbage collection in semantique
-% terminal in proc
+\DeclareMathOperator{\pgcd}{PGCD}
 
 \hypertitle{Informatique}{3}{1402}
 {Benoît Legat et Lucas Nyssens}
 {Benoît Legat \and Lucas Nyssens}
 
-\lstset{language={Oz}}
+\lstset{language={Oz},morekeywords={for,do}}
 
 \newcommand{\st}{\mathrm{ST}}
 \newcommand{\ce}{\mathrm{CE}}
@@ -78,6 +76,30 @@ et si on ne fait pas de concurrence, il n'y a qu'une seule pile
 La programmation déclarative non concurrente a donc une machine abstraite
 plus simple à utiliser
 \[ (\st, \sigma). \]
+
+\subsubsection{Garbage collection}
+Pour chaque variable en mémoire,
+\oz{} se souvient du nombre d'identificateurs qui y sont liés.
+Dès que ce nombre passe à zéro, \oz{} considère l'espace mémoire que
+prenait la variable comme libre et on peut retirer la variable en mémoire
+de la mémoire.
+
+Par exemple, pour
+\begin{lstlisting}
+local B in
+  local A in
+    A = 0
+  end
+  B = 0
+end
+\end{lstlisting}
+à la ligne 3, on a
+\[ ([(3,\{\verb|A|\to a, \verb|B|\to b\}),
+(5,\{\verb|B|\to b\})],\{a = 0, b\}) \]
+et à la ligne 5, on a
+\[ ([(5,\{\verb|B|\to b\})],\{b = 0\}) \]
+où $a$ a été retiré de la mémoire car plus aucun identificateur ne
+lui était associé.
 
 \section{Instructions et expressions}
 \label{sec:sv}
@@ -294,6 +316,27 @@ $x$ est la variable en mémoire créée avec
 \lstinline|<x>|.
 On ajoute d'ailleurs $x$ à la mémoire, $\sigma' = \sigma \cup \{x\}$.
 
+\paragraph{Raccourcis}
+En sortant du language noyau,
+on peut utiliser un raccourcis assez pratique pour éviter
+d'écrire le mot local.
+Après les \keyword{} \lstinline|proc|, \lstinline|fun| et
+\lstinline|thread|, on peut ne pas écrire de \lstinline|local|.
+% FIXME any other ?
+Par exemple, dans
+\begin{lstlisting}
+proc {PrintAnswer}
+  local
+    fun {GetAnswer}
+      42
+    end
+  in
+    {Browse {GetAnswer}}
+  end
+end
+\end{lstlisting}
+la ligne 2 est optionnelle.
+
 \subsection{Assignation}
 Une variable peut avoir deux états (rien à voir avec les cellules)
 \begin{itemize}
@@ -392,7 +435,7 @@ C := @C + 1
 la machine virtuelle change la mémoire à affectation multiple
 de \lstinline|{c:a,...}| à \lstinline|{c:b,...}|.
 
-La ligne 5 s'écrirait en language noyau en % FIXME
+La ligne 5 s'écrirait en language noyau en
 \begin{lstlisting}
 local D E F in
   D = @C
@@ -679,18 +722,51 @@ end
 on passe de
 \[
   ([(3-5, \{\verb|GetAnswer|\to\verb|getAnswer|,
-  \verb|Answer|\to\verb|42|,\ldots\}),\ldots],\newline
-  \{\verb|getAnswer|,\ldots\})
+  \verb|Answer|\to\verb|answer|,\ldots\}),\ldots],\sigma)
 \]
-en
-\[ ([\ldots],
-\{\verb|getAnswer|=(\verb|proc {$ X} 4 end|,
-\{\verb|Answer|\to\verb|42|\}),
-\ldots\}). \]
+où $\sigma = \{\verb|getAnswer|,\verb|answer|=42\ldots\}$
+en $([\ldots],\sigma')$ où, dans $\sigma'$, \verb|getAnswer| devient
+\[ \verb|getAnswer|=(\verb|proc {$ X} X = Answer end|,
+  \{\verb|Answer|\to\verb|answer|\}). \]
 On remarque que dans l'environnement contextuel de la cellule en mémoire,
 on a gardé que \lstinline|Answer|, on a pas gardé les $\ldots$ car on utilisait
 que \lstinline|Answer| ni \lstinline|getAnswer| car on ne faisait pas
-de récursion ni même \lstinline|X|.
+de récursion ni même \lstinline|X| qui sera ajouté
+lors de l'appel.
+
+\subsubsection{Appel d'une procédure}
+Pour appeler une procédure, la syntaxe est la suivante
+\begin{lstlisting}
+{<x> <x>_1 <x>_2 ... <x>_n}
+\end{lstlisting}
+où \lstinline|<x>| n'est pas spécialement le ``nom'' de la procédure.
+Par exemple, on peut faire
+\begin{lstlisting}
+local B X in
+  B = Answer
+  {B X}
+end
+\end{lstlisting}
+\lstinline|B| a la même valeur que
+\lstinline|Answer| qui vaut la procédure,
+c'est à dire que dans la mémoire,
+on a
+\[ \verb|b| = (\verb|proc {$ X} X = Answer end|,
+\{\verb|Answer|\to\verb|answer|\})). \]
+D'où la nécessité de garder les identificateurs libres dans la valeur
+de la procédure car ici, \lstinline|B| n'est pas dans le
+\lstinline|local Answer|.
+
+Sémantiquement, ce qui va se passer c'est que la machine virtuelle
+rajoutera sur la pile le contenu de la procédure avec son environnement
+contextuel dont on ajoute les arguments.
+
+Par exemple, dans l'exemple précédent, on passera de
+\[ ([(\verb|{B X}|, \{\verb|B| \to \verb|b|, \verb|X| \to \verb|x|\},\ldots]
+,\sigma) \]
+à
+\[ ([(\verb|X = Answer|,
+\{\verb|X| = \verb|x|, \verb|Answer| = \verb|answer|\}, \ldots], \sigma). \]
 
 \subsection{Fonctions}
 Les fonctions ne sont pas définies dans le language noyau.
@@ -707,7 +783,7 @@ instruction (ou plusieurs par la composition séquentielle)
 suivie d'une expression, soit par une expression seule.
 \footnote{Je n'aurais pas pu juste mettre \lstinline|<v>| en supposant
 qu'il existe une composition
-séquentielle \lstinline|<v> = <s> <v>'| car c'est faux car en language
+séquentielle \lstinline|<v> = <s> <v>_1| car c'est faux car en language
 noyau, il n'y a que des intructions, les expressions sont obligées de faire
 partie d'une intruction (voir section~\ref{sec:sv}).}
 
@@ -719,9 +795,127 @@ proc {<x> <x>_1 <x>_2 ... <x>_n <x>_{n+1})
 end
 \end{lstlisting}
 
+\subsection{Récursion}
+\label{sec:rec}
+Le principe de la récursion,
+c'est qu'au lieu de calculer ce que doit faire la fonction,
+on va établir une équation de récurrence avec un invariant et ça
+va nous permettre de reléguer le travail à un appel récursif à la fonction
+même qu'on écrit.
+Bien sûr, il faut aussi un cas de base sinon la récursion sera
+infinie.
+
+Par exemple, imaginons qu'on veuille calculer le plus grand commun
+diviseur ($\pgcd$) de deux nombres.
+On vérifie sans mal que $\pgcd(a, b) = \pgcd(a-b, b)$.
+Un corrolaire de la relation trouvée est
+$\pgcd(a, b) = \pgcd(a \pmod{b}, b)$.
+Durant l'exécution, faisons en sorte que $a > b$
+sinon, on fait un coup pour rien donc utilisons
+la relation de récurrence
+$\pgcd(a, b) = \pgcd(b, a \pmod{b})$, en effet, n'oublions pas que
+$a \pmod{b} < b$ par définition.
+L'invariant, c'est $\pgcd(a,b)$.
+Le cas de base, c'est $\pgcd(a, 0) = a$.
+Ce cas tombe bien car $a \pmod{b}$ ne marche pas lorsque $b = 0$.
+On a donc
+\begin{lstlisting}
+fun {PGCD A B}
+  if B == 0 then
+    A
+  else
+    {PGCD B A mod B}
+  end
+end
+\end{lstlisting}
+
+On peut calculer une complexité de $\bigoh(\log(\max(a, b)))$
+ce qui est très efficace.
+
+\subsubsection{Récursion terminale}
+Il y a un problème avec les récursions,
+du moins avec les languages classiques comme le \java{}.
+À chaque appel, la pile augmente et à un moment, il n'y a plus
+assez de mémoire.
+
+Il y a une solution à ce problème en \oz{} qui requiert
+un certain style de programmation qu'on appelle la récursion terminale.
+Il faut qu'\emph{en language noyau},
+la dernière instruction à exécuter soit l'appel récursif.
+Ainsi, il ne reste plus rien à exécuter pour chacune des fonctions
+lorsqu'on fait l'appel récursive et la taille de la pile n'augmente pas.
+
+Par chance, lors de la traduction en language noyau automatique,
+s'il y a moyen, \oz{} utilise toujours la récursion terminale.
+Par exemple,
+\begin{lstlisting}
+fun {Sum N} % = 1 + 2 + ... + N
+  if N == 0 then
+    0
+  else
+    N + {Sum N-1}
+  end
+end
+\end{lstlisting}
+n'est pas récursif terminal car en language noyau, ça donne
+\begin{lstlisting}
+proc {Sum N R}
+  local Rec Z Eq in
+    Z = 0
+    Eq = N == Z
+    if Eq then
+      R = 0
+    else
+      Rec = {Sum N-1}
+      R = N + Rec
+    end
+  end
+end
+\end{lstlisting}
+par contre,
+\begin{lstlisting}
+fun {Sum N Acc}
+  if N == 0 then
+    Acc
+  else
+    {Sum N Acc + N}
+  end
+end
+\end{lstlisting}
+est récursif terminal ainsi que
+\begin{lstlisting}
+fun {ListNums N} % = [N N-1 ... 1]
+  if N == 0 then
+    nil
+  else
+    N|{ListNums N-1}
+  end
+end
+\end{lstlisting}
+parce que pour la créaction d'enregistrement,
+les valeurs des champs \emph{peuvent être des variables pas encore assignées}.
+Contrairement à l'opérateur $+$ où les deux opérandes doivent être connues.
+Comme \oz{} est malin, il écrit alors le language noyau comme suit
+\begin{lstlisting}
+fun {ListNums N R}
+  local Z Eq in
+    Z = 0
+    Eq = N == 0
+    if Eq then
+      R = nil
+    else
+      local End in
+        R = N|End
+        End = {ListNums N-1}
+      end
+    end
+  end
+end
+\end{lstlisting}
+
 \subsection{Boucle for}
-La boucle \lstinline|for|, c'est du pur sucre syntaxique,
-elle a deux formes.
+La boucle \lstinline|for|, c'est du pur sucre syntaxique.
+Elle a deux formes.
 La première,
 \begin{lstlisting}
 for <x> in <v> do <s> end
@@ -762,16 +956,419 @@ end
 
 \section{Concurrence}
 \subsection{Concurrence}
-%TODO
+Tout comme un ordinateur exécute plusieurs processus en même temps,
+un programme peut avoir plusieurs threads.
+
+En fait, le nombre de threads (tous processus confondus) qui peuvent
+s'exécuter vraiment en même temps est égal au nombre de coeur mais
+le système d'exploitation fait ce qu'on appelle du ``time sharing'',
+c'est à dire qu'on l'impression que deux threads s'exécutent en même temps
+mais en fait, on leur donne juste le processeur un temps très court puis
+en le lui reprend et on le donne un temps très court à une autre.
+Donc au final on sait exécuter beaucoup plus de threads en ``même temps''
+qu'on a de coeur.
+
+Pour lancer un thread en \oz{}, on utilise le \keyword{}
+\lstinline|thread|. Sa syntaxe est la suivante
+\begin{lstlisting}
+  thread
+    <s>
+  end
+\end{lstlisting}
+Ce qui va se passer sémantiquement,
+c'est qu'on va passer de
+\[ ([(\verb|thread <s> end|,\ce),\ldots],\st_2, \ldots, \st_n,\sigma) \]
+à
+\[ ([\ldots],\st_2, \ldots, \st_n,[(\verb|<s>|,\ce)],\sigma). \]
+
 \subsection{Dataflow}
 \label{sec:dataflow}
-%TODO
+On remarque que la mémoire est partagée entre tous les threads.
+Si dans un thread on essaie d'évaluer une expression dont on ne connait pas
+la valeur comme par exemple dans \lstinline|Y = X + 1| où \lstinline|X|
+n'a pas encore de valeur mais \emph{pas} dans
+\lstinline|answer(value:X)| ou \lstinline$42|X$ où on ne connait pas la
+valeur de \lstinline|X|,
+l'exécution se mettra en pause et attendra en esperant qu'un autre
+thread lui assigne une valeur.
+On appelle ça le ``variable dataflow''.
+
+\subsection{Déterminisme}
+Tout d'abord, insistons sur le fait que le mot ``déterminisme'' en
+informatique n'est pas exactement le même qu'en philosophie où
+on se demande des évènements sont purement aléatoire.
+En informatique, on dit que c'est aléatoire quand ça dépend de facteurs
+externes comme la température du processeur,
+l'état du système d'exploitation,
+etc, \ldots
+
+On doit aussi se rendre compte que le temps donné à chaque thread
+dépend du bon vouloir du système d'exploitation.
+L'ordre d'exécution entre deux instructions dans deux threads différents
+est rarement garanti.
+Les seuls cas où c'est garanti, c'est quand on a par exemple
+\begin{lstlisting}
+thread Y in
+  Y = X + 1
+end
+X = 41
+\end{lstlisting}
+où la ligne 4 s'exécutera toujours avant la ligne 2 si on imagine qu'aucune
+autre ligne ne donne de valeur à \lstinline|X|.
+
+Si on utilise des cellules,
+notre programme devient \emph{non-déterministe}.
+Par exemple, pour
+\begin{lstlisting}
+local Arch = {NewCell 0} in
+  thread
+    Arch = 32
+  end
+  thread
+    Arch = 64
+  end
+  if Arch == 32 then
+    {Browse ':('}
+  elseif Arch == 64 then
+    {Browse ':)'}
+  else
+    {Browse ':o'}
+  end
+end
+\end{lstlisting}
+on ne pourra jamais dire ce qu'affichera le programme.
+
+Si on reste dans le modèle \emph{déclaratif},
+l'exécution est néanmoins \emph{toujours déterministe}
+car les variables ne peuvent pas changer de valeur donc au pire,
+le programme attendra.
 
 \section{Programmation orientée objet}
-%TODO
+On peut faire de la programmation orientée objet
+(abrégé POO en français et OOP en anglais) en \oz{} mais il
+est pour cela \emph{nécessaire} de sortir du modèle déclaratif.
+Il est donc impossible de faire de la POO concurrentielle déclarative.
 
-\part{Définitions} % FIXME
+La syntaxe d'une classe est la suivante
+\begin{lstlisting}
+class <x>
+  attr <a>_1 <a>_2 ... <a>_n
+  meth <m>_1 ... end
+  meth <m>_m ... end
+end
+\end{lstlisting}
+où on peut remarquer que tous les attributs doivent être déclaré
+après un unique \keyword{} \lstinline|attr|.
+Chaque attribut est une \emph{cellule} qui est créée automatiquement
+mais sans être initialisée, c'est à dire que si on fait par exemple
+\lstinline|@<a>_1 + 1| dès la création d'une cellule, ça va attendre
+que la cellule ait une valeur.
 
+La syntaxe de la définition d'une méthode est la suivante
+\begin{lstlisting}
+meth <m>(<x>_1 <x>_2 ... <x>_n)
+  <s>
+end
+\end{lstlisting}
+
+Pour en appeler une, la syntaxe est la suivante
+\begin{lstlisting}
+{<x> <m>(<x>_1 <x>_2 ... <x>_n)}
+\end{lstlisting}
+Que ce soit pour l'appel ou pour la définition d'une méthode,
+s'il n'y a pas d'argument, les parenthèses sont facultatives.
+Lors de l'implémentation d'une méthode,
+pour appeler une méthode sur l'objet dans lequel on est,
+il y a le \keyword{} \lstinline|self|.
+
+Pour créer un objet, il faut utiliser la syntaxe suivante
+\begin{lstlisting}
+<x> = {New <x>_c <m>(<x>_1 <x>_2 ... <x>_n)}
+\end{lstlisting}
+où \lstinline|<x>_c| est la classe à instantier.
+
+Les méthodes se comportent comme des procédures mais on peut aussi les
+faire se comporter comme des fonctions.
+Pour ce faire, il suffit de remplacer un \lstinline|<x>_i| lors de l'appel
+et de la définition de la méthode en \lstinline|$|.
+Bien évidemment, ils doivent être à la même place
+(tous deux le \lstinline|i|\ieme{} argument).
+
+Voici un exemple illustrant les concepts vu dans cette section
+\begin{lstlisting}
+declare
+class Pair
+  attr first second
+  meth init(F S)
+    first := F
+    second := S
+  end
+  meth sort
+     if @second < @first then
+        {self swap}
+     end
+  end
+  meth swap
+     Tmp = @first
+  in
+     first := @second
+     second := Tmp
+  end
+  meth getFirst($)
+     @first
+  end
+  meth getSecond($)
+     @second
+  end
+  meth multiply(A)
+     first := @first * A
+     second := @second * A
+  end
+end
+X = {New Pair init(32 21)}
+{X sort}
+{X multiply(2)}
+{Browse {X getFirst($)}}
+\end{lstlisting}
+Essayez de deviner ce que ce programme affiche.
+
+\section{Exceptions}
+Comme en \java{}, en \oz{}, on sait lancer et traiter des exceptions.
+
+\subsection{Traiter des exceptions}
+Pour traiter des exception,
+il faut utiliser le \keyword{} \lstinline|try| ainsi que
+le \keyword{} \lstinline|catch|
+\begin{lstlisting}
+try <s>_1 catch <x> then <s>_2 end
+\end{lstlisting}
+Sémantiquement, on passe de
+\[ ([(1,\ce),\ldots],\sigma) \]
+à
+\[ ([(\verb|<s>_1|,\ce),(\verb|catch <x> then <s>_2|,\ce),\ldots],\sigma). \]
+
+\subsection{Lancer des exceptions}
+Pour traiter des exception,
+il faut utiliser le \keyword{} \lstinline|raise|
+\begin{lstlisting}
+raise <x> end
+\end{lstlisting}
+Sémantiquement, la machine abstraite va dépiler chaque instruction
+de la pile sans même les exécuter jusqu'à arriver à un \lstinline|catch|
+qui correspond à \lstinline|<x>| au niveau du pattern matching.
+
+Par exemple, on passe de
+\[ ([(\verb|raise X end|,\ce_1),(\verb|R=S|,\ce_2),
+(\verb|catch a(M) then skip end|,\ce_3), \]
+\[ (\verb|catch b(M) then skip end|,\ce_4),\ldots],
+\{x=\verb|b(v)|,v=\verb|'bla'|,\ldots\}) \]
+en
+\[ ([(\verb|skip|,\ce_4 + \{\verb|M|\to m\}),\ldots],
+\{x=\verb|b(v)|,v=\verb|'bla'|,m=\verb|'bla'|,\ldots\}). \]
+
+Voici un exemple illustratif sur les exceptions
+\begin{lstlisting}
+declare
+fun {FunListInt List Fun}
+   fun {FunListIntAux List Fun Acc}
+      case List
+      of H|T then
+         if {IsInt H} then
+            {FunListIntAux T Fun {Fun Acc H}}
+         else
+            raise nonIntFoundException(H) end
+         end
+      [] nil then
+         Acc
+      else
+         raise invalidListException(List) end
+      end
+   end
+in
+   case List
+   of nil then
+      raise emptyListException() end
+   [] H|T then
+      {FunListIntAux T Fun H}
+   else
+      raise invalidListException(List) end
+   end
+end
+fun {OpListInt List Op}
+   Fun
+   Default
+in
+   case Op
+   of 'plus' then
+      Fun = Number.'+'
+      Default = 0
+   [] 'times' then
+      Fun = Number.'*'
+      Default = 1
+   [] 'max' then
+      Fun = Max
+      Default = none
+   [] 'min' then
+      Fun = Min
+      Default = none
+   else
+      raise invalidOperandException(Op) end
+   end
+   try
+      {FunListInt List Fun}
+   catch emptyListException() then
+      if Default \= none then
+         Default
+      else
+         raise invalidListException() end
+      end
+   end
+end
+L = [32 42 troll 64]
+try
+   try
+      try
+         {Browse {OpListInt L 'plus'}}
+      catch nonIntFoundException(M) then
+         {Browse M}
+      end
+   catch invalidListException() then
+      {Browse ':('}
+   end
+catch invalidOperandException(M) then
+   {Browse M}
+end
+\end{lstlisting}
+De la ligne 47 à 55,
+il aurait été préférable de vérifier que la liste n'était pas vide
+avant d'appeler \lstinline|FunListInt| car c'est considéré comme de
+meilleure conception.
+Cependant, dans le but d'illustrer les exceptions,
+il a tout de même été choisi d'utiliser
+l'exception \lstinline|invalidListException|.
+
+\section{Complexité}
+Pour évaluer l'efficacité tant temporelle que spatiale d'un programme,
+on utilise la complexité.
+
+\subsection{Complexité temporelle}
+Le concept est simple.
+
+Supposons qu'on ait obtenu une fonction $f(n_1, n_2, \ldots, n_m)$
+qui décrit le nombre exact d'opérations à l'exécution en fonction
+de paramètre $n_1, n_2, \ldots, n_m$ qu'on appelle la ``taille
+du problème''.
+Par la suite, prenons $m = 1$ et $n = n_1$ pour plus de simplicité.
+
+C'est évidemment une supposition, en pratique,
+on a jamais cette fonction.
+
+On dit que la complexité temporelle est $\bigoh(g(n))$ si
+$\exists C \in \mathbb{R}$ tel que $f(n) \leq C g(n)$.
+C'est à dire que $g(n)$ est une approximation pessimiste de $f(n)$
+à un facteur prêt.
+On dit aussi que c'est la complexité du pire cas.
+C'est très pratique car ça donne une bonne idée du temps
+que l'exécution de dépassera jamais.
+
+On dit aussi que la complexité temporelle est $\Omega(g(n))$ si
+$\exists C \in \mathbb{R}$ tel que $C g(n) \leq f(n)$.
+C'est à dire que $g(n)$ est une approximation optimiste de $g(n)$
+à un facteur prêt.
+On dit aussi que c'est la complexité dans le meilleur cas.
+C'est moins pratique et moins utilisé que $\bigoh$.
+
+On remarque que trouver un $g$ qui marche dans chaque cas
+n'est pas bien compliqué. En effet dire qu'un algorithme est
+$\Omega(0)$ est correct cependant, c'est d'une utilité assez limitée.
+On essaie donc toujours de donner des approximation les plus proches
+possible de $f$.
+
+Parfois, on arrive à un $g$ identique pour $\bigoh$ et $\Omega$.
+On dit alors que l'algorithme a une complexité $\Theta(g(n))$.
+
+L'art réside souvent dans le choix d'une taille du problème qui
+rendra le $g$ de $\bigoh$ et celui de $\Omega$ le plus proche possible
+car, le plus on est précis, mieux c'est évidemment.
+
+Par exemple, supposons qu'on veuille calculer un $\pgcd$
+comme pour la section~\ref{sec:rec}.
+L'algorithme dit ``brute-force'' car il cherche toute les possibilité
+est le suivant
+\begin{lstlisting}
+fun {PGCD A B}
+  fun {PGCDAux A B I}
+    if A mod I == 0 andthen B mod I == 0 then
+      I
+    else
+      {PGCDAux A B I-1}
+    end
+  end
+  {PGCDAux A B {Min A B}}
+end
+\end{lstlisting}
+Sa complexité est pas terrible, $\bigoh(\min(n,m))$ et $\Omega(1)$
+où la taile du problème est $(n, m) = (a, b)$.
+En effet, dans le pire cas, leur $\pgcd$ est 1 et dans le meilleur
+cas, leur $\pgcd$ est $a$ ou $b$.
+
+On a vu à la section~\ref{sec:rec} qu'il y avait une manière plus
+efficace de calculer ce $\pgcd$.
+\begin{lstlisting}
+fun {PGCD A B}
+  if B == 0
+    A
+  else
+    {PGCD B A mod B}
+  end
+end
+\end{lstlisting}
+On peut se convaincre ici qu'en deux appels récursifs,
+$a$ est au moins diminué de moitié.
+En effet,
+\begin{itemize}
+  \item si $2b < a$, comme le $a$ de l'appel récursif est $b$, c'est
+    vrai au premier appel;
+  \item sinon, $a \pmod{b}$ est plus petit que la demi de $a$, au premier
+    appel, il deviendra $b$ et au deuxième, il deviendra $a$.
+\end{itemize}
+En $\log_2(a)$ appels, on trouvera la solution.
+Pour rester dans le pire cas, il faut prendre $\log_2(\max(a, b))$
+donc la complexité est $\bigoh(\log_2(\max(n, m)))$ et $\Omega(1)$ où
+la taille du problème est $(n,m) = (a, b)$.
+
+\subsection{Complexité spatiale}
+Pour la complexité spatiale, c'est exactement la même chose
+sauf qu'au lieu de parler d'opération,
+on parle de variable en mémoire qu'on ajoute à la mémoire.
+
+\part{Définitions}
+%    ________________________________________________
+%   / ____        __ _       _ _   _                 \
+%  / |  _ \  ___ / _(_)_ __ (_) |_(_) ___  _ __  ___  \
+% |  | | | |/ _ \ |_| | '_ \| | __| |/ _ \| '_ \/ __|  |
+% |  | |_| |  __/  _| | | | | | |_| | (_) | | | \__ \  |
+%  \ |____/ \___|_| |_|_| |_|_|\__|_|\___/|_| |_|___/ /
+%   \------------------------------------------------/
+%     \               ,-----._
+%   .  \         .  ,'        `-.__,------._
+%  //   \      __\\'                        `-.
+% ((    _____-'___))                           |
+%  `:='/     (alf_/                            |
+%  `.=|      |='                               |
+%     |)   O |                                  \
+%     |      |                               /\  \
+%     |     /                          .    /  \  \
+%     |    .-..__            ___   .--' \  |\   \  |
+%    |o o  |     ``--.___.  /   `-'      \  \\   \ |
+%     `--''        '  .' / /             |  | |   | \
+%                  |  | / /              |  | |   mmm
+%                  |  ||  |              | /| |
+%                  ( .' \ \              || | |
+%                  | |   \ \            // / /
+%                  | |    \ \          || |_|
+%                 /  |    |_/         /_|
+%                /__/
 \begin{description}
   \item[Identificateur]
     Nom introduit sur le clavier. Commence avec une majuscule.
@@ -934,10 +1531,12 @@ end
     L'état est bénéfique pour la modularité.
 
   \item[Encapsulation]
-    A compléter. % TODO
+    Protéger l’intérieur d'une implémentation.
 
   \item[Abstraction]
-    A compléter. % TODO
+    Définir une interface pour une
+    interaction contrôlée avec l’intérieur, ce qui garantit
+    un bon comportement
 
   \item[Polymorphisme]
     Une méthode est polymorphe si elle peut prendre
@@ -976,6 +1575,11 @@ end
     qui doit être une super-classe de \lstinline|A|.
     À utiliser uniquement pour la redéfinition d'une méthode
     déjà définie dans une super-classe.
+
+  \item[Contexte d'exécution]
+    Un contexte d’exécution est une partie de la pile sémantique
+    qui commence avec un marqueur et qui va jusqu’au sommet
+    de la pile.
 
   \item[Concurrence]
     Exécution de plusieurs activités au même temps.
