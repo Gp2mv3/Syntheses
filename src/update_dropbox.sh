@@ -1,14 +1,16 @@
 #! /bin/bash
 
-clients=('1 2 3' '1 2 3' '1' '3')
-officials=(true false false false)
+clients=('1 2 3 4' '1 2 3 4' '1 2' '3 4' '4' '4')
+filters=('' '' '' 'eco sigsys' 'edo opti' 'oopdb os')
+officials=(true false false false false false)
 in_root='.'
-in_names='chimie elec info math meca philo physique methodnum'
+in_names='chimie eco edo elec info math meca methodnum oopdb opti os philo physique sigsys'
 home='/home/blegat'
 dropbox="${home}/Dropbox"
 out_roots=("$dropbox/Synthèses_EPL" "$dropbox/EPL-Backup"
-"$dropbox/UCL_EPL_BAC1" "$dropbox/EPL")
-out_names='CHIMIE PHYSIQUE INFO MATH PHYSIQUE PHILO PHYSIQUE METHODNUM'
+"$dropbox/UCL_EPL_BAC1" "$dropbox/EPL"
+"$dropbox/MAP" "$dropbox/INFO")
+out_names='CHIMIE ECO EDO PHYSIQUE INFO MATH PHYSIQUE METHODNUM OOPDB OPTIMISATION OS PHILO PHYSIQUE SIGSYS'
 
 read_th() {
   IFS=' ' read -ra array
@@ -74,8 +76,8 @@ same () {
   echo [ "$sign_1" == "$sign_2" ]
 }
 
-is_in() {
-  if [ "x$2" == "x" ]; then
+in_or_empty() {
+  if [ -z "$2" ]; then
     echo 1
     return
   fi
@@ -101,14 +103,16 @@ for i in ${!clients[*]}; do
   quadris=${clients[$i]}
   out_root=${out_roots[$i]}
   official=${officials[$i]}
+  filter=${filters[$i]}
   for quadri in $quadris; do
-    if [ `is_in "q$quadri" "$*"` == "1" ]; then
-      i=0
+    if [ `in_or_empty "q$quadri" "$*"` == "1" ]; then
+      i=0 # TODO change its name
       for in_name in $in_names; do
-        if [ `is_in "$in_name" "$*"` == "1" ]; then
+        if [ `in_or_empty "$in_name" "$*"` == "1" ] &&
+          [ `in_or_empty "$in_name" "$filter"` == "1" ]; then
           in=`input $quadri $in_name $i`
           out=`output $quadri $in_name $i`
-          if [ "x$out" == "x" ]; then
+          if [ -z "$out" ]; then
             echo "Missing out_names !"
             exit 1
           fi
