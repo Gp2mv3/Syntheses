@@ -1,16 +1,16 @@
 #! /bin/bash
 
 clients=('1 2 3 4' '1 2 3 4' '1 2' '3 4' '4' '4')
-filters=('' '' '' 'eco sigsys' 'edo opti' 'oopdb os')
+filters=('' '' '' 'eco sigsys' 'edo opti' 'coo os')
 officials=(true false false false false false)
 in_root='.'
-in_names='chimie eco edo elec info math meca methodnum oopdb opti os philo physique sigsys'
+in_names='chimie eco edo elec info math meca methodnum coo opti os philo physique sigsys'
 home='/home/blegat'
 dropbox="${home}/Dropbox"
 out_roots=("$dropbox/Synthèses_EPL" "$dropbox/EPL-Backup"
 "$dropbox/UCL_EPL_BAC1" "$dropbox/EPL"
 "$dropbox/MAP" "$dropbox/INFO")
-out_names='CHIMIE ECO EDO PHYSIQUE INFO MATH PHYSIQUE METHODNUM OOPDB OPTIMISATION OS PHILO PHYSIQUE SIGSYS'
+out_names='CHIMIE ECO EDO PHYSIQUE INFO MATH PHYSIQUE METHODNUM COO OPTIMISATION OS PHILO PHYSIQUE SIGSYS'
 
 read_th() {
   IFS=' ' read -ra array
