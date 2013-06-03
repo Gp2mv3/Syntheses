@@ -13,6 +13,7 @@
 \newcommand{\transfz}{\mathcal{Z}}
 \newcommand{\transzu}{\mathcal{Z}_u}
 \newcommand{\roc}{\mathrm{ROC}}
+\DeclareMathOperator{\cof}{cof}
 
 \hypertitle{Signaux et syst\`emes}{4}{FSAB}{1106}{Benoît Legat}{Benoît Legat}
 
@@ -353,11 +354,22 @@ ce qu'il n'y ait pas de chevauchements,
 il suffit de multiplier le signal en fréquentiel par une fenêtre
 qui vaut $T_s$ pour $-\pi/T_s \leq \omega < \pi/T_s$ et 0 sinon;
 ce qui fait une convolution par $\sin(\pi t/T_s)/(\pi t/T_s)$ en temporel.
+On appelle ça un \emph{filtre passe-bas}.
+
+Il peut arriver que bien que les conditions du théorème de Shannon n'aient
+pas été respectées, on sache quand même récupérer le signal de départ.
+Il faut pour cela qu'il ne se soit pas chevauché avec ses reproductions.
+C'est le cas quand les fréquences sont localisés par exemple entre
+$4\pi \leq \omega < 6\pi$.
+On peut alors récupérer le signal de départ en multipliant
+en fréquentiel par une fenêtre qui faut $T_s$ pour
+$4\pi \leq \omega < 6\pi$ et 0 ailleurs.
+C'est un \emph{filtre passe-bande}.
 
 \paragraph{Périodicité temporelle du signal échantillonné}
 Même si $x(t)$ est périodique,
 $x_s(t)$ n'est pas nécessairement périodique.
-Pour que $x_s(t)$ soit périodique, il faut et il suffit que,
+Pour que $x_s(t)$ soit périodique, il faut et il suffit que
 $T_s$ soit un multiple rationnel de la période de $x(t)$.
 
 \subsubsection{TFD - Transformée de Fourier discrète}
@@ -541,6 +553,13 @@ d'où
   h(t) & = \fdif{}{t}s(t) & h[n] & = s[n] - s[n-1].
 \end{align*}
 
+On peut aussi calculer la réponse indicielle à l'aide de $H(s)$
+ou $H(z)$.
+C'est à dire calculer
+\begin{align*}
+  S(s) & = H(s)U(s) & S(z) & = H(z)U(z).
+\end{align*}
+et puis faire la transformée inverse pour trouver $s(t)$ ou $s[n]$.
 
 %Parallèle : $+$
 %Série : $*$ commutatif car LTI
@@ -608,22 +627,22 @@ Une approximation de ce diagramme peut être très facilement dessiné à la mai
 \[ H(s) = K \frac{\sum_{i=0}^mb_is^i}{\sum_{i=0}^na_is^i}. \]
 
 Il nous suffit de factoriser le numérateur et le dénominateur
-jusqu'à avoir 3 types de facteurs.
+jusqu'à avoir 4 types de facteurs.
 \begin{itemize}
   \item Une racine nulle
     \[ s; \]
   \item Une racine simple réelle
     \[ \frac{s}{\omega_0} + 1; \]
-  %\item Deux racines conjuguées,
-    %\[ \left(\frac{s}{\omega_0}\right)^2 +
-    %2\zeta\frac{s}{\omega_0} + 1; \]
+  \item Deux racines conjuguées,
+    \[ \left(\frac{s}{\omega_0}\right)^2 +
+    2\zeta\frac{s}{\omega_0} + 1; \]
   \item Une racine double réelle
     \[ \left(\frac{s}{\omega_0} + 1\right)^2. \]
 \end{itemize}
 Il est important d'avoir à chaque fois la bonne forme pour les facteurs
 car ça modifie $K$.
 Par exemple, pour la racine simple réelle, il ne faut pas garder
-$(s + \omega_0)$.
+$(s + \omega_0)$ mais le transformer en $(s/\omega_0 + 1)$.
 
 En suite, comme on trace le graphe d'un logarithme,
 le produit de ses facteurs va devenir leur somme.
@@ -641,19 +660,30 @@ l'opposé de celui au numérateur.
   \centering
   \begin{tabular}{|l|l|}
     \hline
-    Type & Graphe\\
+    \emph{Type} & \emph{Graphe}\\
     \hline
     Contante $K$ & $20\log|K|$\\
     \hline
     Zéro nul & $\si{20}{dB\per decade}$ passant par $\si{0}{dB}$ pour
-    $\omega=0$\\
+    $\omega=1$\\
     \hline
     Pôle nul & $\si{-20}{dB\per decade}$ passant par $\si{0}{dB}$ pour
-    $\omega=0$\\
+    $\omega=1$\\
     \hline
     Zéro réel & $\si{20}{dB\per decade}$ à partir de $\omega = \omega_0$\\
     \hline
     Pôle réel & $\si{-20}{dB\per decade}$ à partir de $\omega = \omega_0$\\
+    \hline
+    Zéros conjugués &
+    $\si{40}{dB\per decade}$ à partir de $\omega = \omega_0$.\\
+    & Il faut aussi rajouter un pic à $\omega_0$ d'amplitude
+    $20\log(2\zeta)$.\\
+    \hline
+    Pôles conjugués &
+    $\si{-40}{dB\per decade}$ à partir de $\omega = \omega_0$.\\
+    &
+    Il faut aussi rajouter un pic à $\omega_0$ d'amplitude
+    $-20\log(2\zeta)$.\\
     \hline
     Double zéro réel &
     $\si{40}{dB\per decade}$ à partir de $\omega = \omega_0$\\
@@ -777,6 +807,11 @@ En discret, c'est pareil
 et on trouve alors
 \[ H(z) = \frac{Y(z)}{X(z)} = C(zI-A)^{-1}B + D. \]
 
+Le plus simple pour transposer en pratique est à l'aide de
+\[ C(zI-A)^{-1}B = \frac{1}{\det(zI-A)} C\cof(zI-A)^TB. \]
+L'astuce est de bien regarder les coefficients de $C$ et de $B$
+qui sont nuls pour éviter de calculer trop de cofacteurs.
+Le calcul n'est alors pas si fastidieux.
 
 \section{Équations différentielles - équations aux dérivées partielles}
 Elle constitue la représentation entrée-sortie d'un système contrairement
@@ -887,6 +922,15 @@ Pour un système causal,
 Un système marginalement stable mais pas asymptotiquement stable
 qui n'a pas d'annulation pôle-zéro n'est donc pas BIBO stable.
 
+En effet, si le système est causal, il faut que $h[n] = 0$ $\forall n < 0$,
+il faut donc du $u[n]$ et pas du $u[-n-1]$, la formule à utiliser donne
+alors un ROC de $|z| > |\lambda|$.
+S'il existe un $|\lambda| \geq 1$,
+on a $|z| > 1$ et le cercle unité n'est pas
+dans le ROC.
+Par contre si tous les $\lambda < 1$, $|z| = 1$ est dans l'intersection
+des ROC $|z| > |\lambda|$.
+
 \subsection{Stabilité interne}
 Un point $(\bar{q}, \bar{x})$ est un équilibre si $A\bar{q} + B\bar{x} = 0$.
 Cet équilibre est \emph{stable} si un bruit suffisamment faible
@@ -968,6 +1012,25 @@ on aurait eu une instabilité BIBO aussi.
 %\[ C = \begin{pmatrix}0 & -1 & 2\\1 & -1 & -1\\1 & -1 & -1\end{pmatrix} \]
 %base $\mathcal{C}(C)^\perp = (0;1;-1)$
 %donc posons $z_1 = q_1$, $z_2 = q_2$ et $z_3 = q_2 - q_3$.
+
+\subsection{Critère de Routh Hurwitz}
+Soit une fonction
+\[ F(s) = a_ns^n + a_{n-1}s^{n-1} + \ldots + a_1s + a_0. \]
+On peut construire le tableau suivant
+\begin{align*}
+  &a_n && a_{n-2} && a_{n-4} && \cdots\\
+  &a_{n-1} && a_{n-3} && a_{n-5} && \cdots\\
+  &b_1=\frac{a_{n-1}a_{n-2}-a_na_{n-3}}{a_{n-1}} &&
+  b_2=\frac{a_{n-1}a_{n-4}-a_na_{n-5}}{a_{n-1}} && \cdots\\
+  &c_1=\frac{b_1a_{n-3}-a_{n-1}b_{2}}{b_1} && \cdots\\
+  \vdots
+\end{align*}
+Ce tableau crée en fait un triangles en ne laissant que des zéros
+sous lui ainsi qu'à sa droite.
+
+On sait ensuite que le nombre de racines à partie réelle positive
+est le nombre de changements de signe des coefficients de la première
+colonne de ce tableau (si ces coefficients sont tous non-nuls).
 
 \subsection{Feedback}
 Soit un système LTI avec un gain de fonction de transfert $G(s)$ à la suite
