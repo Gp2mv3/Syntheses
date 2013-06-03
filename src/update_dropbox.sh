@@ -5,7 +5,7 @@ filters=('' '' '' 'eco sigsys' 'edo opti' 'coo os')
 officials=(true false false false false false)
 in_root='.'
 in_names='chimie eco edo elec info math meca methodnum coo opti os philo physique sigsys'
-home='/home/blegat'
+home="$HOME"
 dropbox="${home}/Dropbox"
 out_roots=("$dropbox/Synthèses_EPL" "$dropbox/EPL-Backup"
 "$dropbox/UCL_EPL_BAC1" "$dropbox/EPL"
@@ -98,6 +98,16 @@ show() {
 #if [ "$*" == "" ]; then
   #echo "empty"
 #fi
+
+if [ -z $home ]; then
+  echo "Please set your HOME environment variable to your home directory."
+  exit 1
+fi
+
+if [ ! -d $dropbox ]; then
+  echo "$dropbox: No such file or directory"
+  exit 1
+fi
 
 for i in ${!clients[*]}; do
   quadris=${clients[$i]}
