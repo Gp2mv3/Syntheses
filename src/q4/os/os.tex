@@ -1,6 +1,260 @@
 \input{../../lib.tex}
 
-\hypertitle{Systèmes informatiques}{4}[SINF]{1252}
-{}{}
+\lstset{language={C}}
+
+\hypertitle{Syst\`emes informatiques}{4}{SINF}{1252}
+{Beno\^it Legat}{Beno\^it Legat}
+
+\part{Le language \clang{}}
+\section{Normes}
+Depuis sa création par Dennis Ritchie,
+le \clang{} a pas mal évolué.
+Il existe plusieurs normes dont la norme \clang99 qui permet
+de faire pas mal de nouvelles choses.
+
+Pour demander à \lstinline[language=bash]|gcc|
+de compiler du code avec \clang99,
+il faut lui donner l'argument \lstinline[language=bash]|--std=c99|.
+
+\section{Les pointeurs}
+En \clang{}, les variables sont passées par \emph{valeur},
+pour partager une variable sans la copier, on utilise les pointeurs.
+Un pointeur contient l'adresse \emph{virtuelle} d'un endroit en mémoire.
+\begin{lstlisting}
+int n = 0;
+int *i = &n;
+printf("%d == n\n", *i, n); // imprime 0 == 0
+\end{lstlisting}
+On doit aussi donner ce vers quoi point l'adresse (ici, un \lstinline|int|)
+pour permettre au compilateur d'effectuer de l'arithmétique de pointeur.
+En effet, lorsqu'on fait
+\begin{lstlisting}
+int *p = 0x10;
+p++;
+\end{lstlisting}
+\lstinline|p| n'est pas incrémenté de 1 mais de la taille d'un
+\lstinline|int|, c'est à dire \lstinline|sizeof(int)|.
+
+Par convention, \lstinline|NULL| est la valeur d'un pointeur qui
+ne pointe pas encore vers de la mémoire allouée.
+Il donc mieux toujours donner cette valeur à un pointeur qui ne pointe
+pas vers quelque chose de telle sorte que
+\begin{lstlisting}
+if (p != NULL) {
+  free(p);
+}
+\end{lstlisting}
+ne libère jamais de la mémoire non-allouée
+
+\subsection{Le heap}
+Les pointeurs permettent aussi de s'allouer de la mémoire dans la \emph{heap}.
+La heap est un endroit de la mémoire où on peut s'allouer dynamiquement
+de la mémoire.
+C'est à dire s'allouer un nombre de bytes
+qu'on ne connait pas à la compilation.
+
+Pour cela, on utilise la fonction \lstinline|malloc| qui alloue de la mémoire
+et la fonction \lstinline|free| qui la libère.
+En effet, si on ne libère jamais la mémoire qu'on s'alloue dans la heap,
+elle risque d'être remplie et \lstinline|malloc| renverra alors
+\lstinline|NULL|.
+\lstinline|malloc| renvoie un pointeur de type \lstinline|void*|
+pour rester générique.
+Il faut le caster dans le type voulu.
+\begin{lstlisting}
+int n;
+printf("Combien voulez-vous de int (%d bytes par int) ? : ",
+       sizeof(int));
+scanf("%d", &n);
+// On s'alloue n int consecutifs dans la heap
+int *p = (int*) malloc(n * sizeof(int));
+if (p == NULL) {
+  // n est negatif, nul ou trop grand
+  printf("Vous avez ete un peut trop optimiste il me semble :)\n");
+}
+// utilisation de p
+// On n'oublie pas de liberer la memoire
+free(p);
+p = NULL;
+\end{lstlisting}
+
+\lstinline|malloc| ne met pas de valeur dans la mémoire qu'elle alloue
+et \lstinline|free| ne change pas la valeur de \lstinline|p|
+(d'ailleurs il en est incapable car on ne lui a pas passé un pointeur
+vers \lstinline|p|).
+
+Il existe aussi la fonction \lstinline|calloc| qui contrairement à
+\lstinline|malloc| initialise tous les bytes à 0.
+\lstinline|calloc| est donc moins rapide que \lstinline|malloc| mais
+met tous les bytes à 0 de manière très efficace.
+\begin{lstlisting}
+#define N 42
+int *p = (int*) malloc(N * sizeof(int));
+for (int i = 0; i < N; i++) {
+  p[i] = 0;
+}
+// est plus lent que
+int *p = (int*) calloc(N, sizeof(int));
+\end{lstlisting}
+
+\section{Structures}
+On peut créer des structures qui des une sorte de classes sans méthodes.
+On accède aux éléments à l'aide de \lstinline|.|, \lstinline|a.b|
+est l'élément au label \lstinline|b| dans la variable \lstinline|a|.
+On a un raccourcis pour \lstinline|(*a).b| qui est \lstinline|a->b|.
+\begin{lstlisting}
+struct point {
+  int x;
+  int y;
+}
+int move (struct point *p, struct point delta) {
+  (*p).x += delta.x;
+  p->y += delta.y;
+}
+int main () {
+  struct point d;
+  d.x = 1;
+  d.y = 2;
+  struct point *triangle = (struct point *) malloc(3 * sizeof(struct point));
+  printf("Before\n");
+  for (int i = 0; i < 3; i++) {
+    triangle[i].x = i;
+    triangle[i].x = i+1;
+    printf("(%d, %d)\n", triangle[i].x, triangle[i].y);
+  }
+  printf("After\n");
+  for (int i = 0; i < 3; i++) {
+    move(triangle[i], d);
+    printf("(%d, %d)\n", triangle[i].x, triangle[i].y);
+  }
+  free(triangle);
+  return 0;
+}
+\end{lstlisting}
+
+\section{Fonctions}
+En \clang{}, les variables sont passées par \emph{valeur}.
+Il n'y a jamais de passage par référence comme en \java{} pour les objets
+ou comme pour le \oz{}.
+Par exemple,
+\begin{lstlisting}
+void inc1 (int a) {
+  a++;
+}
+void inc2 (int *b) {
+  (*b)++;
+}
+void foo () {
+  int n = 0;
+  inc1(n);
+  printf("%d\n", n); // affiche 0
+  inc2(&n);
+  printf("%d\n", n); // affiche 1
+}
+\end{lstlisting}
+comme on fait un passage par valeur,
+\lstinline|a| vaut 0 et changer \lstinline|a| ne change pas \lstinline|n|.
+Par contre, \lstinline|b| contient l'adresse de \lstinline|n| donc modifier
+\lstinline|*b| modifie bien \lstinline|n|.
+C'est pour ça que pour \lstinline|scanf|,
+il faut passer l'adresse de la variable qui doit stocker le résultat.
+
+\section{Opérateurs}
+\subsection{Opérateurs logiques}
+Les opérateurs de bits s'exécutent sur chaque bits.
+On a
+\begin{center}
+  \begin{tabular}{cccc}
+    \clang{} bit & \clang{} \lstinline|bool| & Logique & Appelation\\
+    \& & \&\& & $\land$ & and\\
+    | & || & $\lor$ & or\\
+    $\hat{}$ &  & $\oplus$ & xor
+  \end{tabular}
+\end{center}
+
+\section{Portée des variables}
+En \clang{}, il n'y a pas de classe,
+les variables sont soient \emph{locales}, soient \emph{globales}.
+
+\subsection{Variables globales}
+Les variables globales sont initialisées à 0 ou NULL pour les pointeurs.
+Elles sont visibles partout.
+Elles sont déclarées à l'extérieur de toute fonction.
+
+\subsection{Variables locales}
+Elles ne sont pas initialisées.
+Elles sont visibles uniquement à l'intérieur de la fonction à l'intérieur
+de laquelle elles sont créées.
+Si elles ont le même nom qu'une variable globales,
+la variable globale ne sera pas disponible à l'intérieur de la fonction.
+Contrairement aux variables globales, ces variables ne sont pas
+initialisées.
+
+\subsection{Variables de boucle}
+À partir de la norme \clang99,
+on peut déclarer des variables à l'intérieur
+de n'importe quel bloc
+\begin{lstlisting}
+int main () {
+  {
+    int i = 0;
+  }
+  i = 1; // ne compile pas
+  return 0;
+}
+\end{lstlisting}
+ce qui permet d'écrire
+\begin{lstlisting}
+int main () {
+  int sum = 0;
+  for (int i = 0; i < 5; i++) {
+    sum += i;
+  }
+  return 0;
+}
+\end{lstlisting}
+
+%\begin{lstlisting}
+%char *string;
+%int* v = (int *) string;
+%\end{lstlisting}
+
+%\section{Arguments}
+%Variables d'env.
+%Arguments.
+%Pour beaucoup d'OS, ils sont dans un endroit au dessus de la pile de taille
+%fixe. Il y a une limite sur la longueur de tous les args et pas sur leur
+%nombre souvent.
+%
+%struct:
+%regarde le plus long et leur donne tous ça
+%ex:
+%char : 1
+%int : 4
+%short : 2
+%4 + 4 + 4 = 12
+%char : 1
+%long : 8
+%short : 2
+%8 + 8 + 8 = 24
+%char : 1
+%long[3] : 8
+%short : 2
+%8 + 3*8 + 8 = 40
+%char : 1
+%char : 1
+%short : 2
+%4 WTF :o
+%32 bits - paquets de 4
+%64 bits - paquets de 8
+
+%int pid = fork();
+%-> -1 pour père => fils existe pas
+%-> >0 -> père et fils a pid = pid
+%-> 0 -> fils
+
+
+%\n ne flush pas tout le temps !!!
+%flush est plus sûr. Crazy :o
 
 \end{document}
