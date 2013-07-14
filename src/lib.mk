@@ -7,9 +7,9 @@
 PDFVIEWER=xdg-open # Default pdf viewer - GNU/Linux
 #PDFVIEWER=open # Default pdf viewer - Mac OS
 ROOT=../../..
-EXT=pdf
-PATH_TO_PDF=$(QUADRI)/$(MAIN_NAME)
-PDF_NAME=$(MAIN_NAME)_$(QUADRI).$(EXT)
+
+# You want latexmk to *always* run, because make does not have all the info.
+.PHONY: $(MAIN_NAME).pdf
 
 # If you want the pdf to be opened by your preferred pdf viewer
 # after `$ make', comment the following line and uncomment the
@@ -17,24 +17,29 @@ PDF_NAME=$(MAIN_NAME)_$(QUADRI).$(EXT)
 #default: all
 default: show
 
-all: $(MAIN_NAME).$(EXT)
+all: $(MAIN_NAME).pdf
 
-$(MAIN_NAME).$(EXT): $(MAIN_NAME).tex ../../lib.tex
-	pdflatex -shell-escape -enable-write18 $(MAIN_NAME).tex
+# MAIN LATEXMK RULE
+
+# -pdf tells latexmk to generate PDF directly (instead of DVI).
+# -pdflatex="" tells latexmk to call a specific backend with specific options.
+# -use-make tells latexmk to call make for generating missing files.
+
+# -interactive=nonstopmode keeps the pdflatex backend from stopping at a
+# missing file reference and interactively asking you for an alternative.
+
+$(MAIN_NAME).pdf: $(MAIN_NAME).tex
+	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18" \
+	  -use-make $(MAIN_NAME).tex
 
 clean:
-	$(RM) *.aux *.log *.out *.toc
+	latexmk -CA
 
-show: $(MAIN_NAME).$(EXT)
-	$(PDFVIEWER) $(MAIN_NAME).$(EXT) 2> /dev/null &
+show: $(MAIN_NAME).pdf
+	$(PDFVIEWER) $(MAIN_NAME).pdf 2> /dev/null &
 
-release: $(MAIN_NAME).$(EXT)
-	cd ../..; ./update_dropbox.sh $(QUADRI) $(MAIN_NAME)
+release: $(MAIN_NAME).pdf
+	cd ../..; smartcp -vv -s quadri=$(QUADRI) -s cours=$(MAIN_NAME) config.yml
 
-addpdf: release
-	git add $(ROOT)/$(PATH_TO_PDF)/$(PDF_NAME)
-
-addtex:
+add:
 	git add $(MAIN_NAME).tex
-
-add: addpdf addtex
