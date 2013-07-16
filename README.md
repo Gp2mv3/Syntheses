@@ -102,24 +102,38 @@ Comme exemple, voici le mien
     clients:
       - name: Officiel
         arguments: &all_args
-          - [1, 2, 3, 4]
-          - &courses
-            [math, physique]
+          quadri: [1, 2, 3, 4]
+          cours: &courses
+            - chimie
+            - chimieorga
+            - eco
+            - edo
+            - elec
+            - info
+            - math
+            - meca
+            - methodnum
+            - coo
+            - opti
+            - os
+            - philo
+            - physique
+            - sigsys
         input: &input_path
           path_format: q{0}/{1}/{1}.pdf
           parameters:
-            - arg: 0
-            - arg: 1
+            - arg: quadri
+            - arg: cours
         output:
           path_format: Synthèses_EPL/q{0}/{1}/{2}
           parameters:
-            - arg: 0
-            - arg: 1
+            - arg: quadri
+            - arg: cours
             - &output_file
               path_format: Synthèse_q{0}_{1}.pdf
               parameters:
-              - arg: 0
-              - arg: 1
+              - arg: quadri
+              - arg: cours
       - name: EPL Backup
         arguments: *all_args
         input: *input_path
@@ -129,7 +143,7 @@ Comme exemple, voici le mien
             - &EPL_style_output
               path_format: Q{0}/{1}/{2}
               parameters:
-              - arg: 0
+              - arg: quadri
               - mapping:
                   chimie: CHIMIE
                   chimieorga: CHIMIEORGA
@@ -147,15 +161,15 @@ Comme exemple, voici le mien
                   physique: PHYSIQUE
                   sigsys: SIGSYS
                 key:
-                  arg: 1
+                  arg: cours
               - &output_end
                 path_format: Synthèses/{0}
                 parameters:
                 - *output_file
       - name: EPL q3
         arguments:
-          - [3]
-          - *courses
+          quadri: [3]
+          cours: *courses
         input: *input_path
         output:
           path_format: EPL/{0}
@@ -163,8 +177,8 @@ Comme exemple, voici le mien
             - *EPL_style_output
       - name: EPL q4
         arguments:
-          - [4]
-          - [eco, sigsys]
+          quadri: [4]
+          cours: [eco, sigsys]
         input: *input_path
         output:
           path_format: EPL/{0}
@@ -172,8 +186,8 @@ Comme exemple, voici le mien
             - *EPL_style_output
       - name: UCL_EPL_BAC1
         arguments:
-          - [1, 2]
-          - *courses
+          quadri: [1, 2]
+          cours: *courses
         input: *input_path
         output:
           path_format: UCL_EPL_BAC1/{0}
@@ -181,8 +195,8 @@ Comme exemple, voici le mien
             - *EPL_style_output
       - name: MAP
         arguments:
-          - [3, 4]
-          - [edo, opti]
+          quadri: [3, 4]
+          cours: [edo, opti]
         input: *input_path
         output:
           path_format: MAP/{0}
@@ -190,8 +204,8 @@ Comme exemple, voici le mien
             - *EPL_style_output
       - name: INFO
         arguments:
-          - [3, 4]
-          - [coo, os]
+          quadri: [3, 4]
+          cours: [coo, os]
         input: *input_path
         output:
           path_format: INFO/{0}
@@ -199,8 +213,8 @@ Comme exemple, voici le mien
             - *EPL_style_output
       - name: FYKI
         arguments:
-          - [3, 4]
-          - [chimieorga]
+          quadri: [3, 4]
+          cours: [chimieorga]
         input: *input_path
         output:
           path_format: FYKI12/{0}/{1}
@@ -208,5 +222,5 @@ Comme exemple, voici le mien
             - mapping:
                 chimieorga: MAPR1230 CHIMIE ORGANIQUE
               key:
-                arg: 1
+                arg: cours
             - *output_end
