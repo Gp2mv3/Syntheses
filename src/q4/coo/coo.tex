@@ -1,18 +1,26 @@
 \input{../../lib.tex}
 
+\usepackage{tikz}
+%\usepackage{pgf-umlcd}
+\usepackage{pgf-umlsd}
+\usepgflibrary{arrows} % for pgf-umlsd
+
 \usepackage{graphicx}
 \usepackage{verbatim}
 
-\lstset{language=SQL}
+\lstset{language=SQL, morekeywords=
+{DATABASE,ESCAPE,IS,REAL,REFERENCES,TEXT}}
 
-\hypertitle{Conception orientée objet et gestion de bases de données}
-{4}{SINF}{1225}{Benjamin de Wergifosse}{Benjamin de Wergifosse}
+\hypertitle{Conception orient\'ee objet et gestion de bases de donn\'ees}
+{4}{SINF}{1225}
+{Beno\^it Legat\and Benjamin de Wergifosse}
+{Kim Mens}
 
-\section{Gérer une base de données avec le langage SQL}
+\part{Gérer une base de données avec le langage SQL}
 Une base de données permet de stocker des informations de manières structurées
 et facilement accessible.
 Les données y sont organisées en tables selon un thème,
-une \textbf{collection d'entités} (ex. Clients, Réservations,...).
+une \strong{collection d'entités} (ex. Clients, Réservations,...).
 Il faut cependant veiller à créer ces tables de manières intelligentes:
 il faut
 \begin{itemize}
@@ -26,54 +34,106 @@ il faut
 
 Dans une table,
 si une colonne est constituée de valeurs uniques,
-on dit qu'elle est un \textbf{identifiant} de la table,
-elle constitue une \textbf{clé primaire}.
+on dit qu'elle est un \strong{identifiant} de la table,
+elle constitue une \strong{clé primaire}.
 Si une colonne contient des informations (un ID par exemple) qui permettent
 de récupérer des informations associées dans une autre table,
-on nomme la colonne de \textbf{clé étrangère}.
+on nomme la colonne de \strong{clé étrangère}.
 
 Une base de données se gère grâce au langage SQL
 qui possède une syntaxe particulière.
 Nous allons voir les principales requêtes permettant d'accéder aux données,
 de les modifier et d'en ajouter.
 D'autres parts, un logiciel,
-que l'on nomme \textbf{système de gestion de bases de données},
+que l'on nomme \strong{système de gestion de bases de données},
 permet la gestion sur disque des tables.
 Il assure la sécurité, la confidentialité,
 l'archivage et la restauration des informations.
 Les requêtes SQL sont envoyées au programme qui les comprends et
 va chercher sur le disque les informations relatives aux requêtes.
 On utilisera SQLite,
-un SGBD léger et efficace utilisé par les applications Android et iOS.
+un SGBD léger et efficace utilisé par les applications d'Android et iOS.
 
-\subsection{Les requêtes de base}
+En SQLite, les types possibles sont
+
+\begin{itemize}
+  \item \lstinline|INTEGER|, c'est un entier signé sur 1, 2, 3, 4, 6, ou 8 bytes
+    en fonction de sa taille;
+  \item \lstinline|REAL|, c'est un nombre à virgule flottante sur 8 bytes
+    selon la norme IEEE;
+  \item \lstinline|TEXT|, c'est un string, stocké en utilisant
+    l'encodage de la base de donnée (UTF-8, UTF-16BE ou UTF-16LE);
+  \item \lstinline|BLOB|, c'est un blob de donnée,
+    stocké exactement comme tel, utile pour les images.
+\end{itemize}
+Il y a aussi le mot clef \lstinline|NULL| qui est l'équivalent
+d'une valeur absente.
+
+\section{Création, modification et suppression de tables}
+On crée une table avec le mot clef \lstinline|CREATE TABLE|
+Pour chaque colonne, il faut donner sont nom, son type
+et des options supplémentaires
+\begin{itemize}
+  \item \lstinline|NOT NULL| indique qu'une entrée doit toujours compléter
+    cette colonne;
+  \item \lstinline|UNIQUE| indique qu'on ne peut pas avoir plusieurs
+    entrées qui ont la même valeur pour cette colonne;
+  \item \lstinline|PRIMARY KEY| indique ce c'est la clef primaire qu'on
+    utiliser pour référencer les entrées.
+    \lstinline|NOT NULL| et \lstinline|UNIQUE| sont implicite lorsqu'on a
+    \lstinline|PRIMARY KEY|;
+  \item \lstinline|REFERENCES| indique que les éléments de cette colonne
+    font référence à des entrées d'une table.
+\end{itemize}
+
+Voici un exemple de table non-relationnelle, c'est à dire sans
+\lstinline|REFERENCES|
 \begin{lstlisting}
-SELECT - extracts data from a database
-UPDATE - updates data in a database
-DELETE - deletes data from a database
-INSERT INTO - inserts new data into a database
-
-CREATE DATABASE - creates a new database
-ALTER DATABASE - modifies a database
-CREATE TABLE - creates a new table
-ALTER TABLE - modifies a table
-DROP TABLE - deletes a table
-CREATE INDEX - creates an index (search key)
-DROP INDEX - deletes an index
+CREATE TABLE blades (
+  id PRIMARY KEY,
+  color TEXT NOT NULL,
+  length REAL NOT NULL);
+\end{lstlisting}
+et en voici un avec relation
+\begin{lstlisting}
+CREATE TABLE jedis (
+  name TEXT NOT NULL,
+  blade_id INTEGER,
+  PRIMARY KEY (name),
+  FOREIGN KEY (blade_id) REFERENCES blade);
+\end{lstlisting}
+qui peut aussi être écrit
+\begin{lstlisting}
+CREATE TABLE jedis (
+  name TEXT PRIMARY KEY,
+  blade_id INTEGER NOT NULL REFERENCES blades);
 \end{lstlisting}
 
-\subsection{SELECT statement}
+On peut aussi ajouter une colonne à une table déjà créée
 \begin{lstlisting}
-SELECT LastName,FirstName FROM Persons
+ALTER TABLE jedis ADD COLUMN height REAL;
+\end{lstlisting}
+et supprimer une table
+\begin{lstlisting}
+DROP TABLE jedis;
+\end{lstlisting}
+
+\section{Sélection dans une base de donnée}
+On peut sélectionner des entrées,
+\begin{lstlisting}
+SELECT LastName, FirstName FROM Persons
 SELECT * FROM Persons
 SELECT DISTINCT City FROM Persons
 \end{lstlisting}
 
-\subsection{WHERE clause}
+les filtrer selon des conditions
 \begin{lstlisting}
-SELECT column_name(s) FROM table_name WHERE column_name operator value
-
-With the WHERE clause, the following operators can be used:
+SELECT column_name1, column_name2, ...  FROM table_name
+WHERE column_name operator value
+\end{lstlisting}
+Dans le \lstinline|WHERE|,
+on peut utiliser les opérateurs suivant
+\begin{lstlisting}
 Operator  Description
 =         Equal
 <>        Not equal
@@ -89,210 +149,181 @@ IN        To specify multiple possible values for a column
  */
 \end{lstlisting}
 
-\subsection{AND \& OR operators}
+qui peuvent contenir les mots clefs \lstinline|AND| et \lstinline|OR|
 \begin{lstlisting}
-SELECT * FROM Persons WHERE LastName='Svendson' AND (FirstName='Tove' OR FirstName='Ola')
+SELECT * FROM Persons WHERE FirstName='Jean'
+                        AND (LastName='Dupond' OR LastName='Dupont')
 \end{lstlisting}
 
-\subsection{ORDER BY keyword}
+et qui peuvent être ordonnés
 \begin{lstlisting}
 SELECT * FROM Persons ORDER BY LastName DESC
 \end{lstlisting}
 
-\subsection{INSERT INTO statement}
+\subsection{Examples de requêtes}
+L'aspect le plus intéressant de SQL sont les références.
+On peut par exemple obtenir les jedis sans sabre laser
+\begin{lstlisting}
+SELECT name
+FROM jedis
+WHERE blade_id IS NULL; /* ATTENTION PAS blade_id = NULL */
+\end{lstlisting}
+ou le contraire
+\begin{lstlisting}
+SELECT name
+FROM jedies
+WHERE blade_id IS NOT NULL;
+\end{lstlisting}
+mais aussi le nom des jedis ayant un sabre laser rouge
+\begin{lstlisting}
+SELECT J.NAME
+FROM JEDI J, LASER_BLADE LB
+WHERE J.BLADE_ID = LB.ID
+and LB.COLOR = 'red';
+\end{lstlisting}
+Cette commande peut aussi être écrite comme suit
+\begin{lstlisting}
+SELECT NAME
+FROM JEDI
+WHERE BLADE_ID in
+(SELECT ID
+FROM BLADE WHERE COLOR = 'red');
+\end{lstlisting}
+mais c'est moins efficace car la précédente est mieux optimisées par
+les SGBD.
+
+Pour éviter d'avoir des répétitions, on peut utiliser le mot clef
+\lstinline|DISTINCT| qui vérifie que les $n$-uples en sortie sont tous
+distincts.
+C'est à dire qu'ils peuvent avoir certaines colonnes les mêmes mais pas toutes.
+Par exemple, dans l'exemple suivant,
+\begin{lstlisting}
+SELECT DISTINCT b.color
+FROM jedis j, blades b
+WHERE j.height < 1.20 AND j.blade_id = b.id;
+\end{lstlisting}
+on sélectionne les couleurs de sabres lasers de jedis de moins
+de \unit{1.2}{\meter}.
+
+Il y a aussi le mot clef \lstinline|IN|,
+\begin{lstlisting}
+SELECT name
+FROM jedis j, blades b
+WHERE j.blade_id = b.id AND b.color IN ('red','blue','green');
+\end{lstlisting}
+\begin{lstlisting}
+SELECT name
+FROM jedis j
+WHERE j.blade_id = b.id AND b.color NOT IN ('red','blue');
+\end{lstlisting}
+le mot clef \lstinline|BETWEEN|
+\begin{lstlisting}
+SELECT name
+FROM jedis j
+WHERE height BETWEEN 1 AND 2;
+\end{lstlisting}
+et le mot clef \lstinline|LIKE|
+\begin{lstlisting}
+SELECT name
+FROM jedis
+WHERE name LIKE 'Yo__'; /* Yoda */
+
+SELECT name
+FROM jedis
+WHERE name LIKE '%Wan%'; /* 'Obi-Wan Kenobi', 'Obi-Wan', ... */
+\end{lstlisting}
+à qui on peut aussi définir un caractère d'échappement
+avec \lstinline|ESCAPE|
+\begin{lstlisting}
+SELECT name
+FROM jedis
+WHERE LIBELLE like '%!_% 100!% !!' ESCAPE '!';
+/* 'super_jedi 100% cool !' */
+\end{lstlisting}
+
+On peut effectuer des calculs sur la sortie
+\begin{lstlisting}
+SELECT j.height + b.length
+FROM jedis j, blades b;
+\end{lstlisting}
+et changer le nom des colonnes avec des alias
+\begin{lstlisting}
+SELECT name, j.height + b.length AS total_size
+FROM jedis j, blades b;
+\end{lstlisting}
+
+\section{Modification des entrées}
+\subsection{Insérer une nouvelle entrée}
+La syntaxe est la suivante
 \begin{lstlisting}
 INSERT INTO table_name VALUES (value1, value2, value3,...)
 INSERT INTO table_name (column1, column2, column3,...) VALUES (value1, value2, value3,...)
 \end{lstlisting}
 
-\subsection{UPDATE statement}
+On peut complèter les colonnes dans l'ordre
 \begin{lstlisting}
-UPDATE table_name SET column1=value, column2=value2,... WHERE some_column=some_value AND some_column=some_value AND ...
+INSERT INTO jedis
+values ('Anakin Skywalker',42,1);
+\end{lstlisting}
+mais ce n'est pas très lisible.
+On peut donc être plus explicite et les remplir dans l'ordre que l'on veut
+\begin{lstlisting}
+INSERT INTO jedis (name,blade_id,height)
+values ('Anakin Skywalker',1,42);
 \end{lstlisting}
 
-\subsection{DELETE statement}
+On peut aussi insérer dans une tables
+des données obtenue par un \lstinline|SELECT|.
+Supposons qu'on veule mettre dans une table le noms des jedis qui ont
+rejoint le côté obscur
 \begin{lstlisting}
-DELETE FROM table_name WHERE some_column=some_value AND some_column=some_value AND ...
+INSERT INTO DARK_SIDE
+SELECT j.name
+FROM jedis j, blades b
+WHERE j.blade_id = b.id AND b.color = 'red';
 \end{lstlisting}
 
-\subsection{Examples of queries}
+\subsection{Mettre à jour des entrées}
+La syntaxe est la suivante
 \begin{lstlisting}
-select NCOM
-from COMMANDE M, CLIENT C
-where M.NCLI = C.NCLI
-and C.LOCALITE = 'Toulouse';
-
-select NCOM
-from COMMANDE
-where NCLI in
-(select NCLI
-from CLIENT where LOCALITE = 'Toulouse');
+UPDATE table_name SET column1=value1, column2=value2, ...
+WHERE some_column=some_value AND some_column=some_value AND ...
 \end{lstlisting}
 
-\subsection{Création d'une table}
+On peut par exemple changer le nom et la couleur du sabre d'Anakin
+Skywalker avec
 \begin{lstlisting}
-create table CLIENT (
-  NCLI char(10) not null primary key,
-  NOM char(32) not null unique,
-  ADRESSE char(60) not null,
-  LOCALITE char(30) not null,
-  CAT char(2),
-  COMPTE decimal(9,2) not null );
+UPDATE jedis j, blades b
+SET j.name = 'Dark Vador', b.color = 'red'
+WHERE j.name = 'Anakin Skywalker' AND j.blade_id = b.id;
 \end{lstlisting}
 
-\subsection{Création d'une table relationnelle}
+\subsection{Supprimer des entrées}
+La syntaxe est la suivante
 \begin{lstlisting}
-create table COMMANDE (
-  NCOM char(12) not null,
-  NCLI char(10) not null,
-  DATECOM date not null,
-  primary key (NCOM),
-  foreign key (NCLI) references CLIENT);
-/* ou de maniere equivalente */
-create table COMMANDE (
-  NCOM char(12) not null primary key,
-  NCLI char(10) not null references CLIENT,
-  DATECOM date not null);
+DELETE FROM table_name
+WHERE some_column=some_value AND some_column=some_value AND ...
 \end{lstlisting}
 
-\subsection{Modification et suppression d'une table NON RELATIONNELLE}
+On peut par exemple supprimer ``Qui-Gon''
 \begin{lstlisting}
-alter table PRODUIT add column POIDS smallint;
-
-drop table CLIENT;
+DELETE FROM jedis
+WHERE name = 'Qui-Gon';
 \end{lstlisting}
 
-\subsection{Une sélection simple dans une table}
+Ou supprimer tous les jedis du dark side
 \begin{lstlisting}
-select distinct LOCALITE
-from CLIENT
-where CAT = 'C1';
-
-select NCLI
-from CLIENT
-where CAT is null; /* ATTENTION PAS CAT = null */
-
-select NCLI
-from CLIENT
-where CAT is not null;
+DELETE j FROM jedis j, blades b
+WHERE j.blade_id = b.id AND b.color = 'red';
 \end{lstlisting}
 
-\subsection{Une sélection avec condition(s)}
+Ou supprimer ceux qui n'ont plus de sabre laser
 \begin{lstlisting}
-select NCLI
-from CLIENT
-where CAT in ('C1','C2','C3');
-
-select NCLI
-from CLIENT
-where LOCALITE not in ('Toulouse','Breda');
-
-select NCLI
-from CLIENT
-where COMPTE between 1000 and 4000;
-
-select NCLI
-from CLIENT
-where CAT like 'B_';
-/* exemple : 'B1' 'Bd' 'B '
- * mais pas : 'xB' 'B' 'B12'
- */
-
-select NPRO
-from PRODUIT
-where LIBELLE like '%SAPIN%';
-/* exemple : 'PL. SAPIN 200x20x2' */
-'Boite en SAPIN'
-'SAPIN VERNI'
-
-select LIBELLE
-from PRODUIT
-where LIBELLE like '%produit avec un !_%'
-/* on utilise un caractere d echappement */
-escape '!';
+DELETE FROM jedis
+WHERE j.blade_id IS NULL;
 \end{lstlisting}
 
-\subsection{Une sélection avec calcul}
-\begin{lstlisting}
-select 'TVA de ', NPRO, ' = ', 0.21*PRIX*QSTOCK
-from PRODUIT
-where QSTOCK > 500;
-\end{lstlisting}
-
-\subsection{Une sélection avec alias}
-\begin{lstlisting}
-select NPRO as Produit, 0.21*PRIX*QSTOCK as Valeur_TVA
-from PRODUIT
-where QSTOCK > 500;
-\end{lstlisting}
-
-\subsection{Les conditions de jointures}
-\begin{lstlisting}
-select NCOM,
-DATECOM,
-CLIENT.NCLI, /* .NCLI obligatoire car ambiguite sinon */
-NOM,
-LOCALITE
-from COMMANDE, CLIENT
-where COMMANDE.NCLI = CLIENT.NCLI;
-/* NCLI est une colonne commune dans les deux tables */
-\end{lstlisting}
-
-\subsection{Deux requêtes équivalentes avec jointures}
-\begin{lstlisting}
-select NCOM,DATECOM
-from COMMANDE
-where NCLI in (select NCLI
-from CLIENT
-where LOCALITE = 'Poitiers');
-
-select NCOM,DATECOM
-from COMMANDE, CLIENT
-where COMMANDE.NCLI = CLIENT.NCLI
-and LOCALITE = 'Poitiers';
-\end{lstlisting}
-
-\subsection{Insertion}
-\begin{lstlisting}
-insert into DETAIL
-values ('30185','PA45',12);
-
-insert into CLIENT (NCLI,NOM,ADRESSE,COMPTE,LOCALITE)
-values ('C402','BERNIER','avenue de France, 28',-2500,'Lausanne');
-
-insert into CLIENT_TOULOUSE
-select NCLI, NOM, ADRESSE
-from CLIENT
-where LOCALITE = 'Toulouse';
-\end{lstlisting}
-
-\subsection{Suppression de ligne}
-\begin{lstlisting}
-delete from CLIENT
-where NCLI = 'K111';
-
-delete from DETAIL
-where NPRO in (select NPRO
-from PRODUIT
-where QSTOCK <= 0);
-
-delete from CLIENT
-where CAT is null;
-\end{lstlisting}
-
-\subsection{Update de ligne}
-\begin{lstlisting}
-update CLIENT
-set ADRESSE = '29, av. de la Magne',
-LOCALITE = 'Niort'
-where NCLI = 'F011';
-
-update PRODUIT
-set PRIX = PRIX * 1.05
-where LIBELLE like '%SAPIN%';
-\end{lstlisting}
-
-\section{Modélisation de données ORM et mapping relationnel}
+\part{Modélisation de données ORM et mapping relationnel}
 Dans le processus de développement d'une application orientée objet,
 il est important de bien penser son application avant de se
 pencher sur l'implémentation de son code source.
@@ -301,23 +332,24 @@ La modélisation de données selon l'approche
 ORM (Object-Role Modeling) est en la première.
 
 Dans un premier temps,
-il est important de définir \textbf{l'univers de discours} (UoD).
+il est important de définir \strong{l'univers de discours} (UoD).
 Celui-ci, en une phrase, définit le domaine de l'application.
 
-\subsection{Le modèle relationnel et les relations n-aires}
+\section{Le modèle relationnel et les relations $n$-aires}
 On cherche à définir les relations qui existent.
 Ces relations définiront les tables SQL qui seront créées.
 À une relation correspondra une table.
-Le \textbf{schéma de la relation} reprend les noms des colonnes de
+Le \strong{schéma de la relation} reprend les noms des colonnes de
 la table qui lui correspondra.
-Par exemple, on pourrait imaginer le schéma de la relation Client suivant:
+Par exemple, on pourrait imaginer le schéma de la relation
+\lstinline|CLIENT| suivant
 \begin{lstlisting}
 CLIENT(ID, SORTE, NOM, PRENOM, ADRESSE)
 \end{lstlisting}
 Dans le modèle relationnelle, on n'utilise pas la notation positionnelle.
-Dès lors, un mutliplet Client sera toujours
+Dès lors, un mutliplet \lstinline|CLIENT| sera toujours
 un ensemble de couple \lstinline$(TITRE, valeur)$.
-On pourrait imaginer la \textbf{relation} basée sur
+On pourrait imaginer la \strong{relation} basée sur
 le schéma ci-dessus comme étant l'ensemble de multiplets suivant:
 \begin{lstlisting}
 {
@@ -331,26 +363,26 @@ le schéma ci-dessus comme étant l'ensemble de multiplets suivant:
 Le transfert de cette relation vers une table est immédiat.
 La base de données est donc un ensemble de table basées
 sur un ensemble de relations $n$-aires.
-La \textbf{schéma de la base de données} n'est
+La \strong{schéma de la base de données} n'est
 autre que l'ensemble des schémas des différentes relations.
 
-\subsection{L'Object-Role Modeling}
+\section{L'Object-Role Modeling}
 Fortement basé sur le modèle relationnel simple présenté ci-dessus,
 l'ORM en est une amélioration qui permet d'éviter les redondances,
 qui est plus conforme au monde réel et plus intuitif et facile à comprendre.
 Cette approche tient compte du fait qu'une base de données
-peut être vue comme un ensemble de \textbf{faits} (les données)
-et de \textbf{règles} (liens entre les faits) s'articulant autour
-d'un \textbf{univers de discours}.
+peut être vue comme un ensemble de \strong{faits} (les données)
+et de \strong{règles} (liens entre les faits) s'articulant autour
+d'un \strong{univers de discours}.
 Ainsi, 3 étapes permettent la modélisation ORM.
 
-\subsubsection{Les faits élémentaires}
+\subsection{Les faits élémentaires}
 Premièrement,
 il faut, en se basant sur des exemples de données,
-établir une liste de \textbf{faits élémentaires}.
+établir une liste de \strong{faits élémentaires}.
 Un fait élémentaire est une assertion simple et atomique
 sur l'univers de discours.
-Un fait élémentaire fait intervenir des \textbf{objets} et leur \textbf{rôle}.
+Un fait élémentaire fait intervenir des \strong{objets} et leur \strong{rôle}.
 Il y a deux types d'objets:
 les VALEURS et les entités (= ensemble TYPE-MODE-VALEUR).
 Exemples:
@@ -361,25 +393,27 @@ Exemples:
 \end{itemize}
 
 Selon qu'un fait élémentaire fait intervenir plus ou moins d'objets
-on dira qu'elle est \textbf{unaire} (1),
-\textbf{binaire} (2) ou \textbf{n-aire} (n).
+on dira qu'elle est \strong{unaire} (1),
+\strong{binaire} (2) ou \strong{$n$-aire} ($n$).
 Voici quelques exemples de faits élémentaires :
 \begin{itemize}
-  \item Destination-numéro-0475151230 \emph{est gratuite}
-  \item Opérateur-nom-``Proximus'' \emph{a} Préfixe-numéro-0478
-  \item Communication-numéro-11 \emph{a} Durée-minutes-``1:38''
-  \item Facture-numéro-0648979136879 \emph{coûte} Montant-euro-289
+  \item Destination-numéro-0475151230 \emph{est gratuite};
+  \item Opérateur-nom-``Proximus'' \emph{a} Préfixe-numéro-0478;
+  \item Communication-numéro-11 \emph{a} Durée-minutes-``$1:38$'';
+  \item Facture-numéro-0648979136879 \emph{coûte} Montant-euro-289;
   \item Etudiant-noma-54511100 \emph{a obtenu} Cote-chiffre-18
-    \emph{pour} Cours-code-``LSINF1125''
+    \emph{pour} Cours-code-``LSINF1125'';
+  \item Jedi-nom-Yoda \emph{mesure} Taille-mètre-\np{0.66}.
 \end{itemize}
 Il est à noter qu'un fait élémentaire ne peut pas être divisé et
 qu'il n'utilise aucun connecteurs logiques (et, ou, non, si).
 
-\subsubsection{Dessiner les types de faits + population}
-Le but de cette étape est de créer un \textbf{schéma conceptuel}
+\subsection{Dessiner les types de faits + population}
+Le but de cette étape est de créer un \strong{schéma conceptuel}
 (voir figure~\ref{schema_conceptuel}).
-Pour cela il faut identifié les TYPES d'objets, leur MODE (type de valeur)
-et la relation n-aire s'y rapportant.
+Pour cela il faut identifier les TYPES d'objets,
+leur MODE (type de valeur)
+et la relation $n$-aire s'y rapportant.
 L'exemple n'illustre que des relations binaires mais l'extension
 à la relation ternaire est immédiate
 (ajout d'une boite sur la ligne de relation).
@@ -393,11 +427,11 @@ Une fois le schéma créé,
 il faut lui ajouter une population exemple pour
 s'assurer de l'exactitude de celui-ci.
 
-\subsubsection{Les contraintes}
+\subsection{Les contraintes}
 Le schéma est encore loin d'être terminé,
-il faut maintenant lui ajouter les \textbf{contraintes d'unicité}
+il faut maintenant lui ajouter les \strong{contraintes d'unicité}
 (voir figure~\ref{contraintes}).
-Ces contraintes permettent de déterminer si un valeur peut se retrouver
+Ces contraintes permettent de déterminer si une valeur peut se retrouver
 une ou plusieurs fois dans une même colonne.
 Une bonne population exemple facilite le choix des contraintes.
 L'exemple donné illustre les contraintes pour la relation binaire mais
@@ -411,62 +445,78 @@ auquel cas on pourrait diviser la relation en deux autres binaires.
   \caption{Contraintes possibles pour une relation binaire}
   \label{contraintes}
 \end{figure}
+La figure~\ref{fig:schema_conceptuel_complet} illustre un usage où on
+stipule qu'un étudiant a au plus un nom et au plus une classe.
 
-Il faut également ajouter les contraintes de \textbf{rôles obligatoires}.
+Il faut également ajouter les contraintes de \strong{rôles obligatoires}.
 En effet il se peut que l'on veille stipuler que la relation
 liant deux objets doit être obligatoire.
-Pour ce faire, on place un point sur la ligne de relation.
+Pour ce faire, on place un point sur la ligne de relation du côté
+de l'entité qui doit apparaitre au moins une fois dans les exemples.
+La figure~\ref{fig:schema_conceptuel_complet} en illustre un usage où
+on stipule qu'il est obligatoire pour un étudiant d'avoir
+au moins un nom et au moins une classe.
 
 Une autre contrainte à ajouter sur le schéma conceptuel est celle
-d'\textbf{unicité externe}.
+d'\strong{unicité externe}.
 En effet, il se peut qu'un objet ayant plusieurs relations soit déterminé
 de manière uniquement par la combinaison de plusieurs objets avec lesquels
 il est en relation.
 Par exemple un fichier qui serait en relation avec un dossier et un nom de
 fichier est déterminé
-de manière unique par la combinaison dossier-nom\_de\_fichier.
+de manière unique par le couple (dossier, nom de fichier).
+La figure~\ref{fig:schema_conceptuel_complet} illustre un autre exemple
+où on stipule qu'il n'y a pas deux élèves avec
+le même nom dans la même classe.
+On peut donc référencer un élève par son nom et sa classe.
 
-La dernière contrainte possible est la \textbf{contrainte de sous-ensemble}.
+La dernière contrainte possible est la \strong{contrainte de sous-ensemble}.
 Cette contrainte stipule qu'une relation ne peut exister que
 si une autre (qui n'est donc pas obligatoire) est satisfaite.
+Elle se dessine comme une flèche en pointillé d'une boite
+à celle obligatoire (un peu comme l'unicité externe).
 
 \begin{figure}[h]
   \centering
   \includegraphics[scale=0.8]{schema_conceptuel_complet}
   \caption{Exemple complet d'un schéma conceptuel}
-  \label{schema_conceptuel_complet}
+  \label{fig:schema_conceptuel_complet}
 \end{figure}
 
-La figure~\ref{schema_conceptuel_complet} montre comment dessiner ces
-contraintes sur le schéma conceptuel.
-La contrainte de sous-ensemble, plus rare,
-se dessine comme une flèche en pointillé de boite à boite obligatoire
-(un peu comme l'unicité externe).
-
-
-\subsection{Schéma relationnel}
-Après avoir transformer les relations n-aires du modèle relationnel
+\section{Schéma relationnel}
+Après avoir transformé les relations $n$-aires du modèle relationnel
 en schéma conceptuel ORM,
 il est maintenant temps de transformer le schéma conceptuel
-ORM et \textbf{schéma relationnel}.
+ORM et \strong{schéma relationnel}.
 
 Le principe consiste à choisir un objet clé du schéma conceptuel
 et de le transcrire sous forme de tableau.
-Dans ce tableau doit ce retrouvé toutes les contraintes du schéma conceptuel.
+Dans ce tableau doit se retrouver toutes les contraintes du schéma conceptuel.
 Ainsi,
 \begin{itemize}
-  \item la contrainte d'unicité donnera lieu à une clé primaire et sera
-    souligné une fois si il n'y a pas d'autres clés secondaires
-    (deux fois sinon).
-  \item la contrainte d'unicité externe donnera lieu à une clé secondaire et
-    sera souligné une fois
-    (avec des flèches si les entités ne sont pas voisines)
-  \item le rôle obligatoire s'exprimera par le fait qu'on encadrera les entités
-    optionnelles; les autres étant donc obligatoires.
-  \item la contrainte de sous-ensemble se manifestera par une flèche reliant
-    les deux clés primaires des tableaux différents
+  \item les colonnes sont soulignées si elles sont uniques;
+  \item les colonnes sont soulignées par la même lignes quand elles
+    font partie d'une unicité externe commune;
+  \item les colonnes sont mises entre crochet si elles ne sont optionnelles;
+  \item les deux clés primaires de tableaux différents
     (si toutefois les données sont dans deux tableaux différents)
+    sont reliés par une flèche pour une
+    contrainte de sous-ensemble.
 \end{itemize}
+
+La clef primaire doit exister et être unique, c'est donc
+\begin{itemize}
+  \item soit une colonnes obligatoire et unique;
+  \item soit plusieurs colonnes obligatoire avec une unicité externe.
+\end{itemize}
+Dans le premier cas, la colonne correspondante est soulignée deux fois.
+Dans le deuxième, les colonnes correspondantes sont soulignées deux fois
+par les même lignes.
+
+La clef primaire consitue la \strong{règle d'intégrité des entités}.
+D'autres parts, lors d'une contrainte de sous-ensemble,
+la flèche venant de la clé étrangère doit pointer vers une clé primaire.
+Il s'agit de la \strong{règle d'intégrité référentielle}.
 
 La figure~\ref{schema_relationnel} illustre un exemple de schéma relationnel
 avec les différentes contraintes représentées.
@@ -476,13 +526,6 @@ avec les différentes contraintes représentées.
   \caption{Exemple schéma relationnel}
   \label{schema_relationnel}
 \end{figure}
-
-Dans un tableau, une clé primaire ne peut jamais être nulle,
-une clé primaire est donc une colonne obligatoire.
-Il s'agit de la \textbf{règle d'intégrité des entités}.
-D'autres parts, lors d'une contrainte de sous-ensemble,
-la flèche venant de la clé étrangère doit pointer vers une clé primaire.
-Il s'agit de la \textbf{règle d'intégrité référentielle}.
 
 La figure~\ref{conceptuel_to_relationnel} illustre un exemple un peu plus
 élaboré du passage d'un schéma conceptuel vers un schéma relationnel.
@@ -494,7 +537,7 @@ La figure~\ref{conceptuel_to_relationnel} illustre un exemple un peu plus
 \end{figure}
 
 
-\subsection{Le Relational Mapping}
+\section{Le Relational Mapping}
 Cette dernière étape permet, à partir du schéma relationnel,
 de construire la base de données SQL.
 La règle est relativement simple, deux règles sont à respecter:
@@ -506,14 +549,14 @@ La règle est relativement simple, deux règles sont à respecter:
     avec comme clé l'identifiant de ce type d'objet.
 \end{enumerate}
 
-\section{Processus de développement}
+\part{Processus de développement}
 Dans la section précédente, nous avons vu comment modéliser,
 de manière efficace, les données qui seront utilisées par l'application.
 Cette modélisation par l'approche ORM nous a permis d'obtenir une solide
 base de données SQL.
 À présent, il est temps de se pencher sur la question de l'implémentation.
 Comment va-t-on implémenter notre application, que doit-elle pouvoir faire,...
-Il est important de suivre un \textbf{processus de développement}
+Il est important de suivre un \strong{processus de développement}
 rigoureux qui nous permettra d'implémenter une bonne application.
 Observons différents processus possibles.
 
@@ -527,7 +570,7 @@ Observons différents processus possibles.
 La figure~\ref{processus_developpement_example}
 montre 3 exemples de processus de développement qui existent.
 
-En haut à gauche, on retrouve le \textbf{modèle en cascade avec retour}.
+En haut à gauche, on retrouve le \strong{modèle en cascade avec retour}.
 Celui-ci tient compte du fait que l'on ne peut bâtir
 un toit sans avoir les fondations.
 Ainsi une fois l'étape une terminée,
@@ -536,16 +579,16 @@ Cependant un retour à l'une des phases précédentes est possible mais
 la modification de celle-ci à un important coût sur le reste du développement,
 ce qui rend cette approche peu pratique et non efficace.
 
-Au milieu, on observe le \textbf{cycle en V}.
+Au milieu, on observe le \strong{cycle en V}.
 Il s'agit d'une amélioration du modèle précédant
 car il permet de limiter le retour aux étapes précédentes.
 
-A droite, le \textbf{modèle en spirale} reprend l'idée du cycle en V mais
+À droite, le \strong{modèle en spirale} reprend l'idée du cycle en V mais
 recommence à chaque boucle tout le processus de manière à obtenir
 des versions successives de plus en plus complètes.
 
 Le meilleur modèle pour la conception orientée objet est
-typiquement \textbf{itératif et incrémental}.
+typiquement \strong{itératif et incrémental}.
 Ainsi la figure~\ref{processus_developpement_choisi}
 illustre les différentes étapes de ce modèle.
 On retrouve ainsi la phase d'INCEPTION où l'on
@@ -570,10 +613,10 @@ La phase de FABRICATION reprend différentes itérations tels que
   \item pour arriver à l'implémentation.
 \end{itemize}
 
-\subsection{Les histoires utilisateur}
+\section{Les histoires utilisateur}
 Dans un premier temps,
 il faut définir ce qu'on appelle les
-\textbf{histoires utilisateur} (user stories).
+\strong{histoires utilisateur} (user stories).
 Celles-ci définissent les besoins,
 les exigences de l'application.
 On distinguera les besoins fonctionnels (fonctionnalités de l'application) et
@@ -614,7 +657,7 @@ Le mot clé ``INVEST'' caractérise une bonne histoire utilisateur :
     le plus indépendante les unes des autres.
   \item[Négociable] Une histoire n'est pas fixée une fois pour
     toute, la conversation avec le client peut amener à la modifier.
-  \item[Valuable] Chaque histoire à
+  \item[Valuable] Chaque histoire a
     sa propre valeur en fonction de son importance.
   \item[Estimable] À chaque histoire est associé un
     ``coût'' d'implémentation.
@@ -623,8 +666,8 @@ Le mot clé ``INVEST'' caractérise une bonne histoire utilisateur :
   \item[Testable]On peut tester si une histoire est réalisée ou pas.
 \end{description}
 
-\subsection{Les cartes CRC}
-Les cartes CRC, pour \textbf{classes, responsabilités et collaborations},
+\section{Les cartes CRC}
+Les cartes CRC, pour \strong{classes, responsabilités et collaborations},
 permettent, comme leur nom l'indique,
 d'obtenir une première idée des objets et classes qu'il faudra implémenter.
 Ces classes auront certaines responsabilités en fonction des collaborations
@@ -635,21 +678,32 @@ cette méthode use de l'utilisation de petites cartes
 permettant une représentation visuelle facile.
 Chaque carte correspond à une classe,
 contient une brève description de celle-ci,
-ses responsabilités et collaborations (voir figure~\ref{carte_CRC}).
+ses responsabilités et collaborations (voir tableau~\ref{tab:crc}).
 
-\begin{figure}[h]
+\begin{table}[h]
   \centering
-  \includegraphics[scale=0.9]{carte_CRC.jpg}
+  \begin{tabular}{|p{0.4\textwidth}|p{0.4\textwidth}|}
+    \hline
+    \multicolumn{2}{|l|}{\strong{Classe}: nom de la classe}\\
+    \hline
+    \multicolumn{2}{|l|}{\strong{Description}: courte description de la classe}\\
+    \hline
+    \strong{Responsabilités} & \strong{Collaborations}\\
+    liste des différentes responsabilités de cette classe &
+    classes avec lesquelles cette classe collabore pour réaliser
+    ses différents responsabilités\\
+    \hline
+  \end{tabular}
   \caption{Modèle d'une carte CRC}
-  \label{carte_CRC}
-\end{figure}
+  \label{tab:crc}
+\end{table}
 
 Il est à noter que chaque classe possède au minimum une collaboration,
 en effet si elle n'en avait pas elle ne servirait à rien.
 
-\subsection{Le diagramme de classes UML}
+\section{Le diagramme de classes UML}
 La transformation des cartes CRC en
-\textbf{diagramme de classes Unified Modeling Language} est assez simple.
+\strong{diagramme de classes Unified Modeling Language} est assez simple.
 Son but est d'exprimer de manière générale la \emph{structure statique}
 d'un système en termes de classes et des relations entre elles.
 
@@ -660,14 +714,32 @@ et contient généralement des attributs et des opérations applicables
 aux instances de cette classe.
 Pour les attributs,
 ils ont généralement la syntaxe suivante:
-visibilité \textbf{nom} : ``Type[multiplicité] = valeurInitiale''.
+visibilité \strong{nom} : ``Type[multiplicité] = valeurInitiale''.
 Seul le nom est obligatoire.
 Les opérations ont la syntaxe suivante:
-``visibilité \textbf{nom}(nomArg: Type=valeur,...) : Type''.
+``visibilité \strong{nom}(nomArg: Type=valeur,...) : Type''.
 De même, uniquement le nom est obligatoire.
 
 \begin{figure}[h]
   \centering
+ %\begin{tikzpicture}
+ %  \begin{class}[text width=7cm]{Flight}{0,0}
+ %    \attribute{flightNumber : Integer}
+ %    \attribute{departureTime : Date}
+ %    \attribute{flightDuration : Minutes}
+ %    \attribute{departingAirport : String}
+ %    \attribute{arrivingAirport : String}
+ %    \operation{delayFlight ( numberOfMinutes : Minutes )}
+ %    \operation{getArrivalTime ( ) : Date}
+ %  \end{class}
+ %  \begin{class}{Plane}{11,0}
+ %    \attribute{airPlaneType : String}
+ %    \attribute{maximumSpeed : MPH}
+ %    \attribute{maximumDistance : Miles}
+ %    \attribute{tailID : String}
+ %  \end{class}
+ %  \association{Plane}{assignedPlane}{0..1}{Flight}{0..*}{assignedFlights}
+ %\end{tikzpicture}
   \includegraphics[scale=0.8]{diagramme_classes.jpg}
   \caption{Exemple d'un diagramme de classes UML}
   \label{diagramme_classes}
@@ -675,21 +747,21 @@ De même, uniquement le nom est obligatoire.
 
 \hspace*{-.75cm}Les différentes multiplicités possibles sont les suivantes :
 \begin{description}
-  \item[m] doit avoir exactement m (peut valoir *)
-  \item[m..n] peut avoir entre m et n
-  \item[m..*] minimum m
+  \item[$m$] doit avoir exactement $m$ (peut valoir *).
+  \item[$m$..$n$] peut avoir entre $m$ et $n$.
+  \item[$m$..*] minimum $m$.
 \end{description}
 Les différents modes de visibilité sont les suivants :
 \begin{description}
   \item[+]	Public, ouvert aux autres classes
   \item[\#]	Protégé, uniquement visible par les sous-classes
-  \item[-]	Privé, uniquement accessible par cette classe
+  \item[$-$]	Privé, uniquement accessible par cette classe
 \end{description}
-Des \textbf{contraintes} sur les attributs sont notés entre accolades.
-Des \textbf{notes} peuvent être ajoutées au diagramme pour le clarifier.
+Des \strong{contraintes} sur les attributs sont notés entre accolades.
+Des \strong{notes} peuvent être ajoutées au diagramme pour le clarifier.
 Une note se manifeste par une boîte repliée qui est
 reliée en pointillé à la boîte qu'elle clarifie.
-On explicite aussi les \textbf{attributs dérivés} par la présence
+On explicite aussi les \strong{attributs dérivés} par la présence
 d'un / avant le nom de l'attribut.
 Un attribut est dérivé si sa valeur peut être retrouvée
 grâce à d'autres attributs.
@@ -702,7 +774,7 @@ comment représenter un attribut dérivé et sa contrainte dans une note associ�
   \label{diagramme_classes_addon}
 \end{figure}
 
-Pour exprimer une \textbf{association binaire},
+Pour exprimer une \strong{association binaire},
 on relie simplement les deux classes concernées.
 On utilise en fait les associations lorsqu'un attribut n'est pas de type primitif.
 Ainsi si on veut exprimer le fait qu'un client a des commandes (objet),
@@ -715,7 +787,7 @@ deux rôles (un a chaque extrémité) et les multiplicités associées aux class
 Si l'association n'est pas à double sens
 (c'est à dire si la classe A peut accéder à B mais pas l'inverse),
 alors on placera une flèche (plutôt qu'une ligne) allant de A vers B.
-On dit alors que c'est une \textbf{navigation}.
+On dit alors que c'est une \strong{navigation}.
 
 La figure~\ref{diagramme_classes_association}
 représente une exemple d'association binaire.
@@ -726,13 +798,13 @@ représente une exemple d'association binaire.
   \label{diagramme_classes_association}
 \end{figure}
 
-Une \textbf{généralisation} exprime que certaines classes
+Une \strong{généralisation} exprime que certaines classes
 ``dérivent'' d'une classe mère,
 est une sorte de...
 En java, on dit qu'une classe hérite d'une autre.
 Cela se représente par une flèche ouverte.
 Cela peut être nécessaire notamment dans le cas d'une
-\textbf{classe abstraire} non instanciée mais qui
+\strong{classe abstraite} non instanciée mais qui
 est présente pour clarifier les choses.
 La figure~\ref{diagramme_classes_generalisation} représente ces deux concepts
 \begin{figure}[h]
@@ -745,7 +817,7 @@ La figure~\ref{diagramme_classes_generalisation} représente ces deux concepts
 Il existe encore d'autres relations aux notations particulières.
 Celles-ci sont reprises sur la figure~\ref{diagramme_classes_relations}.
 
-On peut retrouver des \textbf{dépendances}.
+On peut retrouver des \strong{dépendances}.
 Représenté par une flèche en pointillé,
 elle est ornée d'un mot-clé qui décrit la relation
 d'utilisation entre la source et la cible.
@@ -766,27 +838,32 @@ On distingue
   \label{diagramme_classes_relations}
 \end{figure}
 
-L'\textbf{agrégation} représente une association non symétrique dans laquelle
+L'\strong{agrégation} représente une association non symétrique dans laquelle
 une des extrémités joue un rôle prédominant par rapport à l'autre extrémité.
 La différence avec l'association est floue et on ne l'utilisera donc pas.
 
-La \textbf{composition} décrit une relation de contenance
+La \strong{composition} décrit une relation de contenance
 physique (exemple : un polygone contient des points).
+Pour savoir si c'est un composition, on regarde si lorsqu'on supprime
+un élément d'une base de donnée, l'autre doit être supprimé également.
+Par exemple, si on supprime un restaurant, il faut aussi supprimer
+ses plages horaires.
+Mais si on supprime un utilisateurs, il ne faut pas supprimer ses amis.
 
-L'\textbf{association n-aire} relie plus de deux classes entre elles.
+L'\strong{association $n$-aire} relie plus de deux classes entre elles.
 Généralement le lieu de rencontre peut être remplacé par une nouvelle
-classe que l'on nomme \textbf{classe-association}.
+classe que l'on nomme \strong{classe-association}.
 Par exemple,
 l'association Etudiant-Enseignant-Salle peut donné lieu à la classe Cours.
 
 Lors de la réalisation d'un diagramme de classe UML,
-il est important de pensé orienté objet,
+il est important de penser orienté objet,
 et de bien penser à toutes les responsabilités,
 opérations qu'une classe doit pouvoir effectuer.
 
-\subsection{Le diagramme de séquence UML}
+\section{Le diagramme de séquence UML}
 Dernière étape du processus de développement,
-le \textbf{diagramme de séquence UML} permet de penser
+le \strong{diagramme de séquence UML} permet de penser
 la \emph{structure dynamique} de l'application.
 Rappelons en effet que le diagramme de classes traitait
 de la \emph{structure statique} de l'application.
@@ -823,7 +900,7 @@ Un message particulier est celui qui initiale le diagramme:
 le message trouvé; il est représenté par un cercle noir.
 Une ligne de vie possède une ou plusieurs barre d'activation
 indiquant quand un participant est actif dans une interaction.
-A un message correspond une réponse ou retour qui a la syntaxe:
+À un message correspond une réponse ou retour qui a la syntaxe:
 \begin{verbatim}
 valeurDeRetour = message(paramètre)
 \end{verbatim}

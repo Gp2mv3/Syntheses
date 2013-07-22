@@ -1,2 +1,2 @@
-QUADRI=q4
+QUADRI=4
 include ../../lib.mk
