@@ -2,15 +2,20 @@
 Les documents présents sur ce repository sont des documents
 mis à disposition pour les élèves de l'EPL.
 
+## Visualisation des Synthèses
+Les `.pdf` des synthèses dans leur dernière version sont disponibles
+[ici](https://www.dropbox.com/sh/mglnckwio1ug5x0/BgESQh2X2a).
+
+Vous pourriez aussi être intéressés par
+[EPL-Backup](https://www.dropbox.com/sh/5a1dfg8e17bbgkw/bgVWq1icjf)
+et
+[EPL-Heavy](https://www.dropbox.com/sh/tn2r9y2m4d4o03m/AzfvTnqwv5).
+
 ## Documentation
 Ce README donne quelques premières indications
 quand à l'utilisation de ce repository.
 Pour de plus amples informations,
 voir le [wiki](https://github.com/Gp2mv3/Syntheses/wiki).
-
-## Visualisation des Synthèses
-Les `.pdf` des synthèses dans leur dernière version sont disponibles
-[ici](https://www.dropbox.com/sh/mglnckwio1ug5x0/BgESQh2X2a).
 
 ## Comment contribuer
 La façon la plus simple de contribuer est de suggérez des améliorations
