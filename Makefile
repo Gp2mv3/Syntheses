@@ -5,3 +5,7 @@ all:
 # same but also copy to the destination
 release:
 	cd src; smartcp -v -qq -x "make all" config.yml
+
+# run make clean for all synthèse
+clean:
+	cd src; smartcp -v -qq -x "make clean" -n config.yml
