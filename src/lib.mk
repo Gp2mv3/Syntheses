@@ -39,7 +39,8 @@ show: $(MAIN_NAME).pdf
 	$(PDFVIEWER) $(MAIN_NAME).pdf 2> /dev/null &
 
 release: $(MAIN_NAME).pdf
-	cd ../..; smartcp -vv -s quadri=$(QUADRI) -s cours=$(MAIN_NAME) config.yml
+	cd ../..; smartcp -vv -s \
+	  quadri=$(QUADRI) -s cours=$(MAIN_NAME) config.yml
 
 add:
 	git add $(MAIN_NAME).tex
