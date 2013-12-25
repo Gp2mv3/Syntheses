@@ -2,7 +2,7 @@
 
 
 \hypertitle{Systèmes informatiques 2}{5}{INGI}{1131}
-{Benoît Legat\and Yannick Tivisse\and Antoine Walsdorff}
+{Benoît Legat\and Yannick Tivisse\and Antoine Walsdorff\and Mélanie Sedda}
 {Marc Lobelle}
 
 %------------------------------------------------------------------------------
@@ -1115,16 +1115,54 @@ La fetch policy détermine quand une page devrait être amenée dans la mémoire
 \subsubsection{Placement Policy}
 La placement policy détermine où dans la real memory un morceau de processus doit être placé. Dans un système pure-segmentation, on a vu des algorithmes (best-fit,firstfit,...). Dans un système pure-pagin ou combiné, le placement est généralement inutile car la mécanisme machine de traduction et d'accès peuvent faire le mêmeboulot avec autant d'effiacité. Ca devient intérressant avec des multiprocesseurs NUMA.
 \subsubsection{Replacement Policy}
-Revient à selectionner choisir une page dans la main memory à virer pour faire rentrer une nouvelle page.
+Revient à selectionner choisir une page dans la main memory à virer pour faire rentrer une nouvelle page.\\
 • Basic Algorithms\\
 – Optimal\\
 – Least recently used (LRU)\\
 – First-in-first-out (FIFO) \\
 – Clock\\
-• Page Buffering
+• Page Buffering\\
+• Replacement policy and cache size
 \subsubsection{Resident Set Management Cleaning Policy}
+\paragraph{Resident set size} L'OS doit décider combien de pages d'un processus il garde en main memory, c'est-à-dire combien de main memory il doit allouer à un certain processus. Plusieurs facteurs sont importants
+\begin{itemize}
+\item Au moins on alloue à un processus, au plus de processus différents il y peut y avoir en main memory. C'est mieux car ça accroit la probabilité que l'OS trouve au moins un processus ready et donc diminue le temps perdu à faire des swaps.
+\item Mais si y a trop peu de pages, alors le taux de page fault va être plus haut en vertu du principe de localité.
+\item A partir d'une certaine taille, allouer plus de mémoire pour le processus n'aura pas d'effet notable sur le taux de page fault.
+\end{itemize}
+Deux politiques sont utilisées dans les OS actuels.
+\begin{itemize}
+\item Fixed-allocation policy : donne à un processus un nombre fixé de frames en main memory. Ce nombre est fixé à la création du processus et peu être déterminé sur base du type de processus ou peut être fixé par le programmeur.
+\item Variable-allocation policy : nombre de frames peut varier au cours du temps de vie du processus. Si le taux de fault est grand (resp. petit), on peut lui en donner plus (resp. moins). Cette technique parait mieux mais l'OS doit alors évaluer le comportement des processus actifs ce qui cause plus d'overhead 
+\end{itemize}
+\paragraph{Replacement scope}
+\begin{itemize}
+\item local replacement policy : vire une page du processus qui génère le page fault
+\item global replacement policy : toutes les pages unlocked sont candidates
+\end{itemize}
 \subsubsection{Cleaning Policy}
+opposé de fetch policy, s'intéresse à déterminer quand une page modifiée doit être réécrite en secondary memory
+\begin{itemize}
+\item demand cleaning : quand la page a été sélectionnée pour replacement. Inconvénient : veut dire que quand un autre processus qui veut lire la page et qui fait un page fault devrait attendre le transfert avant d'être débloqué
+\item precleaning : avant. Avantage : on peut le faire par blocs de pages. Inconvénient : capacité de transfert vers la secondary memory est limité et ne devrait pas être gaspillé avec des opérations pas nécessaires
+Une meilleure approche incorpore page buffering, à lire dans le livre.
+\end{itemize}
 \subsubsection{Load Control}
+Quel nombre de processus résidant en main memory? 
+\begin{itemize}
+\item Trop grand $\rightarrow$ chacun a une taille petite $\rightarrow$ beaucoup de page faut
+\item Trop petit $\rightarrow$ seront plein de fois tous blocked  $\rightarrow$ beaucoup de temps de swapping
+\end{itemize}
+\paragraph{Processus suspension} Si on veut réduire le taux de multiprogramming, on suspend certains processus. Critères :
+\begin{itemize}
+\item lowest-priority
+\item faulting
+\item last activated
+\item smallest résident set
+\item largest
+\item largest remaining execution window
+\end{itemize}
+
 \subsection{UNIX and Solaris Memory Management}
 \subsubsection{Paging System}
 \subsubsection{Kernel Memory Allocation}
