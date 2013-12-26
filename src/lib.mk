@@ -8,6 +8,8 @@ PDFVIEWER=xdg-open # Default pdf viewer - GNU/Linux
 #PDFVIEWER=open # Default pdf viewer - Mac OS
 ROOT=../../..
 
+ALL+=$(MAIN_NAME).pdf
+
 # You want latexmk to *always* run, because make does not have all the info.
 .PHONY: $(MAIN_NAME).pdf
 
@@ -17,7 +19,7 @@ ROOT=../../..
 #default: all
 default: show
 
-all: $(MAIN_NAME).pdf
+all: $(ALL)
 
 # MAIN LATEXMK RULE
 
@@ -38,7 +40,7 @@ clean:
 show: $(MAIN_NAME).pdf
 	$(PDFVIEWER) $(MAIN_NAME).pdf 2> /dev/null &
 
-release: $(MAIN_NAME).pdf
+release: all
 	cd ../..; smartcp -vv -s \
 	  quadri=$(QUADRI) -s cours=$(MAIN_NAME) config.yml
 
