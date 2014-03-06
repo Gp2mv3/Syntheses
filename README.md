@@ -24,7 +24,10 @@ en soumettant une issue sur le
 
 Vous pouvez aussi directement modifier le code et nous le soumettre
 en utilisant `git`,
-plus d'infos sur `git` dans le
+plus d'infos sur `git`,
+lisez la partie *Utilisation linéaire de Git* de
+[ce tutoriel](http://sites.uclouvain.be/SystInfo/notes/Outils/html/git.html)
+écrit par Benoît Legat, jettez aussi un oeuil dans le
 [wiki](https://github.com/Gp2mv3/Syntheses/wiki).
 
 Vous pouvez visualiser le status des différentes synthèses
