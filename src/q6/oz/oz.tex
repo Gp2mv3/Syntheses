@@ -13,6 +13,51 @@
 \paragraph{Prérequis} Ce cours comporte ``Informatique 2'' en prérequis qui donne une introduction à \oz{}.
 Vous êtes invités à lire la synthèse de ce cours si ce n'est déjà fait.
 
+\part{Programmation avancée en \oz{}}
+\section{Fonctions lazy}
+Lazy signifie paresseux en français.
+Une fonction lazy est une fonction qui ne va calculer son résultat qu'à partir du moment où on demande vraiment la valeur de son résultat.
+La demande de la valeur d'une variable se fait avec la fonction \lstinline|Wait|.
+Les opérateurs comme \lstinline|+|, \lstinline|mod|, \lstinline|==| ou même le \lstinline|case| font déjà le \lstinline|Wait| automatiquement.
+Les moments où la valeur d'une variable est demandée sont ces moments où le thread seraient bloqués si elle n'avait pas encore de valeur.
+C'est d'ailleurs pour ça que la fonction, bien que paresseuse, se décide enfin à calculer son résultat, parce qu'un autre thread est bloqué à cause d'elle.
+
+Pour définir une fonction lazy, on rajoute le \keyword{} lazy après \lstinline|fun|.
+Par exemple, le code suivant pourrait être le code de Deep Thought et expliquerait le délais de 7.5 millions d'années pour calculer
+la réponse à la vie, l'univers et le reste.
+Il faut noter que \lstinline|Browse| ne fait pas de \lstinline|Wait| (s'il le faisait, on aurait du attendre moins longtemps),
+il va simplement afficher un underscore en attendant que la variable ait une valeur.
+\begin{lstlisting}
+declare
+fun lazy {Answer}
+  42
+end
+Ans = {Answer}
+{Browse Ans}
+{Delay 9855000000000000}
+{Wait Ans}
+\end{lstlisting}
+
+Il est important aussi de noter qu'une fonction lazy s'exécute automatiquement dans un autre thread, sinon
+ce code bloquerait à la ligne 5, puisque la fonction attendrait qu'on attende la valeur de \lstinline|Ans| pour continuer.
+La traduction en language noyau de ce code est d'ailleurs
+\begin{lstlisting}
+declare
+proc lazy {Answer ?X}
+  thread
+    {WaitNeeded X}
+    X = 42
+  end
+end
+{Answer Ans}
+{Browse Ans}
+{Delay 9855000000000000}
+{Wait Ans}
+\end{lstlisting}
+
+On peut remarquer qu'écrire \lstinline|proc lazy| n'aurait pas de sens car une n'a pas de résultat bien défini donc lors de la traduction
+en language noyau, on ne saurait quelle variable attendre.
+
 \part{Définitions}
 Ceci est une liste exhaustive constituées par Arnaud Schils
 des définitions du livre
