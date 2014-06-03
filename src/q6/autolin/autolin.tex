@@ -4,6 +4,8 @@
 \usepackage{caption}
 \usepackage{subcaption}
 
+\lstset{language=Matlab}
+
 \newcommand{\sbt}{\,\begin{picture}(-1,1)(-1,-3)\circle*{2.5}\end{picture}\ }
 \newcommand{\umin}{u_\mathrm{min}}
 \newcommand{\umax}{u_\mathrm{max}}
@@ -395,6 +397,93 @@ De plus,
 \end{align*}
 
 % Bode phase et log module s'additionnent log(k0) = 0
+
+\section{Matlab}
+Voici les commandes utiles sous Matlab
+\subsection{Calcul de la fonction de transfert}
+\begin{description}
+  \item[tf] \lstinline|F = tf([1,3],[1,2,1]| représente la fonction de transfer $F(s)=\frac{s+3}{s^2+2s+1}$.
+    J'ai mis $F$ pour montrer que ça peut être aussi bien $G$, que $H$, $T_v$, $T_r$, ...
+    Les autres commandes (sauf \lstinline|tf2ss|) on besoin de la fonction de transfert
+    dans la forme renvoyée par \lstinline|tf|.
+  \item[ss2tf] \lstinline|[N,D] = ss2tf(A,B,C,D,iu)| renvoit le numérateur \lstinline|N| et le dénominateur \lstinline|D|
+    de la fonction de transfert correspondant au \lstinline|iu|\ieme{} input de l'équation d'état
+    \begin{align*}
+      \cdot{x} & = Ax + Bu\\
+      y & = Cx + Du.
+    \end{align*}
+    En boucle ouverte, leur $u$ vaut
+    $\begin{pmatrix}
+      u\\v
+    \end{pmatrix}$,
+    on prend donc \lstinline|iu = 1| pour $G(s)$
+    et \lstinline|iu = 2| pou $H(s)$.
+    Pour avoir la fonction de transfert dans la bonne
+    forme pour utiliser les autres commandes, il faut ensuite faire
+    \lstinline|tf(N,D)|.
+  \item[tf2ss] \lstinline|[A,B,C,D] = tf2ss(NUM,DEN)| fait l'inverse de \lstinline|ss2tf|.
+  \item[series] \lstinline|FG = F*G| ou \lstinline|FG = series(F,G)| construit la fonction de transfert
+    de $F(s)G(s)$.
+    \begin{center}
+      \begin{tikzpicture}[auto,node distance=2cm,>=latex']
+        \node [input, name=input] {};
+        \node [block, right of=input] (F) {$F(s)$};
+        \node [block, right of=F] (G) {$G(s)$};
+        \node [output, right of=G] (output) {};
+        \draw [->] (input) -- (F);
+        \draw [->] (F) -- (G);
+        \draw [->] (G) -- (output);
+      \end{tikzpicture}
+    \end{center}
+  \item[feedback] \lstinline|feedback(F,G)| construit la fonction de transfert
+    de $\frac{F(s)}{1+F(s)G(s)}$.
+    \begin{center}
+      \begin{tikzpicture}[auto,node distance=2cm,>=latex']
+        \node [input, name=input] {};
+        \node [sum, right of=input] (sum) {};
+        \node [block, right of=sum,node distance=1.5cm] (F) {$F(s)$};
+        \node [block, below of=F,node distance=1cm] (G) {$G(s)$};
+        \node [output, right of=F] (output) {};
+        \draw [->] (input) -- (sum);
+        \draw [->] (sum) -- (F);
+        \draw [->] (G) -| node[pos=0.9] {$-$} (sum);
+        \draw [->] (F) -- node (Fr) {} (output);
+        \draw [->] (Fr) |- (G);
+      \end{tikzpicture}
+    \end{center}
+    On a par exemple \lstinline|Tr = feedback(series(C,G),1)|.
+\end{description}
+
+\subsection{Analyse de la réponse}
+\begin{description}
+  \item[step] \lstinline|step(F)| montre le graphe de $y(t) = f * u(t)$,
+    c'est à dire la réponse à un échelon.
+  \item[impulse] \lstinline|impulse(F)| montre le graphe de $y(t) = f * \delta(t)$,
+    c'est à dire la réponse à une impulsion.
+  \item[lsim] \lstinline|lsim(F,xt,t)| montre le graphe de $y(t)$ pour une entrée $x(t)$,
+    décrite par le vecteur \lstinline|xt| contenent $x(t)$ pour les différents
+    temps dans le vecteur \lstinline|t|.
+\end{description}
+
+\subsection{Stabilité}
+\begin{description}
+  \item[nyquist] \lstinline|nyquist(F)| fait le diagramme de Nyquist.
+  \item[bode] \lstinline|bode(F)| fait le diagramme de bode.
+\end{description}
+
+\subsection{Robustesse}
+\begin{description}
+  \item[margin] \lstinline|margin(F)| est comme bode mais affiche aussi
+    $\omega_c$, $\omega_L$, $\phi_M$, $G_M$ dans le titre du plot dans le format
+    ``\lstinline|Gm = |$G_M$\lstinline| (at |$\omega_L$\lstinline|), Pm = |$\phi_M$\lstinline| (at |$\omega_c$\lstinline|)|''.
+\end{description}
+
+\subsection{Divers}
+\begin{description}
+  \item[ltiview] \lstinline|ltiview(F)| lance une GUI avec plusieurs vues
+    (on peut choisir ce qui est affiché et combien sont affichées).
+    Ça regroupe toutes les autres commandes.
+\end{description}
 
 \biblio
 
