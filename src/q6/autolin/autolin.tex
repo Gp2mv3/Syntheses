@@ -3,6 +3,7 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
+\newcommand{\laplace}{\mathcal{L}}
 
 \lstset{language=Matlab}
 
@@ -31,6 +32,8 @@
 % voir 6.1, 6.2, 8.1
 
 % Si état observable/commandable, utiliser retour d'état !
+
+% Bode phase et log module s'additionnent log(k0) = 0
 
 \section{Règle de Mason}
 Le principe est expliqué assez clairement dans \cite{chau2002mason}
@@ -93,6 +96,374 @@ La plupart du temps, les chaines directes touchent toutes les boucles et le num�
     \label{fig:masonex}
   \end{figure}
 \end{myexem}
+
+\section{Erreur statique}
+L'erreur est définie par $r(t) - y(t)$.
+L'erreur statique est $\lim_{t\to\infty} r(t) - y(t)$.
+Seulement, on sait que pour tout signal $f$, $\lim_{t\to\infty} f(t) = \lim_{s \to 0} sF(s)$.
+On a donc, par le principe de superposition,
+une erreur de commande de
+\[ \lim_{s \to 0} s(1 - T_r(s))R(s) \]
+et une erreur de perturbation de
+\[ \lim_{s \to 0} sT_v(s)V(s). \]
+
+En se rappelant que $\laplace(u(t)) = \frac{1}{s}$\footnote{$u(t)$ est un échelon, pas la commande},
+que $\laplace(tu(t)) = \frac{1}{s^2}$
+et que $\laplace(\sin(\omega_0 t)) = \frac{1}{s^2+\omega_0^2}$, on trouve que,
+pour ne pas avoir d'erreur statique,
+\begin{itemize}
+  \item pour $r(t) = u(t)$, il faut que $CG$ ait un pôle nul,
+    aussi appelée action intégrale $\frac{1}{s}$;
+  \item pour $r(t) = t u(t)$, il faut que $CG$ ait un double pôle nul $\frac{1}{s^2}$;
+  \item pour $r(t) = \sin(\omega_0 t)$ (ou $\cos$, c'est pareil), il faut que $CG$ ait les pôles conjugués $\frac{1}{s^2+\omega_k^2}$.
+\end{itemize}
+En effet, par exemple, pour $r(t) = u(t)$, on a
+\begin{align*}
+  \lim_{s \to 0} s\left(1 - \frac{\frac{1}{s}C_0(s)G(s)}{1+\frac{1}{s}C_0(s)G(s)}\right)\frac{1}{s}
+  & = \lim_{s \to 0} 1 - \frac{C_0(s)G(s)}{s+C_0(s)G(s)}\\
+  & = 1 - \frac{C_0(s)G(s)}{C_0(s)G(s)}\\
+  & = 1 - 1\\
+  & = 0.
+\end{align*}
+
+En résumé, si $G$ n'a pas déjà les pôles voulus et qu'il ne les a pas en pôles, prêt à nous annuler
+nos pôles bien placés, on a une erreur statique nulle avec
+\[ r(t) = \alpha_0 + \alpha_1 t + \cdots + \alpha_q t^q + \sum_{k=1}^p \beta_k \sin(\omega_k t + \phi_k), \]
+il suffit de prendre
+\[ C(s) = \frac{1}{s^q} \prod_{k=1}^p \left(\frac{1}{s^2+\omega_k^2}\right) C_0(s) \]
+où $C_0$ n'a évidemment pas des zéros où on a mis nos pôles.
+
+Pour ne pas avoir d'erreur statique,
+\begin{itemize}
+  \item pour $v(t) = u(t)$, il faut que $CG$ ait plus de pôles nuls que $H$.
+    Si $H$ a un zéro nul, on a même pas besoin d'avoir de pôle nul.
+\end{itemize}
+
+\section{Nyquist}
+Nyquist est un outil qui nous permet de trouver le nombre de zéros instables de
+$1 + C(s)G(s)$ si on connait le nombre de pôle instables de $C(s)G(s)$ et
+donc de déterminer si notre fonction de transfert avec $1+C(s)G(s)$ au dénominateur
+est stable, c'est à dire qu'il n'y a aucun zéro instable.
+
+Soit $C(s)G(s) = \frac{N(s)}{D(s)}$, on a $1 + C(s)G(s) = \frac{D(s)+N(s)}{D(s)}$.
+Les pôles de $C(s)G(s)$ sont donc les mêmes que ceux de $1 + C(s)G(s)$.
+Le théorème de Cauchy nous dit que si on prend un parcours fermé $\Gamma$,
+\[ N = P - Z \]
+où $N$ est le nombre de fois que $1 + CG$ tourne autours de l'origine dans le sens
+trigonométrique et $P$ et $Z$ sont le nombre de pôles et de zéros qui sont dans
+le contour (on ne peut pas l'appliquer s'il y en a sur le contour).
+
+\begin{figure}
+  \centering
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[width=\linewidth,height=\linewidth]{nyquistpath.jpg}
+    \caption{Courbe fermée regroupant les racines instables.}
+    \label{fig:nyquistpath}
+  \end{subfigure}
+  \begin{subfigure}{0.49\linewidth}
+    \includegraphics[trim=22cm 0cm 0cm 0cm,clip,width=\linewidth,height=\linewidth]{nyquistplot.jpg}
+    \caption{Image de la courbe par $C(s)G(s)=\frac{90}{(s+3)(s+6)}$.}
+    \label{fig:nyquistplot}
+  \end{subfigure}
+  \caption{Exemple de diagramme de Nyquist~\cite{cheever2013nyquist}.}
+  \label{fig:nyquist}
+\end{figure}
+
+Si on prend le coutour de la \figuref{nyquistpath},
+on regroupe donc toutes les racines instables.
+Si on connait le nombre de pôles instables de $CG$, on a $P$ et ce qu'on cherche,
+$Z$ est simplement $P - N$.
+Si $CG$ a des racines ou pôles sur l'axe imaginaire, on ne peut pas appliquer le
+critère car ils sont sur le contour, c'est problématique car on a souvent un
+pôle nul avec l'action intégrale.
+La solution est de passer par un petit demi-cercle de rayon $\epsilon$ autour
+de 0.
+Pour ce cours, on ne s'en soucie pas trop.
+\cite{cheever2013nyquist} apporte de plus amples informations à ce sujet.
+
+Au lieu de plotter $1 + CG$ et de regarder combien de fois on tourne autour
+de l'origine,
+on va plotter $CG$ et regarder combien de fois on tourne autour de $-1 + 0j$
+ce qui revient au même.
+On obtient alors un graphe semblable à la \figuref{nyquistplot}.
+
+Pour trouver $N$, il suffit de prendre une demi-droite partant de $-1$ et
+allant à l'infini dans n'importe quel sens, à chaque fois qu'on rencontre
+la courbe, si elle va vers la gauche, on fait $+1$, sinon, on fait $-1$.
+Au final, on aura $N$ (c'est bien illustré par \cite{cheever2013nyquist}).
+
+\subsection{Allure classique}
+Au final, on a souvent $P = 0$ et $CG$ a souvent soit des pôles ou racines
+conjuguées, soit des pôles ou racines réelles négatives, soit un pôle
+nul dû à l'action intégrale.
+On nos pôles et racines sont toujours avec leur conjuguées car on a des coefficients
+réels dans nos polynômes.
+
+Dans le parcours de la \figuref{nyquistpath}, on traverse la droite
+$s = j\omega$ de $\omega = -\infty$ à $\omega = \infty$ en passant par $\omega = 0$
+(ou plutôt en faisant un demi-cercle de rayon $\epsilon$ autour).
+En $\omega = 0$, la phase de $CG$ est soit 0 comme pour la \figuref{nyquistplot},
+  soit $-\ang{90}$ si on a une action
+intégrale.
+En effet la phase est la somme des phase des différents facteurs.
+\begin{itemize}
+  \item
+    Pour les racines et pôles réels positifs, on a $s + r_i$ avec $r_i > 0$ donc
+    pour $s = 0$, on a une phase nulle.
+  \item
+    Pour les racines et pôles conjuguées, ils ont des phases opposées donc leur somme
+    est nulle.
+  \item
+    L'action intégrale a la phase de $\frac{1}{\epsilon j} = -\frac{1}{\epsilon} j \to -\infty j$
+    qui a un module infini et une phase de $-\ang{90}$.
+    Le module infini explique pourquoi on part souvent vers $-\infty j$ quand on a une action
+    intégrale.
+\end{itemize}
+
+Si $CG$ est strictement propre (le degré du dénominateur est plus grand que celui du dénominateur),
+lorsque $|\omega| \to \infty$, le module de $CG$ tend vers 0, on passe donc par l'origine comme
+le montre la \figuref{nyquistplot}.
+
+Comme on a supposé que $CG$ n'a pas de pôles instables, $P = 0$ et donc $Z = -N$.
+Il faut donc que $N = 0$ pour avoir un système stable.
+
+Comme nos polynômes sont à coefficients réels,
+$C(-j\omega)G(-j\omega) = C(\bar{j\omega})G(\bar{j\omega}) = \bar{C(j\omega)G(j\omega)}$.
+On fait donc le même trajet pour $\omega$ allant de $-\infty$ à $0$ qu'on a fait
+pour $\omega$ allant de $0$ à $\infty$ mais dans l'autre sens et de l'autre côté de l'axe réel.
+C'est exactement ce qu'on voit à la figure \figuref{nyquistplot}.
+
+S'il n'y a pas d'action intégrale, la partie de la courbe de $\omega = 0$ à $\omega = \infty$
+part donc de $C(0)G(0)$ qui est un réel positif
+et abouti en $0$ si $CG$ est strictement propre, comme on a vu, on fait après exactement pareil
+de l'autre côté de l'axe réel.
+Avec action intégrale, on part de $-\infty j$ et on abouti en $0$ puis on fait pareil
+mais vers $\infty j$ puis pendant qu'on fait notre petit demi-cerce de rayon $\epsilon$ autour
+de l'origine, on passe de $\infty j$ à $-\infty j$ par la droite (parce que).
+
+On peut donc juste regarder ce qu'on fait de $\omega = 0$ à $\omega = \infty$.
+Si on passe à gauche du point $-1$,
+alors on fera un tour dans le sens horlogique et donc
+$N = -1$ ce qui fait $Z = 1$, on est donc instable.
+Si on y passe à droite, alors $N = 0$ et donc $Z = 0$ et on est stable!
+
+\section{Robustesse}
+C'est bien qu'un système soit stable mais on est jamais à l'abris d'une erreur de
+modélisation ou d'une non-linéarité.
+Il vaut donc mieux ne pas être tout juste table mais avoir une certaine marge.
+
+Il y a 4 marges différentes, avec $p_i$ les pôles de $1 + C(s)G(s)$,
+\begin{align*}
+  \sigma_R & = -\max \Re(p_i)\\
+  \sigma_M & = \inf_\omega|1 + C(j\omega)G(j\omega)|\\
+  \phi_M & = \arg(C(j\omega)(G(j\omega)) + \ang{180}\\
+  G_M & = 1 - |C(j\omega_L)G(j\omega_L)|
+\end{align*}
+où $\arg:\R\to[-\ang{360};0]$.
+
+Il est aisé de vérifier qu'on respecte une marge de robustesse $\sigma_R$.
+Il suffit de regarder si $1 + C(s')G(s')$ est stable où $s' = s + \sigma_R$.
+On remplace donc simplement les $s$ par $s' - \sigma_R$ dans l'expression
+et on utilise les critères des stabilités normaux
+(Routh-Hurwirz, Nyquist, Bode, ...).
+
+\begin{figure}
+  \begin{subfigure}{0.49\linewidth}
+    \centering
+    \includegraphics{nyquist-robust.png}
+    \caption{$\sigma_M$, $\phi_M$ et $G_M$ dans le graphe de Nyquist.}
+    \label{fig:nyquist-robust}
+  \end{subfigure}
+  \begin{subfigure}{0.49\linewidth}
+    \centering
+    \includegraphics{bode-robust.png}
+    \caption{$\phi_M$ et $G_M$ dans le graphe de Bode.}
+    \label{fig:bode-robust}
+  \end{subfigure}
+  \caption{Marges dans Nyquist et Bode avec $s_m$ pour $\sigma_M$,
+  $\varphi_m$ pour $\phi_M$ et $g_m$ pour $G_M$ \cite{astrom2010feedback}.}
+  \label{fig:robust-graph}
+\end{figure}
+
+$\sigma_M$, $\phi_M$ et $G_M$ peuvent être obtenu à l'aide
+du diagramme de Bode et de Nyquist comme illustré à la \figuref{robust-graph}.
+
+Ils peuvent également s'obtenir via identification à la fonction
+de transfert de référence
+\[ T_r(s) = \frac{\omega_n^2}{s^2 + 2 \zeta \omega_n s + \omega_n^2}. \]
+On a
+\[ \sigma_M = \inf_\omega \left|1 + C(j\omega)G(j\omega)\right| =
+\inf_\omega \sqrt{1 + \frac{1 - 2\left(\frac{\omega}{\omega_n}\right)^2}{\left(\frac{\omega}{\omega_n}\right)^4 + 4\zeta^2\left(\frac{\omega}{\omega_n}\right)^2}} \]
+$\sigma_M$ est atteint pour
+\[ \left(\frac{\omega}{\omega_n}\right)^2 = \frac{1 + \sqrt{1 + 8\zeta^2}}{2}. \]
+$\sigma_M$ ne dépend donc que de $\zeta$ et
+\[ \sigma_M^2 = 1 - \frac{4\sqrt{8\zeta^2+1}}{(8\zeta^2+1)^{3/2}+\sqrt{8\zeta^2+1}+16\zeta^2+2}. \]
+
+De plus,
+\begin{align*}
+  \frac{\omega_c}{\omega_n} & = \sqrt{\sqrt{4\zeta^4 + 1} - 2\zeta^2}\\
+  \phi_M & = \arctan\left(\frac{2\zeta}{\frac{\omega_c}{\omega_n}}\right)
+\end{align*}
+
+\subsection{Sensibilité}
+On analyse la sensibilité normalisée.
+Par exemple, pour la sensibilité de $T_v$ par rapport à $H$,
+ce n'est pas juste $\fdif{T_V}{H}$ mais
+\[ S_v = \fdif{T_v}{H} \frac{H}{T_v} = \frac{1}{(1 + CG)^2}\frac{H}{\frac{H}{1+CG}} = \frac{1}{1+CG}. \]
+On remarque qu'on a aussi
+\[ \sigma_M^{-1} = \sup_\omega\frac{1}{|1+C(j\omega)G(j\omega)|}
+= \sup_\omega |S_v(j\omega)|. \]
+On voit bien dans la \figuref{nyquist-robust},
+qu'il est difficile d'avoir $\sigma_M > 1$, on essaie donc d'avoir $\sigma_M$
+le plus grand possible tout en restant réaliste donc avoir $\sigma_M$ le plus proche
+de 1 tout en restant $< 1$.
+On essaie donc d'avoir $\sigma_M^{-1}$ le plus proche de 1 tout en restant $> 1$.
+Dans la \figuref{sensitivity}, on veut donc que $|S_v|$ dépasse le moins possible
+au dessus de 1 (à ne pas confondre avec le dépassement $D$ qui se mesure sur la réponse
+à un échelon).
+
+On aime aussi être peu sensible à une large bande en basse fréquence.
+Ce gabarit est aussi illustré par la \figuref{sensitivity}.
+
+Seulement, on sait aussi,
+par le théorème de Bode\cite[p.~336]{astrom2010feedback}
+que que si le degré relatif de $C(s)G(t)$ $\geq 2$,
+\[ \int_0^\infty \ln|S_v(j\omega) \dif \omega = \pi \sum_k \Re(p_k) \]
+où $p_k$ sont les pôles \emph{instables} de $C(s)G(s)$.
+S'ils n'en ont pas, l'intégrale vaut donc 0.
+
+\begin{figure}
+  \begin{subfigure}{0.3\linewidth}
+    \includegraphics[width=\linewidth]{sensitivity.png}
+    \caption{Gabarits pour $S_v$.
+    Rappelons qu'avec une action intégrale,
+    $|C(j0)G(j0)| \to \infty$ et $C(j\infty)G(j\infty)| = 0$
+    ce qui explique la forme de $|S_v(s)| = \frac{1}{|1+C(s)G(s)|}$.}
+    \label{fig:sensitivity}
+  \end{subfigure}
+  \begin{subfigure}{0.3\linewidth}
+    \includegraphics[width=\linewidth]{sensitivity-log.png}
+    \caption{$S_v$ en échèle semi-logarithmique avec
+    l'intégrale du théorème de Bode colorée\cite{astrom2010feedback}.}
+    \label{fig:sensitivity-log}
+  \end{subfigure}
+  \begin{subfigure}{0.3\linewidth}
+    \includegraphics[width=\linewidth]{sensitivity-shovel.png}
+    \caption{Le compromis entre nos deux gabarits qu'on doit faire
+    à cause du théorème de Bode illustré\cite{astrom2010feedback}.}
+    \label{fig:sensitivity-shovel}
+  \end{subfigure}
+  \caption{Illustration du lien entre le théorème de Bode
+  et les gabarits sur $S_v$.}
+\end{figure}
+
+Seulement, comme on le voit en comparant la \figuref{sensitivity} et la \figuref{sensitivity-log}
+que si on veut être peu sensible à une large bande en basse fréquence et avoir un $\sigma_M^{-1}$ proche de 1,
+on aura une intégrale très négative.
+Ce n'est pas possible par le théorème de Bode et c'est encore pire si on a des pôles instables.
+En essayant de diminuer notre sensibilité aux basses fréquences ou d'augmenter la bande
+de basse fréquence où on est peu sensible, on augmentera donc $\sigma_M^{-1}$
+et vice-versa.
+En voyant ça de façon imagée à l'aide de la \figuref{sensitivity-shovel},
+on veut faire un trou large et profond sans avoir un tas de terre trop haut à côté.
+
+Bien étaller le tas de terre serait bien évidemment une solution mais je doute que ce soit évident.
+
+\section{Régulateur PID}
+En se rappelant de Laplace, on peut donner un sens plus intuitif à notre régulation.
+Que faisons-nous avec l'erreur ?
+\begin{itemize}
+  \item Si $C(s) = 1$, on met simplement $u$ à l'erreur.
+  \item Si $C(s) = \frac{1}{s}$,
+    $U(s) = \frac{E(s)}{s}$ donc $u(t) = \int_{-\infty}^t e(\tau) \dif \tau$.
+    $u(t)$ est donc l'intégrale de l'erreur.
+  \item Si $C(s) = s$,
+    $U(s) = sE(s)$ donc $u(t) = \fdif{e(t)}{t}$.
+    $u(t)$ est donc la dérivée de l'erreur.
+\end{itemize}
+Voyons voir l'intérêt de chacun de ces effets.
+
+\subsection{Régulateur P}
+Supposons qu'on ait uniquement une action proportionnelle,
+n'est-ce pas suffisant ?
+Je pense que la première fois qu'on arrive devant un problème de régulation,
+le premier réflexe est de penser à une action intégrale et de penser que ça va marcher.
+Il faut cependant bien voir que $C(s)E(s)$ ne va pas être la modification qu'on va faire
+à $u(t)$ mais bien directement la valeur de $u(t)$ !
+Supposons un système trivial où $G(s) = 2$.
+Avec $C(s) = k_p$, on va arrêter de changer $u(t)$ lorsque
+$u(t) = k_p(2u(t) - r)$, c'est donc lorsque
+$u(t) = \frac{rk_p}{1 - 2k_p}$.
+On aura donc $y = r\frac{2k_p}{1+2k_p}=rT_r(s)$ qui ne vaut
+jamais $r$.
+
+On va donc s'arrêter, soit-disant satisfait avec notre $u(t)$,
+alors qu'on a même pas le bon $y(t)$.
+En fait l'action intégrale est surtout bonne avec un $G(s)$
+avec de l'intégrale sous le capot !
+En effet, si $y(t)$ intègre $u(t)$, alors ça a du sens de mettre
+du $u(t)$ négatif si on est $y(t)$ est trop grand et du positif
+si $y(t)$ est trop petit.
+
+Mais si $G(s)$ n'a pas une intégrale pure $\frac{1}{s}$, on aura
+une erreur statique comme on le voit sur la \figuref{proportionnal}.
+
+En résumé, une action proportionnelle est bête mais tout de même
+importante parmis les trois action PID.
+C'est un peu Sid.
+
+\begin{figure}
+  \begin{subfigure}{0.3\linewidth}
+    \includegraphics[width=\linewidth]{proportionnal.png}
+    \caption{Régulateur P\cite{astrom2010feedback}.}
+    \label{fig:proportionnal}
+  \end{subfigure}
+  \begin{subfigure}{0.3\linewidth}
+    \includegraphics[width=\linewidth]{pi.png}
+    \caption{Régulateur PI\cite{astrom2010feedback}.}
+    \label{fig:pi}
+  \end{subfigure}
+  \begin{subfigure}{0.3\linewidth}
+    \includegraphics[width=\linewidth]{pid.png}
+    \caption{Régulateur PID\cite{astrom2010feedback}.}
+    \label{fig:pid}
+  \end{subfigure}
+  \caption{Illustration de l'utilité de chaque composante
+  d'un régulateur PID.}
+\end{figure}
+
+\subsection{Régulateur PI.}
+Un régulateur PI applique une action intégrale en \emph{parallèle} à l'action
+proportionnelle.
+On a donc $C(s) = k_p + \frac{k_i}{s}$ et \emph{non} $\frac{k_pk_i}{s}$.
+On aura donc deux actions qui auront chacune la parole et dicteront à $u(t)$ ce
+qu'il doit faire. Ce dernier les écoutera tous les deux et appliquera la somme
+de leur commane, pondérées par $k_p$ et $k_i$.
+
+L'avantage de l'action intégrale, c'est qu'on sait que quand $u(t)$ ne bouge plus,
+c'est qu'on a arrêté d'intégrer et donc que l'erreur est nulle car on intègre l'erreur.
+C'est donc la mémoire du régulateur, qui permet donc, avec de bon paramètres $k_p$ et $k_i$
+d'avoir un régulateur un peu plus intelligent.
+
+On voit sur la \figuref{pi} qu'on a maintenant plus d'erreur statique grâce à l'action
+intégrale.
+
+\subsection{Régulateur PID.}
+Le problème c'est qu'on a maintenant pas mal de dépassement car lorsque $y$ s'approche de $r$
+et donc que l'erreur s'approche de 0, bien que l'action proporitonnelle est moins grande
+(mais est toujours dans le même sens), l'action intégrale continue plein gaz.
+
+Une dérivée verrait que l'erreur diminie bien vite et donnerait donc un ordre contraire
+à l'intégrale, pour permettre d'anticiper et de réduire de dépassement.
+On voit en effet sur la \figuref{pid} que l'action dérivée diminue le dépassement.
+
+L'action proportionnelle est donc bête mais importante,
+l'action intégrale est le sage de la bande qui grâce à sa mémoire et à sa vision
+long terme permet d'avoir un errer statique nulle et
+l'action dérivée permet d'avoir un peu d'anticipation et donc d'efficacité.
+
+La meilleur image de ce trio est le trio de ``Ice Age'' où Sid joue le rôle de l'action
+proportionnelle, Manny l'action intégrale et Diego l'action dérivée.
 
 \section{Emballement}
 
@@ -272,140 +643,15 @@ est négatif.
 Au final, lors $y(t) \geq r(t)$, l'intégrale est vide et $u$ ne sature plus, on repasse donc dans un système LTI et le système
 anti-emballement n'a plus d'effet.
 
-% TODO astrom p. 307pdf 295vrai
-
-\section{Nyquist}
-Nyquist est un outil qui nous permet de trouver le nombre de zéros instables de
-$1 + C(s)G(s)$ si on connait le nombre de pôle instables de $C(s)G(s)$ et
-donc de déterminer si notre fonction de transfert avec $1+C(s)G(s)$ au dénominateur
-est stable, c'est à dire qu'il n'y a aucun zéro instable.
-
-Soit $C(s)G(s) = \frac{N(s)}{D(s)}$, on a $1 + C(s)G(s) = \frac{D(s)+G(s)}{D(s)}$.
-Les pôles de $C(s)G(s)$ sont donc les mêmes que ceux de $1 + C(s)G(s)$.
-Le théorème de Cauchy nous dit que si on prend un parcours fermé $\Gamma$,
-\[ N = P - Z \]
-où $N$ est le nombre de fois que $1 + CG$ tourne autours de l'origine dans le sens
-trigonométrique et $P$ et $Z$ sont le nombre de pôles et de zéros qui sont dans
-le contour (on ne peut pas l'appliquer s'il y en a sur le contour).
-
-\begin{figure}
-  \centering
-  \begin{subfigure}{0.49\linewidth}
-    \includegraphics[width=\linewidth,height=\linewidth]{nyquistpath.jpg}
-    \caption{Courbe fermée regroupant les racines instables.}
-    \label{fig:nyquistpath}
-  \end{subfigure}
-  \begin{subfigure}{0.49\linewidth}
-    \includegraphics[trim=22cm 0cm 0cm 0cm,clip,width=\linewidth,height=\linewidth]{nyquistplot.jpg}
-    \caption{Image de la courbe par $C(s)G(s)=\frac{90}{(s+3)(s+6)}$.}
-    \label{fig:nyquistplot}
-  \end{subfigure}
-  \caption{Exemple de diagramme de Nyquist~\cite{cheever2013nyquist}.}
-  \label{fig:nyquist}
-\end{figure}
-
-Si on prend le coutour de la \figuref{nyquistpath},
-on regroupe donc toutes les racines instables.
-Si on connait le nombre de pôles instables de $CG$, on a $P$ et ce qu'on cherche,
-$Z$ est simplement $P - N$.
-Si $CG$ a des racines ou pôles sur l'axe imaginaire, on ne peut pas appliquer le
-critère car ils sont sur le contour, c'est problématique car on a souvent un
-pôle nul avec l'action intégrale.
-La solution est de passer par un petit demi-cercle de rayon $\epsilon$ autour
-de 0.
-Pour ce cours, on ne s'en soucie pas trop.
-\cite{cheever2013nyquist} apporte de plus amples informations à ce sujet.
-
-Au lieu de plotter $1 + CG$ et de regarder combien de fois on tourne autour
-de l'origine,
-on va plotter $CG$ et regarder combien de fois on tourne autour de $-1 + 0j$
-ce qui revient au même.
-On obtient alors un graphe semblable à la \figuref{nyquistplot}.
-
-Pour trouver $N$, il suffit de prendre une demi-droite partant de $-1$ et
-allant à l'infini dans n'importe quel sens, à chaque fois qu'on rencontre
-la courbe, si elle va vers la gauche, on fait $+1$, sinon, on fait $-1$.
-Au final, on aura $N$ (c'est bien illustré par \cite{cheever2013nyquist}).
-
-\subsection{Allure classique}
-Au final, on a souvent $P = 0$ et $CG$ a souvent soit des pôles ou racines
-conjuguées, soit des pôles ou racines réelles négatives, soit un pôle
-nul dû à l'action intégrale.
-On nos pôles et racines sont toujours avec leur conjuguées car on a des coefficients
-réels dans nos polynômes.
-
-Dans le parcours de la \figuref{nyquistpath}, on traverse la droite
-$s = j\omega$ de $\omega = -\infty$ à $\omega = \infty$ en passant par $\omega = 0$
-(ou plutôt en faisant un demi-cercle de rayon $\epsilon$ autour).
-En $\omega = 0$, la phase de $CG$ est soit 0 comme pour la \figuref{nyquistplot},
-  soit $-\ang{90}$ si on a une action
-intégrale.
-En effet la phase est la somme des phase des différents facteurs.
-\begin{itemize}
-  \item
-    Pour les racines et pôles réels positifs, on a $s + r_i$ avec $r_i > 0$ donc
-    pour $s = 0$, on a une phase nulle.
-  \item
-    Pour les racines et pôles conjuguées, ils ont des phases opposées donc leur somme
-    est nulle.
-  \item
-    L'action intégrale a la phase de $\frac{1}{\epsilon j} = -\frac{1}{\epsilon} j \to -\infty j$
-    qui a un module infini et une phase de $-\ang{90}$.
-    Le module infini explique pourquoi on part souvent vers $-\infty j$ quand on a une action
-    intégrale.
-\end{itemize}
-
-Si $CG$ est strictement propre (le degré du dénominateur est plus grand que celui du dénominateur),
-lorsque $|\omega| \to \infty$, le module de $CG$ tend vers 0, on passe donc par l'origine comme
-le montre la \figuref{nyquistplot}.
-
-Comme on a supposé que $CG$ n'a pas de pôles instables, $P = 0$ et donc $Z = -N$.
-Il faut donc que $N = 0$ pour avoir un système stable.
-
-Comme nos polynômes sont à coefficients réels,
-$C(-j\omega)G(-j\omega) = C(\bar{j\omega})G(\bar{j\omega}) = \bar{C(j\omega)G(j\omega)}$.
-On fait donc le même trajet pour $\omega$ allant de $-\infty$ à $0$ qu'on a fait
-pour $\omega$ allant de $0$ à $\infty$ mais dans l'autre sens et de l'autre côté de l'axe réel.
-C'est exactement ce qu'on voit à la figure \figuref{nyquistplot}.
-
-S'il n'y a pas d'action intégrale, la partie de la courbe de $\omega = 0$ à $\omega = \infty$
-part donc de $C(0)G(0)$ qui est un réel positif
-et abouti en $0$ si $CG$ est strictement propre, comme on a vu, on fait après exactement pareil
-de l'autre côté de l'axe réel.
-Avec action intégrale, on part de $-\infty j$ et on abouti en $0$ puis on fait pareil
-mais vers $\infty j$ puis pendant qu'on fait notre petit demi-cerce de rayon $\epsilon$ autour
-de l'origine, on passe de $\infty j$ à $-\infty j$ par la droite (parce que).
-
-On peut donc juste regarder ce qu'on fait de $\omega = 0$ à $\omega = \infty$.
-Si on passe à gauche du point $-1$,
-alors on fera un tour dans le sens horlogique et donc
-$N = -1$ ce qui fait $Z = 1$, on est donc instable.
-Si on y passe à droite, alors $N = 0$ et donc $Z = 0$ et on est stable!
-
-\section{Robustesse}
-
-\[ T_r(s) = \frac{\omega_n^2}{s^2 + 2 \zeta \omega_n s + \omega_n^2}. \]
-On a
-\[ \sigma_M = \inf \left|1 + C(j\omega)G(j\omega)\right| =
-\inf 1 + \frac{1 - 2\left(\frac{\omega}{\omega_n}\right)^2}{\left(\frac{\omega}{\omega_n}\right)^4 + 4\zeta^2\left(\frac{\omega}{\omega_n}\right)^2} \]
-$\sigma_M$ est atteint pour
-\[ \left(\frac{\omega}{\omega_n}\right)^2 = \frac{1 + \sqrt{1 + 8\zeta^2}}{2}. \]
-
-De plus,
-\begin{align*}
-  \frac{\omega_c}{\omega_n} & = \sqrt{\sqrt{4\zeta^4 + 1} - 2\zeta^2}.
-\end{align*}
-
-% Bode phase et log module s'additionnent log(k0) = 0
-
 \section{Matlab}
 Voici les commandes utiles sous Matlab
 \subsection{Calcul de la fonction de transfert}
 \begin{description}
-  \item[tf] \lstinline|F = tf([1,3],[1,2,1]| représente la fonction de transfer $F(s)=\frac{s+3}{s^2+2s+1}$.
+  \item[tf] \lstinline|F = tf([10,30],[1,5,6]| représente la fonction de transfert $F(s)=10\frac{s+3}{s^2+5s+6}$.
     J'ai mis $F$ pour montrer que ça peut être aussi bien $G$, que $H$, $T_v$, $T_r$, ...
     Les autres commandes (sauf \lstinline|tf2ss|) on besoin de la fonction de transfert
-    dans la forme renvoyée par \lstinline|tf|.
+    dans la forme renvoyée par \lstinline|tf| ou \lstinline|zpk|.
+  \item[zpk] \lstinline|F = zpk([-3],[-2,-3],10)| représente la fonction de transfert $F(s) = 10\frac{s+3}{(s+2)(s+3)}$.
   \item[ss2tf] \lstinline|[N,D] = ss2tf(A,B,C,D,iu)| renvoit le numérateur \lstinline|N| et le dénominateur \lstinline|D|
     de la fonction de transfert correspondant au \lstinline|iu|\ieme{} input de l'équation d'état
     \begin{align*}
@@ -435,6 +681,22 @@ Voici les commandes utiles sous Matlab
         \draw [->] (G) -- (output);
       \end{tikzpicture}
     \end{center}
+  \item[parallel] \lstinline|F+G| ou \lstinline|parallel(F,G)| construit la fonction de transfert
+    de $F(s) + G(s)$
+    \begin{center}
+      \begin{tikzpicture}[auto,node distance=2cm,>=latex']
+        \node [input, name=input] {};
+        \node [block, above right of=input, node distance=1.5cm] (F) {$F(s)$};
+        \node [block, below right of=input, node distance=1.5cm] (G) {$G(s)$};
+        \node [sum, right of=input, node distance=2.1cm] (sum) {};
+        \node [output, right of=sum, node distance=1cm] (output) {};
+        \draw [->] (input) |- (F);
+        \draw [->] (input) |- (G);
+        \draw [->] (F) -| (sum);
+        \draw [->] (G) -| (sum);
+        \draw [->] (sum) -- (output);
+      \end{tikzpicture}
+    \end{center}
   \item[feedback] \lstinline|feedback(F,G)| construit la fonction de transfert
     de $\frac{F(s)}{1+F(s)G(s)}$.
     \begin{center}
@@ -452,6 +714,10 @@ Voici les commandes utiles sous Matlab
       \end{tikzpicture}
     \end{center}
     On a par exemple \lstinline|Tr = feedback(series(C,G),1)|.
+  \item[pade] \lstinline|[N,D] = pade(T,n)| donne le numérateur \lstinline|N|
+    et le dénominateur \lstinline|D| de l'approximation de pade de $e^{-Ts}$ d'ordre
+    \lstinline|n|.
+    Pour l'appliquer à $F$, il faut ensuite faire \lstinline|tf(N,D)*F|.
 \end{description}
 
 \subsection{Analyse de la réponse}
@@ -461,7 +727,7 @@ Voici les commandes utiles sous Matlab
   \item[impulse] \lstinline|impulse(F)| montre le graphe de $y(t) = f * \delta(t)$,
     c'est à dire la réponse à une impulsion.
   \item[lsim] \lstinline|lsim(F,xt,t)| montre le graphe de $y(t)$ pour une entrée $x(t)$,
-    décrite par le vecteur \lstinline|xt| contenent $x(t)$ pour les différents
+    décrite par le vecteur \lstinline|xt| contenant $x(t)$ pour les différents
     temps dans le vecteur \lstinline|t|.
 \end{description}
 
