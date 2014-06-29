@@ -15,10 +15,22 @@
 \newcommand{\roc}{\mathrm{ROC}}
 \DeclareMathOperator{\cof}{cof}
 
+\lstset{language=MATLAB}
+
 \hypertitle{Signaux et syst\`emes}{4}{FSAB}{1106}
 {Beno\^it Legat}
 {Luc Vandendorpe et Vincent Wertz}
 
+\paragraph{Prérequis}
+Il sera supposé tout au long de cette synthèse que les
+formules
+\begin{align*}
+  f & = \frac{1}{T} & \omega & = 2\pi f
+\end{align*}
+sont maitrisées et connues.
+Elles seront utilisées abondamment sans le signaler.
+La deuxième formule est d'ailleurs l'origine de beaucoup
+de facteur $2\pi$ dans les formules car $\dif\omega = 2\pi \dif f$.
 
 %  ____  _                   _
 % / ___|(_) __ _ _ __   __ _| |___
@@ -42,7 +54,7 @@ On nomme $T_s$, la période entre deux évaluations.
 En effet, passer d'un signal continu $x(t)$ à un signal discret
 $x[n] = x(nT_s)$ est appelé de l'échantillonnage qui en anglais se dit
 ``sampling''. D'où le $T_s$ qui réfère à la période de ``sampling''.
-L'échantillonnage est vu plus en détail à la section~\ref{sec:sampling}.
+L'échantillonnage est vu plus en détail à la \sectionref{sampling}.
 
 \subsection{Propriétés d'un signal}
 Un signal peut être pair si
@@ -93,7 +105,7 @@ On a les relations suivantes
 \begin{align}
   \label{eq:tfc}
   X(j\omega) & = \int_{-\infty}^\infty x(t) e^{-j\omega t} \dif t\\
-  \nonumber
+  \label{eq:tfci}
   x(t) & = \frac{1}{2\pi} \int_{-\infty}^\infty X(j\omega) e^{j\omega t}
   \dif \omega.
 \end{align}
@@ -140,7 +152,21 @@ En effet, on montre ici bien que c'est périodique de période $2\pi$
 en $\Omega$ car, si on prend $\Omega + 2\pi$,
 on obtient $X(e^{j(\Omega + 2\pi)}) = X(e^{j\Omega})$.
 
+La raison pour laquelle on parle en terme de $\Omega$ et non de $\omega$ n'est pas
+évidente à saisir.
+Lorsqu'on a un signal $x[n]$, parler de $f_s$ ou $T_s$ est un peu superflu.
+En effet, avec par exemple un signal $x(t) = \sin(2\pi f t)$.
+On a $x[n] = \sin\left(2\pi \frac{f}{f_s} t\right)$.
+On voit bien ici qu'un même signal $x[n]$ peut être produit par $(f,f_s) = (2,2)$
+ou par $(f,f_s) = (4,4)$ par exemple.
+Lorsqu'on calcule la tranformée de Fourier discrète, on veut une transformée de Fourier
+indépendante de $f_s$.
+Même si, lorsqu'on connait $f_s$, on peut facilement repasser à la transformée de Fourier
+classique en remplaçant $\Omega$ par $\omega T_s$.
+Pour ceux pour qui ça parait abstrait, voir la \sectionref{fft}.
+
 \subsection{Série de Fourier continue}
+\label{sec:sfc}
 Si on a un signal périodique de période $T$, on peut faire encore mieux.
 Au lieu de prendre toutes les fréquences possibles dans le domaine spectral,
 on ne va prendre que celle dont l'exponentielle correspondante est
@@ -148,7 +174,7 @@ aussi périodique de période $T$.
 
 Cela peut se justifier de la même manière que pour
 la transformée de Fourier discrète.
-En effet, on a vu à la section~\ref{sec:fourier_discret}
+En effet, on a vu à la \sectionref{fourier_discret}
 que la transformée de Fourier d'un signal discret
 donne un signal périodique.
 On peut donc s'attendre à ce que la transformée de Fourier inverse d'un
@@ -165,6 +191,20 @@ En posant $\omega_0 = \frac{2\pi}{T}$, on a donc
   x(t) & = \sum_{k=-\infty}^\infty X[k]e^{jk\omega_0t}.
 \end{align}
 
+On remarque que la série de fourier n'est pas un échantillonage de la transformée de fourier.
+C'est dû au fait qu'ici on divise par $T$.
+Si on tend $T$ vers l'infini, on voit qu'on a la transformée de fourier divisée par $T$.
+On a alors l'infini sur l'infini.
+Ça s'interprète assez facilement avec un exemple.
+Si on prend $x(t) = \exp(j\pi t)$, on a $T = 2$ et donc $\omega_0 = \pi$,
+on voit par \eqref{eq:tfci} que $X(j\omega) = 2\pi\delta(\omega - \pi)$ alors qu'on voit
+avec \eqref{eq:sfci} que $X[k] = \delta[k - 1]$.
+$X(j\pi)$ est infini alors que $X[1]$ vaut juste 1.
+
+On voit aussi que l'avantage de diviser par la longueur de l'intégrale c'est
+que $X[k]$ ne change pas si on intègre sur n'importe quel multiple de la période.
+On pourrait par exemple intégrer de $0$ à $2T$ et diviser par $2T$, on aurait le même résultat.
+
 \subsubsection{Série de Fourier d'une répétition de deltas}
 \label{sec:deltas}
 Soit un signal
@@ -180,7 +220,7 @@ De toute façon, c'est périodique donc l'intégrale est la même.}
   e^{-2\pi jkt/T} \dif t\\
   & = \frac{1}{T}\int_{-T/2}^{T/2} \delta(t) e^{-2\pi jkt/T} \dif t\\
   & = \frac{1}{T} e^{-2\pi jk0/T}\\
-  & = \frac{1}{T}.\\
+  & = \frac{1}{T}.
 \end{align*}
 
 Du coup, par \eqref{eq:sfci},
@@ -189,17 +229,40 @@ ce qui nous permet,
 par la linéarité de la transformée de Fourier et en nous aidant du
 tableau~\ref{tab:fourier_ex} et de la propriété de décalage en fréquentiel,
 d'obtenir le résultat assez intéressant
-qui nous sera utile dans la section~\ref{sec:sampling}
+qui nous sera utile dans la \sectionref{sampling}
 \[ X(j\omega) = \frac{2\pi}{T}
 \sum_{k=-\infty}^\infty \delta(\omega-2\pi k/T). \]
 
 \subsection{Série de Fourier discrète}
+\label{sec:sfd}
 Un signal discret et périodique a donc,
 selon le tableau~\ref{tab:recap_fourier}, une transformée
 périodique car il est discret et discrète car il est périodique.
 
-En considérant que $x[n]$ est de période $N$, on a donc,
-avec $\Omega_0 = \frac{2\pi}{N}$,
+En considérant que $x[n]$ est de période $N$.
+On combine les résultats de la transformée de Fourier discrète
+et de la série de Fourier continue.
+\begin{description}
+  \item[transformée de Fourier discrète]
+    La transformée de Fourier est périodique de période $\frac{2\pi}{T_s}$
+    lorsque $x$ est discet avec une période de discrétisation $T_s$.
+  \item[série de Fourier continue]
+    La transformée de Fourier est discrète de période de discrétisation
+    $\frac{2\pi}{T}$ lorsque $x$ est périodique de période $T$.
+\end{description}
+La transformée de Fourier est donc ici discrète et périodique.
+$x$ est discret et de période $N$, sa période en continue est donc $NT_s$
+car $T_s$ est la distance entre deux valeurs discrète.
+
+La transformée de Fourier a donc une période de discrétisation de $\omega_0 = \frac{2\pi}{NT_s}$
+et une période de $\frac{2\pi}{T_s}$.
+En prenant $\Omega = \omega T_s$ pour la même raison que pour la transformée de Fourier discrète,
+on a une signale avec une période de discrétisation de $\Omega_0 = \frac{2\pi}{N}$ et une période
+de $2 \pi$.
+La période de la transformée de Fourier en discret est donc $N$, comme celle du signal de départ!
+C'est pour ça que lorsqu'on applique FFT sur un vecteur de longueur $N$ on reçoit un vecteur de longueur
+$N$ également (voir \sectionref{fft}).
+On a donc
 \begin{align}
   \label{eq:sfd}
   X[k] & = \frac{1}{N} \sum_{n=0}^{N-1}x[n]e^{-jk\Omega_0n}\\
@@ -216,7 +279,7 @@ Les coefficients de cette combinaison linéaire sont alors les $X[k]$.
   \centering
   \begin{tabular}{|l|l|}
     \hline
-    \textbf{Temps} & \textbf{Fréquence}\\
+    \textbf{Temporel} & \textbf{Fréquentiel}\\
     \hline
     Continu & Non-périodique\\
     \hline
@@ -230,6 +293,76 @@ Les coefficients de cette combinaison linéaire sont alors les $X[k]$.
   \caption{Tableau récapitulatif de la transformée de Fourier}
   \label{tab:recap_fourier}
 \end{table}
+
+\subsection{Fast Fourier Transform (FFT)}
+\label{sec:fft}
+Le but de l'algorithme FFT est de calculer une transformée de Fourier de façon numérique.
+Le problème avec le numérique c'est qu'on ne sais pas s'occuper d'une infinité de points.
+On doit donc travailler sur un interval et avec une version discrétisée de la fonction.
+On effectue alors une série de Fourier discrète.
+Malheureusement, la série de Fourier discrète suppose que la fonction soit périodique.
+FFT ne va donc pas calculer la transformée de Fourier de la fonction mais la transformée
+de Fourier de la fonction obtenue en répétant l'interval et l'image de la fonction sur cet interval.
+
+L'algorithme prend donc en entrée les $N$ valeurs $x[0], \ldots, x[N-1]$ et calcule
+$X[0], \ldots, X[N-1]$.
+tels que
+\[ X[k] = \sum_{n=0}^{N-1}x[n]e^{-jk\Omega_0n} \]
+ou encore
+\[ X[k] = \sum_{n=0}^{N-1}x[n]e^{-j\frac{2\pi}{N} kn}. \]
+Pour obtenir la série de Fourier discrète,
+il faut encore diviser ce résultat par $N$
+comme on le voit avec l'équation~\eqref{eq:sfd}.
+
+Comme on l'a vu à la \sectionref{sfc},
+il ne faut pas interpréter les $X[k]$ comme la valeur de
+la transformée de Fourier en $k\omega_0$ mais plutôt la présence
+d'une composante $\exp(jk\omega_0 t)$ d'amplitude $X[k]$
+dans $x(t)$.
+Dans la transformée de Fourier, comme on l'a vu
+à l'exemple de la \sectionref{sfc},
+on a plutôt $2\pi X[k] \delta(\omega - k\omega_0)$.
+Par exemple, pour $\cos(4\pi)$ on peut s'attendre à
+une série de Fourier continue $\frac{\delta[k-1]+\delta[k+1]}{2}$
+pour $T = 1/2$ ($\omega_0 = \frac{2\pi}{T} = 4\pi$)
+et $\frac{\delta[k-2]+\delta[k+2]}{2}$
+pour $T = 1$ ($\omega_0 = \frac{2\pi}{T} = 2\pi$).
+
+Il faut bien comprendre également que l'algorithme FFT
+est indépendant de $T_s$ et donc de $T = nT_s$.
+On lui donne un vecteur de $N$ élément, il nous renvoit $N$
+élément.
+Il peut trouver $\Omega_0 = \frac{2\pi}{N}$ et utiliser
+l'équation~\eqref{eq:sfd} sans se soucier de $T_s$.
+On voit à la \sectionref{sfd} où le $T_s$ se simplifie.
+À nous donc de nous souvenir quel $T_s$ on a utilisé.
+On sait alors que $\omega_0 = \Omega_0 f_s$ et donc on peut
+calculer
+$X(j\omega) = 2\pi \sum_{k=0}^{N-1} X[k] \delta(\omega - k\omega_0)$.
+
+On voit qu'une manière simple de calculer la FFT est directement
+avec la formule.
+C'est un algorithme en $\bigoh(N^2)$.
+Les algorithmes utilisés en pratiques sont plus rapides ($\bigoh(N\log(N))$)
+et même plus précis.
+Voici un exemple d'utilisation de \lstinline|fft| avec \matlab{},
+avec un cosinus de fréquence $2$
+\begin{lstlisting}
+N = 10;
+t = (0:N-1) / N;
+u = cos(2*pi*2*t);
+U = fft(u) / N;
+f = 0:n-1;
+stem(f, U);
+\end{lstlisting}
+La ligne la moins évidente est la ligne 5 et la division par $N$.
+Essayez de la comprendre avec les formules de $\omega_0$, etc, vues plus haut.
+Pour avoir les fréquences de $-5$ à $4$ et non de $0$ à $9$,
+il faut remplacer les lignes 4 et 5 par
+\begin{lstlisting}
+U = fftshift(fft(u)) / N;
+f = (0:n-1) - n/2;
+\end{lstlisting}
 
 \subsection{Propriété de la transformée de Fourier}
 La transformée de Fourier a pas mal de propriétés intéressantes.
@@ -255,11 +388,14 @@ Pour des signaux \emph{non-périodiques} $x$ et $y$,
   \label{eq:prod2conv}
   \fourier\{xy\} & = \frac{1}{2\pi}X * Y
 \end{align}
-et pour des signaux \emph{périodiques} $x$ et $y$,
+et pour des signaux \emph{périodiques} $x$ et $y$
+où $X$ et $Y$ sont donc leur série de Fourier,
 \begin{align*}
   %\fourier\{x * y\} & = X Y\\ % TODO is it true ?
-  \fourier\{xy\} & = X * Y
+  \fourier\{xy\} & = X * Y.
 \end{align*}
+La disparition du facteur $\frac{1}{2\pi}$ et du au facteur
+$\frac{1}{T}$ de l'équation~\eqref{eq:sfc}.
 
 Une propriété très intéressante pour les équations différentielles est que
 \begin{align*}
@@ -326,13 +462,13 @@ La relation de Parseval permet de passer d'une certaine intégrale en temporel
 \label{sec:sampling}
 \subsubsection{Échantillonnage en temporel}
 Lorsqu'on échantillonne un signal continu $x(t)$ en $x_s(t)$,
-comme on a vu à la section~\ref{sec:fourier_discret},
+comme on a vu à la \sectionref{fourier_discret},
 son spectre devient périodique.
 
 En effet, échantillonner,
 revient à multiplier en temporel par
 \[ \sum_{n=-\infty}^{\infty} \delta(t-nT_s). \]
-C'est à dire, comme on a vu dans la section~\ref{sec:deltas} et
+C'est à dire, comme on a vu dans la \sectionref{deltas} et
 en utilisant \eqref{eq:prod2conv},
 faire une convolution en fréquentiel par
 \[ \frac{1}{2\pi} \times
@@ -488,7 +624,7 @@ et la différentiation en fréquence
 \[ \transfz^{-1}\left\{z\fdif{X(z)}{z}\right\} = -nx[n]. \]
 
 \subsection{Transformée en $z$ unilatérale}
-Comme pour la section~\ref{sec:laplacu}, on a besoin
+Comme pour la \sectionref{laplacu}, on a besoin
 d'une transformée en $z$ unilatérale pour résoudre les équations
 différentielles à conditions initiales non-nulles
 \begin{align*}
