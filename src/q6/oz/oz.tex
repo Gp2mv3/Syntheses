@@ -1,10 +1,35 @@
 \input{../../lib.tex}
 
-\lstset{language={Oz},morekeywords={for,do}}
+\lstset{language={Oz},morekeywords={for,do,lazy}}
 
 \newcommand{\st}{\mathrm{ST}}
 \newcommand{\ce}{\mathrm{CE}}
 \newcommand{\mozart}{Mozart}
+
+\usepackage{pgf}
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata}
+\usetikzlibrary{positioning}
+
+\tikzset{
+  state/.style={
+    rectangle,
+    rounded corners,
+    draw=black, very thick,
+    minimum height=2em,
+    inner sep=2pt,
+    text centered,
+    text width=2.5cm,
+  },
+  bad/.style={
+    state,
+    draw=dkred,
+  },
+  good/.style={
+    state,
+    draw=dkgreen,
+  },
+}
 
 \hypertitle{Concepts des languages informatiques}{6}{INGI}{1131}
 {Benoît Legat\and Arnaud Schils}
@@ -14,6 +39,72 @@
 Vous êtes invités à lire la synthèse de ce cours si ce n'est déjà fait.
 
 \part{Programmation avancée en \oz{}}
+La \figuref{paradigms} reprend les paradigmes abordés par ce cours.
+Ceux en rouge sont les paradigmes qui sont à éviter contrairement à ceux en vert qui sont des bons paradigmes.
+\begin{myfig}{paradigms}{Paradigmes du cours.}
+
+  \begin{tikzpicture}[->,>=stealth',node distance=3cm]
+    \node[state,text width=3cm] (FUNCTIONAL)
+    {functional programming};
+    \node [yshift=0.5cm,right of=FUNCTIONAL]
+    {\(\begin{cases}
+        \text{recursion}\\\text{higher-order}
+      \end{cases}\)
+    };
+
+    \node[good,
+      below of=FUNCTIONAL,
+      xshift=-5cm,
+      anchor=center] (DATAFLOW)
+    {deterministic dataflow};
+
+    \node[bad,
+      below of=FUNCTIONAL] (EVENTLOOP)
+    {event loop programming};
+
+    \node[state,
+      below of=FUNCTIONAL,
+      xshift=5cm,
+      anchor=center] (OOP)
+    {sequential OOP};
+    \node[yshift=0.5cm,right of=OOP,node distance=2cm] {\sc Java};
+
+    \node[state,
+      below of=DATAFLOW,
+      anchor=center] (LAZY)
+    {Lazy deterministic dataflow};
+    \node[below of=LAZY,anchor=east,node distance=1cm] {\sc Haskell};
+
+    \node[good,
+      below of=EVENTLOOP,
+      anchor=center] (AGENT)
+    {Multi-agent dataflow};
+    \node[below of=AGENT,anchor=east,node distance=1cm] {\sc Erlang};
+
+    \node[bad,
+      below of=OOP,
+      anchor=center] (CONCOOP)
+    {concurrent OOP};
+
+    \node[good,
+      below of=AGENT,
+      xshift=2.5cm,
+      anchor=center] (ACTIVE)
+    {Active objects};
+    \node[yshift=0.5cm,right of=ACTIVE,node distance=2cm] {\sc Scala};
+
+    \path
+    (FUNCTIONAL) edge node[anchor=south,above,sloped] {$+$ thread}  (DATAFLOW)
+    (FUNCTIONAL) edge node[anchor=south,above,sloped] {$+$ port}    (EVENTLOOP)
+    (FUNCTIONAL) edge node[anchor=south,above,sloped] {$+$ cell}    (OOP)
+    (DATAFLOW)   edge node[anchor=south,above,sloped] {$+$ by-need} (LAZY)
+    (EVENTLOOP)  edge node[anchor=south,above,sloped] {$+$ thread}  (AGENT)
+    (OOP)        edge node[anchor=south,above,sloped] {$+$ thread}  (CONCOOP)
+    (AGENT)      edge node[anchor=south,above,sloped] {$+$ cell}    (ACTIVE)
+    (CONCOOP)    edge node[anchor=south,above,sloped] {$+$ ports}   (ACTIVE);
+  \end{tikzpicture}
+\end{myfig}
+
 \section{Fonctions lazy}
 Lazy signifie paresseux en français.
 Une fonction lazy est une fonction qui ne va calculer son résultat qu'à partir du moment où on demande vraiment la valeur de son résultat.
@@ -57,6 +148,62 @@ end
 
 On peut remarquer qu'écrire \lstinline|proc lazy| n'aurait pas de sens car une n'a pas de résultat bien défini donc lors de la traduction
 en language noyau, on ne saurait quelle variable attendre.
+
+\section{Producer-Consumer}
+\begin{description}
+  \item[Eager producer-consumer]
+    Le producteur produit autant qu'il veut et le consommateur consomme ce qu'il produit et attend si le buffer est vide.
+    \textbf{Problème:} Le producteur peut causer un memory overflow.
+  \item[Lazy producer-consumer]
+    Le producteur attend que le consommateur demande un élément pour le produire.
+    \textbf{Problème:} Le consommateur doit attendre pour chaque élément.
+  \item[Bounded buffer]
+    Pareil que ``Eager producer-consumer'' mais le buffer a une taille limitée.
+\end{description}
+
+\section{Deterministic dataflow}
+\subsection{Avantages du deterministic dataflow} % TODO pourquoi il était mis limites ??
+\begin{itemize}
+  \item Tous les programmes fonctionnels peuvent devenir concurrents.
+  \item Les résultats ne changent pas quand on ajoute des threads.
+  \item Les calculs devient incrémentaux.
+  \item On construit des programmes avec des streams qui sont
+    des listes sans fin (ça donnera lieu aux stream objects et stream agents).
+\end{itemize}
+
+\subsection{Limitations du deterministic dataflow}
+Son déterminisme !
+\begin{itemize}
+  \item same inputs give same (or equivalent) results (eventually).
+  \item when the execution stops for a given input, the outputs are equivalent.
+\end{itemize}
+
+Il y a beaucoup de programmes qui doivent avoir un comportement non-déterministe.
+Par exemple, une application client-serveur avec au moins 2 clients.
+Le comportement de l'application dépend de l'ordre dans lequel le serveur
+reçoit les messages des clients, ce n'est donc pas déterministe.
+Pour résoudre cela, on introduit les ports.
+
+\subsection{Objets}
+Différents types d'objets
+\begin{itemize}
+  \item Stream objects
+  \item Port objects
+  \item Active objects
+  \item Passive objects (Java)
+\end{itemize}
+
+\section{Ports}
+Message protocols
+\begin{itemize}
+  \item RMI
+  \item asynchronous RMI
+  \item RMI with callback
+\end{itemize}
+
+\section{Shared-State Concurrency}
+Il y a 3 instructions atomiques,
+\lstinline|@|, \lstinline|:=| et \lstinline|Exchange|.
 
 \part{Définitions}
 Ceci est une liste exhaustive constituées par Arnaud Schils
