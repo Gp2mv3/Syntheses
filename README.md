@@ -13,12 +13,12 @@ et
 
 ## Documentation
 Ce README donne quelques premières indications
-quand à l'utilisation de ce repository.
+quant à l'utilisation de ce repository.
 Pour de plus amples informations,
 voir le [wiki](https://github.com/Gp2mv3/Syntheses/wiki).
 
 ## Comment contribuer
-La façon la plus simple de contribuer est de suggérez des améliorations
+La façon la plus simple de contribuer est de suggérer des améliorations
 en soumettant une issue sur le
 [bug tracker](https://github.com/Gp2mv3/Syntheses/issues).
 
@@ -27,10 +27,10 @@ en utilisant `git`,
 plus d'infos sur `git`,
 lisez la partie *Utilisation linéaire de Git* de
 [ce tutoriel](http://sites.uclouvain.be/SystInfo/notes/Outils/html/git.html)
-écrit par Benoît Legat, jettez aussi un oeuil dans le
+écrit par Benoît Legat, jetez aussi un oeil dans le
 [wiki](https://github.com/Gp2mv3/Syntheses/wiki).
 
-Vous pouvez visualiser le status des différentes synthèses
+Vous pouvez visualiser le statut des différentes synthèses
 [ici](https://github.com/Gp2mv3/Syntheses/wiki/Status).
 
 ### Contribuer à une synthèse existante
@@ -53,7 +53,7 @@ Un `$ make clean` est dans ces cas très utile.
 ### Ajouter un synthèse
 Supposons que vous vouliez ajouter une synthèse d'`info`
 pour `q2`.
-Commençez par créer un dossier `info` dans le dossier `q2` et
+Commencez par créer un dossier `info` dans le dossier `q2` et
 ajoutez-y le `Makefile` suivant
 
     MAIN_NAME=info
@@ -74,7 +74,7 @@ Ouvrez le fichier `lib.tex` pour plus d'information.
 
 Vous pouvez alors ajouter le contenu de votre synthèse entre
 `\hypertitle` et `\end{document}`.
-Vous pouvez aussi ajoutez des choses dans le préambule en les
+Vous pouvez aussi ajouter des choses dans le préambule en les
 ajoutant entre `\input` et `\hypertitle`.
 
 ### Package nécessaires pour compiler
@@ -82,8 +82,8 @@ Il vous sera parfois nécessaire d'avoir une installation plutôt complète de
 **LaTeX** pour compiler certaines synthèses.
 
 Si vous êtes sur **Linux**,
-assurez-vous que vous avez installé les packets suivants
-(si vous avez installé le packet **texlive-full**, vous devriez tous les avoir)
+assurez-vous que vous avez installé les paquets suivants
+(si vous avez installé le paquet **texlive-full**, vous devriez tous les avoir)
 
 * **texlive**
 * **texlive-fonts-extra**
