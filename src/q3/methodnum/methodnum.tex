@@ -1,7 +1,9 @@
 \input{../../lib.tex}
 
 \newcommand\fv[1]{{\bf #1}} % free vector
-
+\usepackage{graphicx}
+\usepackage{pgf,tikz}
+\usetikzlibrary{arrows}
 \usepackage{listings}
 \usepackage{numprint}
 \DeclareMathOperator{\dist}{dist}
@@ -68,7 +70,7 @@ En prenant $\phi_j(x) = x^j$, ça donne un système linéaire à résoudre.
 	1 			& X_0 		& \cdots & X_0^n  \\
 	1 			& X_1 		& \cdots & X_1^n  \\
 	\vdots	& \vdots 	& 			 & \vdots \\
-	1 			& X_n 		& \cdots & X_n^b
+	1 			& X_n 		& \cdots & X_n^n
 \end{bmatrix}
 \begin{bmatrix}
 	a_0 			\\
@@ -104,12 +106,18 @@ Il suffit de prendre
   {\prod_{i \neq j} (X_j - X_i)}.
 \]
 
-% TODO : add figure 1.3, page 7 (représentation graphique des
-% fonctions de de base de Lagrange).
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{fonctions_lagrange.png}
+	\caption{Les fonctions de base de Lagrange pour les abscisses $X_0 = 0$, 
+	$X_1 = \frac{1}{3}$, $x_2 = \frac{2}{3}$ et $X_3 = 1$ sur l'intervalle 
+	$[0,1]$. (Tiré du syllabus)}
+	\label{fig:lagrange}
+\end{figure}
 
 On remarque alors que la matrice de Vandermonde devient la matrice
 unité et que $a_j = U_j$. En effet, $\phi_i(X_j) = 0$ $\forall i \neq j$
-et $\phi_i(X_i) = 1$.
+et $\phi_i(X_i) = 1$ (voir figure~\ref{fig:lagrange}).
 
 \subsection{Interpolation en 2D}
 (Voir APE1, exerice 12) On peut étendre la notion d'interpolation à des fonctions à deux variables. Imaginons 
@@ -123,13 +131,11 @@ cas à deux dimensions.
 $$u(x, y) \approx u^h(x, y) = \sum U_i \phi_i(x, y)$$
 
 Où
-% Quelqu'un pour confirmer que c'est la bonne forme?
+
 $$\phi_j(x) = \frac{\prod_{i \neq j} (x - X_i)(y - Y_i)}
   {\prod_{i \neq j} (X_j - X_i)(Y_j - Y_i)}.$$
 	
 On a donc bien $\phi_i(X_i, Y_i) = 1$ et $\phi_i(X_j, Y_j) = 0 \forll j\neq i$.  
-% TODO : add figure 2.4, page 7 du syllabus de solutions (Représentation
-% graphiques des fonctions de bases bilinéaires).
 
 \subsection{Erreur d'interpolation}
 L'erreur d'interpolation du polynôme de Lagrange peut être calculée
@@ -287,13 +293,15 @@ qu'une B-spline est le cas particulier des NURBS où tous les $W_i$ valent 1.
 
 \part{Intégration numérique}
 Soit une fonction $u(x)$.
-Une intégrale classique recquière la primitive de $u(x)$.
+Une intégrale classique requiert la primitive de $u(x)$.
 Seulement, cette méthode est souvent assez fastidieuse à effectuer
 numériquement.
 
 L'intégration numérique se fait à partir de différents points $X_i$ auquels
-on donne un poids $w_i$ et de la formule suivante
+on donne un poids $w_i$. On utilise ensuite la formule suivante 
 \[ \int_a^b u(x) \dif x = I \approx I^h = \sum_{i=0}^m w_i u(X_i). \]
+
+qu'on appelle règle d'intégration ou \emph{quadrature}.
 Si $X_0 = a$ et $X_m = b$, on dit que la méthode est \emph{fermée},
 sinon, on dit qu'elle est \emph{ouverte}.
 
@@ -308,6 +316,7 @@ de variable
 \[ I = \int_a^b u(x) \dif x =
 \frac{b-a}{2} \int_{-1}^1 u(x(\xi)) \dif \xi. \]
 
+Où $x(\xi) = \frac{b-a}{2}\xi + \frac{b+a}{2}$.
 Par exemple, si $u(x) = x^2$, $a = 0$ et $b = 1$,
 on a $x(\xi) = \frac{\xi+1}{2}$ et donc $\dif x = \frac{1}{2}\dif \xi$ d'où
 \[ \int_0^1 x^2 \dif x =
@@ -326,7 +335,9 @@ Comme ils ne dépendent pas de $u$, on peut les calculer à priori.
 On remarque que si $u$ est un polynôme de degré $m$, $E^h = 0$.
 Mais comme $\int_{-1}^1 x^{2n+1} \dif x = 0$ $\forall n \in \mathbb{N}$,
 si $m$ est pair et que $u$ est un polynôme de degré $m+1$,
-on a aussi $E^h = 0$.
+on a aussi $E^h = 0$. Ceci permet d'expliquer pourquoi le degré
+de précision de la méthode de Simson est 3, alors qu'on utilise
+un polynôme de degré 2 comme interpolation de $u$.
 
 On a donc le tableau suivant où $d$ est le degré de précision de la méthode
 \begin{center}
@@ -341,6 +352,14 @@ On a donc le tableau suivant où $d$ est le degré de précision de la méthode
     \hline
   \end{tabular}
 \end{center}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{trapezes_simpson.png}
+	\caption{Interprétation géométrique de la méthode des trapèzes et de
+	la méthode de Simpson. (Tiré du syllabus)}
+	\label{fig:trapeze-simpson}
+\end{figure}
 
 \subsection{Méthodes composites}
 On a des méthodes efficaces pour calculer l'intégrale sur plusieurs
@@ -366,9 +385,20 @@ On a pour les méthodes avec $m = 1, 2, 4$, respectivement,
   \left(7U_{-2h} + 32U_{-h} +12U_0 + 32U_{h} + 7U_{2h}\right)
   -\frac{8h^7}{945}u^{(6)}(\xi).
 \end{align*}
+Les termes en $h^3$, $h^5$ et $h^7$ sont les erreurs \emph{locales}
+sur un sous-intervalle.
+
 \paragraph{Attention}
 Dans les équations précédentes, $h = (b-a), \frac{b-a}{2}, \frac{b-a}{4}$
 respectivement où $b-a$ est la longueur du sous l'intervalle.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.7]{trapezes_composites.png}
+	\caption{Méthode composite des trapèzes - Intervalles juxtaposés.
+	(Tiré du syllabus)}
+	\label{fig:trapeze-composite}
+\end{figure}
 
 \subsection{Erreur d'interpolation}
 On peut calculer l'erreur d'interpolation et obtenir les relations suivantes
@@ -378,7 +408,23 @@ pour, respectivement, $m = 1, 2, 4$
   |E^h| & \leq \frac{C_4(b-a)}{180}h^4\\
   |E^h| & \leq \frac{2C_6(b-a)}{945}h^6
 \end{align*}
-où $C_i$ est une borne de $|u^{(i)}(x)|$.
+où $C_i$ est une borne de $|u^{(i)}(x)|$. On remarque qu'on perd un ordre
+par rapport aux erreurs locales. Prenons par exemple l'erreur locale pour
+la méthode de Simpson : $E^h_\text{locale} = -\frac{h^5}{90}u^{(4)}(\xi) 
+= \frac{h^5}{90}C_4$. L'erreur totale est obtenue en sommant les erreurs locales
+des $n^$ sous-intervalles :
+
+$$E^h = \sum_{i=0}^n E^h_{locale, i}.$$
+
+On a donc que
+
+$$|E^h| \leq n\frac{h^5}{90}C_4.$$
+
+Or, pour la méthode composite de Simpson, $2nh = b-a$. On a donc finalement
+
+$$|E^h| \leq \frac{C_4(b-a)}{180}h^4$$
+
+où a donc bien perdu un ordre par rapport aux erreurs locales.
 
 \section{Gauss-Legendre: Méthodes à pas inégaux}
 Avec la méthode de Newton-Cotes, on sait, avec $n+1$ points, avoir
@@ -427,6 +473,8 @@ $F_{i, j}$ tels que $F_{i, 0} = f\left(\frac{h}{2^i}\right)$ et
 
 $F_{n, n}$ est une extrapolation d'ordre
 $\bigoh\left(h^{n+1}\right)$ de $f(0)$.
+
+% TODO : ajouter l'interprétation graphique de l'extrapolation de Richardson
 
 \subsection{Méthode de Romberg}
 Soit $f(h) = I^h$, l'intégrale exacte est $f(0)$.
@@ -498,6 +546,9 @@ On utilise aussi souvent $\hat{f}(x) \eqdef f(x, u(x))$.
 
 Définissons aussi la jacobienne de l'équation linéaire comme suit
 \[ J(x, u(x)) \eqdef \left.\fpart{f}{u}\right|_{(x,u(x))}. \]
+
+% Peut-être ajouter une section ou sous-section sur l'arithmétique
+% en virgule flottante?
 
 \section{Stabilité d'une équation différentielle}
 Avant de regarder comment résoudre cela numériquement,
