@@ -1,7 +1,7 @@
 \input{../../lib.tex}
 
 \newcommand\fv[1]{{\bf #1}} % free vector
-
+\usepackage{graphicx}
 \usepackage{listings}
 \usepackage{numprint}
 \DeclareMathOperator{\dist}{dist}
@@ -68,7 +68,7 @@ En prenant $\phi_j(x) = x^j$, ça donne un système linéaire à résoudre.
 	1 			& X_0 		& \cdots & X_0^n  \\
 	1 			& X_1 		& \cdots & X_1^n  \\
 	\vdots	& \vdots 	& 			 & \vdots \\
-	1 			& X_n 		& \cdots & X_n^b
+	1 			& X_n 		& \cdots & X_n^n
 \end{bmatrix}
 \begin{bmatrix}
 	a_0 			\\
@@ -104,8 +104,36 @@ Il suffit de prendre
   {\prod_{i \neq j} (X_j - X_i)}.
 \]
 
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{fonctions_lagrange.png}
+	\caption{Les fonctions de base de Lagrange pour les abscisses $X_0 = 0$, 
+	$X_1 = \frac{1}{3}$, $x_2 = \frac{2}{3}$ et $X_3 = 1$ sur l'intervalle 
+	$[0,1]$. (Tiré du syllabus)}
+	\label{fig:lagrange}
+\end{figure}
+
 On remarque alors que la matrice de Vandermonde devient la matrice
-unité et que $a_j = U_j$.
+unité et que $a_j = U_j$. En effet, $\phi_i(X_j) = 0$ $\forall i \neq j$
+et $\phi_i(X_i) = 1$ (voir figure~\ref{fig:lagrange}).
+
+\subsection{Interpolation en 2D}
+(Voir APE1, exerice 12) On peut étendre la notion d'interpolation à des fonctions à deux variables. Imaginons 
+par exemple que l'on veuille interpoler une fonction $u(x, y)$ par une fonction $u^h(x, y)$
+sur un domaine carré dont on connait la valeur de $u$ aux quatres sommets : $u(X_i, Y_i) = U_i$,
+$i = 0, 1, 2, 3.$ On pourrait prendre comme fonctions de bases les monômes $1$, $x$, $y$ et $xy$
+de sorte que $u^h(x, y) = a_0 + a_1x + a_2y + a_3xy$ et résoure le système linéaire qui en découle.
+Mais on peut faire mieux. Pour ce faire, on généralise la notion de fonction de base de Lagrange au 
+cas à deux dimensions.
+
+$$u(x, y) \approx u^h(x, y) = \sum U_i \phi_i(x, y)$$
+
+où
+
+$$\phi_j(x) = \frac{\prod_{i \neq j} (x - X_i)(y - Y_i)}
+  {\prod_{i \neq j} (X_j - X_i)(Y_j - Y_i)}.$$
+	
+On a donc bien $\phi_i(X_i, Y_i) = 1$ et $\phi_i(X_j, Y_j) = 0 \forall j\neq i$.  
 
 \subsection{Erreur d'interpolation}
 L'erreur d'interpolation du polynôme de Lagrange peut être calculée
@@ -118,10 +146,44 @@ par le Théorème~\ref{thm:error}.
   $x \in ]X_0, X_n[$, il existe $\xi(x) \in ]X_0, X_n[$ tel que
   \[ e^h(x) = \frac{u^{(n+1)}(\xi(x))}{(n+1)!}
   \prod_{i=0}^n (x - X_i). \]
-  $e^h(x)$ est donc d'ordre $n+1$, $e^h(x) = \bigoh(h^{n+1})$.
 \end{mytheo}
 
+\begin{myrem}\label{rem:borne}
+	En pratique on ne dispose pas de $u(x)$ et de $\xi(x)$, on ne dispose donc 
+	pas non plus de	$u^{(n+1)}(\xi(x)$). On va donc introduire une constante
+	$C$ qui borne toute les dérivées de $u(x)$ (dans certains cas c'est très simple, comme
+	pour $\sin(x)$ ou $\cos(x)$ dont la dérivée d'ordre $n+1$ sera comprise
+	entre $-1$ et 1). Il est également possible de démontrer que $\prod_{i=0}^n (x - X_i)
+	< n! \frac{h^{n+1}}{4}$ où $h$ est le pas entre les abscisses $X_i$ (voir APE1, question 5).
+	On peut donc finalement écrire 
+	
+	$$|e^h(x)| \leq \frac{C}{(n+1)!} \cdot n! \frac{h^{n+1}}{4} = \frac{C}{4(n+1)}h^{n+1}.$$
+	
+  $e^h(x)$ est donc d'ordre $n+1$, $e^h(x) = \bigoh(h^{n+1})$.
+\end{myrem}
+
+\subsection{Convergence de l'interpolation polynomiale}
+\begin{mydef}
+	Une interpolation est dite convergente si l'erreur d'interpolation tend vers
+	zéro lorsque le nombre de degrés de liberté, c'est à dire $n$ tend vers l'infini :
+	
+	$$\lim_{n \to \infty} e^h(x) = 0$$
+	
+	pour $x \in [X_0, X_n]$.
+\end{mydef}
+
+Comme on peut le voir au travers de la remarque \ref{rem:borne}, on peut prouver 
+ce résultat de convergence pour des fonctions $u(x)$ dont les dérivées sont
+bornées sur le domaine d'interpolation par une constante $C$ (e.g $\sin(x)$, $\cos(x)$, $e^x$).
+En effet, en se rappelant que $h = \frac{b-a}{n}$, on a bien 
+
+$$\lim_{n \to \infty} e^h(x) = C \lim_{n \to \infty} \frac{1}{4(n+1)}(\frac{b-a}{n})^{n+1} = 0.$$
+
 \subsection{Les abscisses de Chebyshev}
+Pour certaines fonctions $u(x)$ plus ou moins irrégulières (e.g fonctions de Runge),
+l'interpolation ne converge pas lorsque le nombre de points d'interpolation
+augmente : il y a présence de fortes oscillations de l'interpolant près des
+bords de l'intervalle d'interpolation lorsque le degré $n$ augmente.
 On peut réduire l'erreur maximale en essayant de la répartir le plus possible.
 Comme c'est au bord qu'il y a le plus d'erreur, l'idée serait de mettre
 plus de points au bord.
@@ -129,6 +191,9 @@ Pour cela, il suffit d'utiliser les abscisses de Chebyshev
 \[ X_i = \cos\left(\frac{(2i+1)\pi}{2(n+1)}\right). \]
 
 \subsection{Les splines cubiques}
+L'utilisation des abscisses de Chebyshev ne suffit parfois pas à faire converger
+l'interpolation polynomiale (c'est le cas pour des fonctions pas du tout régulière),
+il faut alors utiliser une autre méthode : l'interpolation polynomiale par morceaux.
 Au lieu de chercher un polynôme passant par tous les points, l'idée des
 splines cubiques est de prendre un polynôme différent entre chaque pair
 de points adjacents.
@@ -229,13 +294,15 @@ qu'une B-spline est le cas particulier des NURBS où tous les $W_i$ valent 1.
 
 \part{Intégration numérique}
 Soit une fonction $u(x)$.
-Une intégrale classique recquière la primitive de $u(x)$.
+Une intégrale classique requiert la primitive de $u(x)$.
 Seulement, cette méthode est souvent assez fastidieuse à effectuer
 numériquement.
 
 L'intégration numérique se fait à partir de différents points $X_i$ auquels
-on donne un poids $w_i$ et de la formule suivante
+on donne un poids $w_i$. On utilise ensuite la formule suivante
 \[ \int_a^b u(x) \dif x = I \approx I^h = \sum_{i=0}^m w_i u(X_i). \]
+
+qu'on appelle règle d'intégration ou \emph{quadrature}.
 Si $X_0 = a$ et $X_m = b$, on dit que la méthode est \emph{fermée},
 sinon, on dit qu'elle est \emph{ouverte}.
 
@@ -250,6 +317,7 @@ de variable
 \[ I = \int_a^b u(x) \dif x =
 \frac{b-a}{2} \int_{-1}^1 u(x(\xi)) \dif \xi. \]
 
+Où $x(\xi) = \frac{b-a}{2}\xi + \frac{b+a}{2}$.
 Par exemple, si $u(x) = x^2$, $a = 0$ et $b = 1$,
 on a $x(\xi) = \frac{\xi+1}{2}$ et donc $\dif x = \frac{1}{2}\dif \xi$ d'où
 \[ \int_0^1 x^2 \dif x =
@@ -268,7 +336,9 @@ Comme ils ne dépendent pas de $u$, on peut les calculer à priori.
 On remarque que si $u$ est un polynôme de degré $m$, $E^h = 0$.
 Mais comme $\int_{-1}^1 x^{2n+1} \dif x = 0$ $\forall n \in \mathbb{N}$,
 si $m$ est pair et que $u$ est un polynôme de degré $m+1$,
-on a aussi $E^h = 0$.
+on a aussi $E^h = 0$. Ceci permet d'expliquer pourquoi le degré
+de précision de la méthode de Simspon est 3, alors qu'on utilise
+un polynôme de degré 2 comme interpolation de $u$.
 
 On a donc le tableau suivant où $d$ est le degré de précision de la méthode
 \begin{center}
@@ -283,6 +353,14 @@ On a donc le tableau suivant où $d$ est le degré de précision de la méthode
     \hline
   \end{tabular}
 \end{center}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{trapezes_simpson.png}
+	\caption{Interprétation géométrique de la méthode des trapèzes et de
+	la méthode de Simpson. (Tiré du syllabus)}
+	\label{fig:trapeze-simpson}
+\end{figure}
 
 \subsection{Méthodes composites}
 On a des méthodes efficaces pour calculer l'intégrale sur plusieurs
@@ -308,9 +386,20 @@ On a pour les méthodes avec $m = 1, 2, 4$, respectivement,
   \left(7U_{-2h} + 32U_{-h} +12U_0 + 32U_{h} + 7U_{2h}\right)
   -\frac{8h^7}{945}u^{(6)}(\xi).
 \end{align*}
+Les termes en $h^3$, $h^5$ et $h^7$ sont les erreurs \emph{locales}
+sur un sous-intervalle.
+
 \paragraph{Attention}
 Dans les équations précédentes, $h = (b-a), \frac{b-a}{2}, \frac{b-a}{4}$
 respectivement où $b-a$ est la longueur du sous l'intervalle.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.7]{trapezes_composites.png}
+	\caption{Méthode composite des trapèzes - Intervalles juxtaposés.
+	(Tiré du syllabus)}
+	\label{fig:trapeze-composite}
+\end{figure}
 
 \subsection{Erreur d'interpolation}
 On peut calculer l'erreur d'interpolation et obtenir les relations suivantes
@@ -320,7 +409,23 @@ pour, respectivement, $m = 1, 2, 4$
   |E^h| & \leq \frac{C_4(b-a)}{180}h^4\\
   |E^h| & \leq \frac{2C_6(b-a)}{945}h^6
 \end{align*}
-où $C_i$ est une borne de $|u^{(i)}(x)|$.
+où $C_i$ est une borne de $|u^{(i)}(x)|$. On remarque qu'on perd un ordre
+par rapport aux erreurs locales. Prenons par exemple l'erreur locale pour
+la méthode de Simpson : $E^h_\text{locale} = -\frac{h^5}{90}u^{(4)}(\xi) 
+= \frac{h^5}{90}C_4$. L'erreur totale est obtenue en sommant les erreurs locales
+des $n$ sous-intervalles :
+
+$$E^h = \sum_{i=0}^n E^h_{locale, i}.$$
+
+On a donc que
+
+$$|E^h| \leq n\frac{h^5}{90}C_4.$$
+
+Or, pour la méthode composite de Simpson, $2nh = b-a$. On a donc finalement
+
+$$|E^h| \leq \frac{C_4(b-a)}{180}h^4$$
+
+où a donc bien perdu un ordre par rapport aux erreurs locales.
 
 \section{Gauss-Legendre: Méthodes à pas inégaux}
 Avec la méthode de Newton-Cotes, on sait, avec $n+1$ points, avoir
@@ -369,6 +474,8 @@ $F_{i, j}$ tels que $F_{i, 0} = f\left(\frac{h}{2^i}\right)$ et
 
 $F_{n, n}$ est une extrapolation d'ordre
 $\bigoh\left(h^{n+1}\right)$ de $f(0)$.
+
+% TODO : ajouter l'interprétation graphique de l'extrapolation de Richardson
 
 \subsection{Méthode de Romberg}
 Soit $f(h) = I^h$, l'intégrale exacte est $f(0)$.
@@ -440,6 +547,8 @@ On utilise aussi souvent $\hat{f}(x) \eqdef f(x, u(x))$.
 
 Définissons aussi la jacobienne de l'équation linéaire comme suit
 \[ J(x, u(x)) \eqdef \left.\fpart{f}{u}\right|_{(x,u(x))}. \]
+
+% TODO : arithmétique en virgule flottante
 
 \section{Stabilité d'une équation différentielle}
 Avant de regarder comment résoudre cela numériquement,
@@ -924,4 +1033,76 @@ help foo
 \end{lstlisting}
 ça affichera les premières lignes de commentaire du fichier \verb|foo.m|.
 
+\subsubsection{Interpolation polynomiale}
+Voici un exemple de code \matlab{} permettant d'approximer la fonction $u(x) = \sin(x)$
+par un polynôme $u^h(x)$ de degré 2 :
+
+On crée d'abord un vecteur contenant les abscisses $X_i$ pour lequels les ordonnées
+$U_i$ sont connues :
+
+\begin{lstlisting}
+X = [0, pi/2, pi];
+\end{lstlisting}
+
+On crée ensuite un vecteur contenant les ordonnées $U_i$ tel quel $u(X_i) = U_i$
+
+\begin{lstlisting}
+U = [0, 1, 0]; 
+\end{lstlisting}
+
+Remarquez que cette ligne de code peut être remplacée par la suivante :
+
+\begin{lstlisting}
+U = sin(X); 
+\end{lstlisting}
+
+On stocke ensuite les coéfficients du polynôme de degré 2 $ax^2 + bx + c$ interpolant la fonction
+dans un vecteur $(a, b, c)$ :
+
+\begin{lstlisting}
+coef = polyfit(X, U, 2); 
+\end{lstlisting}
+
+On peut enfin s'amuser à tracer $u(x)$ et $u^h(x)$ sur une même figure afin de vérifier la 
+qualité de l'interpolation. Dans un premier temps, on défini un vecteur $x$ contenant un
+ensemble de points. Pour ce faire, on utilise la fonction \lstinline{linspace(a, b, n)}. 
+Cette fonction va retourner un vecteur contenant $n$ points compris dans l'intervalle
+$[a, b]$ :
+
+\begin{lstlisting}
+x = linspace(0, pi, 100); 
+\end{lstlisting}
+
+On va ensuite évaluer l'interpolation polynomiale $u^h(x)$ sur cet ensemble de points :
+
+\begin{lstlisting}
+uh = polyval(coef, x); 
+\end{lstlisting}
+
+Enfin, on peut demander à \matlab{} de tracer ces deux fonctions :
+
+\begin{lstlisting}
+plot(x, uh); hold on; plot(x, sin(x));
+\end{lstlisting}
+
+Où la commande \lstinline{hold on} demande à \matlab{} d'afficher les deux courbes
+sur la même figure.
+
+\subsubsection{Spline cubique}
+La démarche est presque identique que celle présentée précédemment, seules deux 
+commandes changent. La commande pour calculer les coéfficients du spline
+est \lstinline{spline(X, U)} :
+
+\begin{lstlisting}
+coef = spline(X, U):
+\end{lstlisting}
+
+On peut alors évaluer cette spline de la manière suivante :
+
+\begin{lstlisting}
+uh = ppval{coef, x}; 
+\end{lstlisting}
+
+Remarquez qu'il est possible de combiner ces deux fonctions en ajoutant comme
+troisième argument à la fonction \lstinline{spline} l'ensemble de points $x$.
 \end{document}
