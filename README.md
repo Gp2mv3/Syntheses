@@ -59,14 +59,18 @@ ajoutez-y le `Makefile` suivant
     MAIN_NAME=info
     include ../q2.mk
 Ajoutez ensuite le fichier `info.tex` suivant,
-en supposant que vous vous appeliez Jean Dupont et que le cours
-soit `FSAB1402`
+en supposant que vous vous appeliez Jean Dupont, que le cours
+soit `FSAB1402` et qu'il soit donné par John Doe
 
     \input{../../lib.tex}
 
-    \hypertitle{Informatique}{2}{FSAB}{1402}
+    \hypertitle[']{Informatique}{2}{FSAB}{1402}
+    {Jean Dupont}
+    {John Doe}
 
     \end{document}
+L'argument `[']` doit être enlevé si le nom du cours 
+ne commence pas par une voyelle.
 Le `\begin{document}`, le titre et la table des matières
 sont fait par `\hypertitle`.
 Pas mal de nouvelles commandes sont aussi créées.
