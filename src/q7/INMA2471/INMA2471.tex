@@ -1,0 +1,450 @@
+\input{../../lib.tex}
+
+\usepackage{pifont}
+\usepackage{diagbox}
+\usepackage[normalem]{ulem}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\DeclareMathOperator{\epi}{epi}
+\DeclareMathOperator{\conv}{conv}
+\DeclareMathOperator{\dom}{conv}
+
+\hypertitle{en}{Optimization models and methods}{7}{INMA}{2471}
+{Benoît Legat}
+{François Glineur}
+
+\section{Reminder}
+\subsection{Convex set}
+\begin{mydef}[Convex set]
+  A set $X$ is convex if for all $x,y \in X$ and $\lambda \in [0,1]$,
+  $\lambda x + (1-\lambda) y \in X$.
+\end{mydef}
+
+\begin{myprop}
+  Let $X,Y$ be convex set.
+  The intersection $X \cap Y$ and the cartesian product $X \times Y$ are convex
+  but the union $X \cup Y$ is \emph{not} necessarily convex.
+\end{myprop}
+
+\subsection{Convex function}
+\begin{mydef}[Epigraph]
+  The epigraph of a function is defined as
+  \[ \epi(f) = \{(x,t) \in \Rn \times \R | f(x) \leq t\}. \]
+\end{mydef}
+
+\begin{mydef}[Convex function]
+  A function $f$ is convex iff $\epi(f)$ is convex.
+\end{mydef}
+
+\begin{myprop}
+  Let $f$ and $g$ be convex functions.
+  $\max(f,g)$ is convex but $\min(f,g)$ is \emph{not} necessarily convex.
+  \begin{proof}
+    \begin{align*}
+      \epi(\max(f,g))
+      & = \{(x,t) \in \Rn \times \R : \max(f(x),g(x)) \leq t\}\\
+      & = \{(x,t) \in \Rn \times \R : f(x) \leq t \land g(x) \leq t\}\\
+      & = \{(x,t) \in \Rn \times \R : f(x) \leq t\} \cap \{(x,t) \in \Rn \times \R : g(x) \leq t\}\\
+      & = \epi(f) \cap \epi(g)\\
+      \epi(\min(f,g))
+      & = \{(x,t) \in \Rn \times \R : \min(f(x),g(x)) \leq t\}\\
+      & = \{(x,t) \in \Rn \times \R : f(x) \leq t \lor g(x) \leq t\}\\
+      & = \{(x,t) \in \Rn \times \R : f(x) \leq t\} \cup \{(x,t) \in \Rn \times \R : g(x) \leq t\}\\
+      & = \epi(f) \cup \epi(g).
+    \end{align*}
+  \end{proof}
+\end{myprop}
+
+\begin{myprop}
+  If $f$ is convex and $g$ is linear, $f \circ g$ is convex.
+\end{myprop}
+
+\section{Model Building}
+\subsection{Building linear models}
+\subsubsection{Objective function}
+\begin{myprop}[Linear objective]
+  \label{prop:linobj}
+  Every optimization problem can be modeled with a linear objective.
+  \begin{proof}
+    Let
+    \begin{align*}
+      \min_{x \in \Rn} f(x)\\
+      x & \in X
+    \end{align*}
+    be a modelisation of the problem.
+    It can be reformulated as
+    \begin{align*}
+      \min_{x \in \Rn} t\\
+      f(x) & \leq t\\
+      x & \in X.
+    \end{align*}
+  \end{proof}
+\end{myprop}
+
+\begin{myrem}[Convex]
+  If the original model was convex, $f$
+  is convex and therefore, $f(x) \leq t \equiv \epi(f)$ defines % TODO define epi(f)
+  a convex set.
+  The intersection of convex sets is convex so the
+  reformulation is convex too!
+\end{myrem}
+
+\begin{myrem}[Piecewise linear]
+  If $f$ was piecewise linear, the reformulation is linear.
+\end{myrem}
+
+\subsubsection{Monotone transformation}
+We can apply strictly monotone transformation to equations and/or the objective
+(changing the inequality and/or the $\min$ in $\max$ if it is strictly decreasing).
+The reformulated model is equivalent but can become convex or even linear !
+
+\begin{myexem}[Geometric optimization]
+  The problem
+  \begin{align*}
+    \min_{r \geq 0} r_1 r_2 r_3 r_4 r_5\\
+    r_1r_2r_3 & \geq 1.05\\
+    r_2r_3r_4 & \geq 1.10\\
+    r_3r_4r_5 & \geq 1.15
+  \end{align*}
+  can be reformulated (since $\log$ is strictly increasing) as
+  \begin{align*}
+    \min_{r \geq 0} \log(r_1) + \log(r_2) + \log(r_3) + \log(r_4) + \log(r_5)\\
+    \log(r_1) + \log(r_2 + \log(r_3) & \geq \log(1.05)\\
+    \log(r_2) + \log(r_3 + \log(r_4) & \geq \log(1.10)\\
+    \log(r_3) + \log(r_4 + \log(r_5) & \geq \log(1.15)
+  \end{align*}
+  which is linear in $x_i \eqdef \log(r_i)$.
+\end{myexem}
+
+\subsubsection{D.E.A Data Envelopment Analysis}
+Let's analyse the non-convex problem
+\begin{align*}
+  \min_x \frac{c^T x + d}{f^T x + g}\\
+  Ax & \leq b
+\end{align*}
+under the asumption $f^Tx+g > 0$ for all $x$ such that $Ax \leq b$.
+
+Charnes and Cooper in \cite{charnes1985foundations} describes
+how to reformulate this as a convex problem.
+We introduce $t > 0$ and $y \in \in \mathbb{R}^n$
+such that $x = y/t$.
+The problem becomes
+\begin{align*}
+  \min_{y \in \mathbb{R}^n,t > 0} \frac{c^T y + dt}{f^T y + gt}\\
+  Ay & \leq bt
+\end{align*}
+which is \emph{homogeneous} since for $\lambda > 0$,
+$(y,t)$ and $(\lambda y, \lambda t)$ have the same objective
+and $(y,t)$ is admissible iff $(\lambda y, \lambda t)$ is admissible).
+
+We can therefore suppose that $f^T y + g t = 1$
+(if not, we take $\lambda = \frac{1}{f^Ty + gt}$ and
+$(y,t) \leftarrow (\lambda y, \lambda t)$), we have
+\begin{align*}
+  \min_x c^T y + dt\\
+  Ay & \leq bt.
+\end{align*}
+
+\subsection{Building convex model}
+
+\subsubsection{Convexification}
+Let's suppose that we have a general (see property~\ref{prop:linobj}) problem
+\begin{align*}
+  \min_x c^T x\\
+  x & \in X
+\end{align*}
+
+Its admissible domain is not necessarily convex but we can make it so while
+keeping the \emph{same} optimal value.
+
+\begin{mydef}[Convex hull]
+  The convex hull $\conv(X)$ of a set $X$ is the smallest convex set containing $X$.
+  It can be defined as the set of of all convex combinations of the points of $X$
+  \[ \left\{\sum_{i=1}^k \lambda_ix_i | x_1, \ldots, x_k \in X \lambda \sum \lambda_i = 1 \land \lambda_i \geq 0\right\}. \]
+\end{mydef}
+From the simple observation
+\begin{align*}
+  c^T\left(\sum_{i=1}^k \lambda_ix_i\right)
+  & = \sum_{i=1}^k \lambda_i c^Tx_i\\
+  & \geq \min_i c^Tx_i
+\end{align*}
+we see that the convexified problem has the same optimal solution but its optimal
+set is also a superset of the optimal set of the original problem.
+
+Sadly this is very hard to do in general even if it is easy in some case.
+
+\subsubsection{Strict convexity}
+\begin{mydef}[Strict convexity]
+  $f$ is strictly iff
+  \[ f(\lambda x + (1-\lambda)y) < \lambda f(x) + (1-\lambda)f(y) \]
+  for all $0 < \lambda < 1$ and for all $x,y$.
+\end{mydef}
+
+\begin{mytheo}
+  The problem
+  \begin{align*}
+    \min_x f(x)\\
+    x & \in X
+  \end{align*}
+  with $f$ stricly convex and $X$ convex has at most 1 optimal solution.
+\end{mytheo}
+
+If $\lap f(x)$ is positive definite for all $x$ then $f$ is strictly convex
+but it is \emph{not} necessary.
+For example $x^4$ is strictly convex but $12x^2$ is 0 for $x=0$ and
+is therefore only positive semi-definite.
+
+An usual trick to make a convex problem strictly convex is convexification
+\begin{mytheo}[Regularization]
+  If $f$ is convex then $f + \mu\|x\|^2$ is strictly convex for all $\mu > 0$.
+\end{mytheo}
+
+\subsubsection{Convex maximization}
+Let's first notice that since a linear function is both convexe and concave,
+a linear problem is both a convex minimizatoin \emph{and} a convex maximization.
+It has therefore the properties of both.
+
+\begin{mydef}[Extreme point]
+  Let $X$ be a convex set.
+  The point $x$ is said to be extreme if it does is not inside any segment formed
+  by two distinct points of $X$.
+\end{mydef}
+
+\begin{mytheo}
+  If the problem $\max_{x \in X} f(x)$ with $f$ and $X$ convex has an optimal solution,
+  one of the optimal solution is an extreme point of $X$.
+\end{mytheo}
+This is a property that we already knew for linear optimization.
+Now we see that it is actually a property of a bigger class of problems.
+
+\subsubsection{Quasiconvexity}
+\begin{mydef}[Quasiconvex]
+  A function $f$ is quasiconvex if for all $\alpha$,
+  its sub-level set
+  \[ L_\alpha(f) = \{x \in \dom f | f(x) \leq \alpha\} \]
+  is convex for all $\alpha$.
+\end{mydef}
+
+If $f$ is convex, $L_\alpha(f)$ is also convex for all $\alpha$
+but the converse is not true (e.g. $\sqrt{|x|}$).
+
+If $f$ is convex and $g$ is concave, $\frac{f}{g}$ is quasiconvex on $\{x | g(x) > 0\}$.
+We see that $\frac{f}{g} \leq \alpha$ is equivalent to
+$f - \alpha g \leq 0$ which is a convex set since $f - \alpha g$ is convex.
+Here we see that it only works for $\alpha \geq 0$, since if $\alpha < 0$, $-\alpha g$ is concave.
+
+\paragraph{Solving procedure}
+If the objective $f$ is quasiconvex and the admissible set $X$ is convex then
+we can find the optimal solution using bisection.
+If the convex set
+\begin{align*}
+  f(x) & \leq \alpha\\
+  x & \in X
+\end{align*}
+is empty, $\alpha$ is a lower bound.
+Otherwise it is an upper bound.
+
+Checking whether it is non-empty can be done by solving a convex problem
+such as
+\begin{align*}
+  \min 0\\
+  f(x) & \leq \alpha\\
+  x & \in X
+\end{align*}
+
+% TODO relation restriction
+
+\section{Alternative et duality}
+\subsection{Theorems of the alternative}
+\begin{mytheo}[Farkas' lemma]
+  Only one of the two following systems has a solution
+  \begin{align*}
+    Ax & \leq b & A^T\lambda & = 0\\
+       & & \lambda & \geq 0\\
+       & & b^T\lambda & < 0.
+  \end{align*}
+  Only one of the two following systems has a solution
+  \begin{align*}
+    Ax & = b & A^T\lambda & \geq 0\\
+     x & \geq 0 & b^T\lambda & < 0.
+  \end{align*}
+  Only one of the two following systems has a solution
+  \begin{align*}
+    Ax & = b & A^T\lambda & = 0\\
+       & & b^T\lambda & \neq 0.
+  \end{align*}
+\end{mytheo}
+
+\subsection{Duality and certificates}
+Let's consider the problem primal (P)
+\begin{align*}
+  \max b^Ty\\
+  Ay & \leq c
+\end{align*}
+
+If we want to prove that the optimal objective is $\theta$,
+we have to find a proof that
+\[ Ay \leq c \Rightarrow b^Ty \leq \theta. \]
+Let's analyse the LHS
+\begin{align*}
+  a_1 y & \leq c_1\\
+  \vdots \quad  & \quad\quad \vdots\\
+  a_m y & \leq c_m
+\end{align*}
+For $x \geq 0$, this system implies the following system
+\begin{align*}
+  x_1 a_1 y & \leq x_1 c_1\\
+  \vdots \quad  & \quad\quad \vdots\\
+  x_m a_m y & \leq x_m c_m
+\end{align*}
+and also
+\begin{align*}
+  \sum_{i=1}^m x_m a_m y & \leq \sum_{i=1}^m x_m c_m\\
+  x^T A y & \leq x^T c.
+\end{align*}
+
+We see that $\lambda$ is a certificate for $\theta$ if
+\begin{align*}
+  A^T x & = b\\
+  c^T x & = \theta\\
+  x & \geq 0.
+\end{align*}
+
+Of course, finding a certificate just gives us an upper bound.
+Finding the certificate for the lowest upper bound is the optimization problem
+\begin{align*}
+  \min c^T x\\
+  A^T x & = c\\
+  x & \geq 0
+\end{align*}
+which is called the \emph{dual} (D) of (P).
+
+Of course if we find an admissible couple $(y,x)$ for which $b^T y = \theta$ and
+$c^T x = \theta$ we are sure that $\theta$ is the optimal value.
+In this case $x$ is called the optimality certificate of $y$.
+
+\subsubsection{Weak and strong duality}
+\begin{mytheo}[Weak duality]
+  For all admissible solution $y$ of the primal and all admissible solution $x$ of the dual,
+  \[ b^Ty \leq c^Tx. \]
+\end{mytheo}
+
+\begin{mytheo}[Strong duality]
+  Let $y^*$ be an optimal solution for (P).
+  Then there exists an (optimal\footnote{The fact that this solution is optimal is a consequence of the weak duality}) solution $x^*$ to the problem (D) such that
+  \[ c^Tx^* = b^Ty^*. \]
+\end{mytheo}
+
+\begin{mycorr}
+  The different possibilites are summarized below
+  \begin{center}
+    \begin{tabular}{l|c|c|c}
+      \diagbox{P}{D} & impossible & finite & unbounded\\
+      \hline
+      impossible & \checkmark & \xmark & \cmark\\
+      \hline
+      finite & \xmark & \cmark & \xmark\\
+      \hline
+      unbounded & \cmark & \xmark & \xmark\\
+    \end{tabular}
+  \end{center}
+  \begin{itemize}
+    \item If (P) is unbounded, (D) is impossible.
+    \item If (D) is unbounded, (P) is impossible.
+    \item If (P) is finite, (D) is finite.
+    \item If (D) is finite, (P) is finite.
+    \item \sout{If (P) is impossible, (D) is unbounded.}
+    \item \sout{If (D) is impossible, (P) is unbounded.}
+  \end{itemize}
+  $\checkmark$ means that it is possible but is unstable
+  in the sense that for a problem for which the dual and the primal is
+  impossible, modifying a little bit $A$, $b$ or $c$ makes it fall in another category.
+
+  In practice, we are never in this category except if the problem has
+  been crafted on purpose.
+\end{mycorr}
+
+% TODO Analyse de sensibilité
+
+\subsection{Robust optimization}
+Let consider a linear problem
+\begin{align*}
+  \max b^T y\\
+  a_i^Ty & \leq c_i & \forall i, a_i \in \mathcal{A_i} = \{a | C_ia \leq d_i\}.
+\end{align*}
+
+Each constraint is equivalent to
+\[ \max_{a_i \in \mathcal{A}_i} y^Ta_i \leq c_i. \]
+The LHS is a linear optimization problem in $a_i$ (not $y$ !).
+By strong duality, we know that it is equivalent to
+\begin{align*}
+  \min d_i^Tx & \leq c_i\\
+  C_i^T x & = y\\
+  x & \geq 0
+\end{align*}
+or simply asking that there exists an $x$ such that
+\begin{align*}
+  d_i^Tx & \leq c_i\\
+  C_i^T x & = y\\
+  x & \geq 0
+\end{align*}
+but asking for the existence of such $x$ is done
+by adding these 3 constraints in the model.
+
+\section{Conic optimization}
+For a cone $K$,
+we define the parial order $\succeq_K$ as
+\[ y \preceq x \iff x \succeq_K y \iff x - y \succeq_K \iff x - y \in K. \]
+It is a \emph{partial} order since there can be $x,y$ such that
+neither $x \succeq y$ nor $x \preceq y$.
+
+\begin{mydef}[Convex cone]
+  A convex cone is a set $K$ such that
+  \begin{itemize}
+    \item if $x \in K$ and $\lambda \in \mathbb{R}_+$, $\lambda x \in \preceq_K$
+      (i.e. if $x \preceq_K y$, $\lambda x \preceq_K \lambda y$);
+    \item $x, y \in K$, $x + y \in K$
+      (i.e. if $x_1 \preceq_K y_1$ and $x_2 \preceq_K y_2$, $x_1 + x_2 \preceq y_1 + y_2$).
+  \end{itemize}
+\end{mydef}
+It is interesting to compare it with the definition of a vector space.
+The difference is that here we impose that $\lambda \geq 0$.
+If we allowed $\lambda < 0$, it would mean that if $x \preceq y$, $-x \preceq -y$ and that wouldn't work.
+
+\begin{mydef}[Regular cone]
+  A regular cone is a convex cone $K$ such that
+  \begin{itemize}
+    \item $K$ is closed;
+    \item $K$ has a non-empty interior;
+    \item $K \cap (-K) = \{0\}$ (i.e. $K$ is \emph{pointed}).
+  \end{itemize}
+\end{mydef}
+The fact that $K$ is pointed means that $x \preceq_K 0 \iff 0 \preceq_K -x$.
+For example, the cone $\{(x,y) \in \mathbb{R}^2 | x \geq 0\}$ is not pointed.
+
+\begin{mydef}[Lorentz cone]
+  The Lorentz cone $\mathbb{L}^n$ is defined as
+  \[ \mathbb{L}^n \eqdef \left\{(x_0, x_1, \ldots, x_n) \in \mathbb{R}^{n+1} | x_0 \geq \|(x_1, \ldots, x_n)\|_2 = \sqrt{x_1^2 + \cdots + x_n^2}\right\}. \]
+\end{mydef}
+
+\begin{myexem}[Ellipsoid]
+  An ellipsoid is defined as $\{x|(x-c)^TE(x-c) \leq 1\}$ wher $c$ is the center
+  and $E \succ 0$.
+  Using Cholesky factorization, we have $E = LL^T$ and the condition becomes
+  \begin{align*}
+    \sqrt{(x-c)^TE(x-c)} & \leq 1\\
+    \sqrt{(x-c)^TLL^T(x-c)} & \leq 1\\
+    \|L^T(x-c)\|_2 & \leq 1\\
+    \begin{pmatrix}
+      1\\
+      L^T(x-c)
+    \end{pmatrix}
+    & \in \mathbb{L}^n.
+  \end{align*}
+\end{myexem}
+
+\biblio
+%http://www2.isye.gatech.edu/~nemirovs/Lect_IPM.pdf
+
+\end{document}
