@@ -1,0 +1,136 @@
+\input{../../lib.tex}
+
+\usepackage{multirow}
+
+\hypertitle{en}{Computer Networks : Information transfer}{5}{INGI}{1341}
+{Benoît Legat}
+{Olivier Bonaventure}
+
+\section{Layers}
+
+The different layers are represented by the \tabref{layers}.
+A router only has the 3 layers: Network, Datalink and Physical.
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{|c|c|c|p{4cm}|c|}
+    \hline
+    \multicolumn{3}{|c|}{Layers} & Protocols & PDU\footnote{Protocol Data Unit}\\
+    \cline{1-3}
+    CNP3 & TCP/IP & OSI & & \\
+    \hline
+    \multirow{3}{*}{Application} & \multirow{3}{*}{Application}             & Application  & DHCP, DNS, FTP, HTTP, NFS, NTP, SMTP, SNMP, Telnet & ADU\\
+    \cline{3-5}
+                                 &                                          & Presentation & MIME, XDR, SSL &\\
+    \cline{3-5}
+                                 &                                          & Session      & RTP, TLS & SDU\\
+    \hline
+    Transport                    & Transport                                & Transport    & UDP, MPTCP, TCP, SCTP & segment\\
+    \hline
+    Network                      & Internet                                 & Network      & ICMP, IPsec, IPv4, IPv6, IPX & packet\\
+    \hline
+    Datalink                     & \multirow{2}{*}{Link}                    & Datalink     & IEEE 802.3 (Ethernet), ATM, ARP, Frame Relay, HDLC, IS-IS, LAPB, LLC, MAC, PPP, SLIP & frame\\
+    \cline{1-1}
+    \cline{3-5}
+    Physical                     &                                          & Physical     & IEEE 802.3 (Ethernet), IEEE 802.11 (WLAN) & bit\\
+    \hline
+  \end{tabular}
+  \caption{This table contains all the protocols of \cite{bonaventure2011computer}. See \cite{wiki:osimodel} for more protocols.}
+  \label{tab:layers}
+\end{table}
+
+\begin{myexem}
+  An HTTPS request will use the following protocols in each layer of the OSI model:
+  \begin{description}
+    \item[Application] HTTP,
+    \item[Presentation] SSL,
+    \item[Session] TLS,
+    \item[Transport] TCP,
+    \item[Network] IPv6,
+    \item[Datalink] IEEE 802.3 (Ethernet),
+    \item[Physical] IEEE 802.3 or IEEE 802.11 (Wireless Local Area Network).
+  \end{description}
+\end{myexem}
+
+\subsection{Physical Layer}
+The Physical Layer service is provided by
+\begin{description}
+  \item[Electrical cable] twisted pairs or coaxial cables;
+  \item[Optical fiber] multimode or monomode;
+  \item[Wireless] laser for point-to-point and radio-based for spread signal (e.g. WIFI).
+\end{description}
+Its PDU is the bit and it may
+\begin{itemize}
+  \item change the value of a bit;
+  \item deliver more bits than requested;
+  \item deliver fewer bits than requested.
+\end{itemize}
+That is why it is considered unreliable.
+
+\subsection{Datalink Layer}
+The PDU of Datalink Layer service is a frame.
+A frame is separated in 3 parts
+\begin{description}
+  \item[Header] It contains a flag to tell whether it is an ACK or DATA, a sequence number and sometimes the length of the payload.
+  \item[Payload] It contains the information that needs to be transmitted.
+  \item[Error Detection Code] It allows the receiver to detect transmission errors.
+    It is either
+    \begin{itemize}
+      \item a checksum such as the Internet checksum chosen by the TCP/IP community and the
+        Fletcher checksum chosen by the OSI community;
+      \item or a Cyclic Redundancy Check (CRC).
+        It was slow to implement in software before 1995 and the publication of \cite{feldmeier1995fast}.
+        It is now preferred since it has better error detection \cite{stone1998performance}.
+        An $n$ bit CRC can detect errors if there are at most $n$
+        bits in error or if there is an odd number of bits in error.
+    \end{itemize}
+  \item[Error Correction Code] It allow the receiver to correct transmission errors.
+    No widely used datalink protocol use this.
+\end{description}
+
+The separation of frames are done using \emph{bit stuffing}
+or \emph{character stuffing}.
+
+\subsubsection{Recover from failures}
+Thanks to the ACK flag in the header and the Error Detection Code,
+we can try to recover from failures of the physical layers
+and provide a reliable service.
+
+Since the Physical Layer does not reorder the bits,
+the frames will not be reordered either.
+Providing a reliable service it therefore easier than for the Transport Layer that has to cope with the reordering of packets in the Network Layer (it has to discard packets to old packets and have maximal throughput because of that).
+
+There are 3 ways of achieving a reliable Datalink Layer.
+\begin{enumerate}
+  \item[ABP]
+    The Alternating Bit Protocol is
+    a particular case of go-back-n for $n = 2$.
+  \item[Go-back-n]
+    Go-back-n is simple, the receiver discards all out of sequence frames
+    and the ACK always contains the last in sequence frame received.
+
+    The sender has simply one timer and when it expires, it retransmits \emph{all}
+    its unacked frames.
+  \item[Selective Repeat]
+    The difference with the go-back-n is that the receiver stored out of sequence frames received,
+    even if cumulative acknowledgement is still used.
+    When an out of sequence (e.g. sequence number 3) frame is received while the last acked frame was for example 1,
+    the ACK contains 1.
+    However when the frame 2 is received correctly, the receivers remembers that it has already received the frame 3
+    and the ACK contains 3.
+    In consequence, the sender has now a timer for each frame of the sending window.
+
+    The ACK sometimes also contains the list of out of sequence frame received (\emph{selective acknowledgement})
+    to avoid useless retransmission.
+\end{enumerate}
+
+Since the Physical Layer will not reorder the frames,
+if the sequence number has $n$ bits and we use $2^n$ different sequence numbers,
+the maximum window size for the go-back-n is $2^n-1$ and is $2^{n-1}$ for the Selective Repeat.
+
+\paragraph{Piggybacking}
+When DATA is sent in both directions, an ACK frame and a DATA frame sent by one side are sometimes merged in one
+because an ACK frame does not need a lot of bit to do its job.
+
+\biblio
+
+\end{document}
