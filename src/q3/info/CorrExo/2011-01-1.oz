@@ -12,26 +12,49 @@ in
 end
 
 fun {MulN Ass}
-   Out
-   proc {MulNAux LA LB N}
-      case LA#LB of nil#nil then skip
-      [](H1|T1)#(H2|T2) then Out.N={Mul2 H1 H2}
-	 {MulNAux LA T2 N+1}
-      [](H1|T1)#nil then
-	 case T1 of nil then skip
-	 [](H2|T2) then {MulNAux T1 T2 N}
+   Leng = {Length Ass}
+   fun {MulNAux N}
+      NewTuple = {MakeTuple '#' Leng}
+      {Fill NewTuple 1 L Ass}
+      NewTuple|{MulNAux N+1}
+   end
+   proc {Fill Tuple N Indexs Ass}
+      case Indexs#Ass of nil#nil then Tuple
+      [](H1|T1)#(H2|T2) then
+	 Tuple.N = {GetValueAtIndex H2 H1}
+	 {Fill Tuple N+1 T1 T2}
+      else
+	 skip
+      end
+   end
+
+   fun {Increment ListOfPos PosToInc} %returne une liste avec les nouvelles positions
+      fun {IncrementAux ListOfValues ListOfPosAux Pos}
+	 case ListOfValues#ListOfPosAux of (H1|T1)#(H2|T2) then
+	    if Pos==1 andthen H2 < {Length H1} then
+	       (H2+1)|T2
+	    elseif Pos==1 then
+	       {Increment Ass LPos PosToInc+1}
+	    elseif Pos==0 then
+	       endofproc
+	    else
+	       H2|{Increment T1 T2 PosToIncAux+1}	       
+	    end
 	 end
       end
+   in
+      {IncrementAux Ass ListOfPos PosToInc}
    end
-   fun{CountLengthOut N Acc}
-      if N < {Length Ass} then {CountLengthOut N+1 Acc+N}
-      else
-	 Acc
+
+   fun {GetValueAtIndex List Index}
+      case List of H|T then
+	 if Index==1 then H
+	 else {GetValueAtIndex T Index-1}
+	 end
       end
-   end
+   end   
    
 in
-   Out = {MakeTuple prodCart {CountLengthOut 2 1}}
    case Ass of (H|T) then {MulNAux Ass T 1} Out
    else error
    end
