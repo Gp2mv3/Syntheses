@@ -230,6 +230,8 @@ Here will be presented different algorithm to search in a tree.
 \begin{tabular}{|l|m{2cm}|m{2cm}|m{2cm}|m{2cm}|m{2cm}|m{2cm}|}
 \hline
 & \textbf{BFS} & \textbf{UCS} & \textbf{DFS} & \textbf{DLS} & \textbf{IDS} & \textbf {BDS}\\
+\hline
+& level by level & cheap path & last depth & limited depth & iterative depth & bi direct  \\
 
 \hline
 \hline
@@ -341,132 +343,202 @@ and a \textit{space complexity} of $O(b^{d/2})$.
 
 \subsection{Informed search}
 
-On  the  previous  algorithm,  we   didn't  use  any  information  about
-the  solution,  in \textit{informed  search}  we  are going  to  exploit
-informations on the node to make a decision.
-
 \begin{description}
-\item[Informed search] we search using problem specific knowledge and find and/or deduce information about future states and future paths.
+    \item[Informed search] we search using problem specific knowledge and find and/or deduce information about future states and future paths. (\textit{exploit informations on the node
+        to make better decision})
 \end{description}
 
-We are going to use an evaluation function $f(n)$ that evaluates if the node $n$ is a good candidate to expand (select the node that minimize $f(n)$). Take care that this is an \textbf{evaluation} function \textbf{not the exact} distance.\footnote{If it was the exact distance, we would already know if we are (or not) on the solution path, and we would never have to change direction at any point during the search.}
 
-\subsubsection{Best-first search}
+\begin{figure}[h]
+    \centering
+    \begin{tabular}{|l|m{2.5cm}|m{2.5cm}|m{2.5cm}|m{2.5cm}|m{2.5cm}|}
+        \hline
+        & \textbf{GBFS} & \textbf{A*} & \textbf{IDA*} & \textbf{RBFS} & \textbf{SMA*} \\
+        \hline
+        & best solution & total estimated & A* with iterative deepening & \\
 
-BFS is afamily of search methods on trees and graphes. It is the same algorithm that we saw earlier, but we add the \textit{evaluation function} in the \textcolor{red}{priority queue}.
+        \hline
+        \hline
+        \textbf{Complete} & No (loop) & \textcolor{red}{if} $\epsilon$ > 0 & Yes  \\
+        \hline
+        \textbf{Optimale} & NO & \textcolor{red}{if} admissible, consistante & \textcolor{red}{if} admissible, consistante\\
+        \hline
+        \textbf{Time} & $b^m$ & $b^m$ & Exponential\\
+        \hline
+        \textbf{Space} &$b^m$ & $b^m$ & Linear\\
+        \hline
+        Frontier & Priority & Priority &Priority &\\
+        \hline
+    \end{tabular}
+    \caption{Informed Search Algorithm}
+\end{figure}
 
-Two example:
-\begin{itemize}
-\item Greedy best-first search
-\item A*
-\end{itemize}
+
+\paragraph{Best-first search}
+
+is a general search algorithm (Tree or graph) in wich a node is selected
+for  expansion based  on  a \textbf{evaluation  function} ($f(n$).  This
+function is  construed as a  \textit{estimate cost}\ldots so  the lowest
+evaluation is expanded first. So we use \textcolor{red}{priority queue}.
+
+Take care that  this is an \textbf{evaluation}  function \textbf{not the
+exact} distance.\footnote{If it was the exact distance, we would already
+know if we are (or not) on the solution path, and we would never have to
+change direction at any point during the search.}
 
 \subsubsection{Heuristics functions}
 
 A \textbf{heuristic function}, denoted $h(n)$, is the estimated cost of the node to the goal.\footnote{$f(n)=g(n)$} Obviously we don't know this cost, so we'll have to approximate it. You have to define the heuristic function for each problem you'll have to solve. 
 
 \begin{description}
-\item[Optimistic heuristic] an admissible heuristic
-\item[Admissible heuristic] it never overestimates the cost of reaching the goal, i.e. the cost it estimates to reach the goal is not higher than the lowest possible cost from the current point in the path.\cite{wikiadmheur} \textbf{TODO: explain properly}
-\item[Consistent heuristic] The estimation from a node $n$ to the goal, is lesser than the cost\footnote{Not an estimation, the exact cost} from $n$ to a new node $n'$ with the estimation from the node $n'$ to the goal ($h(n) \leq c(n,a,n')+h(n')$).
-    Consistent heuristic is admissible.
-\item[Contour] a countour is a set of nodes with $f(n) \leq$ some fixed value
+    \item[Contour] a countour is a set of nodes with $f(n) \leq$ some fixed value
+
+    \item[Optimistic heuristic] an admissible heuristic because they think the cost of solving the problem is less thant it actually is
+
+    \item[Admissible heuristic] it never overestimates the cost of reaching the goal, i.e. the cost it estimates to reach the goal is not higher than the lowest possible cost from the current point in the path.\cite{wikiadmheur} $h(n)$ = 0 if is a goal state.
+        
+    \item[Consistent heuristic] The estimation from a node $n$ to the goal, is lesser than the cost\footnote{Not an estimation, the exact cost} from $n$ to a new node $n'$ with the estimation from the node $n'$ to the goal $$h(n) \leq c(n,a,n')+h(n')$$
+        Consistent heuristic is admissible.
+
+    \item[Triangle inequality] :\\ 
+        \begin{tabular}{m{8cm}m{7cm}}
+
+            Each side of a triangle cannot be longen than te sum of
+        the other two sides. 
+        &
+        \begin{tikzpicture}
+            \node[circle, draw, minimum size=0.8cm,] (N) {n};
+            \node[circle, draw, minimum size=0.8cm, below right = 0.5cm and 2cm of N] (NN) {n'};
+            \node[circle, draw, minimum size=0.8cm, right = 4cm of N] (G) {G};
+
+            \path (N) edge[->] node[below left] {$h(n)$} (NN) ;
+            \path (NN) edge[->] node[below right] {$c(n, a, n')$} (G) ;
+
+            \path (N) edge[->] node[above] {$h(n')$} (G) ;
+
+        \end{tikzpicture}
+    \end{tabular}
+
+    \item[Monotonicity] If $h(n)$ is consistent (Let a be an action and n,n'
+    two nodes we  have $h(n) \leq c(n,a,n') + h(n')$)  then $f(n)$ along any
+    path is non decreasing.
+
+        Suppose that $n'$ is successor of $n$. We have
+        \begin{eqnarray*}
+            g(n') &=& g(n) + c(n,a,n')\\
+            f(n') &=& g(n') + h(n')\\
+            &=& g(n) + c(n,a,n') + h(n')\\
+            c(n,a,n') +h(n') &\geq& h(n)\\
+            g(n) + c(n,a,n') + h(n') &\geq& g(n) + h(n)\\
+            &\geq& f(n) \\
+            f(n') &\geq& f(n)
+        \end{eqnarray*}
 \end{description}
 
-\subsubsection{Algorithm: Greedy best-first search}
 
-This algorithm calculate directly the heuristic using only the evaluated distance. It ain't good because you don't take into account the path cost and you may come to no solution at all. 
+\subsubsection{Algorithm: Greedy Best-first search}
+GBFS tries to expand the node that is \textbf{closest} to the goal.
+(\textit{For path finding, the straight-line distance})
 
-\begin{figure}[h]
-\centering
-\begin{tabular}{|llll|}
-\hline
-\textbf{Complete} & \textbf{Time complexity} & \textbf{Space complexity} & \textbf{Optimal} \\
-\hline
-No& $O(b^m)$ & $O(b^m)$ & No\\
-\hline
-\end{tabular}
-\caption{Greedy best-first search analysis}
-\end{figure}
+\paragraph{Criteria} It's not a optimal solution and it's no complete
+because you can loop.
 
-\subsubsection{Algorithm: A* Search}
+\paragraph{Complexity} The \textit{space} and \textit{time} complexity
+is $O(b^m)$ but with a good heuristic the complexity can be reduced
+substantially.
 
-A* use the distance and add the current solution path cost. Let $g(n)$ be the cost of the solution going to the node $n$ and $h(n)$ a heuristic function.
-$$f(n) = g(n) + h(n)$$
-$h(n)$ must never overestimates the cost to reach a goal (and so $f(n)$ also never overestimates the cost). If $n$ is the goal node, then $h(n) = 0$.
 
-\begin{figure}[h]
-\centering
-\begin{tabular}{|llll|}
-\hline
-\textbf{Complete} & \textbf{Time complexity} & \textbf{Space complexity} & \textbf{Optimal} \\
-\hline
-Yes & $O(b^m)$ & $O(b^m)$ & Yes\\
-\hline
-\end{tabular}
-\caption{A* search analysis}
-\end{figure}
+\subsubsection{Algorithm: A* search}
+Minimizing the total estimated solution cost (fusion Greedy and uniform-cost).
 
-This is a nice algorithm, but we have a space complexity issue, it takes a lot of memory.
+A* use the  distance and add the current solution  path cost. Let $g(n)$
+be the cost of the solution going to the node $n$ and $h(n)$ a heuristic
+function. $$f(n)  = g(n)  + h(n)$$ $h(n)$  must never  overestimates the
+cost to reach a goal (and  so $f(n)$ also never overestimates the cost).
+If $n$ is the goal node, then $h(n) = 0$.
 
-\paragraph{Proof of A* optimality}
+\paragraph{Complexity}
 
-Let $G$ be a goal node in the fringe, but in a suboptimal path. Its path cost $g(G)=C$ is not the lowest one\footnote{$\exists C^* : C > C^*$}. We use the formula at line (1), then as $G$ is a goal node and $h$ is admissible we have line (2). 
-\begin{eqnarray}
-f(G) &=& g(G) + h(G)\\
-h(G) &=& 0\\
-f(G) &=& g(G)\\
-&=& C > C^*\\
-f(G) > C^*
-\end{eqnarray}
-Let $n$ be a node in the fringe, with $n$ in the path to the optimal soluation (cost $C^*$). As $h$ is admissible, we have $f(n) = g(n) + h(n) \leq C^*$. Then we have
-$$f(n) \leq C^* < f(G)$$
-In this scenario, $G$ will never be selected, so the hypothesis is absurd. In conclusion \textbf{A* expands no nodes with} $f(n) > C*$.
+\textit{space} and \textit{time} ar $O(b^d)$  This is a nice algorithm,.
+but we have  a \textcolor{red}{space complexity issue}, it  takes a lot.
+of memory!
+
+\paragraph{Criteria} It's \textit{complete} if the is cost that be negative
+to avoid infinite zero-cost action. 
+It's optimal if heuristic is admissible (\textit{in tree search}) or consistante
+(\textit{in graph search}).
+
 \paragraph{Properties of A*}
 
 Here are the properties of A*:
 \begin{itemize}
-\item With $h(n)$ consistent, the sequence of nodes expanded by A* using \textbf{Graph-Search} is in non decreasing order of $f(n)$
-\item A* (using \textbf{Graph-Search}) is optimal if $h(n)$ is consistent
-\item A* expands all nodes with $f(n) < C^*$ ($C*$ beeing the optimal cost)
-\item A* expands some (at least one) of the nodes on the $C^*$ countour before finding the goal
-\item A* expands no nodes with $f(n) > C^*$ 
+    \item With $h(n)$ consistent, the sequence of nodes expanded by A* using \textbf{Graph-Search} is in non decreasing order of $f(n)$
+    \item A* (using \textbf{Graph-Search}) is optimal if $h(n)$ is consistent
+    \item A* expands all nodes with $f(n) \leq C^*$ ($C*$ beeing the optimal cost)
+    \item A* expands some (at least one) of the nodes on the $C^*$ countour before finding the goal
+    \item A* expands no nodes with $f(n) > C^*$ 
 \end{itemize}
 
-\subsubsection{Algorithm: Iterative deepening A* (IDA*)}
+A*  is \textbf{optimaly  efficient} because  he don't  expand node  with
+$f(n) > C*$. We  can't be more efficient because if  we don't expand all
+node with $f(n) < C*$ we take the risk of missing the optimal solution!
 
-We combined the algorithm A* with the Iterative deepening. Let $l$ be a limit. \textbf{TODO}
 
-\begin{figure}[h]
-\centering
-\begin{tabular}{|llll|}
-\hline
-\textbf{Complete} & \textbf{Time complexity} & \textbf{Space complexity} & \textbf{Optimal} \\
-\hline
-Yes & Exponetial & \textbf{\textit{linear}} & Yes\\
-\hline
-\end{tabular}
-\caption{IDA* search analysis}
-\end{figure}
+\paragraph{To proof of A* optimality}
+TODO (C'est pas bien fait.. recopiage simple des slides)
 
-It's a nice algorithm, but we can still improve the algorithm. With an infinite amount of memory, A* would be the best algorithm. If I agree to re-do some operations IDA* is the best. So we use A* and when we are short of memory we switch to IDA*.\footnote{We called this one \textit{Simple memory-bounded A*}}
+we juste pro thant A* expands no nodes with $f(n) > c*$ .
+\begin{enumerate}
 
-\subsubsection{Monotonicity of $f(n)$}
+    \item Let  $G$ be  a goal node  in the fringe,  but in  a suboptimal
+    path. Its path cost $g(G)=C$ is not the lowest one\footnote{$\exists
+    C^* : C  > C^*$}. 
+    
+    We use the  formula at line (1), then as  $G$ is a
+    goal node and $h$ is admissible we have line (2).
 
-If $h(n)$ is consistent (Let a be an action and n,n' two nodes we have $h(n) \leq c(n,a,n') + h(n')$) then $f(n)$ along any path is non decreasing.
+        \begin{eqnarray}
+            f(G) &=& g(G) + h(G)\\
+            \footnotemark\quad h(G) &=& 0 \\
+            f(G) &=& g(G) = C > C^*\\
+            \color{red}f(G) &\color{red}>&\color{red} C^*
+        \end{eqnarray}
+        \footnotetext{Because G is a goal state}
 
-\paragraph{Proof}
+    \item Let $n$ be a node in the fringe, with $n$ in the path to the optimal soluation (cost $C^*$). As $h$ is admissible, we have $f(n) = g(n) + h(n) \leq C^*$. Then we have
+    $$f(n) \leq C^* < f(G)$$
+    In this scenario, $G$ will never be selected, so the hypothesis is absurd. 
+\end{enumerate}
 
-Suppose that $n'$ is successor of $n$. We have
-\begin{eqnarray*}
-g(n') &=& g(n) + c(n,a,n')\\
-f(n') &=& g(n') + h(n')\\
-&=& g(n) + c(n,a,n') + h(n')\\
-c(n,a,n') +h(n') &\geq& h(n)\\
-g(n) + c(n,a,n') + h(n') &\geq& g(n) + h(n)\\
-&\geq& f(n) \\
-f(n') &\geq& f(n)
-\end{eqnarray*}
+In conclusion \textbf{A* expands no nodes with} $f(n) > C*$.
+
+\subsubsection{Memory-bounded heuristic search}
+
+
+\paragraph{Algorithm: Iterative deepening A* (IDA*)}
+
+We combined the algorithm A* with the Iterative deepening. Let $l$ be a limit.
+IDA* use f-cost(g+h) rather than depth.
+TODO
+
+TODO répartie ce paragraph
+It's a nice  algorithm, but we can still improve  the algorithm. With an
+infinite amount of memory, A* would be the best algorithm. If I agree to
+re-do  some operations  IDA* is  the  best. So  we  use A*  and when  we
+are  short of  memory we  switch  to IDA*.\footnote{We  called this  one
+\textit{Simple memory-bounded A*}}
+
+\paragraph{Algorithm: Recursive best-first search}
+TODO
+
+\paragraph{Algorithm: Memory-bouded A* and simplified MA*}
+TODO
+
+
+\subsubsection{Learning to search better}
+TODO
+
+\subsection{Heuristic in practice}
 
 \subsubsection{Comparing two heuristics}
 
@@ -481,13 +553,15 @@ To compare two heuristics you may use:
 You must choose an \textit{admissible} and \textit{consistent} heuristic. You must choose the most dominant heuristics\footnote{The most dominant is the one with the most informations}. 
 
 
-\subsection{Heuristic function}
-TODO
 
 
 \section{Chapitre 4.1 : Local search}
 
-A search is the operation of looking for a solution where solution is a path from start to goal. We've seen two kind of search, an \textit{uninformed search} in which no prediction is available about the cost of the path. And an \textit{informed search}, where we can estamite the cost of the solution.
+A search  is the operation of  looking for a solution  where solution is
+a  path  from  start  to  goal.  We've  seen  two  kind  of  search,  an
+\textit{uninformed search} in which no prediction is available about the
+cost of the path. And an \textit{informed search}, where we can estamite
+the cost of the solution.
 
 What if the path is not important, but only the goal? \textbf{Local search} will not keep track of paths. It has sereval advantages
 \begin{itemize}
