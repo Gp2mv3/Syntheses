@@ -1,0 +1,153 @@
+\input{../../../lib.tex}
+
+\usepackage[numbered, framed]{mcode}
+\DeclareMathOperator{\pgcd}{PGCD}
+
+\hypertitle[']{fr}{Informatique}{3}{FSAB}{1402}
+{Beno\^it Legat\and Lucas Nyssens}
+{Peter Van Roy}
+
+\lstset{language={Oz},morekeywords={for,do}}
+
+\newcommand{\st}{\mathrm{ST}}
+\newcommand{\ce}{\mathrm{CE}}
+\newcommand{\mozart}{Mozart}
+
+\part{Séance 10 : Complexité calculatoire}
+\section{Exo 1: Vrai ou faux?}
+
+%\lstinputlisting{10-1.m}
+
+\section{Syntaxe et sémantique}
+\subsection{Syntaxe et langage noyau}
+La syntaxe, c'est la définition de ce qui peut être écrit.
+Lors de la création d'un langage, on a envie que la syntaxe soit
+stricte car c'est plus simple d'implémenter le langage ainsi mais
+pour l'utilisateur, c'est plus rapide d'écrire avec une syntaxe
+moins stricte.
+
+Une manière de faire pour pallier ce problème est la création
+d'un langage noyau dont la syntaxe est un sous-ensemble de celle
+du langage.
+
+La définition du langage est plus simple via ce langage noyau et
+tous les éléments du langage peuvent être définis à partir du langage noyau.
+
+\subsection{Sémantique}
+La sémantique, c'est la description de ce que fait chaque élément
+du langage.
+Comme tout le langage peut être défini à partir du langage noyau,
+il suffit de définir la sémantique du langage noyau et on définit toute
+la sémantique.
+Par contre, il faut traduire son programme en langage noyau
+si on veut analyser sa sémantique.
+
+En \oz{}, la sémantique se fait à l'aide d'une machine virtuelle.
+Cette machine virtuelle est un tuple constitué de l'ensemble des
+threads, de la mémoire à affectation unique $\sigma$ et de la mémoire
+à affectation multiple $\mu$
+\[ (\{\st_1, \ldots, \st_n\}, \sigma, \mu). \]
+Chaque thread est représenté par une pile $\st_i$ consituée de couples
+$(\verb|<s>|, \ce)$ où $\ce$ est l'environnement contextuel
+de l'instruction \lstinline|<s>|
+\[ \st_i = [(\verb|<s>|_1, \ce_1), \ldots, (\verb|<s>|_m, \ce_m)]. \]
+
+La machine abstraite répète indéfiniment la même action jusqu'à ce
+que toutes les piles soient vides ou qu'elles soient bloquées à cause du
+dataflow (voir section~\ref{sec:dataflow}).
+Durant cette action, elle choisit une pile.
+Ce choix n'est pas arbitraire mais dépend de l'OS (Operating System) dans
+lequel \mozart{} s'exécute.
+Elle prend l'instruction au sommet de la pile $\verb|<s>|_1$ et l'exécute
+avec comme environnement contextuel $\ce_1$.
+Cette exécution dépend de l'instruction en question.
+La sémantique des différentes instructions est donnée dans la suite de cette
+synthèse.
+
+Si on fait de la programmation déclarative, il n'y a plus de mémoire à
+affectation multiple
+\[ (\{\st_1, \ldots, \st_n\}, \sigma) \]
+et si on ne fait pas de concurrence, il n'y a qu'une seule pile
+\[ (\st, \sigma, \mu). \]
+La programmation déclarative non concurrente est donc pourvue d'une machine abstraite
+plus simple à utiliser
+\[ (\st, \sigma). \]
+
+\subsubsection{Garbage collection}
+Pour chaque variable en mémoire,
+\oz{} se souvient du nombre d'identificateurs qui y sont liés.
+Dès que ce nombre passe à zéro, \oz{} considère l'espace mémoire que
+prenait la variable comme libre et on peut retirer la variable en mémoire
+de la mémoire.
+
+Par exemple, pour
+\begin{lstlisting}
+local B in
+  local A in
+    A = 0
+  end
+  B = 0
+end
+\end{lstlisting}
+à la ligne 3, on a
+\[ ([(3,\{\verb|A|\to a, \verb|B|\to b\}),
+(5,\{\verb|B|\to b\})],\{a = 0, b\}) \]
+et à la ligne 5, on a
+\[ ([(5,\{\verb|B|\to b\})],\{b = 0\}) \]
+où $a$ a été retiré de la mémoire car plus aucun identificateur ne
+lui était associé.
+
+\section{Instructions et expressions}
+\label{sec:sv}
+\oz{} fait une différence fondamentale entre expression et instruction.
+D'ailleurs, en langage noyau, les seules ``lignes'' qu'il accepte sont les instructions.
+En langage ``pas noyau'', par contre la dernière ``ligne''%
+\footnote{Si la fonction termine par un block \lstinline|if ... elseif .. else ... end| ou \lstinline|case of ... [] ... end|, c'est la dernières ligne de chaque branchement.}
+d'une fonction doit être une expression et non une instruction (cette expression est ce que la fonction renvoie).
+
+Par exemple, si on essaie d'exécuter la ligne
+\begin{lstlisting}
+3
+\end{lstlisting}
+\oz{} nous dit
+\begin{lstlisting}
+%** expression at statement position
+\end{lstlisting}
+car il s'attend à ce que 3 soit une instruction.
+
+Si on essaie d'appeler \lstinline{Foo} défini comme suit
+\begin{lstlisting}
+proc {Hello}
+  {Browse 'Hello world'}
+end
+fun {Foo}
+  {Hello}
+end
+\end{lstlisting}
+\oz{} nous dit
+\begin{lstlisting}
+%** illegal arity in application
+%**
+%** Arity found:          1
+%** Expected:             0
+%** Application (names):  {Hello _}
+%** Application (values): {<P/0> _<optimized>}
+\end{lstlisting}
+car comme \lstinline|Foo| est une fonction,
+et que \lstinline|{Hello}| est la dernière ligne qu'il exécute,
+il s'attend à ce que \lstinline|Hello| soit une fonction
+et non une procédure.
+En langage noyau, les fonctions sont des procédures avec un argument
+en plus donc il veut donner un argument en plus à \lstinline|Hello|
+mais \lstinline{Hello} ne prend pas d'argument d'où le
+``\lstinline{illegal arity}''.
+
+Comme vu plus haut,
+\oz{} n'accepte que les instructions seulement en langage noyau.
+Par exemple,
+\begin{lstlisting}
+A = 1
+\end{lstlisting}
+peut être utilisé comme expression et comme instruction.
+
+\end{document}
