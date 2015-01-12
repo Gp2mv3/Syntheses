@@ -2228,7 +2228,7 @@ There are different kind of mutex link.
 Computation of mutex can be efficiently.
 
 \paragraph{Level off}
-Is a level where two level consecutive levels are identical.
+Is a point in the planning graph where two consecutive levels are identical.
 
 \paragraph{Complexity}
 Construct planning  graph is in  polynomial time O($n(a+l)^2$)  with $n$
@@ -2236,7 +2236,7 @@ level, $l$ literals and $a$ actions.
 
 \subsubsection{Heuristic estimation}
 \begin{description}
-    \item[Unsolvable] : if any goal literal fals to appear in the final level of graph.
+    \item[Unsolvable] : if any goal literal fails to appear in the final level of graph.
     \item[Level-cost] of litera g : level at which g first appear.
         (\textit{Admissible})
     \item
@@ -2247,24 +2247,24 @@ level, $l$ literals and $a$ actions.
 \end{description}
 
 \subsubsection{Algorithm: Graphplan}
-Graph construct level by level and 
+Graph is constructed level by level. We also keep hashmap called \textit{nogoods} (level,set of goals) containings all the goals not achievable in a level.
 \begin{itemize}
-    \item if are in leveloff then no solution
-    \item if the goal all the goal literals are non mutex in
+    \item if graph and nogoods have both leveled off then no solution
+    \item if all the goal literals are non mutex in
      current level, then a solution might exist within the current graph 
-     (Givin with extract-solution)
+     (Check with extract-solution)
     \item else no solution in current and we expand this one
 \end{itemize}
 
 \paragraph{Extract-solution}
 Reduce the problem to a backward search problem with boolean CSP
-wich variable is action at each level. (\textit{true if in the plan, false else})
+where the variables are the actions at each level. (\textit{true if in the plan, false else})
 
 \begin{enumerate}
-    \item initial state : Last level + set of \textbf{goals}
+    \item initial state : Last level of the planning graph + set of \textbf{goals} 
     \item Operation : choose a (\textbf{conflict free}) subset of actions at the level of
         the state whose effects covers the goals in the state
-    \item Goal state : state with level 0
+    \item Goal state : reach a state at level 0 such that all goals are satified.
 \end{enumerate}
 
 \subparagraph{Heureustic guidance}
@@ -2276,15 +2276,55 @@ wich variable is action at each level. (\textit{true if in the plan, false else}
 \paragraph{Complexity} \textit{time} is polynomial
 
 \subsubsection{Termination of Graphplan}
+The graphplan algorithme will terminate when the graph and the nogoods both have level off.
+But is it sure that the graph and the nogoods will always level off ?
+
+To proof this is certain properties of planning graphs which are monotonically increasing or decreasing.
 \begin{itemize}
-    \item Literals increase monotonically
-    \item Actions increase monotonically
-    \item Mutexes decrease monotonically
-    \item Finite number of actions and literals
+    \item Literals increase monotonically : Once a literal appears at a given level, it will appear at all subsequent levels.
+    \item Actions increase monotonically : Once an action appears at a given level, it will appear at all subsequent levels.
+    \item Mutexes decrease monotonically : If two actions are mutex at a level $S_i$ they were mutex at all the previous levels where they both appear (same for the literal). But if you considere that the invisible literals and actions (the one that cannot gold at a level $S_i$) are mutex with everything, when you add a action, you reduce mutex.
+    \item No-goods decrease monotonically : If a set of goals is not achievable at a given level then they are not in any previous level either. But they are achievable at some level 
 \end{itemize}
+Because the actions and literals increase monotonically and because there are only a finite number, 
+there must come a level that has the same number of actions and literals as the previous one. Because mutex and no-goods decrease, there must come a level that as the same number of mutexes and no-goods (minimum 0). When the graph has reach this state the algorithm is done and we can return failure.
 
 \subsection{Other Classical Planning Approaches}
-TODO
+
+Here are some other approaches :
+
+\begin{itemize}
+\item Translating to a Boolean SAT problem
+\item Forward state-space search with carefully crafted heuristics
+\item Search using a planning graph
+\end{itemize}
+
+\subsubsection{Planning through SAT}
+Planning by testing the satisfiability of a propositional sentence. How do we translate a PDDL description into something that can be used by a STAPlan
+
+\begin{itemize}
+\item Initial state: add $F$ for every fluent in the problem initial state and $\lnot F$ for every fluent
+not mentioned in the initial state. (PDDL)
+\item Propositionalize the Actions.
+\item Propositionalize the Goal: for every variable in the goal, replace the literals that contains variables with a disjunction over the constants. 
+\begin{align}
+On(A,x) \land Block(x) \text{ with objects A and B would be} \\
+(On(A,A \land Block(A)) \lor (On(A,B) \land Block(B))
+\end{align}
+\item add successor-state axioms
+\item add preconditon axioms
+\item add action exclusion axioms
+\end{itemize}
+
+\subsubsection{Planning with FOL}
+FOL as some limitation about the representation of time. It use a representation called situation calculus to get around the notion of linear time and replace it with the notion of branching situations.
+
+TODO complete
+
+
+\subsubsection{Planning as CSP}
+CSP has a lot in common with SAT, the encoding is similar to the encoding to a SAT problem. 
+With one simplification, at each time step we only need a single variable, $Action_t$, whose domain is the set of possible actions. We no longer need one variable for every action.
 
 
 \section{Chapitre 11 $\backslash$ 11.2, 11.4 : Planning in the Real World}
