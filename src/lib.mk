@@ -6,7 +6,8 @@
 #PDFVIEWER=xpdf # lightweight
 PDFVIEWER=xdg-open # Default pdf viewer - GNU/Linux
 #PDFVIEWER=open # Default pdf viewer - Mac OS
-ROOT=../../..
+ROOT=../..
+COURSE_NAME=${MAIN_NAME}
 
 ALL+=$(MAIN_NAME).pdf
 
@@ -41,8 +42,8 @@ show: $(MAIN_NAME).pdf
 	$(PDFVIEWER) $(MAIN_NAME).pdf 2> /dev/null &
 
 release: all
-	cd ../..; smartcp -vv -s \
-	  quadri=$(QUADRI) -s cours=$(MAIN_NAME) config.yml
+	cd ${ROOT}; python3 ~/git/smartcp/smartcp.py -vvvv -s \
+	  quadri=$(QUADRI) -s cours=$(COURSE_NAME) config.yml
 
 add:
 	git add $(MAIN_NAME).tex
