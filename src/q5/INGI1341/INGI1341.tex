@@ -102,7 +102,7 @@ and for us it is like a black box with these characteristics :
 \end{itemize}
 
 \paragraph{Manchester encoding}
-TODO page 8
+It's an encoding that consist in dividing time in fixed length period. To send a 1, the voltage must be high in the first half of a period and the become low (opposite for zero). It use the symbol InvH (high voltage during last period) and InvB as special marker.
 
 \subsection{Datalink Layer}
 The PDU of Datalink Layer service is a \textbf{frame} (\textit{sequence of bit with a particular syntax or structure}) because we want to share data block.
@@ -161,7 +161,7 @@ We can have errors due to different events:
 \paragraph{ }
 Thanks to the ACK flag in the header,
 we have 2 types of frames: \textbf{data frame} and \textbf{acknowledgment frame}.
-Using to the  \textbf{Error Detection Code}, we can try  to recover from failures
+Using to the  \textbf{Error Detection Code}(ex:parity bit), we can try  to recover from failures
 of the physical layers and provide a reliable service.
 
 \paragraph{Note: }
@@ -169,7 +169,7 @@ Since the \textbf{Physical Layer does not reorder} the bits,
 the frames will not be reordered either.
 Providing a reliable service it therefore easier than for the Transport Layer that has to cope with the reordering of packets in the Network Layer (it has to discard packets to old packets and have maximal throughput because of that).
 
-\paragraph{Pipelling:  }  This technique  allows  a  sender to  transmit
+\paragraph{Pipelining:  }  This technique  allows  a  sender to  transmit
 several  consecutive frames  without being  forced to  wait for  and ack
 after each frame.
 
@@ -178,10 +178,11 @@ There are 3 ways of achieving a reliable Datalink Layer.
 \begin{enumerate}
   \item \textbf{ABP} :
     The Alternating Bit Protocol is
-    a particular case of go-back-n for $n = 2$.
+    a particular case of go-back-n for $n = 2$ (only one bit for the sequence number).
   \item \textbf{Go-back-n} :
     is simple, the receiver discards all out of sequence frames
-    and the ACK always contains the last in sequence frame received.
+    and the ACK always contains the last in sequence frame received. It used three variables,
+    \textit{lastack,next,maxseq}
 
     The sender has simply one timer and when it expires, it retransmits \emph{all}
     its unacked frames.
@@ -198,7 +199,7 @@ unacked frames when it has detected a loss.}
   frame is store in buffer})
 
     The sender has  now a timer  for each frame  of the
-    sending window.
+    sending window. An ACK covers all the frame in the buffer up to the sequence number acknowledged.
 
     \begin{itemize}
         \item[$\to$] The ACK sometimes also contains the list of out of sequence frame received (\emph{selective acknowledgement}) to avoid useless retransmission.
@@ -210,7 +211,8 @@ If the sequence number has $n$ bits, we use $2^n$ \textbf{different sequence} nu
 A \textit{Sliding window} is use to manage the buffer of sequence numbers.
 
 Because the Physical Layer will not reorder the frames,
-the maximum window size for the go-back-n is $\bf 2^n-1$ and is $\bf 2^{n-1}$ for the Selective Repeat.
+the maximum window size for the go-back-n is $\bf 2^n-1$ and is $\bf 2^{n-1}$ for the Selective Repeat. 
+(Think when all the ack are lost)
 
 \paragraph{  }  Not  all  Datalink Services  provide  a  \emph{reliable}
 service. As  a rule  of thumb, datalink  services above  very unreliable
@@ -313,12 +315,16 @@ by a cable. Host and router \textbf{sending packet}.
 
 There are two possible organisation for the network layer.
 
+\begin{itemize}
+    \item \textbf{Data plane :} Protocol and algorithm use to forward data
+    \item \textbf{Control plane :} Protocol and algorithm use to make forwarding table
+\end{itemize}
+
 \subsubsection{The datagram organisation}
 
 \textit{Inspired by the postal service}, each host is identified by a \textbf{network layer address}.
 
 For each \textsc{packet}, sender must define his address, receiver address and data.
-
 
 \paragraph{Forwarding}
 In datagram organisation, router use \textbf{hop-by-hop} forwarding. (\textit{Each router
@@ -330,30 +336,139 @@ consume bandwith}) must be avoiding!
 
 
 \paragraph{Computing forwarding tables}
+
 \begin{description}
-  \item[port-address table] Si on a un \textbf{tree-shapped network} il suffit d'inspecter les packets
-    reçu pour créer sa table de forwarding sans risquer d'avoir de loop.
-    The problem with a tree-shapped network is that if a link fails, the network is split in two since there is no redundancy.
-    If the network is not a tree, we can also use port-address table but we need to use a distributed algorithm to ensure
-    that we have a tree (e.g. Spanning Tree Protocol for Ethernet (Datalink Layer)).
-    %TODO page 35
+    \item[Port-address table] : Only if we have a \textbf{tree-shapped network} (\textit{drawback}), il suffit d'inspecter les packets reçu pour créer sa table de forwarding sans risquer d'avoir de loop.
+        \begin{enumerate}
+            \item If the destination address is in the forwarding table, the packet is
+                forward on the right interface
+            \item Else the packet is send on all interface except the interface
+                from wich the packet was receive. It's call \textbf{broadcasting}
+                (\textit{drawback})
+        \end{enumerate}
+
+        $\to$ The problem with a tree-shapped network is that if a link fails, the network is \textit{split} in two network since there is no redundancy.
+
+        \begin{center}
+            \textit{If the network is not a tree, we can also use port-address table but we need to use a distributed algorithm to ensure
+            that we have a tree (e.g. Spanning Tree Protocol for Ethernet (Datalink Layer)).}
+        \end{center}
+
+    \item[Source routing] : There is no destination address but only the path to reach
+        the destination host. Two type of packet :
+        \begin{enumerate}
+            \item Data packet : to exchange data
+            \item Control packet : to discover the path between endhosts. 
+                When a router receive a control packet he forwad this one via
+                all interface.
+
+                Avoid possible loop because control packet contains a list of \textbf{intermediate nodes}.
+        \end{enumerate}
+        Complexity is placed on the endhost and network node is simpliest.
+
 \end{description}
 
 \paragraph{Flat or hierachical adresse}
-Flat is like number telephone (small match to forwad packet) and hierachical is like a postal adress (smaller forwarding table, adress change when attached to other node\ldots question with mobile host).
+Flat is like number telephone (small match to forwad packet) and hierachical is like a postal adress (smaller forwarding table but adress change when attached to other node\ldots issues with mobile host).
 
 \paragraph{Dealing with heterogeneous datalink}
-Page 39
+
+\begin{enumerate}
+    \item \textbf{Retransmitting} : Discard packet and send a control packet to the source to indicate that it cannot forward pacjets longer than 500byte. Source retransmitting the informaiton in smaller packer.
+        \begin{center}
+            \textit{Router can be really simple and no additionnal operation to perform,
+            but may be inefficient because of retransmitting}
+        \end{center}
+    \item \textbf{Fragmenting} : Router can fragment packet, to way to achieve this :
+        \begin{enumerate}
+            \item The next router reassembles the fragment
+                \begin{center}
+                    \textit{Take so much CPU time and memory to fragment 
+                    and after reassemble}
+                \end{center}
+            \item The endhost reassemble the fragment
+                \begin{center}
+                    \textit{Compromise between the two other}
+                \end{center}
+        \end{enumerate}
+\end{enumerate}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=12cm]{heterogeneous.png}
+    \caption{Example of heterogeneous datalink layer}
+\end{figure}
 
 \subsubsection{Vitual circuit organisation}
+TODO page 40
 
 \subsubsection{The control plane}
+There is two main technique that can be used to maintain the forwarding table in
+a network : Distance vector routing and link state routing.
 
-\paragraph{Distance vector routing}
-%TODO
+\subsubsection{Distance vector routing}
+Allow router discover the destinations reachable inside the network as wall as
+the shortest path to reach each of these destinations.
+(\textit{each link as a associated cost})
 
-\paragraph{Link state routing}
-%TODO
+
+\paragraph{Routing table contains} :
+\begin{itemize}
+    \item $R[d].link$ : outgoing link use to forward paquet to d
+    \item $R[d].cost$ : cost of shortest path to d
+    \item $R[d].time$ : time to last timestamp
+\end{itemize}
+
+\paragraph{Routing table update}
+Router send regularly its \textbf{distance vector} over all interface.
+If a router receiver a distance vector from link l, he only update
+the corresponding entry  if either :
+\begin{itemize}
+    \item $V[d].cost+l.cost < R[d].cost$ : new route smaller thant route already know
+    \item[OR]
+    \item $R[d].link == l$ : Update of the same route
+\end{itemize}
+
+TODO page 46 (failure in distance vector routing)
+
+\subsubsection{Link state routing}
+Exchange messages to allow each router to learn the entier network topology, and so
+each router is then able to compute its routing table by using a shortest path computation
+\footnote{By Dijkstra}
+
+\textbf{Weight} (\textit{Usually symmetric, but it's not a assumption}) of a link can be :
+\begin{enumerate}
+    \item Unit weight. (\textit{shortest path = lowest intermediate routers})
+    \item Proportionnal to the propagation delay
+    \item Opposite proportionnal of the bandwith ($\frac{C}{bandwith}$ where C is
+    higher than the highest bandwith in the network)
+\end{enumerate}
+
+\paragraph{Static Vs dynamic metric} Experience showed that is was difficult
+to tune the dynamic adjustments and ensure that no forwarding loops occur in
+the network! \textit{Actualy,} link state routing protocol use metrics
+that are manually configured.
+
+\paragraph{Network topology update}
+The update is perform by \textbf{link-state packet} that contains :
+\begin{itemize}
+    \item $LSP.Router$ : identification of the LSP sender
+    \item $LSP.age$ : age (\textit{remaining lifetime}) of LSP
+    \item $LSP.seq$ : sequence number of LSP
+    \item $LSP.Links[]$ : 
+\end{itemize}
+
+\paragraph{\textbf{Flooding} algorithm}
+Is used to efficiently distribute the LSPs of all router.
+To implement this, each router maintains a \textit{link state database} (LSDB) that
+contains the most recent LSP for each router. 
+
+$\to$ Router forward a LSP only if he is most recent that the actual LSP on LSDB
+
+\paragraph{\textbf{Reliable flooding}} Router use ack (and retransmissions) to ensure that
+all link state packet are successfully transfered to all neighbouring routers.
+
+TODO page 51 (failure on link state routing)
 
 \subsection{Application}
 %Big-little indian
