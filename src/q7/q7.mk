@@ -1,2 +1,2 @@
 QUADRI=7
-include ../../lib.mk
+include ../../../root.mk
