@@ -20,6 +20,10 @@ It needs to be translated.
 \section{Terminology}
 
 \begin{description}
+    \item[PDU] : \textit{Protocole data unit}. Unité de mesure des informations échangées
+        dans un réseau informatique.
+
+
     \item[DNS] : \textit{Domain Name System}. Service permettant de traduire un nom de domaine en informations de plusieurs types qui y sont associées, notamment une IP.
     \item[DIFS] : \textit{DCF Interframe Space}. Si une station détecte qu'il n'y a pas eu de transmission WiFi pendant DIFS microsecondes et que l'échange de la dernière trame a réussi, elle a le droit de transmettre. Cette valeur au sein de la gestion des collisions : DIFS = SIFS + (2 * Slot time)
     \item[EIFS] : \textit{Extended Interframe Space}. Similaire au DIFS mais activé uniquement si la dernière frame a échoué. EIFS = Temps de transmission d'un acquittement + SIFS + DIFS.
@@ -77,52 +81,53 @@ A router only has the 3 layers: Network, Datalink and Physical.
 
 \subsection{Physical Layer}
 The Physical Layer service is provided by
-\begin{description}
-  \item[Electrical cable] twisted pairs or coaxial cables;
-  \item[Optical fiber] multimode or monomode;
-  \item[Wireless] laser for point-to-point and radio-based for spread signal (e.g. WIFI).
-\end{description}
+\begin{itemize}
+  \item \textbf{Electrical cable} twisted pairs or coaxial cables;
+  \item \textbf{Optical fiber} multimode or monomode;
+  \item \textbf{Wireless} laser for point-to-point and radio-based for spread signal (e.g. WIFI).
+\end{itemize}
 Its PDU is the bit and the following terms are used
-\begin{description}
-    \item[Bit rate] : Expressed in bits/sec
-    \item[Bandwith] : Range of frequency usable
-\end{description}
+\begin{itemize}
+    \item \textbf{Bit rate} : Expressed in bits/sec
+    \item \textbf{Bandwith} : Range of frequency usable
+\end{itemize}
 
-It is not perfect (unreliable),
+\subsubsection{Characteristic}
+
+It is \textit{not perfect} (unreliable),
 and for us it is like a black box with these characteristics :
 \begin{itemize}
-  \item change the value of a bit;
-  \item deliver more bits than requested;
-  \item deliver fewer bits than requested.
+    \item \textcolor{red}{change} the value of a bit (\textit{car interference electromagnétique});
+    \item deliver \textcolor{red}{more or fewer} bits than requested (\textit{car frequence horloge imprécise})
 \end{itemize}
 
 \paragraph{Manchester encoding}
 TODO page 8
 
 \subsection{Datalink Layer}
-The PDU of Datalink Layer service is a frame (sequence of bit with a particular syntax or structure).
-A frame is separated in 3 parts
-\begin{description}
-  \item[Header] It contains a flag to tell whether it is an ACK or DATA, a sequence number and sometimes the length of the payload.
-  \item[Payload] It contains the information that needs to be transmitted.
-  \item[Error Detection Code] It allows the receiver to detect transmission errors.
+The PDU of Datalink Layer service is a \textbf{frame} (\textit{sequence of bit with a particular syntax or structure}) because we want to share data block.
+A frame is separated in 3 parts :
+\begin{itemize}
+    \item \textbf{Header} It contains a flag to tell whether it is an \textcolor{red}{ACK or DATA}, a \textcolor{red}{sequence number} and sometimes the length of the payload.
+  \item \textbf{Payload} It contains the information that needs to be transmitted.
+  \item \textbf{Error Detection Code} It allows the receiver to detect transmission errors.
     It is either
     \begin{itemize}
-      \item a hamming code which is simply a parity bit, it can only detect odd number of errors;
-      \item a checksum such as the Internet checksum chosen by the TCP/IP community and the
+        \item a \textsc{hamming code} which is simply a parity bit, it can only detect odd number of errors;
+        \item a \textsc{checksum such} as the Internet checksum chosen by the TCP/IP community and the
         Fletcher checksum chosen by the OSI community;
-      \item or a Cyclic Redundancy Check (CRC).
+    \item or a \textsc{Cyclic Redundancy Check} (CRC).
         It was slow to implement in software before 1995 and the publication of \cite{feldmeier1995fast}.
         It is now preferred since it has better error detection \cite{stone1998performance}.
         An $n$ bit CRC can detect errors if there are at most $n$
         bits in error or if there is an odd number of bits in error.
-      \item an hash function like MD5 or SHA: however, these are built to be collision resistant against
+    \item an \textsc{hash function} like MD5 or SHA: however, these are built to be collision resistant against
         an active adversary, not random modifications.
         They are also a lot slower than CRC or checksums so they are only used in cryptography.
     \end{itemize}
-  \item[Error Correction Code] It allow the receiver to correct transmission errors.
+  \item \textbf{Error Correction Code} It allow the receiver to correct transmission errors.
     No widely used datalink protocol use this.
-\end{description}
+\end{itemize}
 
 \subsubsection{Framing}
 
@@ -130,13 +135,16 @@ The separation of frames are done using \emph{bit stuffing}
 or \emph{character stuffing}.
 
 \begin{description}
-  \item[Bit stuffing] : \textbf{01111110} is a frame boundary marker, so he can't
+    \item[Bit stuffing] : \textbf{01111110} is a frame \textcolor{red}{boundary marker}, so he can't
     be used when we transmit frames.
     \textit{Adds a 0 after 5 consecutive 1 to ensure that this marker is not in the frame}
     \begin{enumerate}
       \item Easy to implement in hardware.
       \item Increase number of bit transmited
     \end{enumerate}
+\item[Character stuffing] : In software it's easier to work with character. 
+    (No imprimable character use as marker)
+    Begin of frame : \textsc{DLE STX}, end of frame : \textsc{DLE ETX}.
 \end{description}
 
 \paragraph{Note} : Bit stuffing is implemented in hardware and character stuffing is usually
@@ -144,58 +152,76 @@ implemented in software.
 
 \subsubsection{Recovering from failures}
 We can have errors due to different events:
-\begin{itemize}
-  \item when we are to slow to treat incoming frames (\textbf{overflow} of the buffer)
-  \item the frame has been \textbf{lost} or has been \textbf{corrupted}
-    by a transmission error.
-\end{itemize}
+\begin{enumerate}
+  \item The frame has been \textbf{lost} or has been \textbf{corrupted}
+    by a transmission error
+  \item When we are to slow to treat incoming frames (\textbf{overflow} of the buffer)
+\end{enumerate}
 
+\paragraph{ }
 Thanks to the ACK flag in the header,
 we have 2 types of frames: \textbf{data frame} and \textbf{acknowledgment frame}.
-Using to the Error Detection Code,
-we can try to recover from failures of the physical layers
-and provide a reliable service.
+Using to the  \textbf{Error Detection Code}, we can try  to recover from failures
+of the physical layers and provide a reliable service.
 
-Since the Physical Layer does not reorder the bits,
+\paragraph{Note: }
+Since the \textbf{Physical Layer does not reorder} the bits,
 the frames will not be reordered either.
 Providing a reliable service it therefore easier than for the Transport Layer that has to cope with the reordering of packets in the Network Layer (it has to discard packets to old packets and have maximal throughput because of that).
 
+\paragraph{Pipelling:  }  This technique  allows  a  sender to  transmit
+several  consecutive frames  without being  forced to  wait for  and ack
+after each frame.
+
+\subsubsection{Reliable datalink layer}
 There are 3 ways of achieving a reliable Datalink Layer.
 \begin{enumerate}
-  \item[ABP]
+  \item \textbf{ABP} :
     The Alternating Bit Protocol is
     a particular case of go-back-n for $n = 2$.
-  \item[Go-back-n]
-    Go-back-n is simple, the receiver discards all out of sequence frames
+  \item \textbf{Go-back-n} :
+    is simple, the receiver discards all out of sequence frames
     and the ACK always contains the last in sequence frame received.
 
     The sender has simply one timer and when it expires, it retransmits \emph{all}
     its unacked frames.
-  \item[Selective Repeat]
-    The difference with the go-back-n is that the receiver stored out of sequence frames received,
-    even if cumulative acknowledgement is still used.
-    When an out of sequence (e.g. sequence number 3) frame is received while the last acked frame was for example 1,
-    the ACK contains 1.
-    However when the frame 2 is received correctly, the receivers remembers that it has already received the frame 3
-    and the ACK contains 3.
-    In consequence, the sender has now a timer for each frame of the sending window.
 
-    The ACK sometimes also contains the list of out of sequence frame received (\emph{selective acknowledgement})
-    to avoid useless retransmission.
+    \begin{center}
+    \textit{Good performance if few frame are lost but else the performance is quickly
+    drop because of out-sequence frame not accepted and retransmittion of all
+unacked frames when it has detected a loss.}
+\end{center}
+
+  \item \textbf{Selective Repeat}
+      The difference with the go-back-n is that the receiver \textbf{stored out of sequence} frames received, even if cumulative acknowledgement is still used. (\textit{ACK
+      contains yet the last in sequence frame received even a out of sequence
+  frame is store in buffer})
+
+    The sender has  now a timer  for each frame  of the
+    sending window.
+
+    \begin{itemize}
+        \item[$\to$] The ACK sometimes also contains the list of out of sequence frame received (\emph{selective acknowledgement}) to avoid useless retransmission.
+    \end{itemize}
 \end{enumerate}
 
-Since the Physical Layer will not reorder the frames,
-if the sequence number has $n$ bits and we use $2^n$ different sequence numbers,
-the maximum window size for the go-back-n is $2^n-1$ and is $2^{n-1}$ for the Selective Repeat.
+\paragraph{Buffer size}
+If the sequence number has $n$ bits, we use $2^n$ \textbf{different sequence} numbers.
+A \textit{Sliding window} is use to manage the buffer of sequence numbers.
 
-Not all Datalink Services provide a \emph{reliable} service.
-As a rule of thumb, datalink services above very unreliable wireless physical services (e.g. WIFI) does
-provide a reliable service and datalink services above almost reliable wired physical sercies (e.g. cable or fiber)
-do dot include additional retransmission mechanism and are also \emph{almost reliable}.
+Because the Physical Layer will not reorder the frames,
+the maximum window size for the go-back-n is $\bf 2^n-1$ and is $\bf 2^{n-1}$ for the Selective Repeat.
+
+\paragraph{  }  Not  all  Datalink Services  provide  a  \emph{reliable}
+service. As  a rule  of thumb, datalink  services above  very unreliable
+wireless physical services  (e.g. WIFI) does provide  a reliable service
+and datalink services above almost reliable wired physical sercies (e.g.
+cable or fiber)  do dot include additional  retransmission mechanism and
+are also \emph{almost reliable}.
 
 \paragraph{Piggybacking}
-When DATA is sent in both directions, an ACK frame and a DATA frame sent by one side are sometimes merged in one
-because an ACK frame does not need a lot of bit to do its job.
+When DATA is sent in both directions, an ACK frame and a DATA frame sent by one side are sometimes merged in one because an ACK frame does not need a lot of bit to do its job.
+(\textit{Used to reduce the overhead caused by acknowledgements})
 
 
 \subsubsection{Medium Access Control (MAC)}
@@ -282,9 +308,26 @@ this is called a \emph{binary exponential back-off}.
 
 
 \subsection{Building a network}
-Host and router sending packet.
+Network layer is used to send packet between two host that cannot directly relied
+by a cable. Host and router \textbf{sending packet}.
+
+There are two possible organisation for the network layer.
 
 \subsubsection{The datagram organisation}
+
+\textit{Inspired by the postal service}, each host is identified by a \textbf{network layer address}.
+
+For each \textsc{packet}, sender must define his address, receiver address and data.
+
+
+\paragraph{Forwarding}
+In datagram organisation, router use \textbf{hop-by-hop} forwarding. (\textit{Each router
+forward the packet with his forwarding table})
+
+In a network, \textbf{black-hole} (\textit{when router discard packet because not entry
+in his forwarding table for this destination}) and \textbf{cycle} ({packet
+consume bandwith}) must be avoiding!
+
 
 \paragraph{Computing forwarding tables}
 \begin{description}
