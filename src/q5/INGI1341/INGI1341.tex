@@ -22,7 +22,7 @@ It needs to be translated.
 \begin{description}
     \item[PDU] : \textit{Protocole data unit}. Unité de mesure des informations échangées
         dans un réseau informatique.
-
+    \item[MSL] : \textit{Maximum Segment Life}.
 
     \item[DNS] : \textit{Domain Name System}. Service permettant de traduire un nom de domaine en informations de plusieurs types qui y sont associées, notamment une IP.
     \item[DIFS] : \textit{DCF Interframe Space}. Si une station détecte qu'il n'y a pas eu de transmission WiFi pendant DIFS microsecondes et que l'échange de la dernière trame a réussi, elle a le droit de transmettre. Cette valeur au sein de la gestion des collisions : DIFS = SIFS + (2 * Slot time)
@@ -476,7 +476,6 @@ TODO page 51 (failure on link state routing)
 
 
 \subsection{The transport layer}
-The transport layer send \textbf{semgment} as PDU.
 He need to manage different issue from the network layer :
 \begin{multicols}{2}
 \begin{itemize}
@@ -488,10 +487,29 @@ He need to manage different issue from the network layer :
 \end{itemize}
 \end{multicols}
 
-There is three different service on the transport layer : connectionless service,
-connection-oriented service en request-response service.
 
-\paragraph{Note: } All transport layer service on a connectionless network layer service.
+The transport layer send \textbf{segment} as PDU
+Segment contains \textbf{header} with some control information and
+\textbf{payload} from the applicaiton layer.
+
+\begin{center}
+    \textit{When a segment is create, this segment is encapsulated by th network layer
+    into a packet wich contains the segment as its payload and a network header.
+    Packet is then encapsulated in a frame to be transmitted in the datalink layer.}
+\end{center}
+
+\paragraph{ }
+
+Most network use \textbf{datagram organisation} and provide a simple service
+which is called the \textcolor{red}{connectionless service}. \textbf{Transport layer} service is based on 
+this one.\footnote{Virtuals organisation have a connection système based on label}
+
+Pour passer du network layer au transport layer, il faut ajouter un méchanisme de
+\textbf{gestion des erreurs} et une technique de \textbf{multiplexing} (\textit{via port}).
+
+
+\subparagraph{ }There is three different service on the transport layer : connectionless service,
+connection-oriented service en request-response service.
 
 \subsubsection{Connectionless service}
 On envoi les données et le service assure qu'elle arrive.
@@ -508,80 +526,111 @@ Utilisé pour le transport de petit SDU.
         \end{itemize}
 \end{description}
 
-Pour passer du network layer au transport layer, il faut ajouter un méchanisme de
-\textbf{gestion des erreurs} et une technique de \textbf{multiplexing} (\textit{via port}).
-
-
 \subsubsection{Connection-oriented}
 Ici il y a trois phases : établir la connection, transferer les SDUs (\textit{la connection est
 bidirectionnel}) et fermer la connection.
 
 \begin{itemize}
-    \item \textbf{Reliability} : Elle n'est garantie que lorsque la connection est terminé avec un
-        ``gracefully``, sinon des pertes peuvent être observé
+    \item \textbf{Reliability} : Elle n'est garantie que lorsque la connection est terminé avec un ``gracefully``, sinon des pertes peuvent être observé
 \end{itemize}
 
 \paragraph{\textbf{Connection}}
 
-\subparagraph{Refus:} Soit de la part du destinataire, soit du provider.
+\paragraph{Refus:} Soit de la part du destinataire, soit du provider.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=8cm]{refus.png}
+    \caption{Refus connection}
+\end{figure}
 
-\subparagraph{Three-way handshake:} est utilisé contre l'approche naive de la connexion ``aller-retour''. Celle ci est définie par l'envoi d'un \textbf{CR}, répondu par \textbf{CA} qui répond \textbf{CA}.
+\subparagraph{Three-way handshake:} est utilisé contre l'approche naive de la connexion ``aller-retour''.  Celle ci est définie par l'envoi d'un \textbf{CR}, répondu par \textbf{CA} qui répond \textbf{CA}.
 
-Pour permettre le Three-way handshake, on utilise un transport clock.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=12cm]{threeway.png}
+    \caption{Three way handshake connection establishment}
+\end{figure}
+
+Pour éviter des \textbf{dupplicate transport connection} on utilise un \textit{transport clock} incremented
+every \textit{clock cycle} and after each connection establishment. (\textit{Must continue
+to be incremented even if the transport entity stops or reboots})
+
+Implemented with $k$ bits counter and its \textbf{clock cycle} is such that
+$2^k \times cycle >> MSL$
+
+\begin{figure}[h]
+    \centering
+    \begin{tabular}{ccc}
+    \includegraphics[width=5cm]{three1.png}
+    &
+    \includegraphics[width=5cm]{three2.png}
+    &
+    \includegraphics[width=5cm]{three3.png}
+    \\
+    \multicolumn{3}{c}{$\color{red} \bullet$ when a segment
+    is lost and $\color{yellow} \bullet$ when he come from another}
+\end{tabular}
+\caption{Scenario when transport clock is usefull. }
+\end{figure}
 
 
 \paragraph{\textbf{Data transfert}}
-
-\paragraph{Mode}
-\textsc{message-mode} : On envoie et reçois les messages tels quels.\\
-\textsc{stream-mode} : On envoit içi des flux de bytes, et on a besoin de spécifié un délimiter
+\begin{itemize}
+    \item \textsc{message-mode} : On envoie et reçois les messages tels quels.
+    \item \textsc{stream-mode} : On envoit içi des flux de bytes, et on a besoin de spécifié un délimiter
 spécifique pour déliumiter les SDU dans le bytestream.
+\end{itemize}
 
 $\rightarrow$  Le \textbf{Stream-mode}  est utilisé  pour les  reliable
-transport portocols,  et le  numéro de séquence  placé dans  la frame
-correspond à la position du premier byte du payload dans le bytestream.
+transport protocols,  et le  numéro de séquence  placé dans  la frame
+correspond à la position du premier \textbf{byte} du payload dans le bytestream.
 
-\paragraph{Note} : Plusieurs différence par rapport au datalink layer pour assurer que les
-données soient délivré.
+\paragraph{Note} : Plusieurs \textbf{différence} par rapport au \textbf{datalink layer}
+pour assurer que les données soient délivré.
 
 \begin{enumerate}
-    \item Dans  le datalink  layer quand  deux host  sont
-connecté le délai de transmission est fixe. Ici le delai varie car les
+    \item Comparé au datalink  layer ou le délai de transmission est fixe
+        lorsque deux host  sont connecté, ici le \textbf{delai varie}. (\textit{car les
 paquets envoyés  ne prennent pas  forcément le  même path et  il peut
-être mis en attente dans le buffer d'un router.
-    \item Les paquets n'arrivent pas tjrs en séquence contrairement au datalink layer
-    \item Le network peut duppliquer les paquets dans le transport layer
+être mis en attente dans le buffer d'un router}).
+    \item Les paquets peuvent arriver \textbf{hors séquence} contrairement au datalink layer
+    \item Le network peut \textbf{duppliquer} les paquets dans le transport layer
 \end{enumerate}
 
-\paragraph{Solution} :
+\subparagraph{Solution} :
 \begin{enumerate}
     \item Pour détecter les erreurs de transmission, comme dans le datalink layer, on utilise un
     CRC ou checksum sur \textbf{chaque} segment.
-    \item Pour rendre le protocole reliable, on utilise un numéro de séquence et des numéro
-    d'ackowledgement. (32 ou 64bits nécessaire plutot que 8 dans les datalinks layer protocol)
+    \item Pour rendre le protocole reliable, on utilise un numéro de séquence 
+        (\textit{correspondant à la position du premier \textbf{byte} du payload dans
+        le bytestream}) et des numéro d'ackowledgement. 
+
+        $\to$ 32 ou 64bits nécessaire plutot que 8 dans les datalinks layer protocol
 \end{enumerate}
 
 \paragraph{Go-back-n and selective repeat}
-Dans le transport layer on va préférer le sélective repeat puisque cette couche
+Dans le transport layer on va préférer le \textbf{sélective repeat} puisque cette couche
 ne garantit pas l'arrivée en séquence, contrairement au datalink layer.
 
+\paragraph{ }
 De plus, dans le transport layer, plusieurs application concurrente peuvent communiquer
 du coup l'espace mémoire offer à chaque application peut varier ce qui peut rendre la
 taille du buffer variable.
-Le sender à un swin (\textit{taille de son buffer}), et rwin (\textit{taille du buffer du receiver}). Il considère le minimun des deux comme la window size.
-
+Le sender à un \textbf{swin} (\textit{taille de son buffer}), et \textbf{rwin} (\textit{taille du buffer du receiver}). Il considère le minimun des deux comme la window size.
 
 \textbf{Pour éviter un deadlock}, on utilise un persistent timer lorsque le sender reçoit une
-window size du receiver égale à 0. Quand le timer expire on force le renvoi du dernier segment.
+window size du receiver égale à 0. Quand le persistent timer expire on force le renvoi du dernier segment.
 
-\paragraph{Connection release}
+\paragraph{\textbf{Connection release}}
 Soit de manière \textbf{abrute}, soit de manière \textbf{gracefully} càd en fermant
 les deux sens de la connections avec un DR suivit d'un ACK.
 
 
 \subsubsection{Request-response service}
+It's a compromise between connectionless service and connection-oriented service.
 
-Page 61
+It work like a function (\textit{small input and small output}). Use like a 
+\textbf{Remote Call Procedure}.
 
 \subsection{Naming and addressing}
 
