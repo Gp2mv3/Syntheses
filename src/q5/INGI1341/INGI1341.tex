@@ -1087,14 +1087,16 @@ connection-oriented, contenant :
 
 
 \subsection{Internet transport protocols}
-TODO page 137
+In the internet, network layer provides a unreliable connectionless service and IP
+adress to identifie each host, with
+a maximun size packet equal to $64KBytes$ of payload.
 
 \subsection{The User Datagram Protocol (UDP)}
-
 C'est un unreliable connectionless transport service, au dessus d'une unreliable
 connectionless network service, qui utilise les ports
 pour permettre de communiquer avec plusieurs application et qui a comme
 caractéristique :
+
 \begin{itemize}
     \item SDUs doit être < 65467bytes
     \item Garantit pas que le SDU est délivré
@@ -1106,50 +1108,84 @@ caractéristique :
 \paragraph{Port} : 0 - 1023 (\textit{privileged}), 1024 - 49 151 (\textit{registered}),
 49 152 - 65 535 (\textit{ephemere})
 
-TODO paragraph page 139
+\paragraph{Utilisation} 
+\textbf{UDP} is use when delay must be minimised or losses can be recovered by the application
+itself. (\textit{Or real-time application like interactive video})
+
 
 \subsection{The transmission control protocol (TCP)}
-
 Bi-directionnal bytestream d'une connection-oriented transport service, au dessus d'une unreliable connectionless network service.
 
 (Window-based transport protocol using go-back-n)
 
-\paragraph{Header} = Source port (16), dest port (16), sequence number (32), ack number (32),
-window size (16), checksum (16)
+\paragraph{Header} :
+\begin{itemize}
+    \item Source adresse/port (16), dest adresse/port (16)
+    \item sequence number per byte (32), ack number (32), window size (16)
+        \begin{itemize}
+            \item[$\to$] TO make a reliable data transfert
+        \end{itemize}
+    \item Flag : \textit{SYN, FIN, RST, ACK}
+    \item checksum (16)
+    \item Length in world (4)
+\end{itemize}
 
 \subsubsection{TCP connection etablishment}
-Three-way handshake utilisant sequence number, ack number et SYN flag.
+Three-way handshake utilisant sequence number, ack number et SYN/ACK/RST flag.
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=10cm]{tcpconnect.jpg}
+  \includegraphics[width=12cm]{tcpconnect.jpg}
   \caption{Connection TCP}
   \label{fig:tcpconnect}
 \end{figure}
 
 Durant l'établissement de la connection, le client/serveur negocie plusieurs options :
 \begin{enumerate}
-  \item Le \textsc{mms} qui est la taille du plus grand payload acceptable (\textit{536 au minimun})
+  \item Le \textbf{MMS} qui est la taille du plus grand payload acceptable (\textit{536 au minimun})
   \item La taille de la window
-  \item L'utilisation de SACK
-  \item Un ensemble d'option où client/server disent respectivemtn ce qu'il veut et ce
+  \item L'utilisation de SACK (information sur segments reçu hors séquence)
+  \item Un ensemble d'option où client/server disent respectivemnt ce qu'il veut et ce
     qu'il supporte
 \end{enumerate}
 
-\paragraph{Encodage des options} est fait en \textsc{TLV}.
+\paragraph{Encodage des options} est fait en \textsc{TLV}, Type Length Value.
+
+\paragraph{Robustness principe} : On peut recevoir dans SYN des options que l'on
+comprend pas sans crasher, toutefois dans SYN+ACK on ne répond que par ce
+que l'on connait.
+
+\paragraph{Denial of service attacks}
+Un serveur maintient un TCB (transmission control block) qui contient 
+les état des TCP entity pour chaque connection. Pour éviter un overflow
+de la mémoire, la taille du TCB est limité à 100.
+
+La \textbf{Denial of service attacks} essaye de rendre une donnée 
+sur le réseau non disponible.
+
+\textbf{SYN flood attack} a juste a surcharger le serveur de SYN
+pour surcharger son TCB et empecher tout le monde d'établir une connection avec
+lui.
+
+\subparagraph{Solution :} Utiliser un cookie chez le client
+pour remplacer la TCB sur le serveur. Toutefois, il n'est pas
+totalement compatible avec TCP option.
 
 \subsubsection{TCP reliable data transfert}
+
+Pour chaque connection TCP, on maintiens un \textbf{TCB} (transmission control block)
+avec toute les informations nécessaire pour envoyer et recevoir des segments.
 
 \paragraph{Segment transmission strategie}
 
 Deux solutions extrêmes :
 \begin{enumerate}
-    \item Première solution, envoyer quand on a besoin, mais cela peut impliquer d'envoyer
+    \item Envoyer quand on a besoin, mais cela peut impliquer d'envoyer
         un byte d'information avec 20 byte d'header\ldots pas très efficace
     \item L'autre extreme est d'envoyer qd on a rempli \textsc{mms} byte of data
 \end{enumerate}
 
-\paragraph{Nagle  algorithm}  :   on  envoi  le  paquet   si  il  rempli
+\subparagraph{Nagle  algorithm}  :   on  envoi  le  paquet   si  il  rempli
 un  \textsc{mms}  ou  si  l'on  vient  de  recevoir  un  acknwoledgement
 (\textit{càd au moins à chaque round trip time}).
 
@@ -1160,46 +1196,68 @@ fait  à la  connection, même  si certaines  implementations permettent
 d'automatiquement ajuster la taille.
 
 \subsubsection{TCP retransmission}
-\textit{Go-back-n} a besoin d'un bon timer de retransmission (\textsc{rtt} est une
+\textbf{Go-back-n} a besoin d'un bon timer de retransmission (\textsc{rtt} est une
 bonne estimation même si il change pdt la connection)
+\begin{center}
+\textsc{rtt} $\approx$ delai entre la transmission d'un segment et la reception de l'ack
+\end{center}
 
-\textsc{rtt} = $\approx$ delai entre la transmission d'un segment et la reception de l'ack
 \paragraph{Measure RTT }
 Le problème est que l'on ne sait pas de quel segment l'ack est la réponse (càd qu'il pourrait
 y avoir plusieurs segment identique envoyé)
 
 Pour cela on utilise le \textbf{timestamp option} :
 \begin{itemize}
-    \item \textsc{ts} : Par exemple valeur de la clock
-    \item \textsc{ts} echo : Dernier \textsc{ts}val reçu\\
+    \item \textbf{TS} : Par exemple valeur de la clock
+    \item \textbf{TS} echo : Dernier \textsc{ts}val reçu
 \end{itemize}
 
+Comme y'a plus d'ambiguité, on peut mettre à jour la valeur du time ( rtt = 3 sec à l'initialisation).
+\begin{eqnarray*}
+srtt \textrm{ (smoothed rtt mcomputed) } &=&  (\alpha \times srtt) + (1-\alpha) \times rtt) \\
+rto \textrm{ (retransmission timedout) } &=& min(60, max(1, \beta \times srtt))
+\end{eqnarray*}
 
-Comme y'a plus d'ambiguité, on peut mettre à jour la valeur du time (\textit{souvent à 3sec
-de base}).
+où rtt est le RTT mesuré et 1-60 sont les bornes minimal/maximal.
 
+
+\subparagraph{Jacobson's algorithm} : en pratique ça marche pas bien, donc jacobson a une
+autre idée. rto est toujours initialisé à 3 sec.
+\begin{multicols}{2}
 \begin{itemize}
-    \item \textsc{srtt} (\textit{smoothed rtt mcomputed}) = $ (\alpha \times srtt) + (1-\alpha) \times rtt)$, $rtt$ est le \textsc{rtt} measured
-    \item \textsc{rto} (\textit{retransmission timedout}) = $min(60, max(1, \beta \times srtt))$, 1 et 60 sont les bornes minimal/maximal
+    \item[-] Pour la première valeur de RTT
+        \begin{eqnarray*}
+            srtt &=& rtt \\
+            rttvar &=& var / 2 \\
+            rto &=& srtt + 4 * rttvar 
+        \end{eqnarray*}
+
+    \item[-] Ensuite
+        \begin{eqnarray*}
+        rto &=& srtt + 4*rttvar \\
+        rttvar &=& (1-\beta) \times rttvar + \beta \times |srtt - rtt| \\
+        srtt &=&  (\alpha \times srtt) + (1-\alpha) \times rtt) 
+        \end{eqnarray*}
 \end{itemize}
+\end{multicols}
 
-\paragraph{Jacobson's algorithm} : en pratique ça marche pas bien, donc jacobson a une
-autre idée, il redéfini \textsc{rto} = $srtt + 4*rttvar$ avec \textsc{rttvar} = $(1-\beta) \times rttvar + \beta \times |srtt - rtt|$.
+\paragraph{$\alpha, \beta$ value : }  $\beta = \frac{1}{4}, \alpha = \frac{1}{8}$
 
-$\beta = \frac{1}{4}, \alpha = \frac{1}{8}$
-
-\subsubsection{Advanced retranmission strategie}
+\subsubsection{Advanced retransmission strategie}
 
 \paragraph{}
 \textsc{tcp} utilise de base \textbf{go-back-n}, et lorsque le même timer
 expire on recommande de doubler le timer (appellé \textit{exponential backoff}) jusqu'à
-ce qu'il ait atteint 60sec où le host est considée inateignable.
+ce qu'il ait atteint 60sec où le host est considéré inateignable.
+
+\paragraph{Piggybacking} est utilisé par TCP lorsque il y a un échange de 
+donnée bi-directionnel, ce qui reste plutôt rare.
 
 \paragraph{delayed acknowledgement strategy}
 Par ailleurs, il est aussi possible de perdre bcp de performance en envoyant des
 ack quand il n'ont pas bcp d'interet. Typiquement, il est possible d'implémenter
 un \textbf{delayed acknowledgement strategy} qui assure d'envoyer un ack a chaque fin
-de timer (\textit{delai cour}) ou si il reçoit un segment hors séquence puisque du coup
+de timer (\textit{delai cour souvent d'une seconde}) ou si il reçoit un segment hors séquence puisque du coup
 l'ack a énormément d'importance
 
 \paragraph{Out-sequence}
@@ -1218,8 +1276,7 @@ Avec une option de TCP, on peut activer les \textbf{SACK} qui permettent d'indiq
 les segments qui ont été reçu hors séquence. On utilise ici souvent Fast retransmit avec.
 
 \subsubsection{TCP connection release}
-Abrut (\textsc{rst}) ou gracefully.
-TODO page 156
+Abrut (\textsc{rst}) ou gracefully (FIN, FIN+ACK)
 
 \subsection{The stream control transmission protocol (SCTP) }
 Alternative au TCP qui offre :
