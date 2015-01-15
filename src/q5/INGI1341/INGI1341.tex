@@ -869,7 +869,7 @@ layer}. (TCP/IP implements this in transport)
 
 \paragraph{Control de congestion} est un algorithme qui adapte le taux de congestion :
 \begin{enumerate}
-    \item \textbf{Multiplicative decreasing} si il y congestion : $rate = rate*\beta, \quad \beta <1$
+    \item \textbf{Multiplicative decreasing} si il y congestion : $rate =  rate*\beta, \quad \beta <1$
     \item \textbf{Additive increasing} sinon :  $rate =  rate + \alpha, \quad \alpha>0$
 \end{enumerate}
 
@@ -886,8 +886,7 @@ send data faster than : $$\frac{Window}{rtt}, \textrm{ where window is current s
         \textit{swin} = $min( swin, cwin )$
 \end{itemize}
 
-When start, \textit{cwin} is set to one segment and it increase (\textit{additive}) every RRT when there is
-no congestion , else he is decreased down to 2 (\textit{multiplicative}).
+When start, \textit{cwin} is set to one segment and it increases (\textit{additive}) by one every RRT when there is no congestion , else it is divided by two (\textit{multiplicative}).
 
 \paragraph{Note: }
 \begin{description}
@@ -905,7 +904,7 @@ no congestion , else he is decreased down to 2 (\textit{multiplicative}).
         Application & SDU     &                                        &  \\
         \hline
         Transport   & Segment & Connectionless unreliable              & connect to network  \\
-                    &         & connection-oriented souvent reliable   & \\
+                    &         & connection-oriented often reliable   & \\
         \hline
         Network     & Packet  & Unreliable                             & connect to network \\
         \hline
@@ -917,11 +916,14 @@ no congestion , else he is decreased down to 2 (\textit{multiplicative}).
     \caption{Reference models}
 \end{table}
 
+\paragraph{TCP/IP reference model} The same but physical layer and datalink layer are combined in link layer.
+\paragraph{Model OSI} There are a session and a presentation layer before the application layer. Session layer deals with the organisation and the synchronization of the message/data exchanged with presentation entity. Presentation layer deals with how to represents the information. 
+
 \section{Protocols}
 
 \subsection{Application layer}
 A application use connection less service or connection-oriented service
-and are identified by a port number and a network adress (\textit{IPv4 or IPv6})
+and are \textcolor{red}{identified} by a port number and a network adress (\textit{IPv4 or IPv6}). TCP is also called the byte-stream mode service and UDP the datagram service.
 
 \begin{description}
     \item IPv4 : 32 bits wide
@@ -935,6 +937,12 @@ and are identified by a port number and a network adress (\textit{IPv4 or IPv6})
     \includegraphics[width=10cm]{dnsheader.png}
     \caption{DNS header}
 \end{figure}
+DNS runs usually above datagram service. The message is divided in five part, the 3 first one are mandatory, the other 2 last one are optional. In the DNS message header, there is an identifier to match request to answer an inforrmation on authority server (who manage). A request is recursive when resolver recurse through DNS hierarchy to retrieve answer. 
+\paragraph{Resource Record} 
+\begin{itemize}
+	\item[Time-to-Live] How long the client can keep the Resource Record inside is cache.
+	\item[Type] Field in the record to specify if IPv4(A) or IPv6(AAAA)
+\end{itemize}
 
 DNS permet d'obtenir l'adresse qui correpond à un certain nom, mais on peut
 faire un reverser DNS pour obtenir le nom d'une adresse.
@@ -956,7 +964,7 @@ A \textbf{email system} is composed :
 \end{figure}
 
 \subsubsection{Email message}
-Email message are composed of two part : a \textbf{header} (\textit{From, Date, To, Subject,  cc, bcc}) and a \textbf{body}.
+Email message are composed of two part : a \textbf{header} (\textit{From*, Date*, To*, Subject,  cc, bcc}) and a \textbf{body}. (* are mandatory)
 
 Line to separate header and body is empty and contains only CR and LF.
 
@@ -967,17 +975,29 @@ breaking the email servers that were deployed at that time}:
     \item MIME-version : version de MIME pour l'encodage du mail
     \item Content-type : Type de donnée du message
         \begin{enumerate}
-            \item multipart/mixed : le fichier contietn des parties d'encodage
-                indépendant (text, binaire séparé dans le body par une line vide)
-            \item multipart/alternative : même message avec différentes représentation
+            \item multipart/mixed : le fichier contient des parties indépendantes (text, binaire séparé dans le body par une line vide)
+            \item multipart/alternative : même message avec différentes représentation (ex:text and HTML)
         \end{enumerate}
-    \item Content-transfert-encoding : Comment le message est encodé
+    \item Content-transfert-encoding : Comment le message est encodé et un second paramètre explicant quel le string utilisé pour délimiter les champs.
 \end{itemize}
+ A frequent encoding for email is \textbf{Base64} where seuqnece of bytes are encoded in groups of three bytes adb then each group us divided in six-bit fields that correspond to a character. (`=' is reserved for padding)
+
 
 \subsubsection{The Simple Mail Transfer Protocol (SMTP)}
+
 SMTP is a client/server protcolol and text-based protocol relies on the
 connection-oriented service. (\textit{Server listen on port 25})
-
+\paragraph{Note:} DNS MX record of the DNS is used to find destination SMTP server.
+Five agent involved:
+\begin{multicols}{2}
+	\begin{itemize}
+		\item Mail User Agent: email client
+		\item Mail Submission Agent : Process and forward
+		\item Mail Transmission Agent : Forward to other MTA or MDA
+		\item Mail Delivery Agent : Deliver to MUA destination
+	\end{itemize}
+\end{multicols}
+Each agent forward to the next agent.
 \paragraph{Working} :
 
 \begin{tabular}{m{9cm}m{6cm}}
@@ -987,7 +1007,7 @@ connection-oriented service. (\textit{Server listen on port 25})
         messages (\textsc{EHLO}) 
     \item After email transfert phase can start : clients transfert one or more email 
         by indicating \textsc{MAIL FROM:} and \textsc{RCPT TO:}
-    \item At the end, the connection is close
+    \item At the end, the connection is closed (QUIT)
 \end{enumerate}
 &
 \includegraphics[width=7cm]{stmp.png} \\
@@ -995,7 +1015,7 @@ connection-oriented service. (\textit{Server listen on port 25})
 \end{tabular}
 
 \subsubsection{The post office protocol (POP) }
-POP run above a connection-oriented service. (\textit{Server listen on port 110})
+POP run above a connection-oriented service. (\textit{Server listen on port 110}), it allows a client to download all of his/her email from a server.
 
 \paragraph{Working} :
 
