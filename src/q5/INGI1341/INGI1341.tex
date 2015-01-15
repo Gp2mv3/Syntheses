@@ -319,25 +319,27 @@ Flat is like number telephone (small match to forwad packet) and hierachical is 
 \end{figure}
 
 \subsubsection{Vitual circuit organisation}
-TODO page 40
+Each host has an address. Packet forwarding is not done by looking in the packet destination but by checking 
+the label (a int). Enable control over the path used.
+\paragraph{label switching} Each node has a label forwarding table. Upon reception of a packet, it forward 
+the packet in the direction mappig with the label of the packet. It change the label of the packet. (Lookup in 
+O(1)).
 
 \subsubsection{The control plane}
 There is two main technique that can be used to maintain the forwarding table in
 a network : Distance vector routing and link state routing.
 
 \subsubsection{Distance vector routing}
-Allow router discover the destinations reachable inside the network as wall as
+Allow router discover the destinations reachable inside the network as well as
 the shortest path to reach each of these destinations.
-(\textit{each link as a associated cost})
-
-
+(\textit{each link has a associated cost})
 \paragraph{Routing table contains} :
 \begin{itemize}
     \item $R[d].link$ : outgoing link use to forward paquet to d
     \item $R[d].cost$ : cost of shortest path to d
-    \item $R[d].time$ : time to last timestamp
+    \item $R[d].time$ : timestamp of the last distance vector containig destination d
 \end{itemize}
-
+When it boots, it send a distance vector with its address at a distance 0.
 \paragraph{Routing table update}
 Router send regularly its \textbf{distance vector} over all interface.
 If a router receiver a distance vector from link l, he only update
@@ -347,9 +349,12 @@ the corresponding entry  if either :
     \item[OR]
     \item $R[d].link == l$ : Update of the same route
 \end{itemize}
-
-TODO page 46 (failure in distance vector routing)
-
+All router send their distance vectore every N seconds. After $3*N$ seconds, the distance vector cost is set to 
+$\infty$ if there were no update.
+\paragraph{Count to infinity} If two routers send distance vector at the same time, cost keep increasing 
+infinitely. Solution $16=\infty$
+\paragraph{split horizon} Do not send information to where you have learned it. It is done by making 
+specific distance vector for each neighbor.
 \subsubsection{Link state routing}
 Exchange messages to allow each router to learn the entier network topology, and so
 each router is then able to compute its routing table by using a shortest path computation
@@ -362,7 +367,8 @@ each router is then able to compute its routing table by using a shortest path c
     \item Opposite proportionnal of the bandwith ($\frac{C}{bandwith}$ where C is
     higher than the highest bandwith in the network)
 \end{enumerate}
-
+When booting, they send HELLO message to neighboors. HELLO is never fowarded and it is send every N 
+seconds. If no HELLO during $k*N$ second, the link considered to have failed.
 \paragraph{Static Vs dynamic metric} Experience showed that is was difficult
 to tune the dynamic adjustments and ensure that no forwarding loops occur in
 the network! \textit{Actualy,} link state routing protocol use metrics
@@ -385,16 +391,22 @@ contains the most recent LSP for each router.
 $\to$ Router forward a LSP only if he is most recent that the actual LSP on LSDB
 
 \paragraph{\textbf{Reliable flooding}} Router use ack (and retransmissions) to ensure that
-all link state packet are successfully transfered to all neighbouring routers.
+all link state packet are successfully transfered to all neighbouring routers. 
 
-TODO page 51 (failure on link state routing)
+When a failure link has been detected, router attached to it send LSP without this link. So all router update 
+their LSBD. 
+\paragraph{Two-way connectivity} A link is consider failed when one of the router attached to it as detect it.
 
 \subsection{Application}
+Two model to organise a networked application. Client-server and peer-to-peer.
+To understand each other, the client and the server need to agree on a protocol (format of message + 
+organisation of the information flow).
 \begin{itemize}
-    \item \textbf{Big indian} :  send the most significant byte followed byt the least signifiact byte
-    \item \textbf{Little indian} : send the least significant byte followed byt the most signifiact byte
+    \item \textbf{Big indian} :  send the most significant byte followed by the least significant byte (the one 
+    choose by the Internet)
+    \item \textbf{Little indian} : send the least significant byte followed by the most significant byte
 \end{itemize}
-
+ In the peer-to-peer model, host act like client and server.
 
 \subsection{The transport layer}
 He need to manage different issue from the network layer :
@@ -670,7 +682,7 @@ de congestion (= $\frac{nbr congestion}{nbr paquet}$)
 Même technique pour les réseaux virtuels, sauf qu'on marque l'acknowledgement.
 
 \paragraph{Control packet}
-Allow the network node to send a \texttbf{control packet} to the source to indicate
+Allow the network node to send a \textbf{control packet} to the source to indicate
 the current congestion level. But their usage is mainly restricted to small network because :
 \begin{enumerate}
     \item In large network this packet increase the network load when network is congested
