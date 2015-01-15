@@ -1365,24 +1365,44 @@ Plusieurs autre différence :
 Applique un three-way handshake pour cloturer la connection, ou un ABORT chunk
 pour refuser une connection ou la cloturer immédiatement.
 
+\subsection{UDP - TCP - SCTP}
+\begin{table}[h]
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        UDP & Unreliable   & x              & Stream-mode     & x                   & x \\
+        \hline
+        TCP & Reliable     & Option finie   & Stream-mode     & Three-way handshake & seq. = byte \\
+            &              &                &  Single host    &                     &  \\
+        \hline
+        SCTP & reliable or & Option infinie & message mode as & Four-way handshake & chunk \\
+             & partially   & with chunk     & a stream mode   &                    & \\
+             &             &                & Multihomed host &                    & \\
+        \hline
+    \end{tabular}
+    \caption{Difference between UDP, TCP and SCTP}
+\end{table}
 \subsection{Congestion control}
 Le control est effectué dans la transport layer.
 
 \textsc{tcp} control la congestion en agissant sur la window size puisque une connection
-ne peut pas envoyer des données plus vite que $\frac{window}{rtt}$
+ne peut pas envoyer des données plus vite que $$\frac{window}{rtt}$$
 
 \paragraph{Congestion window}
-\textsc{cwnd} est stocké dans le \textsc{TCB} de chaque connection, et la taille de la window
-est $min(cwnd, rwin, swin)$.  \textit{Additive increase} : Chaque \textsc{rount trip time}, on incremente \textsc{cwnd} de MSS byte. \textit{Multiplicative decrease} : Quand une congestion
+\textbf{CWND} est stocké dans le \textsc{TCB} de chaque connection, et la taille de la window
+est $min(cwnd, rwin, swin)$.  
+\begin{itemize}
+    \item[-] \textit{Additive increase} : Chaque \textsc{rount trip time}, on incremente \textsc{cwnd} de MSS byte. 
+    \item[-] \textit{Multiplicative decrease} : Quand une congestion
 est detecté on divise \textsc{cwnd}.
+\end{itemize}
 
 \paragraph{Initial value cwnd}
-est de MSS bytes afin de ne pas congestionner le réseau au démarrage.
+est de \textbf{MSS} bytes afin de ne pas congestionner le réseau au démarrage.
 (Cette valeur de départ a été augmenter à 15Kbyte)
 
 
 Toutefois, cwnd va augmenter lentement avant d'arriver a une valeur qui utilise efficacement le
-reseau. Pour éviter cela, on inclu un \textsc{slow-start algorithm} qui permet durant ce temps
+reseau. Pour éviter cela, on inclu un \textbf{slow-start algorithm} qui permet durant ce temps
 de doubler \textsc{cwnd} chaque RTT.
 
 \paragraph{Detect congestion} revient à detecter la perte de packet.
@@ -1392,24 +1412,34 @@ de doubler \textsc{cwnd} chaque RTT.
 \end{itemize}
 
 \begin{figure}[h]
-    %\includegraphics
-    TODO image
-   \caption{Congestion window with congestion}
+    \centering
+    \begin{tabular}{m{8cm}m{8cm}}
+    \includegraphics[width=8cm]{severecongestion.png} &
+    \includegraphics[width=8cm]{midlecongestion.png} \\
+    \multicolumn{1}{c}{Severe congestion} & \multicolumn{1}{c}{Middle congestion }
+\end{tabular}
+    \caption{Congestion window when detect congestion}
 \end{figure}
 
 \subsubsection{Controlling congestion without losing data}
 L'idée est de détecter avant la perte de paquet la futur congestion avec un
 \textbf{Explicit Congestion Notification}. (Quant un paquet passe par un router
-congestionné on met le bit à 1 et quand le receiver à cette information il la
+congestionné on met le \textbf{CE} bit à 1 et quand le receiver à cette information il la
 transmet au sender pour adapter son débit)
 
-\paragraph{}
 \begin{enumerate}
-    \item Pour déployer la solution, il faut un autre bit pour spécifier si le packet utilise
-        ECN ou non. En effet, le cas échéant lorsque le router est congestionné ceux qui
-        n'implémente pas ECN sont avantagé
+    \item Pour déployer la solution, il faut un \textbf{autre bit} (ECN) pour spécifier si le packet utilise
+        \textbf{ECN} ou non. En effet, le cas échéant lorsque le router est congestionné ceux qui
+        n'implémente pas ECN sont avantagé.
+        \begin{itemize}
+            \item[$\to$] Si le router est congestionné et que le packet implémente ECN alors CE est mis à 1, sinon le packet est discard.
+        \end{itemize}
     \item Si le protocol est reliable ont peut informer le sender via l'ack. Soit via
-        un flag dans le header soit via une option. TCP``choisi le flag, STCP l'option.
+        un flag dans le header soit via une option. (TCP=flag, STCP=option).
+        \begin{itemize}
+            \item[$\to$] Une variable est maintenue à 1 du coté du receiver tant que 
+                les paquets reçu sont marqué comme ``congestionné''.
+        \end{itemize}
     \item Dernièrement, le sender/receiver savent si il utilise ECN via une TCP option
         durant le three-way handshake de connection
 \end{enumerate}
@@ -1418,7 +1448,7 @@ Si le receiver detect une congestion, les prochain paquets envoyé auront cette 
 (Pour éviter que l'information ne se perde si l'ack est perdu)
 
 \paragraph{Router algorithm}
-Deux types de router, soit avec une FifO soit un ensemble de FIFO et round robin scheduler.
+Deux types de router, soit avec une FIFO soit un ensemble de FIFO et round robin scheduler.
 
 Au lieu de prendre une mesure instantanée du remplissage du buffer, on prend une moyenne
 du remplissage.
@@ -1430,7 +1460,34 @@ Quand il y a plusieurs queue ont fait cette probabilité de manière indépendan
 garantir la justesse.
 
 \subsubsection{Modeling TCP congestion control}
-TODO
+To show the factors that affect the performance of TCP,
+if $p$ is the segment loss ratio then $\frac{1}{p}$ is the segment successfully transfers.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=9cm]{modelingtcp.png}
+    \caption{Evolution of the congestion window with regular losses}
+\end{figure}
+
+\begin{description}
+    \item The number of segment that are sent during a cycle is the yellow : 
+    $ area = \frac{3 \times W^2}{8}$
+    \item But by definition, area = $\frac{1}{p}$ so : $ W = \frac{k}{\sqrt{p}}$
+    \item The troughput (\textit{bytes/sec}) is the number of segment transmitted divided
+        by the duration of the cycle : $$Throughput = \frac{area \times MSS}{time} \quad \approx \frac{k \times MSS}{rtt \times \sqrt{p}}$$
+\end{description}
+
+This is a important result wich show that :
+\begin{itemize}
+    \item TCP connection with \textbf{small rtt} higher throughput that higher rtt
+        when losse occur. (\textit{unfair})
+    \item TCP connection that use \textbf{large MSS} can achieve a higher throughput that
+        shorter MSS. (\textit{unfair}). Note that most host use same MSS = 1460 bytes.
+\end{itemize}
+
+\paragraph{Conclusion :} $Througput < min( \frac{window}{rtt}, \frac{k \times MSS}{rtt \times \sqrt{p}})$
+Maximun throughput depend on the maximun window size and rtt if there are no losses,
+else it depends on the MSS, rtt and loss ratio.
 
 \subsection{Network layer}
 Trois type de datalink layer :
