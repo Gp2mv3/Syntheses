@@ -22,7 +22,7 @@ It needs to be translated.
 \begin{description}
     \item[PDU] : \textit{Protocole data unit}. Unité de mesure des informations échangées
         dans un réseau informatique.
-
+    \item[MSL] : \textit{Maximum Segment Life}.
 
     \item[DNS] : \textit{Domain Name System}. Service permettant de traduire un nom de domaine en informations de plusieurs types qui y sont associées, notamment une IP.
     \item[DIFS] : \textit{DCF Interframe Space}. Si une station détecte qu'il n'y a pas eu de transmission WiFi pendant DIFS microsecondes et que l'échange de la dernière trame a réussi, elle a le droit de transmettre. Cette valeur au sein de la gestion des collisions : DIFS = SIFS + (2 * Slot time)
@@ -102,7 +102,7 @@ and for us it is like a black box with these characteristics :
 \end{itemize}
 
 \paragraph{Manchester encoding}
-TODO page 8
+It's an encoding that consist in dividing time in fixed length period. To send a 1, the voltage must be high in the first half of a period and the become low (opposite for zero). It use the symbol InvH (high voltage during last period) and InvB as special marker.
 
 \subsection{Datalink Layer}
 The PDU of Datalink Layer service is a \textbf{frame} (\textit{sequence of bit with a particular syntax or structure}) because we want to share data block.
@@ -161,7 +161,7 @@ We can have errors due to different events:
 \paragraph{ }
 Thanks to the ACK flag in the header,
 we have 2 types of frames: \textbf{data frame} and \textbf{acknowledgment frame}.
-Using to the  \textbf{Error Detection Code}, we can try  to recover from failures
+Using to the  \textbf{Error Detection Code}(ex:parity bit), we can try  to recover from failures
 of the physical layers and provide a reliable service.
 
 \paragraph{Note: }
@@ -169,7 +169,7 @@ Since the \textbf{Physical Layer does not reorder} the bits,
 the frames will not be reordered either.
 Providing a reliable service it therefore easier than for the Transport Layer that has to cope with the reordering of packets in the Network Layer (it has to discard packets to old packets and have maximal throughput because of that).
 
-\paragraph{Pipelling:  }  This technique  allows  a  sender to  transmit
+\paragraph{Pipelining:  }  This technique  allows  a  sender to  transmit
 several  consecutive frames  without being  forced to  wait for  and ack
 after each frame.
 
@@ -178,10 +178,11 @@ There are 3 ways of achieving a reliable Datalink Layer.
 \begin{enumerate}
   \item \textbf{ABP} :
     The Alternating Bit Protocol is
-    a particular case of go-back-n for $n = 2$.
+    a particular case of go-back-n for $n = 2$ (only one bit for the sequence number).
   \item \textbf{Go-back-n} :
     is simple, the receiver discards all out of sequence frames
-    and the ACK always contains the last in sequence frame received.
+    and the ACK always contains the last in sequence frame received. It used three variables,
+    \textit{lastack,next,maxseq}
 
     The sender has simply one timer and when it expires, it retransmits \emph{all}
     its unacked frames.
@@ -198,7 +199,7 @@ unacked frames when it has detected a loss.}
   frame is store in buffer})
 
     The sender has  now a timer  for each frame  of the
-    sending window.
+    sending window. An ACK covers all the frame in the buffer up to the sequence number acknowledged.
 
     \begin{itemize}
         \item[$\to$] The ACK sometimes also contains the list of out of sequence frame received (\emph{selective acknowledgement}) to avoid useless retransmission.
@@ -210,7 +211,8 @@ If the sequence number has $n$ bits, we use $2^n$ \textbf{different sequence} nu
 A \textit{Sliding window} is use to manage the buffer of sequence numbers.
 
 Because the Physical Layer will not reorder the frames,
-the maximum window size for the go-back-n is $\bf 2^n-1$ and is $\bf 2^{n-1}$ for the Selective Repeat.
+the maximum window size for the go-back-n is $\bf 2^n-1$ and is $\bf 2^{n-1}$ for the Selective Repeat. 
+(Think when all the ack are lost)
 
 \paragraph{  }  Not  all  Datalink Services  provide  a  \emph{reliable}
 service. As  a rule  of thumb, datalink  services above  very unreliable
@@ -224,7 +226,495 @@ When DATA is sent in both directions, an ACK frame and a DATA frame sent by one 
 (\textit{Used to reduce the overhead caused by acknowledgements})
 
 
+
+
+\subsection{Building a network}
+Network layer is used to send packet between two host that cannot directly relied
+by a cable. Host and router \textbf{sending packet}.
+
+There are two possible organisation for the network layer.
+
+\begin{itemize}
+    \item \textbf{Data plane :} Protocol and algorithm use to forward data
+    \item \textbf{Control plane :} Protocol and algorithm use to make forwarding table
+\end{itemize}
+
+\subsubsection{The datagram organisation}
+
+\textit{Inspired by the postal service}, each host is identified by a \textbf{network layer address}.
+
+For each \textsc{packet}, sender must define his address, receiver address and data.
+
+\paragraph{Forwarding}
+In datagram organisation, router use \textbf{hop-by-hop} forwarding. (\textit{Each router
+forward the packet with his forwarding table})
+
+In a network, \textbf{black-hole} (\textit{when router discard packet because not entry
+in his forwarding table for this destination}) and \textbf{cycle} ({packet
+consume bandwith}) must be avoiding!
+
+
+\paragraph{Computing forwarding tables}
+
+\begin{description}
+    \item[Port-address table] : Only if we have a \textbf{tree-shapped network} (\textit{drawback}), il suffit d'inspecter les packets reçu pour créer sa table de forwarding sans risquer d'avoir de loop.
+        \begin{enumerate}
+            \item If the destination address is in the forwarding table, the packet is
+                forward on the right interface
+            \item Else the packet is send on all interface except the interface
+                from wich the packet was receive. It's call \textbf{broadcasting}
+                (\textit{drawback})
+        \end{enumerate}
+
+        $\to$ The problem with a tree-shapped network is that if a link fails, the network is \textit{split} in two network since there is no redundancy.
+
+        \begin{center}
+            \textit{If the network is not a tree, we can also use port-address table but we need to use a distributed algorithm to ensure
+            that we have a tree (e.g. Spanning Tree Protocol for Ethernet (Datalink Layer)).}
+        \end{center}
+
+    \item[Source routing] : There is no destination address but only the path to reach
+        the destination host. Two type of packet :
+        \begin{enumerate}
+            \item Data packet : to exchange data
+            \item Control packet : to discover the path between endhosts. 
+                When a router receive a control packet he forwad this one via
+                all interface.
+
+                Avoid possible loop because control packet contains a list of \textbf{intermediate nodes}.
+        \end{enumerate}
+        Complexity is placed on the endhost and network node is simpliest.
+
+\end{description}
+
+\paragraph{Flat or hierachical adresse}
+Flat is like number telephone (small match to forwad packet) and hierachical is like a postal adress (smaller forwarding table but adress change when attached to other node\ldots issues with mobile host).
+
+\paragraph{Dealing with heterogeneous datalink}
+
+\begin{enumerate}
+    \item \textbf{Retransmitting} : Discard packet and send a control packet to the source to indicate that it cannot forward pacjets longer than 500byte. Source retransmitting the informaiton in smaller packer.
+        \begin{center}
+            \textit{Router can be really simple and no additionnal operation to perform,
+            but may be inefficient because of retransmitting}
+        \end{center}
+    \item \textbf{Fragmenting} : Router can fragment packet, to way to achieve this :
+        \begin{enumerate}
+            \item The next router reassembles the fragment
+                \begin{center}
+                    \textit{Take so much CPU time and memory to fragment 
+                    and after reassemble}
+                \end{center}
+            \item The endhost reassemble the fragment
+                \begin{center}
+                    \textit{Compromise between the two other}
+                \end{center}
+        \end{enumerate}
+\end{enumerate}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=12cm]{heterogeneous.png}
+    \caption{Example of heterogeneous datalink layer}
+\end{figure}
+
+\subsubsection{Vitual circuit organisation}
+Each host has an address. Packet forwarding is not done by looking in the packet destination but by checking 
+the label (a int). Enable control over the path used.
+\paragraph{label switching} Each node has a label forwarding table. Upon reception of a packet, it forward 
+the packet in the direction mappig with the label of the packet. It change the label of the packet. (Lookup in 
+O(1)).
+
+\subsubsection{The control plane}
+There is two main technique that can be used to maintain the forwarding table in
+a network : Distance vector routing and link state routing.
+
+\subsubsection{Distance vector routing}
+Allow router discover the destinations reachable inside the network as well as
+the shortest path to reach each of these destinations.
+(\textit{each link has a associated cost})
+\paragraph{Routing table contains} :
+\begin{itemize}
+    \item $R[d].link$ : outgoing link use to forward paquet to d
+    \item $R[d].cost$ : cost of shortest path to d
+    \item $R[d].time$ : timestamp of the last distance vector containig destination d
+\end{itemize}
+When it boots, it send a distance vector with its address at a distance 0.
+\paragraph{Routing table update}
+Router send regularly its \textbf{distance vector} over all interface.
+If a router receiver a distance vector from link l, he only update
+the corresponding entry  if either :
+\begin{itemize}
+    \item $V[d].cost+l.cost < R[d].cost$ : new route smaller thant route already know
+    \item[OR]
+    \item $R[d].link == l$ : Update of the same route
+\end{itemize}
+All router send their distance vectore every N seconds. After $3*N$ seconds, the distance vector cost is set to 
+$\infty$ if there were no update.
+\paragraph{Count to infinity} If two routers send distance vector at the same time, cost keep increasing 
+infinitely. Solution $16=\infty$
+\paragraph{split horizon} Do not send information to where you have learned it. It is done by making 
+specific distance vector for each neighbor.
+\subsubsection{Link state routing}
+Exchange messages to allow each router to learn the entier network topology, and so
+each router is then able to compute its routing table by using a shortest path computation
+\footnote{By Dijkstra}
+
+\textbf{Weight} (\textit{Usually symmetric, but it's not a assumption}) of a link can be :
+\begin{enumerate}
+    \item Unit weight. (\textit{shortest path = lowest intermediate routers})
+    \item Proportionnal to the propagation delay
+    \item Opposite proportionnal of the bandwith ($\frac{C}{bandwith}$ where C is
+    higher than the highest bandwith in the network)
+\end{enumerate}
+When booting, they send HELLO message to neighboors. HELLO is never fowarded and it is send every N 
+seconds. If no HELLO during $k*N$ second, the link considered to have failed.
+\paragraph{Static Vs dynamic metric} Experience showed that is was difficult
+to tune the dynamic adjustments and ensure that no forwarding loops occur in
+the network! \textit{Actualy,} link state routing protocol use metrics
+that are manually configured.
+
+\paragraph{Network topology update}
+The update is perform by \textbf{link-state packet} that contains :
+\begin{itemize}
+    \item $LSP.Router$ : identification of the LSP sender
+    \item $LSP.age$ : age (\textit{remaining lifetime}) of LSP
+    \item $LSP.seq$ : sequence number of LSP
+    \item $LSP.Links[]$ : 
+\end{itemize}
+
+\paragraph{\textbf{Flooding} algorithm}
+Is used to efficiently distribute the LSPs of all router.
+To implement this, each router maintains a \textit{link state database} (LSDB) that
+contains the most recent LSP for each router. 
+
+$\to$ Router forward a LSP only if he is most recent that the actual LSP on LSDB
+
+\paragraph{\textbf{Reliable flooding}} Router use ack (and retransmissions) to ensure that
+all link state packet are successfully transfered to all neighbouring routers. 
+
+When a failure link has been detected, router attached to it send LSP without this link. So all router update 
+their LSBD. 
+\paragraph{Two-way connectivity} A link is consider failed when one of the router attached to it as detect it.
+
+\subsection{Application}
+Two model to organise a networked application. Client-server and peer-to-peer.
+To understand each other, the client and the server need to agree on a protocol (format of message + 
+organisation of the information flow).
+\begin{itemize}
+    \item \textbf{Big indian} :  send the most significant byte followed by the least significant byte (the one 
+    choose by the Internet)
+    \item \textbf{Little indian} : send the least significant byte followed by the most significant byte
+\end{itemize}
+ In the peer-to-peer model, host act like client and server.
+
+\subsection{The transport layer}
+He need to manage different issue from the network layer :
+\begin{multicols}{2}
+\begin{itemize}
+    \item corrupt data
+    \item loose data
+    \item not deliver data in-order
+    \item upper bound on maximun length of the data
+    \item duplicate data
+\end{itemize}
+\end{multicols}
+
+
+The transport layer send \textbf{segment} as PDU
+Segment contains \textbf{header} with some control information and
+\textbf{payload} from the applicaiton layer.
+
+\begin{center}
+    \textit{When a segment is create, this segment is encapsulated by th network layer
+    into a packet wich contains the segment as its payload and a network header.
+    Packet is then encapsulated in a frame to be transmitted in the datalink layer.}
+\end{center}
+
+\paragraph{ }
+
+Most network use \textbf{datagram organisation} and provide a simple service
+which is called the \textcolor{red}{connectionless service}. \textbf{Transport layer} service is based on 
+this one.\footnote{Virtuals organisation have a connection système based on label}
+
+Pour passer du network layer au transport layer, il faut ajouter un méchanisme de
+\textbf{gestion des erreurs} et une technique de \textbf{multiplexing} (\textit{via port}).
+
+
+\subparagraph{ }There is three different service on the transport layer : connectionless service,
+connection-oriented service en request-response service.
+
+\subsubsection{Connectionless service}
+On envoi les données et le service assure qu'elle arrive.
+Utilisé pour le transport de petit SDU.
+
+\begin{description}
+    \item[Reliable] : Garantit l'arrivée à coup sur des données. (\textit{difficile à mettre en pratique})
+    \item[Unreliable] : Imperfection :
+        \begin{itemize}
+            \item Garantit seulement une majorité qui arrive (\textit{Souvent ce qui est écarté est du à l'overflow du buffer})
+            \item Peut duppliquer les packets sur le réseau
+            \item Peut délivrer un SDU différrents
+            \item A une taille limité des données
+        \end{itemize}
+\end{description}
+
+\subsubsection{Connection-oriented}
+Ici il y a trois phases : établir la connection, transferer les SDUs (\textit{la connection est
+bidirectionnel}) et fermer la connection.
+
+\begin{itemize}
+    \item \textbf{Reliability} : Elle n'est garantie que lorsque la connection est terminé avec un ``gracefully``, sinon des pertes peuvent être observé
+\end{itemize}
+
+\paragraph{\textbf{Connection}}
+
+\paragraph{Refus:} Soit de la part du destinataire, soit du provider.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=8cm]{refus.png}
+    \caption{Refus connection}
+\end{figure}
+
+\subparagraph{Three-way handshake:} est utilisé contre l'approche naive de la connexion ``aller-retour''.  Celle ci est définie par l'envoi d'un \textbf{CR}, répondu par \textbf{CA} qui répond \textbf{CA}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=12cm]{threeway.png}
+    \caption{Three way handshake connection establishment}
+\end{figure}
+
+Pour éviter des \textbf{dupplicate transport connection} on utilise un \textbf{transport clock} incremented
+every \textit{clock cycle} and after each connection establishment. (\textit{Must continue
+to be incremented even if the transport entity stops or reboots})
+
+Implemented with $k$ bits counter and its \textbf{clock cycle} is such that
+$2^k \times cycle >> MSL$
+
+\begin{figure}[h]
+    \centering
+    \begin{tabular}{ccc}
+    \includegraphics[width=5cm]{three1.png}
+    &
+    \includegraphics[width=5cm]{three2.png}
+    &
+    \includegraphics[width=5cm]{three3.png}
+    \\
+    \multicolumn{3}{c}{$\color{red} \bullet$ when a segment
+    is lost and $\color{yellow} \bullet$ when he come from another}
+\end{tabular}
+\caption{Scenario when transport clock is usefull. }
+\end{figure}
+
+
+\paragraph{\textbf{Data transfert}}
+\begin{itemize}
+    \item \textsc{message-mode} : On envoie et reçois les messages tels quels.
+    \item \textsc{stream-mode} : On envoit içi des flux de bytes, et on a besoin de spécifié un délimiter
+spécifique pour déliumiter les SDU dans le bytestream.
+\end{itemize}
+
+$\rightarrow$  Le \textbf{Stream-mode}  est utilisé  pour les  reliable
+transport protocols,  et le  numéro de séquence  placé dans  la frame
+correspond à la position du premier \textbf{byte} du payload dans le bytestream.
+
+\paragraph{Note} : Plusieurs \textbf{différence} par rapport au \textbf{datalink layer}
+pour assurer que les données soient délivré.
+
+\begin{enumerate}
+    \item Comparé au datalink  layer ou le délai de transmission est fixe
+        lorsque deux host  sont connecté, ici le \textbf{delai varie}. (\textit{car les
+paquets envoyés  ne prennent pas  forcément le  même path et  il peut
+être mis en attente dans le buffer d'un router}).
+    \item Les paquets peuvent arriver \textbf{hors séquence} contrairement au datalink layer
+    \item Le network peut \textbf{duppliquer} les paquets dans le transport layer
+\end{enumerate}
+
+\subparagraph{Solution} :
+\begin{enumerate}
+    \item Pour détecter les erreurs de transmission, comme dans le datalink layer, on utilise un
+    CRC ou checksum sur \textbf{chaque} segment.
+    \item Pour rendre le protocole reliable, on utilise un numéro de séquence 
+        (\textit{correspondant à la position du premier \textbf{byte} du payload dans
+        le bytestream}) et des numéro d'ackowledgement. 
+
+        $\to$ 32 ou 64bits nécessaire plutot que 8 dans les datalinks layer protocol
+\end{enumerate}
+
+\paragraph{Go-back-n and selective repeat}
+Dans le transport layer on va préférer le \textbf{sélective repeat} puisque cette couche
+ne garantit pas l'arrivée en séquence, contrairement au datalink layer.
+
+\paragraph{Buffer variable}
+De plus, dans le transport layer, plusieurs application concurrente peuvent communiquer
+du coup l'espace mémoire offer à chaque application peut varier ce qui peut rendre la
+taille du buffer variable.
+Le sender à un \textbf{swin} (\textit{taille de son buffer}), et \textbf{rwin} (\textit{taille du buffer du receiver}). Il considère le minimun des deux comme la window size.
+
+\textbf{Pour éviter un deadlock}, on utilise un persistent timer lorsque le sender reçoit une
+window size du receiver égale à 0. Quand le persistent timer expire on force le renvoi du dernier segment.
+
+\paragraph{Excessive timer retransmission} can cause ambiguities if
+you make the turn of sliding window\ldots To solve this issues, transport protocol
+require the network layer to enforce a \textbf{Maximun Segment Lifetime}.
+
+\textsc{MSL} limits the maximun bandwith of a transport because if it use $n$ bits
+for sequence number, then it cannot send mode than $2^n$ segments every MSL.
+
+\paragraph{\textbf{Connection release}}
+Soit de manière \textbf{abrute}, soit de manière \textbf{gracefully} càd en fermant
+les deux sens de la connections avec un DR suivit d'un ACK.
+
+
+\subsubsection{Request-response service}
+It's a compromise between connectionless service and connection-oriented service.
+
+It work like a function (\textit{small input and small output}). Use like a 
+\textbf{Remote Call Procedure}.
+
+\subsection{Naming and addressing}
+The network and transport layer rely on adresses that are encoded as fiwed size bit
+strings. (\textit{for friendly human using}).
+
+The internet is a tree structure capable of containing all names.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=6cm]{internet.png}
+    \caption{Internet tree structure}
+\end{figure}
+
+TODO page 72-73
+
+\subsubsection{Benefit}
+TODO page 73-74
+
+\subsection{Sharing ressources}
+\begin{itemize}
+    \item \textbf{bandwith} est la ressource la plus importante dans un réseau.
+    \item \textbf{buffer} of router est une autre ressource importante.
+    \item \textbf{Processing capacity} of router to analyse packet and see on forwarding table.
+\end{itemize}
+
+\subsubsection{Organisation to sharing bandwith}
+\begin{figure}[h]
+    \centering
+    \begin{tabular}{ccccc}
+    \includegraphics[width=2cm]{fullmesh.png} &
+    \includegraphics[width=2cm]{bus.png} &
+    \includegraphics[width=2cm]{star.png} &
+    \includegraphics[width=2cm]{circle.png} &
+    \includegraphics[width=2cm]{tree.png} \\
+    Full mesh & Bus & Star & Ring & Tree
+\end{tabular}
+    \caption{Differents organisations}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{A full mesh}
+    Le plus efficace, mais nécessite $\frac{n \times (n-1)}{2}$ lien, et chaque
+    host doit manager $n-1$ interface ce qui peut vite devenir impossible.
+
+    \item \textbf{Bus organisation}
+    Le danger est que si le cable du bus est coupé en deux, le réseau est scindé
+    ce qui peut être dur à maintenir.
+
+    \item \textbf{Star organisation}
+    Le noeud du centre de l'étoile est vital pour le réseau, mais il permet aussi
+    de centraliser le control en un seul point (\textit{C'est un excellent point de
+    control et un bon point d'observation}).
+
+    Beaucoup plus facile à maintenir que le bus.
+
+    \item \textbf{Ring organisation}
+    Un lien coupe l'entièrete du réseau, c'est pouquoi on utilise souvent un dual-ring.
+
+    \item \textbf{Tree organisation}
+    Cela permet de connecté un large nombre de client avec un très petit coût.
+\end{itemize}
+
+
+\subsubsection{Sharing bandwith}
+
+Le partage de bandwith dans les réseaux se veut être \textbf{max-min fairness}.
+
+Plusieurs algorithme sont expliqué dans la section Medium Access Control,
+on section \ref{medium_access_control}.
+
+\subsubsection{Network congestion}
+
+\textbf{Congestion} when $\sum demand > capacity$.
+
+\paragraph{Congestion collapse}
+Cela arrive lorsque le réseau est un peu congestionné, et donc la transmission est ralenti.
+Si un protocole tel que \textbf{selective repeat} est utilisé, alors le sender peut
+croire que le packet est perdu et donc renvoyé le packet ce qui ne fait qu'augmenter
+la congestion!
+
+Pour réguler la congestion, une solution est de connaître la congestion actuel afin que
+les hosts ajuste leur bandwith disponible pour diminuer la congestion.
+
+\subparagraph{$\to$} Tant que le buffer est peu ou pas du tout rempli, cela signifie que la demande est plus petite que la capacité et que le buffer sert juste à \textbf{lisser} les demandes dans le temps, sinon il y a une trop de demande pour l'offre de bande passante offerte et on va
+arriver à une congestion
+
+
+\paragraph{Discard mechanism}
+On peut choisir d'écarter des paquets qd le buffer est full ou plutot quand il
+augmente dangereusement afin de prévenir une congestion!
+Toutefois, discard a packet est la solution finale.
+
+\begin{enumerate}
+    \item \textbf{Discard the ingoing} : C'est le plus utilisé mais il tend à rester congestionner et
+        les applications temps réelles en souffre bcp
+    \item \textbf{Discard the next outgoing} : C'est plus judicieux qu'il n'y parait puisque ce paquet
+        y est depuis lgtps et on a surement déja détecté la perte (de part la congestion) avant!
+    \item \textbf{Random early discard} : Supprime un packet random. (\textit{Permet de supprimer les paquets de différents flow en proportion à leur bandwith}).
+\end{enumerate}
+
+\subparagraph{Attention :} supprimer un paquet n'est pas la meilleur solution puisqu'on supprime un paquet qui a consommé des ressources alors qu'on manque justement de ressource!
+
+\paragraph{Forward Explicit Congestion Notification}
+Pour les réseaux datagramme,
+on utilise un bit pour marquer si le paquet est passé par un endroit congestionné,
+et si c'est le cas le receiver envoi un paquet pour informer le sender du degré
+de congestion (= $\frac{nbr congestion}{nbr paquet}$)
+
+\paragraph{Backward Explicit Congestion Notification}
+Même technique pour les réseaux virtuels, sauf qu'on marque l'acknowledgement.
+
+\paragraph{Control packet}
+Allow the network node to send a \textbf{control packet} to the source to indicate
+the current congestion level. But their usage is mainly restricted to small network because :
+\begin{enumerate}
+    \item In large network this packet increase the network load when network is congested
+    \item Network node are optimized for forwading packet, not create a packet.
+\end{enumerate}
+
+\paragraph{Scheduler mechanism}
+Permet d'attribuer une FIFO par flow et un round robin choisit le prochain paquet
+
+
+\subsubsection{Distributing the load across the network}
+
+\paragraph{Virtual network}
+Ici lorsque un host veut envoyer une information, il spécifie la destination et parfois la
+bandwith nécessaire. On lui répond si il peut ou non se connecter.. Cette technique
+est utilisé notament par les téléphones.
+
+\paragraph{Datagram network}
+La technique du virtual ne peut être appliqué car dans le datagram un host n'a pas
+besoin d'autorisation pour envoyer des packets.
+
+TODO page 82
+
+
+\paragraph{Shared popular file}
+
+\paragraph{Save on multi server}
+
+\paragraph{Using popular bittorent service}
+
 \subsubsection{Medium Access Control (MAC)}
+\label{medium_access_control}
 The first of the 3 resources that need to be shared inside a network is the link bandwidth (the 2 others are routers processing time and routers buffers).
 
 \textsc{Collisions} happens when two hosts try to send a frame simultaneously.
@@ -307,271 +797,6 @@ this is called a \emph{binary exponential back-off}.
 
 
 
-\subsection{Building a network}
-Network layer is used to send packet between two host that cannot directly relied
-by a cable. Host and router \textbf{sending packet}.
-
-There are two possible organisation for the network layer.
-
-\subsubsection{The datagram organisation}
-
-\textit{Inspired by the postal service}, each host is identified by a \textbf{network layer address}.
-
-For each \textsc{packet}, sender must define his address, receiver address and data.
-
-
-\paragraph{Forwarding}
-In datagram organisation, router use \textbf{hop-by-hop} forwarding. (\textit{Each router
-forward the packet with his forwarding table})
-
-In a network, \textbf{black-hole} (\textit{when router discard packet because not entry
-in his forwarding table for this destination}) and \textbf{cycle} ({packet
-consume bandwith}) must be avoiding!
-
-
-\paragraph{Computing forwarding tables}
-\begin{description}
-  \item[port-address table] Si on a un \textbf{tree-shapped network} il suffit d'inspecter les packets
-    reçu pour créer sa table de forwarding sans risquer d'avoir de loop.
-    The problem with a tree-shapped network is that if a link fails, the network is split in two since there is no redundancy.
-    If the network is not a tree, we can also use port-address table but we need to use a distributed algorithm to ensure
-    that we have a tree (e.g. Spanning Tree Protocol for Ethernet (Datalink Layer)).
-    %TODO page 35
-\end{description}
-
-\paragraph{Flat or hierachical adresse}
-Flat is like number telephone (small match to forwad packet) and hierachical is like a postal adress (smaller forwarding table, adress change when attached to other node\ldots question with mobile host).
-
-\paragraph{Dealing with heterogeneous datalink}
-Page 39
-
-\subsubsection{Vitual circuit organisation}
-
-\subsubsection{The control plane}
-
-\paragraph{Distance vector routing}
-%TODO
-
-\paragraph{Link state routing}
-%TODO
-
-\subsection{Application}
-%Big-little indian
-
-
-\subsection{The transport layer}
-
-La couche de transport doit gérer les problèmes de la couche network :
-\begin{itemize}
-    \item corrupt data
-    \item loose data
-    \item not deliver data in-order
-    \item upper bound on maximun length of the data
-    \item duplicate data
-\end{itemize}
-
-\subsubsection{Connectionless}
-On envoi les données et le service assure qu'elle arrive.
-Utilisé pour le transport de petit SDU.
-
-\begin{description}
-    \item[Reliable] : Garantit l'arrivée à coup sur des données. (\textit{difficile à mettre en pratique})
-    \item[Unreliable] : Imperfection :
-        \begin{itemize}
-            \item Garantit seulement une majorité qui arrive (\textit{Souvent ce qui est écarté est du à l'overflow du buffer})
-            \item Peut duppliquer les packets sur le réseau
-            \item Peut délivrer un SDU différrents
-            \item A une taille limité des données
-        \end{itemize}
-\end{description}
-% Characteristic page 56
-
-\paragraph{Note:} Pour passer du network layer au transport layer, il faut ajouter la
-gestion des erreurs et une technique de multiplexing (\textit{via port}).
-
-
-\subsubsection{Connection-oriented}
-Ici il y a trois phases : établir la connection, transferer les SDUs (\textit{la connection est
-bidirectionnel}) et fermer la connection.
-
-\begin{description}
-    \item[Reliability] : Elle n'est garantie que lorsque la connection est terminé avec un
-        ``gracefully``, sinon des pertes peuvent être observé
-\end{description}
-
-\paragraph{Connection}
-
-\paragraph{Refus:} Soit de la part du destinataire, soit du provider.
-
-\paragraph{Three-way handshake} est utilisé contre l'approche naive de la connexion ``aller-retour''. Celle ci est définie par l'envoi d'un \textbf{CR}, répondu par \textbf{CA} qui répond \textbf{CA}.
-
-Pour permettre le Three-way handshake, on utilise un transport clock.
-
-
-\paragraph{Data transfert}
-
-\paragraph{Mode}
-\textsc{message-mode} : On envoie et reçois les messages tels quels.\\
-\textsc{stream-mode} : On envoit içi des flux de bytes, et on a besoin de spécifié un délimiter
-spécifique pour déliumiter les SDU dans le bytestream.
-
-$\rightarrow$  Le \textbf{Stream-mode}  est utilisé  pour les  reliable
-transport portocols,  et le  numéro de séquence  placé dans  la frame
-correspond à la position du premier byte du payload dans le bytestream.
-
-\paragraph{Note} : Plusieurs différence par rapport au datalink layer pour assurer que les
-données soient délivré.
-
-\begin{enumerate}
-    \item Dans  le datalink  layer quand  deux host  sont
-connecté le délai de transmission est fixe. Ici le delai varie car les
-paquets envoyés  ne prennent pas  forcément le  même path et  il peut
-être mis en attente dans le buffer d'un router.
-    \item Les paquets n'arrivent pas tjrs en séquence contrairement au datalink layer
-    \item Le network peut duppliquer les paquets dans le transport layer
-\end{enumerate}
-
-\paragraph{Solution} :
-\begin{enumerate}
-    \item Pour détecter les erreurs de transmission, comme dans le datalink layer, on utilise un
-    CRC ou checksum sur \textbf{chaque} segment.
-    \item Pour rendre le protocole reliable, on utilise un numéro de séquence et des numéro
-    d'ackowledgement. (32 ou 64bits nécessaire plutot que 8 dans les datalinks layer protocol)
-\end{enumerate}
-
-\paragraph{Go-back-n and selective repeat}
-Dans le transport layer on va préférer le sélective repeat puisque cette couche
-ne garantit pas l'arrivée en séquence, contrairement au datalink layer.
-
-De plus, dans le transport layer, plusieurs application concurrente peuvent communiquer
-du coup l'espace mémoire offer à chaque application peut varier ce qui peut rendre la
-taille du buffer variable.
-Le sender à un swin (\textit{taille de son buffer}), et rwin (\textit{taille du buffer du receiver}). Il considère le minimun des deux comme la window size.
-
-
-\textbf{Pour éviter un deadlock}, on utilise un persistent timer lorsque le sender reçoit une
-window size du receiver égale à 0. Quand le timer expire on force le renvoi du dernier segment.
-
-\paragraph{Connection release}
-Soit de manière \textbf{abrute}, soit de manière \textbf{gracefully} càd en fermant
-les deux sens de la connections avec un DR suivit d'un ACK.
-
-
-\subsubsection{Request-response service}
-
-Page 61
-
-\subsection{Naming and addressing}
-
-\subsubsection{Benefit}
-
-\subsection{Sharing ressources}
-
-\textsc{bandwith} est la ressource la plus importante dans un réseau.\\
-\textsc{buffer of network node} est une autre ressource importante.\\
-\textsc{Processing capacity} to analyse packet and see on forwarding table.
-
-\subsubsection{Organisation to sharing bandwith}
-
-\paragraph{A full mesh}
-Le plus efficace, mais nécessite $\frac{n \times (n-1)}{2}$ lien, et chaque
-host doit manager $n-1$ interface ce qui peut vite devenir impossible.
-
-\paragraph{Bus organisation}
-Le danger est que si le cable du bus est coupé en deux, le réseau est scindé
-ce qui peut être dur à maintenir.
-
-\paragraph{Star organisation}
-Le noeud du centre de l'étoile est vital pour le réseau, mais il permet aussi
-de centraliser le control en un seul point (\textit{C'est un excellent point de
-control et un bon point d'observation}).
-
-Beaucoup plus facile à maintenir que le bus.
-
-
-\paragraph{Ring organisation}
-Un lien coupe l'entièrete du réseau, c'est pouquoi on utilise souvent un dual-ring.
-
-\paragraph{Tree organisation}
-Cela permet de connecté un large nombre de client avec un très petit coût.
-
-
-\subsubsection{Sharing bandwith}
-
-Le partage de bandwith dans les réseaux se veut être \textbf{max-min fairness}.
-
-\paragraph{ }Plusieurs algorithme sont expliqué dans la section Medium Access Control.
-
-\subsubsection{Network congestion}
-
-Congestion lorsque $\sum demand > capacity$.
-
-\paragraph{Congestion collapse}
-Cela arrive lorsque le réseau est un peu congestionné, et donc la transmission est ralenti.
-Si un protocole tel que \textsc{selective repeat} est utilisé, alors le sender peut
-croire que le packet est perdu et donc renvoyé le packet ce qui ne fait qu'augmenter
-la congestion!
-
-
-Pour régulere la congestion, une solution est de connaître la congestiona actuel afin que
-les hosts ajuste leur bandwith disponible pour diminuer la congestion.
-
-Tant que le buffer est peu ou pas du tout rempli, cela signifie que la demande est plus
-petite que la capacité et que le buffer sert juste à \textit{lisser} les demandes dans le temps.
-
-
-\paragraph{Discard mechanism}
-On peut choisir d'écarter des paquets qd le buffer est full ou plutot quand il
-augmente dangereusement afin de prévenir une congestion!
-Toutefois, discard a packet est la solution finale.
-
-\begin{enumerate}
-    \item Discard celui qui arrive. C'est le plus utilisé mais il tend à rester congestionner et
-        les applications temps réelles en souffre bcp
-    \item Discard le premier de la file est plus judicieux qu'il n'y parait puisque ce paquet
-        y est depuis lgtps et on a surement déja détecté la perte (de part la congestion) avant!
-    \item Random early discard permet de supprimer les paquets de différents flow en proportion
-        à leur bandwith.
-\end{enumerate}
-
-Attention, supprimer un paquet est pas la meilleur solution puisqu'on supprime un paquet
-qui a consommé des ressources alors qu'on manque justement de ressource!
-
-\paragraph{Forward Explicit Congestion Notification}
-Pour les réseaux datagramme,
-on utilise un bit pour marquer si le paquet est passé par un endroit congestionné,
-et si c'est le cas le receiver envoi un paquet pour informer le sender du degré
-de congestion (càd $\frac{nbr congestion}{nbr paquet}$)
-
-\paragraph{Backward Explicit Congestion Notification}
-Même technique pour les réseaux virtuels, sauf qu'on marque l'acknowledgement.
-
-\paragraph{Control packet}
-TODO
-
-\paragraph{Scheduler mechanism}
-Permet d'attribuer une FIFO par flow et un round robin choisit le prochain paquet
-
-
-\subsubsection{Distributing the load across the network}
-
-\paragraph{Virtual network}
-Ici lorsque un host veut envoyer une information, il spécifie la destination et parfois la
-bandwith nécessaire. On lui répond si il peut ou non se connecter.. Cette technique
-est utilisé notament par les téléphones.
-
-\paragraph{Datagram network}
-La technique du virtual ne peut être appliqué car dans le datagram un host n'a pas
-besoin d'autorisation pour envoyer des packets.
-
-TODO page 82
-
-
-\paragraph{Shared popular file}
-
-\paragraph{Save on multi server}
-
-\paragraph{Using popular bittorent service}
 
 
 \subsubsection{Congestion control}

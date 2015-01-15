@@ -42,7 +42,7 @@
 \definecolor{dkgreen}{rgb}{0.25,0.7,0.35}
 \definecolor{dkred}{rgb}{0.7,0,0}
 
-\RequirePackage{../../../eplcommon}
+%\RequirePackage{../../../eplcommon}
 
 \newcommand{\annexe}{\part{Annexes}\appendix}
 
@@ -60,20 +60,27 @@
 \usetikzlibrary{positioning}
 
 \RequirePackage{pdfpages}
+%\usepackage{subfig}
+% subfig is deprecated see
+% http://en.wikibooks.org/wiki/LaTeX/Floats,_Figures_and_Captions#Subfloats
+\usepackage{caption}
+\usepackage{subcaption}
+
+\usepackage{enumerate}
 
 \RequirePackage{hyperref}
 
 % le `[e ]' rend le premier argument (#1) optionnel
 % avec comme valeur par défaut `e `
-\newcommand{\hypertitle}[7][e ]{
+\newcommand{\basehypertitle}[8][e ]{
 
 {\renewcommand{\and}{\unskip, }
 \hypersetup{pdfauthor={#6},
-            pdftitle={\epltype{} of #2 Q#3 - L#4#5},
+            pdftitle={#8 #2 Q#3 - L#4#5},
             pdfsubject={#2}}
 }
 
-\title{\IfLanguageName{english}{\epltype{} of }{\epltype{} d#1}#2 Q#3 - L#4#5}
+\title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 Q#3 - L#4#5}
 \author{#6}
 
 \begin{document}
