@@ -21,15 +21,16 @@ It needs to be translated.
 \section{Terminology}
 
 \begin{description}
-    \item[ADSL] : Asymmetric Digital Subscriber Lines (le principe est d'avoir un gros lien down pour le particulier et un petit lien en up)
-    \item[ARP] : Address Resolution Protocol
-    \item[CRC] : Cyclical Redundancy Check
+    \item[ADSL] : \textit{Asymmetric Digital Subscriber Lines} le principe est d'avoir un gros lien down pour le particulier et un petit lien en up
+    \item[ARP] : \textit{Address Resolution Protocol}
+    \item[BPDU] : \textit{Bridge Protocol Data Unit}
+    \item[CRC] : \textit{Cyclical Redundancy Check}
     \item[DIFS] : \textit{DCF Interframe Space}. Si une station détecte qu'il n'y a pas eu de transmission WiFi pendant DIFS microsecondes et que l'échange de la dernière trame a réussi, elle a le droit de transmettre. Cette valeur au sein de la gestion des collisions : DIFS = SIFS + (2 * Slot time)
     \item[DNS] : \textit{Domain Name System}. Service permettant de traduire un nom de domaine en informations de plusieurs types qui y sont associées, notamment une IP.
     \item[EIFS] : \textit{Extended Interframe Space}. Similaire au DIFS mais activé uniquement si la dernière frame a échoué. EIFS = Temps de transmission d'un acquittement + SIFS + DIFS.
     \item[HTTP] : \textit{HyperText Transfer Protocol}
-    \item[IEEE] : Institute of Electrical and Electronic Engineers
-    \item[LAN] : Local Area Network
+    \item[IEEE] : \textit{Institute of Electrical and Electronic Engineers}
+    \item[LAN] : \textit{Local Area Network}
     \item[MSL] : \textit{Maximum Segment Life}.
     \item[MTU] : \textit{Maximum Transmission Unit} C'est la taille maximale d'un paquet pouvant être transmis en une seule fois (sans fragmentation) sur une interface.
     \item[Path MTU] : Taille maximale entre une machine source et une machine destination
@@ -2064,47 +2065,48 @@ TODO page 209
       
       \textbf{La taille des tables d'adresses MAC est limitée. Une taille limitée entraîne le risque d'attaques par Déni de Service : un hôte foireux peut envoyer des milliers de trames contenant des adresses sources aléatoires et overflow le switch. Une fois les tables d'adresses MAC remplie, le switch devra broadcast toutes les trames qu'il reçoit : à ce moment, l'attaquant recevra toutes les trames unicast qui ne lui sont même pas destinées.} L'attaque ARP discutée dans le chapitre précédent peut aussi arriver sur les switches Ethernet. Les switches doivent implémenter des défenses face à ces attaques.
       
-      Si on combine le \textit{MAC address learning} et l'algorithme de forwarding, on peut réussir à bien gérer un réseau en arbre. Cependant, un arbre est très mauvais en cas de problèmes avec un lien ou avec un switch et ces algorithmes ne fonctionnent pas avec des boucles ! Nous avons besoin du Spanning Tree Protocol. 
+      Si on combine le \textit{MAC address learning} et l'algorithme de forwarding, on peut réussir à bien gérer un réseau en arbre. Cependant, un arbre est très mauvais en cas de problèmes avec un lien ou avec un switch et ces algorithmes ne fonctionnent pas avec des boucles (pas de TTL ni HopLimit) ! Nous avons besoin du Spanning Tree Protocol. 
       
       % TODO : Un exemple existe dans le syllabus, faut-il le mettre ?
       
-
-      TODO image page 217
-
-
-\paragraph{MAc adress}
-Quand deux host sont sur le même hub/segment ethernet, ils peuvent échanger de
-l'information sans configuration ce qui implique que un switche doit pouvoir
-construire sa table de MAC adresse \textit{automatiquement}.
-
-$\rightarrow$ Pour chaque frame reçue, la MAC adress est extraite de la frame et mise dans la table.
-
-\paragraph{ }
-The \textit{MAC adress learning} algorithm fonctionne bien sur un tree-shaped network,
-sauf que cette topologie est dangereuse si l'un des switchs tombent en panne\ldots
-
-Toutefois, si ce n'est pas un arbre ont peu rapidement tomber dans une boucle infinie
-(si il n'y a pas de RTT ou Hop limit)!
-
-\paragraph{Spanning tree protocol}
-Désactive automatiquement des ports pour rester dans une tree-shaped, mais si l'un
-des switchs crash, il y a un autre qui peut prendre le relais.
-
-Le switch root est celui avec la plus petite MAC adress, ensuite le spanning tree est construit
-pour que chaque switch ait le plus path vers le root.
-
-Ils utilisent des BPDUs qui contiennent :
-\begin{itemize}
-    \item L'identifiant du root
-    \item Le coût du path entre le root et celui qui envoit le BPDU
-    \item L'identifiant de celui qui envoit le BPDU
-    \item Le nombre de switch port par lequel il est passé
-\end{itemize}
-
-
-Durant la création du spanning tree toutes les data frames sont écarté
-car on ne peut pas garantir l'absence de loop.
-
+      \paragraph{Spanning Tree Protocol} Permet aux switches de réduire le réseau à un Spanning Tree. Une fois le réseau réduit à un Spanning Tree, les switches s'échangent des BPDU avec l'adresse multicast ALL\_BRIDGES. Chaque switch a un identifiant sur 64 bits unique (48 bits de MAC adresse du switch et 16 bits de poids fort configurés par l'administrateur réseau pour influencer la topologie du Spanning Tree ; default value = 32768).
+      
+      Intuitivement, le Spanning Tree est crée en choisissant comme racine le plus petit identifiant de switch, les branches du Spanning Tree sont composées par les chemins les plus courts qui permettent à tous les switches du réseau d'être atteint.
+      
+      Le BPDU contient :
+      \begin{itemize}
+       \item L'identifiant du switch racine (R)
+       \item Le coût du chemin le plus court entre le switch qui a envoyé le BPDU et la racine (c)
+       \item L'identifiant du switch qui a envoyé le BPDU (T)
+       \item Le numéro du port du switch qui a envoyé le BPDU (p)
+      \end{itemize}
+      
+      L'administrateur peut aussi configurer un coût associé à chaque port du switch qui dépend de la bande passante. On note un BPDU := <R,c,T,P>
+      
+      Chaque port de switch est dans un des trois état : Root, Désigné, Bloqué. Tous les ports du switch racine sont dans l'état désigné. Le port sur lequel le meilleur des vecteurs de priorité a été reçu est celui qui est le plus proche du switch racine : ce port devient un port Root. Il n'y a qu'un port Root par switch.
+      
+      Pour déterminer l'état de chacun de ses ports, le switch compare son propre BPDU avec le dernier BPDU reçu sur chaque port. CETTE COMPARAISON EST FAITE EN UTILISANT LE BPDU ET PAS LES VECTEURS DE PRIORITE RACINES. Si le BPDU du switch est meilleur que le dernier BPDU du port, le port devient désigné ; sinon il devient bloqué.
+      
+      L'état de chaque port est important quand on prend en compte la transmission des BPDU. Le switch racine envoie régulièrement son propre BPDU qui est reçu sur le port Root des switchs directement connectés à la racine.
+      
+      Les switches écoutent tout de même sur le port Bloqué, mais si la topologie du réseau est stable, normalement aucun BPDU ne doit arriver dessus.
+      
+      \begin{center}
+	\begin{tabular}{c|c|c|c}
+	 Etat du port & Réception de BPDU & Envoi de BPDU & Gestion de trames de données \\
+	 \hline
+	 \hline
+	 Bloqué & OUI & NON & NON \\
+	 \hline
+	 Racine & OUI & NON & OUI \\
+	 \hline
+	 Désigné & OUI & OUI & OUI \\
+	\end{tabular}
+      \end{center}
+      
+      Lors du calcul du Spanning Tree, plus aucune donnée n'est transmise dans le réseau. Après le spanning tree, l'algorithme de MAC learning se lance.
+      
+      Les switches, ports et liens peuvent foirer dans un réseau Ethernet avec des switches : quand ça arrive, il faut refaire le spanning tree. Pour les détecter, on envoie des BPDU régulièrement (le BPDU contient deux autres champs : son âge et l'age maximum).
 
 \paragraph{Virtual LAN}
 
