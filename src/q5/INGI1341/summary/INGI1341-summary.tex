@@ -1648,33 +1648,71 @@ nécessaire).
 \end{itemize}
 
 \subsection{The IPv6 subnet}
-TODO
+
+Chaque interface sur un device est identifié par une MAC adresse unique. \footnote{MAC adress block are allocated to manufacturers}.
+
+Grace à cette unicité, deux hosts connecté sur une LAN a donc une adresse unique!
+
+\paragraph{Broadcast :} le packet est délivré à tout les devices attaché au datalink network
+\paragraph{Multicast :} On fait un broadcast sauf que l'interface du device sait si le
+packet lui est destiné ou non (\textit{sur base d'une adresse logique}).
+
+Potentiellement, tout les node IPv6 sont capable de captuer des frames destinés à un 
+autre multicast adresse.
 
 \subsubsection{Interactions between IPv6 and datalink layer}
 
-Dans une LAN sans internet, les hosts prennent une adresse IP grace au \textbf{link-local adresse}.
-Si la LAN est connecté à internet, on utilise \textit{Neighbor Discovery Protocol} (partie de ICMPv6) pour connaître l'adresse des autres
+\paragraph{Dans une LAN  sans internet}, les hosts prennent une  adresse IP grace au
+\textbf{link-local adresse} : on prend fe80::/64 avec la MAC adresse.
 
-\paragraph{Neighbor Discovery Protocol}
+\paragraph{Si  la  LAN  est  connecté à  internet},  on  utilise  \textbf{Neighbor
+Discovery  Protocol} (partie  de ICMPv6)  pour connaître  l'adresse des
+autres
+
+\paragraph{Neighbor Discovery Protocol (NDP)}
 
 \begin{enumerate}
-    \item Envoi un multicast ICMPv6 Neighbor Solicitation avec son adresse IPv6
-    \item Le receiver répond avec un ICMPv6 Neighbor Advertisement avec son adresse IPv6 et MAC
-    \item En recevant le ICMPv6 NA, il stock le lien IPv6-MAC dans sa NDP table
+    \item Envoi un multicast \textbf{ICMPv6 Neighbor Solicitation} (NA) avec son adresse IPv6
+    \item Le receiver répond avec un \textbf{ICMPv6 Neighbor Advertisement} avec son adresse IPv6 et MAC
+    \item En recevant le ICMPv6 NA, il stock le lien IPv6-MAC dans sa \textbf{NDP table}
 \end{enumerate}
-ICMPv6 NS peut aussi être utilisé pour voir si un host est atteignable. De plus, le ICMPv6 NA est
-stocké temporairement dans la cache et quand il expire il faut revalider l'adresse.
+
+\subparagraph{Note:} ICMPv6 NS peut aussi être utilisé en unicast pour voir si un host est atteignable. 
+De plus, le ICMPv6 NA est stocké temporairement dans la cache et quand il expire il faut revalider l'adresse.
+
+\paragraph{Duplicate Address Detection algorithm} permet de ne pas avoir deux adresses IPv6
+identiques.
+Pour cela il envoit un \textbf{ICMPv6 NS} en unicast à sonn adresse, et si il ne reçoit pas de réponse elle est donc unique.
+
+\paragraph{\textbf{Automatically configure IPv6 adress}}
+There is two protocol : SLAAC and DHCPv6.
+
+\subparagraph{Stateless Address Auto-Configuration (SLAAC) }
+\begin{enumerate}
+    \item Un device crée sa \textbf{link-local adresse} avec fe80::/64 et 64bits 
+        issus en partie de MAC
+    \item Il vérifie son unicité en envoyant un \textbf{ICMPv6 NS} unicast
+    \item Pour connaître le \textit{prefix IPv6 subnet}, le router envoi
+        régulièrement des ICMPv6 \textbf{Router Advertisement} contenant : 
+        \begin{itemize}
+            \item[-] \textit{Cur hop limit} : Maximun intermediare router (souvent 64)
+            \item[-] \textit{Router lifetime} : Temps estimé ou le router est le router par
+                défault
+            \item[-] \textit{Reachable time and Retrans timer} : utilisé pour configuré 
+                l'utilisation du NDP protocol pour les hosts du subnet
+        \end{itemize}
+
+        Beaucoup d'\textbf{option} peuvent être pacer dans Router Advertisement messages :
+        \begin{itemize}
+            \item MTU option : Indique la taille maximun de ce qui peut être
+                transmit \textbf{sans} fragmentation sur le subnet
+            \item Prefix option : Donne la taille du prefix et sa length, ainsi que la 
+                durée de vie estimé du préfix.
+        \end{itemize}           
+    \item IPv6 adresse = Prefix + 64 bits d'identification
+\end{enumerate}
 
 \subparagraph{ }
-\textit{Duplicate Address Detection algorithm} permet de ne pas avoir deux adresses identiques.
-Pour cela il envoit un ICMPv7 NS à sonn adresse, et si il ne reçoit pas de réponse elle est
-donc unique.
-
-\paragraph{Automatically configure IPv6 adress}
-\paragraph{Stateless Address Autoconfiguration} mechanism obtient sa link-local adresse
-en prenant 64 bits concaténé avec fe80::/64 et en verifiant avec un NS son unicité.
-
-\paragraph{ }
 Obtenir  une   vrai  adresse  est   effectué  en  envoyant   un  Router
 Advertissement  message  à  ff02::1  qui est  accessible  à  tout  les
 local-link adresse.
@@ -1682,7 +1720,7 @@ local-link adresse.
 \subparagraph{Option}
 TODO page 189
 
-\paragraph{Dynamic Host Configuration Protocol} (DHCP)
+\subparagraph{Dynamic Host Configuration Protocol (DHCP)}
 TODO
 
 \paragraph{Multi router on subnet}
