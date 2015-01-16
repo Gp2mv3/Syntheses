@@ -1901,6 +1901,7 @@ Il existe deux types de relation entre domaine
 \end{figure}
 
 \subsubsection{The Border Gateway Protocol (BGP)}
+
 Dans BGP chaque domain est identifié par un unique \textit{Autonomous System} number (AS).
 
 BGP n'envois pas sa routing table entière mais le fait de manière incrémentale, càd en
@@ -1968,49 +1969,70 @@ TODO page 209
 \subsection{Datalink layer technologie}
 
 \subsubsection{The point to point protocol}
-	On se limite aux protocoles qui sont souvnet utilisés pour le transport de paquets IP entre hôtes et routeurs connectés par un lien point-to-point.
+On se limite aux protocoles qui sont souvnet utilisés pour le \textbf{transport de paquets IP} entre hôtes et routeurs connectés par un lien point-to-point.
+
+\paragraph{\textbf{Serial Line IP} (SLIP)} : C' est une technique de character 
+stuffing appliqué aux paquets IP utilisant deux caractères spéciaux :
+\begin{itemize}
+    \item[-] \textsc{END} : en début et fin de paquet
+    \item[-] \textsc{ESC} : devant un END s'il est dans les informations à transmettre
+\end{itemize}
+
+\begin{tabular}{cm{11cm}}
+    \underline{Limitations} de SLIP :
+    &
+    \begin{itemize}
+     \item Supporte uniquement la transmission de paquets IP
+     \item Configuration manuelle des adresses IP entre host et routeur.
+    \end{itemize}
+\end{tabular}
+
+\subparagraph{Note:} SLIP était surtout utilisé sur des liens $\leq 20Kps$ sur lequel
+    des techniques de \textbf{compressions} des headers TCP/IP étaient indispensable.
+    (\textit{Les header prenaient déja bcp de temps})
+
+    $\to$ On exploitait la redondance de segment consécutif pour compresser
+
+\paragraph{\textbf{Point-to-Point protocol} (PPP)} : Supporte IP et d'autres protocoles de la couche réseaux sur différents types de lignes de transmission. Il utilise le bit stuffing ou le character stuffing selon l'environnement où le protocole est utilisé.
+
+PPP est une famille de 3 protocoles qui s'utilisent ensemble :
+\begin{enumerate}
+    \item Le \textit{Point-to-Point Protocol} : Technique de framing pour transporter les paquets dans la couche réseau.
+    \item Le \textit{Link Control Protocol} : Utilisé pour négocier les options et authentifier la session (\textit{username/password, \ldots})
+    \item Le \textit{Network Control Protocol} : Spécifique à chaque protocole de la couche réseau, il permet de négocier les options spécifiques au protocole. (\textit{IPv4's NCP négocie
+        l'adresse IPv4})
+\end{enumerate}
+
+\subparagraph{Frame} :
+Les champs Address (8) et Control (8) sont présentes pour des raisons de compatibilité. Le champ Protocol (16 bits) contient l'ID du type de protocole utilisé pour le transport de la trame PPP. 
+
+PPP supporte des paquets de taille variable mais LCP peut négocier une taille de paquet maximum.
 	
-	La première solution pour transporter des paquets IP sur une ligne était \textit{Serial Line IP} (SLIP). SLIP est une technique de character stuffing appliqué aux paquets IP utilisant 2 caractères spéciaux END (en début et fin de paquet) et ESC (devant un END s'il est dans les informations à transmettre). \bigskip
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=10cm]{ppp_frame_format.png}
+    \caption{Format d'une trame PPP}
+\end{figure}
 	
-	Limitations de SLIP :
-	\begin{itemize}
-	 \item supporte uniquement la transmission de paquets IP
-	 \item l'hôte et le routeur doivent être configurés manuellement avec l'adresse IP de l'autre.
-	\end{itemize}
-	
-	SLIP était principalement utilisés sur des liens dem oins de 20Kbps sur lesquels envoyer un header IP de 20 bytes et un header TCP de 20 bytes prend énormément de temps. $\Rightarrow$ développement de techniques de compression des headers TCP/IP.
-	
-	La première technique de compression était d'exploiter la redondance entre plusieurs segments consécutifs faisant partie de la même connexion TCP. Dans ces segments, les adresse IP et les numéros de ports ne changent pas, les numéros de séquences et d'acquittements ne changent pas de manière aléatoire.
-	
-	Le protocole Point-to-Point (PPP) supporte IP et d'autres protocoles de la couche réseaux sur différents types de lignes de transmission. PPP est une famille de 3 protocoles qui s'utilisent ensemble :
-	
-	\begin{enumerate}
-	 \item Le \textit{Point-to-Point Protocol} qui définit une technique de framing aux paquets de la couche réseau de transport
-	 \item Le \textit{Link Control Protocol} qui est utilisé pour négocier les options et authentifier la session (username, password ou autres techniques)
-	 \item Le \textit{Netowrk Control Protocol} qui est spécific à chaque protocole de la couche réseau. Par exemple, NCP de IPv4 peut négocier l'adresse IPv4 à utiliser, l'adresse IPv4 du résolveur DNS.
-	\end{enumerate}
-	
-	PPP utilise le bit stuffing ou le character stuffing selon l'environnement où le protocole est utilisé. Les champs Address et Control sont présentes pour des raisons de compatibilité. Le champ Protocol (16 bits) contient l'ID du type de protocole utilisé pour le transport de la trame PPP. 
-	
-	PPP supporte des paquets de taille variable mais LCP peut négocier une taille de paquet maximum.
-	
-	\begin{figure}[!ht]
-	    \begin{center}
-		\includegraphics{ppp_frame_format.png}
-		\caption{Format d'une trame PPP}
-	    \end{center}
-	\end{figure}
-	
-	PPP a joué un rôle important en permettant aux fournisseurs d'accès Internet (ISP) de fournir un accès dial-up (par ligne commutée - téléphonique par exemple). L'accès à Internet se faisait par mot de passe en utilisant l'\textit{Extensible Authentication Protocol} (EAP). EAP est un protocole simple mais extensible. Par après, les ISP ont voulu passer à l'Asymmetric Digital Subscriber Lines (ADSL) et ils voulaient pouvoir réutiliser leurs systèmes d'authentification (et de facturation), IETF a développé des spécificaitons pour permettre à des trames PPP d'être transportées sur d'autres réseaux que les liens point-to-point.
+\begin{center}
+\textit{PPP a fournit un accès dial-up (ligne commuté) aux fournisseurs d'accès Internet (ISP).
+    Cet accès à internet se faisait via l'Extensible Authentification Protocol (EAP) par 
+    mot de passe.
+    Avec l'arrive de l'Asymmetric Digital Subscriber Lines (ADSL) et voulant réutiliser
+    leur système d'authentification/facturation, IETF a dévellopé des spécifications
+pour transporter des framesPPP sur d'autre réseaux que les point-to-point.}
+\end{center}
 	
 \subsubsection{Ethernet}
 
    \begin{center}
-    \begin{tabular}{c|c|c|c}
+    \begin{tabular}{|c|c|c|c|}
+     \hline
      Date & Chercheur & Type de liaison & Vitesse \\
      \hline
      1970 & Palo Alto Research Center & Câble coaxial & 3 Mbps \\
      1980 & Intel, Xerox, Digital Equipment & & 10 Mbps \\
+     \hline
     \end{tabular}
    \end{center}
    
