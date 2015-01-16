@@ -869,7 +869,7 @@ layer}. (TCP/IP implements this in transport)
 
 \paragraph{Control de congestion} est un algorithme qui adapte le taux de congestion :
 \begin{enumerate}
-    \item \textbf{Multiplicative decreasing} si il y congestion : $rate = rate*\beta, \quad \beta <1$
+    \item \textbf{Multiplicative decreasing} si il y congestion : $rate =  rate*\beta, \quad \beta <1$
     \item \textbf{Additive increasing} sinon :  $rate =  rate + \alpha, \quad \alpha>0$
 \end{enumerate}
 
@@ -886,8 +886,7 @@ send data faster than : $$\frac{Window}{rtt}, \textrm{ where window is current s
         \textit{swin} = $min( swin, cwin )$
 \end{itemize}
 
-When start, \textit{cwin} is set to one segment and it increase (\textit{additive}) every RRT when there is
-no congestion , else he is decreased down to 2 (\textit{multiplicative}).
+When start, \textit{cwin} is set to one segment and it increases (\textit{additive}) by one every RRT when there is no congestion , else it is divided by two (\textit{multiplicative}).
 
 \paragraph{Note: }
 \begin{description}
@@ -905,7 +904,7 @@ no congestion , else he is decreased down to 2 (\textit{multiplicative}).
         Application & SDU     &                                        &  \\
         \hline
         Transport   & Segment & Connectionless unreliable              & connect to network  \\
-                    &         & connection-oriented souvent reliable   & \\
+                    &         & connection-oriented often reliable   & \\
         \hline
         Network     & Packet  & Unreliable                             & connect to network \\
         \hline
@@ -917,11 +916,14 @@ no congestion , else he is decreased down to 2 (\textit{multiplicative}).
     \caption{Reference models}
 \end{table}
 
+\paragraph{TCP/IP reference model} The same but physical layer and datalink layer are combined in link layer.
+\paragraph{Model OSI} There are a session and a presentation layer before the application layer. Session layer deals with the organisation and the synchronization of the message/data exchanged with presentation entity. Presentation layer deals with how to represents the information. 
+
 \section{Protocols}
 
 \subsection{Application layer}
 A application use connection less service or connection-oriented service
-and are ident\textcolor{red}{if}ied by a port number and a network adress (\textit{IPv4 or IPv6})
+and are \textcolor{red}{identified} by a port number and a network adress (\textit{IPv4 or IPv6}). TCP is also called the byte-stream mode service and UDP the datagram service.
 
 \begin{description}
     \item IPv4 : 32 bits wide
@@ -935,6 +937,12 @@ and are ident\textcolor{red}{if}ied by a port number and a network adress (\text
     \includegraphics[width=10cm]{dnsheader.png}
     \caption{DNS header}
 \end{figure}
+DNS runs usually above datagram service. The message is divided in five part, the 3 first one are mandatory, the other 2 last one are optional. In the DNS message header, there is an identifier to match request to answer an inforrmation on authority server (who manage). A request is recursive when resolver recurse through DNS hierarchy to retrieve answer. 
+\paragraph{Resource Record} 
+\begin{itemize}
+	\item[Time-to-Live] How long the client can keep the Resource Record inside is cache.
+	\item[Type] Field in the record to specify if IPv4(A) or IPv6(AAAA)
+\end{itemize}
 
 DNS permet d'obtenir l'adresse qui correpond à un certain nom, mais on peut
 faire un reverser DNS pour obtenir le nom d'une adresse.
@@ -952,11 +960,11 @@ A \textbf{email system} is composed :
 \begin{figure}[h]
     \centering
     \includegraphics[width=10cm]{mail.png}
-    \caption{Simpl\textcolor{red}{if}ied architecture mail}
+    \caption{Simplified architecture mail}
 \end{figure}
 
 \subsubsection{Email message}
-Email message are composed of two part : a \textbf{header} (\textit{From, Date, To, Subject,  cc, bcc}) and a \textbf{body}.
+Email message are composed of two part : a \textbf{header} (\textit{From*, Date*, To*, Subject,  cc, bcc}) and a \textbf{body}. (* are mandatory)
 
 Line to separate header and body is empty and contains only CR and LF.
 
@@ -967,17 +975,29 @@ breaking the email servers that were deployed at that time}:
     \item MIME-version : version de MIME pour l'encodage du mail
     \item Content-type : Type de donnée du message
         \begin{enumerate}
-            \item multipart/mixed : le fichier contietn des parties d'encodage
-                indépendant (text, binaire séparé dans le body par une line vide)
-            \item multipart/alternative : même message avec d\textcolor{red}{if}férentes représentation
+            \item multipart/mixed : le fichier contient des parties indépendantes (text, binaire séparé dans le body par une line vide)
+            \item multipart/alternative : même message avec différentes représentation (ex:text and HTML)
         \end{enumerate}
-    \item Content-transfert-encoding : Comment le message est encodé
+    \item Content-transfert-encoding : Comment le message est encodé et un second paramètre explicant quel le string utilisé pour délimiter les champs.
 \end{itemize}
+ A frequent encoding for email is \textbf{Base64} where seuqnece of bytes are encoded in groups of three bytes adb then each group us divided in six-bit fields that correspond to a character. (`=' is reserved for padding)
+
 
 \subsubsection{The Simple Mail Transfer Protocol (SMTP)}
+
 SMTP is a client/server protcolol and text-based protocol relies on the
 connection-oriented service. (\textit{Server listen on port 25})
-
+\paragraph{Note:} DNS MX record of the DNS is used to find destination SMTP server.
+Five agent involved:
+\begin{multicols}{2}
+	\begin{itemize}
+		\item Mail User Agent: email client
+		\item Mail Submission Agent : Process and forward
+		\item Mail Transmission Agent : Forward to other MTA or MDA
+		\item Mail Delivery Agent : Deliver to MUA destination
+	\end{itemize}
+\end{multicols}
+Each agent forward to the next agent.
 \paragraph{Working} :
 
 \begin{tabular}{m{9cm}m{6cm}}
@@ -987,7 +1007,7 @@ connection-oriented service. (\textit{Server listen on port 25})
         messages (\textsc{EHLO}) 
     \item After email transfert phase can start : clients transfert one or more email 
         by indicating \textsc{MAIL FROM:} and \textsc{RCPT TO:}
-    \item At the end, the connection is close
+    \item At the end, the connection is closed (QUIT)
 \end{enumerate}
 &
 \includegraphics[width=7cm]{stmp.png} \\
@@ -995,13 +1015,13 @@ connection-oriented service. (\textit{Server listen on port 25})
 \end{tabular}
 
 \subsubsection{The post office protocol (POP) }
-POP run above a connection-oriented service. (\textit{Server listen on port 110})
+POP run above a connection-oriented service. (\textit{Server listen on port 110}), it allows a client to download all of his/her email from a server.
 
 \paragraph{Working} :
 
 \begin{tabular}{m{9cm}m{6cm}}
 \begin{enumerate}
-    \item Autorisation phase when the server ver\textcolor{red}{if}ies the client's credential 
+    \item Autorisation phase when the server verifies the client's credential 
         (\textit{username/password})
     \item Transaction pahase when the clien download message
     \item Update phase that conclude the session
@@ -1087,14 +1107,16 @@ connection-oriented, contenant :
 
 
 \subsection{Internet transport protocols}
-TODO page 137
+In the internet, network layer provides a unreliable connectionless service and IP
+adress to identifie each host, with
+a maximun size packet equal to $64KBytes$ of payload.
 
 \subsection{The User Datagram Protocol (UDP)}
-
 C'est un unreliable connectionless transport service, au dessus d'une unreliable
 connectionless network service, qui utilise les ports
 pour permettre de communiquer avec plusieurs application et qui a comme
 caractéristique :
+
 \begin{itemize}
     \item SDUs doit être < 65467bytes
     \item Garantit pas que le SDU est délivré
@@ -1106,50 +1128,84 @@ caractéristique :
 \paragraph{Port} : 0 - 1023 (\textit{privileged}), 1024 - 49 151 (\textit{registered}),
 49 152 - 65 535 (\textit{ephemere})
 
-TODO paragraph page 139
+\paragraph{Utilisation} 
+\textbf{UDP} is use when delay must be minimised or losses can be recovered by the application
+itself. (\textit{Or real-time application like interactive video})
+
 
 \subsection{The transmission control protocol (TCP)}
-
 Bi-directionnal bytestream d'une connection-oriented transport service, au dessus d'une unreliable connectionless network service.
 
 (Window-based transport protocol using go-back-n)
 
-\paragraph{Header} = Source port (16), dest port (16), sequence number (32), ack number (32),
-window size (16), checksum (16)
+\paragraph{Header} :
+\begin{itemize}
+    \item Source adresse/port (16), dest adresse/port (16)
+    \item sequence number per byte (32), ack number (32), window size (16)
+        \begin{itemize}
+            \item[$\to$] TO make a reliable data transfert
+        \end{itemize}
+    \item Flag : \textit{SYN, FIN, RST, ACK}
+    \item checksum (16)
+    \item Length in world (4)
+\end{itemize}
 
 \subsubsection{TCP connection etablishment}
-Three-way handshake utilisant sequence number, ack number et SYN flag.
+Three-way handshake utilisant sequence number, ack number et SYN/ACK/RST flag.
 
 \begin{figure}[!ht]
   \centering
-  \includegraphics[width=10cm]{tcpconnect.jpg}
+  \includegraphics[width=12cm]{tcpconnect.jpg}
   \caption{Connection TCP}
   \label{fig:tcpconnect}
 \end{figure}
 
 Durant l'établissement de la connection, le client/serveur negocie plusieurs options :
 \begin{enumerate}
-  \item Le \textsc{mms} qui est la taille du plus grand payload acceptable (\textit{536 au minimun})
+  \item Le \textbf{MMS} qui est la taille du plus grand payload acceptable (\textit{536 au minimun})
   \item La taille de la window
-  \item L'utilisation de SACK
-  \item Un ensemble d'option où client/server disent respectivemtn ce qu'il veut et ce
+  \item L'utilisation de SACK (information sur segments reçu hors séquence)
+  \item Un ensemble d'option où client/server disent respectivemnt ce qu'il veut et ce
     qu'il supporte
 \end{enumerate}
 
-\paragraph{Encodage des options} est fait en \textsc{TLV}.
+\paragraph{Encodage des options} est fait en \textsc{TLV}, Type Length Value.
+
+\paragraph{Robustness principe} : On peut recevoir dans SYN des options que l'on
+comprend pas sans crasher, toutefois dans SYN+ACK on ne répond que par ce
+que l'on connait.
+
+\paragraph{Denial of service attacks}
+Un serveur maintient un TCB (transmission control block) qui contient 
+les état des TCP entity pour chaque connection. Pour éviter un overflow
+de la mémoire, la taille du TCB est limité à 100.
+
+La \textbf{Denial of service attacks} essaye de rendre une donnée 
+sur le réseau non disponible.
+
+\textbf{SYN flood attack} a juste a surcharger le serveur de SYN
+pour surcharger son TCB et empecher tout le monde d'établir une connection avec
+lui.
+
+\subparagraph{Solution :} Utiliser un cookie chez le client
+pour remplacer la TCB sur le serveur. Toutefois, il n'est pas
+totalement compatible avec TCP option.
 
 \subsubsection{TCP reliable data transfert}
+
+Pour chaque connection TCP, on maintiens un \textbf{TCB} (transmission control block)
+avec toute les informations nécessaire pour envoyer et recevoir des segments.
 
 \paragraph{Segment transmission strategie}
 
 Deux solutions extrêmes :
 \begin{enumerate}
-    \item Première solution, envoyer quand on a besoin, mais cela peut impliquer d'envoyer
+    \item Envoyer quand on a besoin, mais cela peut impliquer d'envoyer
         un byte d'information avec 20 byte d'header\ldots pas très efficace
     \item L'autre extreme est d'envoyer qd on a rempli \textsc{mms} byte of data
 \end{enumerate}
 
-\paragraph{Nagle  algorithm}  :   on  envoi  le  paquet   si  il  rempli
+\subparagraph{Nagle  algorithm}  :   on  envoi  le  paquet   si  il  rempli
 un  \textsc{mms}  ou  si  l'on  vient  de  recevoir  un  acknwoledgement
 (\textit{càd au moins à chaque round trip time}).
 
@@ -1160,46 +1216,68 @@ fait  à la  connection, même  si certaines  implementations permettent
 d'automatiquement ajuster la taille.
 
 \subsubsection{TCP retransmission}
-\textit{Go-back-n} a besoin d'un bon timer de retransmission (\textsc{rtt} est une
+\textbf{Go-back-n} a besoin d'un bon timer de retransmission (\textsc{rtt} est une
 bonne estimation même si il change pdt la connection)
+\begin{center}
+\textsc{rtt} $\approx$ delai entre la transmission d'un segment et la reception de l'ack
+\end{center}
 
-\textsc{rtt} = $\approx$ delai entre la transmission d'un segment et la reception de l'ack
 \paragraph{Measure RTT }
 Le problème est que l'on ne sait pas de quel segment l'ack est la réponse (càd qu'il pourrait
 y avoir plusieurs segment identique envoyé)
 
 Pour cela on utilise le \textbf{timestamp option} :
 \begin{itemize}
-    \item \textsc{ts} : Par exemple valeur de la clock
-    \item \textsc{ts} echo : Dernier \textsc{ts}val reçu\\
+    \item \textbf{TS} : Par exemple valeur de la clock
+    \item \textbf{TS} echo : Dernier \textsc{ts}val reçu
 \end{itemize}
 
+Comme y'a plus d'ambiguité, on peut mettre à jour la valeur du time ( rtt = 3 sec à l'initialisation).
+\begin{eqnarray*}
+srtt \textrm{ (smoothed rtt mcomputed) } &=&  (\alpha \times srtt) + (1-\alpha) \times rtt) \\
+rto \textrm{ (retransmission timedout) } &=& min(60, max(1, \beta \times srtt))
+\end{eqnarray*}
 
-Comme y'a plus d'ambiguité, on peut mettre à jour la valeur du time (\textit{souvent à 3sec
-de base}).
+où rtt est le RTT mesuré et 1-60 sont les bornes minimal/maximal.
 
+
+\subparagraph{Jacobson's algorithm} : en pratique ça marche pas bien, donc jacobson a une
+autre idée. rto est toujours initialisé à 3 sec.
+\begin{multicols}{2}
 \begin{itemize}
-    \item \textsc{srtt} (\textit{smoothed rtt mcomputed}) = $ (\alpha \times srtt) + (1-\alpha) \times rtt)$, $rtt$ est le \textsc{rtt} measured
-    \item \textsc{rto} (\textit{retransmission timedout}) = $min(60, max(1, \beta \times srtt))$, 1 et 60 sont les bornes minimal/maximal
+    \item[-] Pour la première valeur de RTT
+        \begin{eqnarray*}
+            srtt &=& rtt \\
+            rttvar &=& var / 2 \\
+            rto &=& srtt + 4 * rttvar 
+        \end{eqnarray*}
+
+    \item[-] Ensuite
+        \begin{eqnarray*}
+        rto &=& srtt + 4*rttvar \\
+        rttvar &=& (1-\beta) \times rttvar + \beta \times |srtt - rtt| \\
+        srtt &=&  (\alpha \times srtt) + (1-\alpha) \times rtt) 
+        \end{eqnarray*}
 \end{itemize}
+\end{multicols}
 
-\paragraph{Jacobson's algorithm} : en pratique ça marche pas bien, donc jacobson a une
-autre idée, il redéfini \textsc{rto} = $srtt + 4*rttvar$ avec \textsc{rttvar} = $(1-\beta) \times rttvar + \beta \times |srtt - rtt|$.
+\paragraph{$\alpha, \beta$ value : }  $\beta = \frac{1}{4}, \alpha = \frac{1}{8}$
 
-$\beta = \frac{1}{4}, \alpha = \frac{1}{8}$
-
-\subsubsection{Advanced retranmission strategie}
+\subsubsection{Advanced retransmission strategie}
 
 \paragraph{}
 \textsc{tcp} utilise de base \textbf{go-back-n}, et lorsque le même timer
 expire on recommande de doubler le timer (appellé \textit{exponential backoff}) jusqu'à
-ce qu'il ait atteint 60sec où le host est considée inateignable.
+ce qu'il ait atteint 60sec où le host est considéré inateignable.
+
+\paragraph{Piggybacking} est utilisé par TCP lorsque il y a un échange de 
+donnée bi-directionnel, ce qui reste plutôt rare.
 
 \paragraph{delayed acknowledgement strategy}
 Par ailleurs, il est aussi possible de perdre bcp de performance en envoyant des
 ack quand il n'ont pas bcp d'interet. Typiquement, il est possible d'implémenter
 un \textbf{delayed acknowledgement strategy} qui assure d'envoyer un ack a chaque fin
-de timer (\textit{delai cour}) ou si il reçoit un segment hors séquence puisque du coup
+de timer (\textit{delai cour souvent d'une seconde}) ou si il reçoit un segment hors séquence puisque du coup
 l'ack a énormément d'importance
 
 \paragraph{Out-sequence}
@@ -1218,71 +1296,113 @@ Avec une option de TCP, on peut activer les \textbf{SACK} qui permettent d'indiq
 les segments qui ont été reçu hors séquence. On utilise ici souvent Fast retransmit avec.
 
 \subsubsection{TCP connection release}
-Abrut (\textsc{rst}) ou gracefully.
-TODO page 156
+Abrut (\textsc{rst}) ou gracefully (FIN, FIN+ACK)
 
 \subsection{The stream control transmission protocol (SCTP) }
 Alternative au TCP qui offre :
 \begin{enumerate}
-    \item Supporte efficacement the \textit{multihomed host} càd avec plusieurs interface réseau. En TCP, une IP par interface et si tu te connecte en W\textcolor{red}{if}I puis que ça
+    \item Supporte efficacement the \textbf{multihomed host} càd avec plusieurs interface réseau. En TCP, une IP par interface et si tu te connecte en WifI puis que ça
         crash la connection ne sait pas être reprise par la 3G.
-    \item La possibilité de pouvoir envoyer des messages par bytestream
-    \item Partially-reliable
+    \item La possibilité de pouvoir envoyer des \textbf{messages} par bytestream
+    \item Partially-reliable, usefull for timed delivery
     \item Une seule vrai connection avec des streams \textit{logique} pour éviter de manager
         plusieurs connection
 \end{enumerate}
 
 \subsubsection{Segment}
 C'est un header suivit d'un ensemble de chunk.
+\begin{figure}[h]
+    \centering
+    \begin{tabular}{m{8cm}m{7cm}}
+        \includegraphics[width=8cm]{sctpsegment.png} &
+        \includegraphics[width=7cm]{sctpchunk.png}
+    \end{tabular}
+    \caption{SCTP segment/chunk format}
+\end{figure}
 
-\paragraph{Header} = Source port number (16), dest port number (16), ver\textcolor{red}{if}ication tag (32) and checksum (32).
+\paragraph{Header} = Source port number (16), dest port number (16), verification tag (32) and checksum (32).
 
-\paragraph{Chunk} = Type (8), flags (8), length (16) et value (32) pour permettre d'insérer facilement un ensemble d'option. STCP, contrairement à TCP, n'est pas limité sur le nombre d'option. C'est bon exemple de format de protocol facilement etendable.
+\paragraph{Chunk} = Type (8), flags (8), length (16) et value (32) pour permettre d'insérer facilement un ensemble d'option. 
+STCP, contrairement à TCP, n'est pas limité sur le nombre d'option. C'est bon exemple de format de protocol facilement etendable.
+ 
 
 \subsubsection{Connection etablishment}
-C'est un four-way handshake (pour contrer l'attaque ``Denial attack'')
+C'est un four-way handshake (pour contrer l'attaque ``Denial attack service'')
 
-TODO image
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=6cm]{fourway.png}
+    \caption{Fourway handshake}
+\end{figure}
 
 \subsubsection{Reliable data transfert}
+
+\begin{figure}[h]
+    \centering
+    \begin{tabular}{m{8cm}m{8cm}}
+    \includegraphics[width=8cm]{datachunk.png} &
+    \includegraphics[width=8cm]{sackchunk.png} 
+\end{tabular}
+    \caption{SCTP data/sack chunk format}
+\end{figure}
 
 \paragraph{Data chunck}
 Les données sont envoyé via des \textbf{data chunck} qui utilise un TNS comme
 numéro de séquence (augmenter de 1 a chaque data chunck). Lorsqu'un chunck est
-scindé on utilise le bit \textsc{b} et \textsc{e} pour spéc\textcolor{red}{if}ier le premier et dernier
+scindé on utilise le bit \textsc{b} et \textsc{e} pour spécifier le premier et dernier
 chunck.
 
 \paragraph{Sack chunk}
-Pour garantir l'arrivé, un TNS ack cumulat\textcolor{red}{if} est utilisé (Is on chunck level and not
+Pour garantir l'arrivé, un TNS ack cumulatif est utilisé (Is on chunck level and not
 byte level). Il donne aussi des informations sur les chunck hors séquence.
-Plusieurs autre d\textcolor{red}{if}férence :
+Plusieurs autre différence :
 \begin{enumerate}
-    \item Il peut fournir de l'information sur d\textcolor{red}{if}férent ``trou'' dans le buffer de réception
+    \item Il peut fournir de l'information sur \textbf{LES} différents ``trou'' dans le buffer de réception
     \item Il peut donner un feedback sur chunck dupplicate (Annonce une mauvaise heuristic du sender)
 \end{enumerate}
 
 \subsubsection{Connection release}
-Applique un three-way handshake pour cloturer la connection.
-TODO error
+Applique un three-way handshake pour cloturer la connection, ou un ABORT chunk
+pour refuser une connection ou la cloturer immédiatement.
 
+\subsection{UDP - TCP - SCTP}
+\begin{table}[h]
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        UDP & Unreliable   & x              & Stream-mode     & x                   & x \\
+        \hline
+        TCP & Reliable     & Option finie   & Stream-mode     & Three-way handshake & seq. = byte \\
+            &              &                &  Single host    &                     &  \\
+        \hline
+        SCTP & reliable or & Option infinie & message mode as & Four-way handshake & chunk \\
+             & partially   & with chunk     & a stream mode   &                    & \\
+             &             &                & Multihomed host &                    & \\
+        \hline
+    \end{tabular}
+    \caption{Difference between UDP, TCP and SCTP}
+\end{table}
 \subsection{Congestion control}
 Le control est effectué dans la transport layer.
 
 \textsc{tcp} control la congestion en agissant sur la window size puisque une connection
-ne peut pas envoyer des données plus vite que $\frac{window}{rtt}$
+ne peut pas envoyer des données plus vite que $$\frac{window}{rtt}$$
 
 \paragraph{Congestion window}
-\textsc{cwnd} est stocké dans le \textsc{TCB} de chaque connection, et la taille de la window
-est $min(cwnd, rwin, swin)$.  \textit{Additive increase} : Chaque \textsc{rount trip time}, on incremente \textsc{cwnd} de MSS byte. \textit{Multiplicative decrease} : Quand une congestion
+\textbf{CWND} est stocké dans le \textsc{TCB} de chaque connection, et la taille de la window
+est $min(cwnd, rwin, swin)$.  
+\begin{itemize}
+    \item[-] \textit{Additive increase} : Chaque \textsc{rount trip time}, on incremente \textsc{cwnd} de MSS byte. 
+    \item[-] \textit{Multiplicative decrease} : Quand une congestion
 est detecté on divise \textsc{cwnd}.
+\end{itemize}
 
 \paragraph{Initial value cwnd}
-est de MSS bytes afin de ne pas congestionner le réseau au démarrage.
+est de \textbf{MSS} bytes afin de ne pas congestionner le réseau au démarrage.
 (Cette valeur de départ a été augmenter à 15Kbyte)
 
 
 Toutefois, cwnd va augmenter lentement avant d'arriver a une valeur qui utilise efficacement le
-reseau. Pour éviter cela, on inclu un \textsc{slow-start algorithm} qui permet durant ce temps
+reseau. Pour éviter cela, on inclu un \textbf{slow-start algorithm} qui permet durant ce temps
 de doubler \textsc{cwnd} chaque RTT.
 
 \paragraph{Detect congestion} revient à detecter la perte de packet.
@@ -1291,25 +1411,35 @@ de doubler \textsc{cwnd} chaque RTT.
     \item \textit{severe congestion} : Quand le timer de transmission expire
 \end{itemize}
 
-\begin{figure}
-    %\includegraphics
-    TODO image
-   \caption{Congestion window with congestion}
+\begin{figure}[h]
+    \centering
+    \begin{tabular}{m{8cm}m{8cm}}
+    \includegraphics[width=8cm]{severecongestion.png} &
+    \includegraphics[width=8cm]{midlecongestion.png} \\
+    \multicolumn{1}{c}{Severe congestion} & \multicolumn{1}{c}{Middle congestion }
+\end{tabular}
+    \caption{Congestion window when detect congestion}
 \end{figure}
 
 \subsubsection{Controlling congestion without losing data}
 L'idée est de détecter avant la perte de paquet la futur congestion avec un
-\textbf{Explicit Congestion Not\textcolor{red}{if}ication}. (Quant un paquet passe par un router
-congestionné on met le bit à 1 et quand le receiver à cette information il la
+\textbf{Explicit Congestion Notification}. (Quant un paquet passe par un router
+congestionné on met le \textbf{CE} bit à 1 et quand le receiver à cette information il la
 transmet au sender pour adapter son débit)
 
-\paragraph{}
 \begin{enumerate}
-    \item Pour déployer la solution, il faut un autre bit pour spéc\textcolor{red}{if}ier si le packet utilise
-        ECN ou non. En effet, le cas échéant lorsque le router est congestionné ceux qui
-        n'implémente pas ECN sont avantagé
+    \item Pour déployer la solution, il faut un \textbf{autre bit} (ECN) pour spécifier si le packet utilise
+        \textbf{ECN} ou non. En effet, le cas échéant lorsque le router est congestionné ceux qui
+        n'implémente pas ECN sont avantagé.
+        \begin{itemize}
+            \item[$\to$] Si le router est congestionné et que le packet implémente ECN alors CE est mis à 1, sinon le packet est discard.
+        \end{itemize}
     \item Si le protocol est reliable ont peut informer le sender via l'ack. Soit via
-        un flag dans le header soit via une option. TCP``choisi le flag, STCP l'option.
+        un flag dans le header soit via une option. (TCP=flag, STCP=option).
+        \begin{itemize}
+            \item[$\to$] Une variable est maintenue à 1 du coté du receiver tant que 
+                les paquets reçu sont marqué comme ``congestionné''.
+        \end{itemize}
     \item Dernièrement, le sender/receiver savent si il utilise ECN via une TCP option
         durant le three-way handshake de connection
 \end{enumerate}
@@ -1318,7 +1448,7 @@ Si le receiver detect une congestion, les prochain paquets envoyé auront cette 
 (Pour éviter que l'information ne se perde si l'ack est perdu)
 
 \paragraph{Router algorithm}
-Deux types de router, soit avec une F\textcolor{red}{if}O soit un ensemble de FIFO et round robin scheduler.
+Deux types de router, soit avec une FIFO soit un ensemble de FIFO et round robin scheduler.
 
 Au lieu de prendre une mesure instantanée du remplissage du buffer, on prend une moyenne
 du remplissage.
@@ -1330,7 +1460,34 @@ Quand il y a plusieurs queue ont fait cette probabilité de manière indépendan
 garantir la justesse.
 
 \subsubsection{Modeling TCP congestion control}
-TODO
+To show the factors that affect the performance of TCP,
+if $p$ is the segment loss ratio then $\frac{1}{p}$ is the segment successfully transfers.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=9cm]{modelingtcp.png}
+    \caption{Evolution of the congestion window with regular losses}
+\end{figure}
+
+\begin{description}
+    \item The number of segment that are sent during a cycle is the yellow : 
+    $ area = \frac{3 \times W^2}{8}$
+    \item But by definition, area = $\frac{1}{p}$ so : $ W = \frac{k}{\sqrt{p}}$
+    \item The troughput (\textit{bytes/sec}) is the number of segment transmitted divided
+        by the duration of the cycle : $$Throughput = \frac{area \times MSS}{time} \quad \approx \frac{k \times MSS}{rtt \times \sqrt{p}}$$
+\end{description}
+
+This is a important result wich show that :
+\begin{itemize}
+    \item TCP connection with \textbf{small rtt} higher throughput that higher rtt
+        when losse occur. (\textit{unfair})
+    \item TCP connection that use \textbf{large MSS} can achieve a higher throughput that
+        shorter MSS. (\textit{unfair}). Note that most host use same MSS = 1460 bytes.
+\end{itemize}
+
+\paragraph{Conclusion :} $Througput < min( \frac{window}{rtt}, \frac{k \times MSS}{rtt \times \sqrt{p}})$
+Maximun throughput depend on the maximun window size and rtt if there are no losses,
+else it depends on the MSS, rtt and loss ratio.
 
 \subsection{Network layer}
 Trois type de datalink layer :
@@ -1341,7 +1498,7 @@ Trois type de datalink layer :
         juste l'unicast)
 \end{enumerate}
 
-\paragraph{LAN} Dans une LAN Chaque host est ident\textcolor{red}{if}ié par un datalink layer adresse
+\paragraph{LAN} Dans une LAN Chaque host est identifié par un datalink layer adresse
 (\textbf{MAC adresse}).
 LAN supporte broadcast and multicast datalink layer adresses. Une frame envoyé a l'adresse
 broadcast/multicast de la LAN est envoyé à tout les participants/participants correspondant
@@ -1410,7 +1567,7 @@ En IPv6 la fragmentation est fait par le sender et non par le router. (Celui-ci 
 le paquet et envoi un message d'erreur au sender si le packet est trop grand).
 
 Un paquet fragmenté contient un numéro d'offset de la fragmentation, le next header (car une option), un champ réservé mis à 0, un flag pour dire si c'est le dernier fragment et un
-champ pour \textit{ident\textcolor{red}{if}ier} le packet original.
+champ pour \textit{identifier} le packet original.
 
 \subparagraph{Note:} On peut envoyer les packets du premier au dernier ou dans l'ordre inverse.
 La deuxieme solution permet au receiver de connaître la taille du paquet (et donc du buffer
@@ -1457,7 +1614,7 @@ donc unique.
 
 \paragraph{Automatically configure IPv6 adress}
 \paragraph{Stateless Address Autoconfiguration} mechanism obtient sa link-local adresse
-en prenant 64 bits concaténé avec fe80::/64 et en ver\textcolor{red}{if}iant avec un NS son unicité.
+en prenant 64 bits concaténé avec fe80::/64 et en verifiant avec un NS son unicité.
 
 \paragraph{ }
 Obtenir  une   vrai  adresse  est   effectué  en  envoyant   un  Router
@@ -1478,17 +1635,17 @@ TODO
 TODO image 189
 
 \subsection{Routing in IP networks}
-Deux classe de protocol entre les d\textcolor{red}{if}férents domaines pour echanger
+Deux classe de protocol entre les différents domaines pour echanger
 efficacement de l'information.
 
-Une grande d\textcolor{red}{if}férence entre intra et inter domaine est la \textit{routing policies}
+Une grande différence entre intra et inter domaine est la \textit{routing policies}
 utilisé par chaque domaine.
 
 Dans un domaine toute les routers sont égaux et la meilleur route est choisi sur
-d\textcolor{red}{if}férents critére : temps, nombre d'intermédiare et taille de bandwith.
+différents critére : temps, nombre d'intermédiare et taille de bandwith.
 
-\paragraph{Routing  policies}  =  import filter  (spéc\textcolor{red}{if}ie  les  routes
-acceptables), export  filter (spéc\textcolor{red}{if}ies  les routes dangereuses)  et un
+\paragraph{Routing  policies}  =  import filter  (spécifie  les  routes
+acceptables), export  filter (spécifies  les routes dangereuses)  et un
 algorithme qui choisi.
 
 
@@ -1558,7 +1715,7 @@ de la même compagnie).
 TODO
 
 \subsubsection{The Border Gateway Protocol (BGP)}
-Dans BGP chaque domain est ident\textcolor{red}{if}ié par un unique \textit{Autonomous System} number (AS).
+Dans BGP chaque domain est identifié par un unique \textit{Autonomous System} number (AS).
 
 BGP n'envois pas sa routing table entière mais le fait de manière incrémentale, càd en
 envoyant uniquement les routes qui ont changé.
@@ -1574,7 +1731,7 @@ De plus BGP utilise TCP pour garantir le bon délivrement des BGP messages.
 \begin{enumerate}
     \item \textit{OPEN} : Quand la connection est établie, ça initialise la session et
         négocie d'option
-    \item \textit{NOT\textcolor{red}{if}ICATION} : Pour cloturer la session
+    \item \textit{NOTifICATION} : Pour cloturer la session
     \item \textit{UPDATE} : Averti du changement d'une route. C'est le message le plus important et pour que le protocol soit efficace, le message doit minimiser le nombre de bit envoyé.
     \item \textit{KEEP ALIVE} : Averti que rien n'a changé (pour être sur que le router
         est toujours en vie)
@@ -1610,7 +1767,7 @@ plutôt qu'un autre via le local-pref en définissant les valeurs dans l'import 
 Certaines routing policies peuvent interférer entre elles et aboutir (en théorie),
 à des ping-pong infini.
 
-\paragraph{ } La convergence des BGP n'esy pas toujours garanti et ver\textcolor{red}{if}ier la
+\paragraph{ } La convergence des BGP n'esy pas toujours garanti et verifier la
 convergence global est un problème NP-complet.
 
 \paragraph{Guideline to guarantee BGP convergence}
@@ -1630,8 +1787,8 @@ Protocol dévellopé après me \textit{Serial Line IP} (SLIP) qui a beaucoup de 
 PPP est enfaite en famille de trois protocol :
 \begin{enumerate}
     \item The PPP define framing technique to transport network layer packet
-    \item The \textit{Link Control Protocol} est utilisé pour negociate option and authent\textcolor{red}{if}ication by username/password
-    \item The \textit{Network Control Protocol} est spéc\textcolor{red}{if}ique à chaque network layer protocol
+    \item The \textit{Link Control Protocol} est utilisé pour negociate option and authentification by username/password
+    \item The \textit{Network Control Protocol} est spécifique à chaque network layer protocol
 \end{enumerate}
 
 PPP frame utilise le bit/caractère stuffing, supporte variable length (même si LCP négocie la MAX size).
@@ -1690,9 +1847,9 @@ pour que chaque switch ait le plus path vers le root.
 
 Ils utilisent des BPDUs qui contiennent :
 \begin{itemize}
-    \item L'ident\textcolor{red}{if}iant du root
+    \item L'identifiant du root
     \item Le coût du path entre le root et celui qui envoit le BPDU
-    \item L'ident\textcolor{red}{if}iant de celui qui envoit le BPDU
+    \item L'identifiant de celui qui envoit le BPDU
     \item Le nombre de switch port par lequel il est passé
 \end{itemize}
 
