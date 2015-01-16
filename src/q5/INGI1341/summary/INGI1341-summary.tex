@@ -10,7 +10,7 @@
 \makesavenoteenv{table}
 
 \hypertitle{Computer Networks : Information transfer}{5}{INGI}{1341}
-{Nicolas Houtain\and Benoît Legat\and Gorby Nicolas Ndonda Kabasele}
+{Nicolas Houtain\and Benoît Legat\and Gorby Nicolas Ndonda Kabasele\and Florian Thuin}
 {Olivier Bonaventure}
 
 \paragraph{French}
@@ -22,14 +22,18 @@ It needs to be translated.
 \begin{description}
     \item[ADSL] : Asymmetric Digital Subscriber Lines (le principe est d'avoir un gros lien down pour le particulier et un petit lien en up)
     \item[ARP] : Address Resolution Protocol
-    \item[PDU] : \textit{Protocole data unit}. Unité de mesure des informations échangées
-        dans un réseau informatique.
-    \item[MSL] : \textit{Maximum Segment Life}.
-
-    \item[DNS] : \textit{Domain Name System}. Service permettant de traduire un nom de domaine en informations de plusieurs types qui y sont associées, notamment une IP.
+    \item[CRC] : Cyclical Redundancy Check
     \item[DIFS] : \textit{DCF Interframe Space}. Si une station détecte qu'il n'y a pas eu de transmission WiFi pendant DIFS microsecondes et que l'échange de la dernière trame a réussi, elle a le droit de transmettre. Cette valeur au sein de la gestion des collisions : DIFS = SIFS + (2 * Slot time)
+    \item[DNS] : \textit{Domain Name System}. Service permettant de traduire un nom de domaine en informations de plusieurs types qui y sont associées, notamment une IP.
     \item[EIFS] : \textit{Extended Interframe Space}. Similaire au DIFS mais activé uniquement si la dernière frame a échoué. EIFS = Temps de transmission d'un acquittement + SIFS + DIFS.
     \item[HTTP] : \textit{HyperText Transfer Protocol}
+    \item[IEEE] : Institute of Electrical and Electronic Engineers
+    \item[LAN] : Local Area Network
+    \item[MSL] : \textit{Maximum Segment Life}.
+    \item[MTU] : \textit{Maximum Transmission Unit} C'est la taille maximale d'un paquet pouvant être transmis en une seule fois (sans fragmentation) sur une interface.
+    \item[Path MTU] : Taille maximale entre une machine source et une machine destination
+    \item[PDU] : \textit{Protocole data unit}. Unité de mesure des informations échangées
+        dans un réseau informatique.
     \item[RIFS] : \textit{Reduced Interframe Space}.
     \item[SDU] : \textit{Service Data Unit}
     \item[SIFS] : \textit{Short Inter Frame Spacing}. Temps pour une interface sans-fil entre la gestion d'une trame reçue et l'envoi de l'acquittement correspondant (temps pour passer de download à upload pour un routeur).  -> CSMA/CA
@@ -1911,14 +1915,49 @@ TODO page 209
       \end{tabular}
     \end{center}
     
-    Le début d'une frame Ethernet commence par un préambule qui est utilisé par la couche physique pour synchroniser son horloge avec l'horloge du sender (non présent sur la figure). Le premier champ de la frame est l'adresse de destination (multicast/broadcast/unicast), placée pour que l'interface Ethernet puisse rapidement vérifier s'il est le récepteur ou non (et donc ne pas prendre en compte la trame). Le second champ est l'adresse source (unicast seulement). Le troisième champ est un entier de 16 bits qui indique quel type de paquet de la couche réseau est transporté (EtherType - IPv4 IPv6 ARP)
+    Le début d'une frame Ethernet commence par un préambule qui est utilisé par la couche physique pour synchroniser son horloge avec l'horloge du sender (non présent sur la figure). Le premier champ de la frame est l'adresse de destination (multicast/broadcast/unicast), placée pour que l'interface Ethernet puisse rapidement vérifier s'il est le récepteur ou non (et donc ne pas prendre en compte la trame). Le second champ est l'adresse source (unicast seulement). Le troisième champ est un entier de 16 bits qui indique quel type de paquet de la couche réseau est transporté (EtherType - IPv4 IPv6 ARP) ; pour IPv4 et IPv6 ça peut paraitre useless parce que déjà présent dans le header IP, mais certaines machines ne checkaient pas le header IP donc on a intégré ça ici. La quatrième partie est le payload. Le dernier champ est un CRC sur 32 bits.
     
+    \[
+     46 \textrm{ bytes} \le \textrm{Ethernet payload} \le 1500 \textrm{ bytes}
+    \]
     
+    \begin{figure}[!ht]
+      \begin{center}
+	  \includegraphics[scale=0.6]{impact_of_frame_length_in_ethernet.png}
+	  \caption{Utilisation de la ligne en \% en fonction de la taille de la trame}
+      \end{center}
+    \end{figure}
     
-TODO changement + slot time
+    Un réseau Ethernet fournit \textbf{un service non-fiable et sans-connexion} qui supporte l'unicast, le multicast et le broadcast. Un bon réseau Ethernet doit fournir un service qui :
+    \begin{itemize}
+     \item délivre les trames à destination avec une grande probabilité de succès ( $\Rightarrow$ utilisation de CSMA/CD)
+     \item ne réordonne pas les trames transmises $\Rightarrow$ organisation du réseau Ethernet comme un shared bus.
+    \end{itemize}
+    
+    Différentes couches physiques ont été définies pour les réseaux Ethernet :
+    
+    \begin{center}
+      \begin{tabular}{c|c|c|c|c|c}
+	  Nom & Vitesse & Longueur du cable & Type de câble & Répéteurs & Topologie réseau \\
+	  10Base5 & 10 Mbps & 500 mètres & Cable coaxial & Oui & Shared bus\\
+	  10Base2 & & 185 mètres & Cable coaxial & Shared bus\\
+	  10BaseF & & & Lien optique & \\
+	  10BaseT & & & Câble torsadé & En étoile\\
+      \end{tabular}
+    \end{center}
+      
+      Les câbles à paire torsadée (\og{} twisted pairs \fg{}) sont utilisés traditionnellement pour les services téléphoniques. Ces services téléphoniques dans les immeubles d'entreprises sont reliés à des centrales téléphoniques (par étage ou bâtiment), ces centrales sont un point de concentration pour les services téléphoniques mais aussi pour les LAN.
+      
+      L'introduction des paires torsadées a mené à deux changements majeurs sur Ethernet :
+      \begin{itemize}
+       \item La topologie physique du réseau
+      \end{itemize}
 
-\paragraph{Hubs}
-Les hosts peuvent être directement relié à un Ethernet hubs.
+    \paragraph{Hub}
+      
+    
+      Les hosts peuvent être directement relié à un Ethernet hubs.
+      
 \subparagraph{Complexe network hub} La topologie doit être un tree et le délai entre
 deux host ne peut pas être plus long que 51.2ms (slot time).
 
