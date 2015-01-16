@@ -1761,11 +1761,6 @@ la \textit{routing policies} utilisé par chaque domaine.
 Dans un domaine toute les routers sont égaux et la meilleur route est choisi sur
 différents critére : temps, nombre d'intermédiare et taille de bandwith.
 
-\paragraph{Routing  policies}  =  import filter  (spécifie  les  routes
-acceptables), export  filter (spécifies  les routes dangereuses)  et un
-algorithme qui choisi.
-
-
 \subsection{Intradomain routing}
 Echange des informations sur les destinations atteignables \textbf{dans} le domain.
 \textit{RIP} est protocol de \textbf{distance vector} et \textit{OSPF} 
@@ -1805,58 +1800,105 @@ l'ensemble du réseau en mémoire.
 Les routers échangent des link-state packet à tout ceux dans l'area.
 
 \paragraph{Inter-area}
-L'inter-area routing est fait en échangeant des distance vector protocol. Pour prévenir les routeur d'une
-area le cout pour atteindre un routeur d'un autre domain. 
-\paragraph{LAN}
-Quand les routeurs boot dans un LAN, ils élisent un routeurs (Designated Routeur). Pour ne pas devoir 
-échanger des HELLO packet entre tout les routeurs. Les routeurs peuvent seulement échanger des HELLO
-avec le DR. C'est lui qui représente le LAN.
+L'inter-area  routing  est  fait  en  échangeant  des  distance  vector
+protocol pour prévenir  les routeur d'une area le cout pour atteindre
+un routeur d'un autre domain.
 
-\paragraph{Shortest path}
-Les protocoles interdomaines choississent les plus court chemin. Il peut arriver qu'il y ait deux
+\paragraph{LAN}
+Quand  les  routeurs  boot  dans   un  LAN,  ils  élisent  un  routeurs
+(\textbf{Designated  Routeur}) pour  ne pas  devoir échanger  des HELLO  packet
+entre tout  les routeurs. Les  routeurs peuvent seulement  échanger des
+HELLO avec le DR : c'est lui qui représente la LAN.
+
+(\textit{La  topologie  de  la  LAN   apparait  comme  un  full-mesh  of
+point-to-point link connected to the DR router})
+
+\subsubsection{Shortest path}
+Les protocoles intradomaines choississent les plus court chemin. Il peut arriver qu'il y ait deux
 chemins qui aient le même coût. Dans ce cas deux approches:
 \begin{itemize}
-	\item On choisit toujours le même chemin et n'utilise pas les autres.
+    \item On utilise toujours le même (\textit{en ne mettant que celui la dans la forwarding table}).
 	\item On utilise les différents chemin:
 	\begin{itemize}
-		\item On peut faire un Round Robin mais cela causerait d'utiliser de chemins différent pour les 			
-		paquets d'un même flow.
-		\item On calcule une hash value à partir du tuple de paquet (SRC,DEST,PortSRC,PortDest) et le Next 
-		header. La même interface (chemin) sera utiliser pour les paquets du même flow.
-	\end{itemize}}
+		\item Via un Round Robin mais cela implique d'utiliser des chemins différent pour les 			
+		paquets d'un même flow (TCP connection) et potentiellemnt augmenter les arrivées
+        hors séquence. 
+        \begin{center}
+            (\textit{hors-sequence $\to$ dupplicate ack $\to$ fast retransmit $\to$ congestion })
+        \end{center}
+
+		\item Utiliser un Round Robin par flow, via une hash value du tuple de paquet.
+		   La même interface (chemin) sera utiliser pour les paquets du même flow.
+            $$hash( NextHeader, IP_{src}, IP_{dst}, Port_{src}, Port_{dst} ) mod N$$
+            N is the number or outgoing interface on the equal cost paths
+	\end{itemize}
 \end{itemize}
 
 \subsection{Interdomain routing}
 Echange de l'informations entre les domaines. Cette information est une information
 agrégé des routers et on considère ici les domaines comme des boîtes noires.
 
-\subsubsection{Connection}
+A \textit{content-rich} sub domain is a domain that contains hosts that
+mainly receive packets. (Google,\ldots)
 
-\paragraph{Private peering link} permet de lier deux domaines. Pour des questions
+\subsubsection{Connected link}
+\begin{itemize}
+    \item \textbf{Private peering link} permet de lier deux domaines. Pour des questions
 de performances plusieurs lien physique sont établi entre les domaines.
 
-\paragraph{Internet eXchange Point} Une solution moins couteuse est de les connecter
-via un IXP. TODO page 198
+     \item \textbf{Internet eXchange Point} Une solution moins couteuse est de les connecter
+via un IXP.  The IXP contient une LAN où tout les routers sont connectés.
+\end{itemize}
 
-\subsubsection{Connection cost} Le coût d'une route est très importante en interdomain
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=8cm]{exchange.png}
+    \caption{Internet eXchange Point}
+\end{figure}
+
+\subsubsection{Connection cost} 
+Le \textbf{coût} d'une route est très importante en interdomain
 alors qu'en intra on préfére la performance.
 
-Il existe deux types de relation entre domaine \textit{customer->provider} et \textit{
-shared cost}.
-TODO image page 198
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=5cm]{peering.png}
+    \caption{Peering relationships}
+\end{figure}
 
-\paragraph{customer->provider}
-Le customer paye pour que son domaine soit distribué dans Internet
+Il existe deux types de relation entre domaine
+\begin{itemize}
+    \item \textbf{customer->provider} :
+        Le customer paye pour que son domaine soit distribué dans Internet. 
+        (\textit{La relation inverse est que le provider partage les routes qu'il 
+        connait})
+    \item \textbf{Shared cost} :
+        Cela arrive quand on a des domaines de taille similaire. 
+            \textit{On ne  veut pas  qu'un packet  passant dans  un
+    shared cost ne soit pas destiné au domaines après ce lien.}
 
-\paragraph{Shared cost}
-Cela arrive quand on a des domaines de taille similaire
-
-\paragraph{Sibling}
-Ils échangenet les routes dans les deux directions (souvent c'est des routers
-de la même compagnie).
+        $\to$ Via un shared cost, un domaine n'annonce que ses routes internes et les liens avec
+        les clients.
+    \item \textbf{Sibling} :
+        Ils échangenet les routes dans les deux directions (souvent c'est des routers
+        de la même compagnie).
+\end{itemize}
 
 \subsubsection{Interdomain routing policie}
-TODO
+\begin{itemize}
+    \item \textbf{Import filter} : spécifie pour chaque lien les routes acceptes du voisin.
+        (\textit{les non-acceptables sont ignorés et jamais utilisé pour forward un packet})
+    \item \textbf{Export filter} : spécifier pour chaque lien les routes qui peuvent
+        être annoncer au voisin
+    \item \textbf{Ranking algorithm} : utiliser pour choisir la meilleur route parmis
+        celle que le domain à reçu vers ce préfix de destination.
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=11cm]{policies.png}
+    \caption{Import export policies example}
+\end{figure}
 
 \subsubsection{The Border Gateway Protocol (BGP)}
 Dans BGP chaque domain est identifié par un unique \textit{Autonomous System} number (AS).
