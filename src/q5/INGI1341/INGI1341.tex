@@ -1492,82 +1492,136 @@ else it depends on the MSS, rtt and loss ratio.
 \subsection{Network layer}
 Trois type de datalink layer :
 \begin{enumerate}
-    \item Utilise directement le lien physique du physical layer
-    \item Utilise un Local Area Network
-    \item Utilise un Non-Broadcast Multi-Access (utilisé pour simuler une LAN supportant
+    \item Directement un lien physique du physical layer
+    \item Local Area Network
+    \item Non-Broadcast Multi-Access (utilisé pour simuler une LAN supportant
         juste l'unicast)
 \end{enumerate}
 
-\paragraph{LAN} Dans une LAN Chaque host est identifié par un datalink layer adresse
+\paragraph{LAN} Dans une LAN Chaque host est identifié par une adresse datalink layer
 (\textbf{MAC adresse}).
+
 LAN supporte broadcast and multicast datalink layer adresses. Une frame envoyé a l'adresse
-broadcast/multicast de la LAN est envoyé à tout les participants/participants correspondant
+\textbf{broadcast/multicast} de la LAN est envoyé à tout les participants correspondant
 au groupe.
 
 \subsubsection{IP version 6}
 IPv4 ne pourra bientot plus supporter toute les adresses, d'ou le besoin
 de passer à une autre solution.
 
+\begin{tabular}{m{2.5cm}m{10cm}}
+    Assumptions : &
+    \begin{itemize}
+        \item[-] Adress encoded on 128 bits
+        \item[-] IPv6 format header easily be parsed by hardware device
+        \item[-] Able to configure IPv6 adress automatically
+        \item[-] Security
+    \end{itemize}
+\end{tabular}
+    
 \paragraph{IPv6 adressing architecture}
-Support unicast, multicast and anycast.
+Scalability of a network layer protocol depend on its addressing architecture.
 
-\paragraph{Unicast}
-TODO image 171
+IPv6 support \textbf{unicast, multicast and anycast}.
 
-Une allocation hierarchique des allocations d'adresse permet de minimiser
-le nombre de route connu par les router. Celui ci connait donc pour
+\paragraph{\textbf{Unicast}} :
+
+\begin{tabular}{m{8cm}m{7cm}}
+    \begin{itemize}
+        \item Global routing prefix that assigned to the \textbf{Internet Service Provider}
+        \item Subnet id identifies a customer of ISP
+        \item Interface id
+    \end{itemize}
+    &
+    \includegraphics[width=8cm]{unicast.png}
+\end{tabular}
+
+\paragraph{ }
+Une allocation \textbf{hierarchique} des allocations d'adresse permet de minimiser
+le nombre de route connu par les router. Celui ci connait donc la route pour
 certains block d'adresse!
-
-$2^{128}$ groupé dans $2^{64}$ subnet!
-
+(\textit{$2^{128}$ groupé dans $2^{64}$ subnet!})
 
 Deux type d'allocation d'adresse :
-\begin{enumerate}
-    \item \textit{provider independent} (PI)
-    \item \textit{provider aggregatable} (PA)
-\end{enumerate}
-TODO understand
+\begin{itemize}
+    \item \textit{provider independent} (PI) : Pour compagnies connecté a au moins deux ISP. 
+        Ca correspond à recevoir un \textbf{block d'adresse} indépendant du ISP.
+    \item \textit{provider aggregatable} (PA) : Est dépendante du provider.
+\end{itemize}
+
+Le désavantage des \textbf{PA} adresses est que lorsque tu utilises un block d'adresse PA
+et que le provider change, il change aussi toute les adresses utilisés.
 
 \paragraph{Size IPv6 adress}
 /32 = Internet Service Provider, /48 = single compagny, /56 = small user site,
 /64 = single user, /128 = rare (Pas plus d'un host attaché au prefix)
 
 \paragraph{Utilisation IPv6 prefix}
-\textit{Longest prefix match} assure que la route qui match le plus avec
-l'adresse est celle employé.
+\textbf{Longest prefix match} assure que la route qui match le plus avec
+l'adresse est celle qui est employé.
 
 Note : ::/0 match avec tout le monde et est donc la \textit{default route}.
 
-\paragraph{Link local unicast}
+\paragraph{\textbf{Unique Local Unicast}}
+L'adresse ULA est un fc00::/7 et est similaire à une IPv4 adresse.
+L'adresse n'est pas garantie unique et un router ne forwarde pas
+une ULA.
+
+Note que contrairement au link local unicast, celle ci ne doit pas forcément
+avoir le même lien.
+
+\paragraph{\textbf{Link Local Unicast}}
 L'addresse commence par fe80::/64 et est suivi des 64 bits d'interfaces.
 Utilisé quand deux host sur le même lien (or LAN) veulent échanger des
 packet.. Note que le router ne peut pas forwarder un packet avec un
 link local unicast.
-(Utilisé qd on ne peut pas avoir une IPv6 régulière, càd en LAN isolé)
+
+(\textit{Utilisé qd on ne peut pas avoir une IPv6 régulière, càd en LAN isolé})
+
+\paragraph{\textbf{Multicast}}
+Permet d'envoyer un packet à toute les personnes d'une même groupe, dans une LAN.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=8cm]{multicast.png}
+    \caption{Multicast adress}
+\end{figure}
 
 
-\paragraph{Multicast}
-Envoyé efficacement un packet à toute les personnes d'une même groupe, dans une LAN.
-TODO
+\paragraph{\textbf{IPv6 packet format}}
 
-\paragraph{IPv6 packet format}
+\subparagraph{Header} = Payload length (16 bits), Hot limit : \textit{limit of router
+that can forward the packet} (8 bits) et Next header (8 bits).
 
-\paragraph{No checksum}
+\subparagraph{No checksum}
 Il n'y a pas de checksum dans le header de packet IPv6 car il y a déja le checksum
-sur les frame au niveau datalink layer! En pratique, l'ajout d'un tel checksum prévient
+sur les \textbf{frames} au niveau datalink layer! En pratique, l'ajout d'un tel checksum prévient
 les erreur de corruption de mémoire au sein d'un routeur (\textit{ridicule}) pour un coùt de
 calcule élevé.
 
-\paragraph{Next header}
-Indique le prochain header, tel que un transport layer header (UDP, TCP, SCTP) ou une
-IPv6 option (page 177). Note qu'une option a aussi le champ \textit{next header}.
+\subparagraph{Next header}
+Indique le prochain header, tel que un transport layer header (\textit{UDP=17, TCP=6, SCTP=132}) ou une IPv6 option.  Note qu'une option a aussi le champ \textit{next header}.
 
-\paragraph{Fragment option}
+\subparagraph{Options}
+Contiennet un next header, une length et un \textbf{opt field} qui indique
+ce que le receiver doit faire si il ne reconnait pas l'option : 
+\begin{itemize}
+    \item[-] 00 : il continue sans se soucier de l'option
+    \item[-] 01 : il supprime le packet
+    \item[-] 10 : il retourne un packet de control
+\end{itemize}
+
+\subparagraph{Fragment option}
 En IPv6 la fragmentation est fait par le sender et non par le router. (Celui-ci discard
 le paquet et envoi un message d'erreur au sender si le packet est trop grand).
 
-Un paquet fragmenté contient un numéro d'offset de la fragmentation, le next header (car une option), un champ réservé mis à 0, un flag pour dire si c'est le dernier fragment et un
-champ pour \textit{identifier} le packet original.
+Un paquet fragmenté contient :
+\begin{itemize} 
+    \item[-] Offset (13) de la fragmentation
+    \item[-] Next header (8) (\textit{car une option})
+    \item[-] Un flag : 0 = dernier fragment,
+    \item[-] Champ pour \textit{identifier} le packet original.
+\end{itemize}
 
 \subparagraph{Note:} On peut envoyer les packets du premier au dernier ou dans l'ordre inverse.
 La deuxieme solution permet au receiver de connaître la taille du paquet (et donc du buffer
@@ -1575,7 +1629,7 @@ nécessaire).
 
 \subsubsection{ICMP version 6}
 \textit{Internet Control Message Protocol} version 6 est utilisé dans un paquet IPv6
-(next header = 58). Deux type de messages :
+(next header = 58) pour transmettre des messages au sender. Deux type de messages :
 
 \begin{itemize}
     \item Messages d'erreurs
@@ -1585,9 +1639,9 @@ nécessaire).
             \item Time exceeded
             \item Parameter problem
         \end{enumerate}
-    \item Messages d'information
+    \item Messages d'information : Lorsque qu'un host reçoit un \textit{Echo request},
+        il doit répondre avec un \textit{Echo reply}.
 \end{itemize}
-TODO page 184
 
 \subsection{The IPv6 subnet}
 TODO
@@ -1782,6 +1836,41 @@ TODO page 209
 \subsection{Datalink layer technologie}
 
 \subsubsection{The point to point protocol}
+	On se limite aux protocoles qui sont souvnet utilisés pour le transport de paquets IP entre hôtes et routeurs connectés par un lien point-to-point.
+	
+	La première solution pour transporter des paquets IP sur une ligne était \textit{Serial Line IP} (SLIP). SLIP est une technique de character stuffing appliqué aux paquets IP utilisant 2 caractères spéciaux END (en début et fin de paquet) et ESC (devant un END s'il est dans les informations à transmettre). \bigskip
+	
+	Limitations de SLIP :
+	\begin{itemize}
+	 \item supporte uniquement la transmission de paquets IP
+	 \item l'hôte et le routeur doivent être configurés manuellement avec l'adresse IP de l'autre.
+	\end{itemize}
+	
+	SLIP était principalement utilisés sur des liens dem oins de 20Kbps sur lesquels envoyer un header IP de 20 bytes et un header TCP de 20 bytes prend énormément de temps. $\Rightarrow$ développement de techniques de compression des headers TCP/IP.
+	
+	La première technique de compression était d'exploiter la redondance entre plusieurs segments consécutifs faisant partie de la même connexion TCP. Dans ces segments, les adresse IP et les numéros de ports ne changent pas, les numéros de séquences et d'acquittements ne changent pas de manière aléatoire.
+	
+	Le protocole Point-to-Point (PPP) supporte IP et d'autres protocoles de la couche réseaux sur différents types de lignes de transmission. PPP est une famille de 3 protocoles qui s'utilisent ensemble :
+	
+	\begin{enumerate}
+	 \item Le \textit{Point-to-Point Protocol} qui définit une technique de framing aux paquets de la couche réseau de transport
+	 \item Le \textit{Link Control Protocol} qui est utilisé pour négocier les options et authentifier la session (username, password ou autres techniques)
+	 \item Le \textit{Netowrk Control Protocol} qui est spécific à chaque protocole de la couche réseau. Par exemple, NCP de IPv4 peut négocier l'adresse IPv4 à utiliser, l'adresse IPv4 du résolveur DNS.
+	\end{enumerate}
+	
+	PPP utilise le bit stuffing ou le character stuffing selon l'environnement où le protocole est utilisé. Les champs Address et Control sont présentes pour des raisons de compatibilité. Le champ Protocol (16 bits) contient l'ID du type de protocole utilisé pour le transport de la trame PPP. 
+	
+	PPP supporte des paquets de taille variable mais LCP peut négocier une taille de paquet maximum.
+	
+	\begin{figure}[!ht]
+	    \begin{center}
+		\includegraphics{ppp_frame_format.png}
+		\caption{Format d'une trame PPP}
+	    \end{center}
+	\end{figure}
+	
+	PPP a joué un rôle important en permettant aux fournisseurs d'accès Internet (ISP) de fournir un accès dial-up (par ligne commutée - téléphonique par exemple). L'accès à Internet se faisait par mot de passe en utilisant l'\textit{Extensible Authentication Protocol} (EAP). EAP est un protocole simple mais extensible. Par après, les ISP ont voulu passer à l'Asymmetric Digital Subscriber Lines (ADSL) et ils voulaient pouvoir réutiliser leurs systèmes d'authentification (et de facturation), IETF a développé des spécificaitons pour permettre à des trames PPP d'être transportées sur d'autres réseaux que les liens point-to-point 
+
 Protocol dévellopé après me \textit{Serial Line IP} (SLIP) qui a beaucoup de limitation.
 
 PPP est enfaite en famille de trois protocol :
