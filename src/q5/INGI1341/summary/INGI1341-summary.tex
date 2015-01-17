@@ -2045,15 +2045,21 @@ pour transporter des framesPPP sur d'autre réseaux que les point-to-point.}
             \item[$\to$] Equivaut à deux fois le temps que prend un impulsion électronique
                 pour parcourir une longeur maximun entre deux noeuds.
 
-                Ce slot time permet de détecter les collisions en CSMA/CD
+                Attendre ce slot time permet de détecter les collisions en CSMA/CD
         \end{itemize}
     \item \textbf{Frame format} : 
         \begin{itemize}
-            \item dest adresse (48 bits) : multicast, broadcast et unicast
-            \item src adresse (48 bits) : Uniquement unicast
-            \item type (16), CRC (32)
-            \item 46bytes $<$ payload $<$ 1500 bytes
+            \item \textbf{Dest adresse} (48 bits) : multicast, broadcast et unicast.
+                
+                Il est placé en début de frame pour que le recepteur sache rapidement si
+                elle lui est destiné ou non
+            \item \textbf{Source adresse} (48 bits) : Uniquement unicast
+            \item \textbf{Type} (16) : type du paquet transporté sur la couche réseau , \textbf{CRC} (32)
+            \item 46bytes $<$ \textbf{Payload} $<$ 1500 bytes
         \end{itemize}
+
+        Note que le début d'une frame Ethernet commence par un préambule
+        utilisé par la pysical layer pour synchroniser les horloges.
     \item \textbf{Adresses} :
         \begin{itemize}
             \item Addresse global \textbf{unique} (MAC adresse) sur 48bits (\textit{permet d'allouer des
@@ -2068,244 +2074,264 @@ pour transporter des framesPPP sur d'autre réseaux que les point-to-point.}
   \caption{MAC adresse format}
 \end{figure}
 
+\paragraph{ }Un réseau Ethernet fournit un \textbf{unreliable connectionless service}
+(\textit{Avec unicast, multicast et broadcast}) tel que :
+\begin{itemize}
+    \item Very high probability of successful delivery ($\to$ utilisation de CSMA/CD)
+    \item Transmission frame dans l'ordre ($\to$ topologie réseau ethernet = shared bus)
+\end{itemize}
+ 
+\begin{figure}[!ht]
+    \centering
+    \includegraphics[width=6cm]{impact_of_frame_length_in_ethernet.png}
+    \caption{Pourcentage d'utilisation de la ligne en fonction de frame size}
+\end{figure}
     
-    Le \textit{slot time} équivaut à deux fois le temps que ça prend pour une impulsion électronique de voyager sur une longueur maximum correspondant à la distance entre deux noeuds. Attendre ce slot time permet normalement en CSMA/CD que les collisions se produisent plus probablement près du transmetteur que sur le câble, permettant ainsi à l'implémentation d'avoir un contrôle sur la situation.
-    
-    Quelques slots times pour information :
-    
-    \begin{center}
-      \begin{tabular}{c|c|c}
-	Vitesse & Slot time & Intervalle de temps \\
-	\hline
-	10 Mbit/s & 512 bits times & 51,2 microsecondes \\
-	100 Mbit/s & 512 bits times & 5,12 microsecondes \\
-	1 Gbit/s & 4096 bit times & 4,096 microsecondes \\
-	10 Gbit/s & Not applicable & Not applicable \\
-      \end{tabular}
-    \end{center}
-    
-    Le début d'une frame Ethernet commence par un préambule qui est utilisé par la couche physique pour synchroniser son horloge avec l'horloge du sender (non présent sur la figure). Le premier champ de la frame est l'adresse de destination (multicast/broadcast/unicast), placée pour que l'interface Ethernet puisse rapidement vérifier s'il est le récepteur ou non (et donc ne pas prendre en compte la trame). Le second champ est l'adresse source (unicast seulement). Le troisième champ est un entier de 16 bits qui indique quel type de paquet de la couche réseau est transporté (EtherType - IPv4 IPv6 ARP) ; pour IPv4 et IPv6 ça peut paraitre useless parce que déjà présent dans le header IP, mais certaines machines ne checkaient pas le header IP donc on a intégré ça ici. La quatrième partie est le payload. Le dernier champ est un CRC sur 32 bits.
-    
-    \[
-     46 \textrm{ bytes} \le \textrm{Ethernet payload} \le 1500 \textrm{ bytes}
-    \]
-    
-    \begin{figure}[!ht]
-      \begin{center}
-	  \includegraphics[scale=0.3]{impact_of_frame_length_in_ethernet.png}
-	  \caption{Utilisation de la ligne en \% en fonction de la taille de la trame}
-      \end{center}
-    \end{figure}
-    
-    Un réseau Ethernet fournit \textbf{un service non-fiable et sans-connexion} qui supporte l'unicast, le multicast et le broadcast. Un bon réseau Ethernet doit fournir un service qui :
+\begin{table}[ht]
+    \centering
+  \begin{tabular}{c|c|c|c|c|c}
+  Nom & Vitesse & Longueur du cable & Type de câble & Répéteurs & Topologie réseau \\
+  10Base5 & 10 Mbps & 500 mètres & Cable coaxial & Oui & Shared bus\\
+  10Base2 & & 185 mètres & Cable coaxial & Shared bus\\
+  10BaseF & & & Lien optique & \\
+  10BaseT & & & Câble torsadé & En étoile\\
+  \end{tabular}
+  \caption{Différentes couches physiques définie pour Ethernet}
+\end{table}
+      
+      
+\paragraph{Introduction paires torsadées} amène à deux changements majeurs sur Ethernet :
+\begin{itemize}
+    \item La topologie physique du réseau (Start shaped)
+    \item L'obligation d'instaurer des hubs pour créer cette topologie 
+\end{itemize}
+
+\paragraph{Hub} : 
+
+\begin{tabular}{m{10cm}m{5cm}}
+    Un hub est un relais sur la couche physique qui
     \begin{itemize}
-     \item délivre les trames à destination avec une grande probabilité de succès ( $\Rightarrow$ utilisation de CSMA/CD)
-     \item ne réordonne pas les trames transmises $\Rightarrow$ organisation du réseau Ethernet comme un shared bus.
+        \item reçoit un signal électrique sur une interfaces 
+        \item le transmet sur toutes ses autres interfaces
+        \item est capable de convertir des signaux électriques de deux
+            couche physiques différentes (10BaseT$\to$10Base2)
     \end{itemize}
-    
-    Différentes couches physiques ont été définies pour les réseaux Ethernet :
-    
+    &      
+	\includegraphics[width=5cm]{ethernet_hub.png}
+\end{tabular}
+      
+Pour créer un réseau complexe avec des hubs, il faut faire attention à certains points :
+\begin{enumerate}
+    \item La topologie du réseau doit être un arbre     
+    \item Il peut exister des collisions $\to$ CSMA/CD
+    \item L'étendue du réseau est limitée par le slot time
+\end{enumerate}
+      
+\begin{figure}[!ht]
     \begin{center}
-      \begin{tabular}{c|c|c|c|c|c}
-	  Nom & Vitesse & Longueur du cable & Type de câble & Répéteurs & Topologie réseau \\
-	  10Base5 & 10 Mbps & 500 mètres & Cable coaxial & Oui & Shared bus\\
-	  10Base2 & & 185 mètres & Cable coaxial & Shared bus\\
-	  10BaseF & & & Lien optique & \\
-	  10BaseT & & & Câble torsadé & En étoile\\
-      \end{tabular}
+    \includegraphics[scale=0.3]{hierarchical_ethernet_network.png}
+    \caption{Un réseau Ethernet hiérarchique composé de hubs}
     \end{center}
-      
-      Les câbles à paire torsadée (``twisted pairs'') sont utilisés traditionnellement pour les services téléphoniques. Ces services téléphoniques dans les immeubles d'entreprises sont reliés à des centrales téléphoniques (par étage ou bâtiment), ces centrales sont un point de concentration pour les services téléphoniques mais aussi pour les LAN.
-      
-      L'introduction des paires torsadées a mené à deux changements majeurs sur Ethernet :
-      \begin{itemize}
-       \item La topologie physique du réseau
-      \end{itemize}
+\end{figure}
 
-    \paragraph{Hub}
-      Un hub est un relais sur la couche physique qui reçoit un signal électrique sur une de ses interfaces et le regénère et le transmet sur toutes ses autres interfaces. Certains hubs sont capables de convertir des signaux électriques d'une couche physique à une autre (p.e. conversion 10BaseT à 10Base2).
+\paragraph{Le Fast Ethernet} est une technologie LAN qui permet d'aller jusqu'à 100Mbps en utilisant la fibre optique. Deux contraintes :
+\begin{itemize}
+    \item Supporter les paires torsadées (\textit{en couche physique on aurait préféré les câbles coaxiaux mais c'est chiant pour la maintenance})
+    \item Utiliser le même format de frame qu'en 10Mbps (parce qu'à la base, ce lien de 100Mbps servait de lien entre 2 liens 10 Mbps). 
+        
+        $\to$ Pour préserver CSMA/CD : slot time = 5.12 microsecondes.
+\end{itemize}
       
-      \begin{figure}[!ht]
-	\begin{center}
-	    \includegraphics[scale=0.3]{ethernet_hub.png}
-	    \caption{Hub Ethernet dans le modèle de référence}
-	\end{center}
-      \end{figure}
-      
-      Pour créer un réseau complexe avec des hubs, il faut faire attention à certains points :
-      \begin{enumerate}
-       \item La topologie du réseau doit être un arbre (deux hubs qui seraient reliés créeraient un court-circuit)
-       \item il peut exister des collisions $\Rightarrow$ CSMA/CD
-       \item l'étendue du réseau est limitée par le slot time
-      \end{enumerate}
-      
-      \begin{figure}[!ht]
-	\begin{center}
-	    \includegraphics[scale=0.3]{hierarchical_ethernet_network.png}
-	    \caption{Un réseau Ethernet hiérarchique composé de hubs}
-	\end{center}
-      \end{figure}
+\paragraph{\textbf{Ethernet switches}}
+Une autre solution pour améliorer les performances des LAN ethernets (\textit{que le fast ethernet}), est de rendre les hubs intelligents.
 
-    \paragraph{Le Fast Ethernet} est une technologie LAN qui permet d'aller jusqu'à 100Mbps en utilisant la fibre optique. Le Fast Ethernet subit 2 contraintes :
-      \begin{itemize}
-       \item Il doit supporter les paires torsadées (en couche physique on aurait préféré les câbles coaxiaux mais c'est chiant pour la maintenance)
-       \item Il doit utiliser le même format de frame qu'en 10Mbps (parce qu'à la base, ce lien de 100Mbps servait de lien entre 2 liens 10 Mbps). Pour préserver CSMA/CD $\Rightarrow$ slot time = 5.12 microsecondes.
-      \end{itemize}
-      
-      \paragraph{Ethernet switches}
-      
-      Accroître la bande passante de la couche physique comme dans le Fast Ethernet était seulement une solution pour améliorer les performances des LAN Ethernet. Une deuxième solution est de remplacer les hubs par des appareils plus intelligents.
-      
-      Les hubs Ethernet opèrent dans la couche physique et ne font que recréer le signal électrique pour accroître l'étendue du réseau. D'un point de vue des performances, il serait plus intéressant d'avoir des appareils qui agissent sur la couche datalink et qui peuvent analysr l'adresse de destination de chaque trame et forwarder les trames sélectivement dans le lien qui mène à la destination.
-      
-      Ces appareils sont les switches Ethernet.
-      
-      \begin{figure}[!ht]
-	\begin{center}
-	    \includegraphics[scale=0.3]{ethernet_switches.png}
-	    \caption{Les switch Ethernet dans le modèle de référence}
-	\end{center}
-      \end{figure}
-      
-      Chaque switch Ethernet maintient une table des MAC adresses. Ces tables contiennent l'identifiant du port du switch sur lequel une frame reçue par le switch doit être transmise pour arriver à destination.
-      
-      \begin{figure}[!ht]
-	\begin{center}
-	    \includegraphics[scale=0.3]{switch_mac_address_table.png}
-	    \caption{Table des adresses MAC du Switch 1}
-	\end{center}
-      \end{figure}
-      
-      Grâce à l'utilisation des adresses MAC 48 bits, un LAN Ethernet est ``plug and play'', autrement dit, n'importe quel hôte qui se connecte à un segment Ethernet peut échanger avec un autre hôte attaché à ce segment. Cela entraîne la nécessaire d'une configuration automatique des tables des adresses MAC par les switches. 
-      
-      Augmenter la bande passante comme \textit{fast ethernet} n'est pas la seule
-      manière d'améliorer les performances d'ethernet LAN, on peut aussi rendre
-      les hubs intelligents en devenant des switchs.
+\paragraph{Switch} \textit{hubs intelligents} capable d'agir sur la couche datalink
+et analyser l'adresse de destination de chaque frame et forwarder dans la direction
+de la destination.
 
-      Ceux-ci maintiennent une table de forwading pour les MAC adresses. (voir code)
+\begin{figure}[!ht]
+    \centering
+    \begin{tabular}{cc}
+        \includegraphics[width=6cm]{ethernet_switches.png} &
+        \includegraphics[width=6cm]{switch_mac_address_table.png}
+    \end{tabular}
+    \caption{Les switch Ethernet et table des adresses MAC}
+\end{figure}
       
-      Grâce aux switches, on sait que chaque hôte ne reçoit que les trames unicast et multicast qui lui sont directement destinées, les trames broadcast et les trames dont le switch ne connaissait pas la destination.
+\subparagraph{Switch forwarding table} 
+\begin{itemize}
+    \item La table de forwarding fait le lien entre MAC adresse et port où forwarder
+
+    \item Utilisations des MAC adresse (48 bits), un LAN ethernet est \textit{plug and play}.
+        (\textit{On se connecte et on peut directement échanger})
+
+        \begin{itemize}
+            \item[$\to$] Nécessite une configuration automatique des tables des switchs
+        \end{itemize}
+
+    \item Avec les switchs, un host ne reçoit que les frames qui lui sont destinés 
+        (\textit{unicast, multicast et broadcast}) ainsi que les frames dont le
+        switch ne connait pas la destination
+
+    \item[$\color{red}\bullet$]  \textcolor{red}{Attaque par dénide service}
+        Taille des tables MAC est limité, un host peut envoyer plein de frame avec
+        des adresses sources aléatoire et overflow le switch.
+        \begin{itemize}
+            \item [$\to$] Le switch devra broadcast toutes les frames reçue, et l'attaquant
+                recevra donc tout les frames..
+        \end{itemize}
+\end{itemize}
+
+
+Si  on  combine le  \textbf{MAC  address  learning} et  l'algorithme  de
+forwarding,  on  peut gérer les réseaux en arbre qui n'ont pas de boucle
+(pas de TTL, ni HopLimit)
+
+(\textit{Cependant, un arbre est dangereux :  en cas de problèmes avec un lien le
+réseau est scindé en deux.})
+
       
-      \textbf{La taille des tables d'adresses MAC est limitée. Une taille limitée entraîne le risque d'attaques par Déni de Service : un hôte foireux peut envoyer des milliers de trames contenant des adresses sources aléatoires et overflow le switch. Une fois les tables d'adresses MAC remplie, le switch devra broadcast toutes les trames qu'il reçoit : à ce moment, l'attaquant recevra toutes les trames unicast qui ne lui sont même pas destinées.} L'attaque ARP discutée dans le chapitre précédent peut aussi arriver sur les switches Ethernet. Les switches doivent implémenter des défenses face à ces attaques.
-      
-      Si on combine le \textit{MAC address learning} et l'algorithme de forwarding, on peut réussir à bien gérer un réseau en arbre. Cependant, un arbre est très mauvais en cas de problèmes avec un lien ou avec un switch et ces algorithmes ne fonctionnent pas avec des boucles (pas de TTL ni HopLimit) ! Nous avons besoin du Spanning Tree Protocol. 
-      
-      % TODO : Un exemple existe dans le syllabus, faut-il le mettre ?
-      
-      \paragraph{Spanning Tree Protocol} Permet aux switches de réduire le réseau à un Spanning Tree. Une fois le réseau réduit à un Spanning Tree, les switches s'échangent des BPDU avec l'adresse multicast ALL\_BRIDGES. Chaque switch a un identifiant sur 64 bits unique (48 bits de MAC adresse du switch et 16 bits de poids fort configurés par l'administrateur réseau pour influencer la topologie du Spanning Tree ; default value = 32768).
-      
-      Intuitivement, le Spanning Tree est crée en choisissant comme racine le plus petit identifiant de switch, les branches du Spanning Tree sont composées par les chemins les plus courts qui permettent à tous les switches du réseau d'être atteint.
-      
-      Le BPDU contient :
-      \begin{itemize}
-       \item L'identifiant du switch racine (R)
-       \item Le coût du chemin le plus court entre le switch qui a envoyé le BPDU et la racine (c)
-       \item L'identifiant du switch qui a envoyé le BPDU (T)
-       \item Le numéro du port du switch qui a envoyé le BPDU (p)
-      \end{itemize}
-      
-      L'administrateur peut aussi configurer un coût associé à chaque port du switch qui dépend de la bande passante. On note un BPDU := <R,c,T,P>
-      
-      Chaque port de switch est dans un des trois état : Root, Désigné, Bloqué. Tous les ports du switch racine sont dans l'état désigné. Le port sur lequel le meilleur des vecteurs de priorité a été reçu est celui qui est le plus proche du switch racine : ce port devient un port Root. Il n'y a qu'un port Root par switch.
-      
-      Pour déterminer l'état de chacun de ses ports, le switch compare son propre BPDU avec le dernier BPDU reçu sur chaque port. CETTE COMPARAISON EST FAITE EN UTILISANT LE BPDU ET PAS LES VECTEURS DE PRIORITE RACINES. Si le BPDU du switch est meilleur que le dernier BPDU du port, le port devient désigné ; sinon il devient bloqué.
-      
-      L'état de chaque port est important quand on prend en compte la transmission des BPDU. Le switch racine envoie régulièrement son propre BPDU qui est reçu sur le port Root des switchs directement connectés à la racine.
-      
-      Les switches écoutent tout de même sur le port Bloqué, mais si la topologie du réseau est stable, normalement aucun BPDU ne doit arriver dessus.
-      
-      \begin{center}
-	\begin{tabular}{c|c|c|c}
-	 Etat du port & Réception de BPDU & Envoi de BPDU & Gestion de trames de données \\
-	 \hline
-	 \hline
-	 Bloqué & OUI & NON & NON \\
-	 \hline
-	 Racine & OUI & NON & OUI \\
-	 \hline
-	 Désigné & OUI & OUI & OUI \\
-	\end{tabular}
-      \end{center}
-      
-      Lors du calcul du Spanning Tree, plus aucune donnée n'est transmise dans le réseau. Après le spanning tree, l'algorithme de MAC learning se lance.
-      
-      Les switches, ports et liens peuvent foirer dans un réseau Ethernet avec des switches : quand ça arrive, il faut refaire le spanning tree. Pour les détecter, on envoie des BPDU régulièrement (le BPDU contient deux autres champs : son âge et l'age maximum).
-      
-      \paragraph{Les Virtual LANs} sont un ensemble de ports dans un ou plusieurs switches. Un switch peut gérer plusieurs LANs séparément et applique l'algorithme de MAC learning sur chacun des VLANs sans partager leurs informations respectives.
-      
-      Pour permettre au switch de distinguer les VLAN on met un identifiant à chaque VLAN qu'on met dans chaque header de frame échangée. Ce header est inséré directement après l'adresse MAC dans la frame Ethernet (avant EtherType).
-      \begin{multicols}{2}
-      \begin{figure}[!ht]
-	  \begin{center}
-	      \includegraphics[scale=0.3]{virtual_local_area_networks.png}
-	      \caption{3 Virtual Area Networks connectés par des switches}
-	  \end{center}
-      \end{figure}
-      
-      \begin{figure}[!ht]
-	 \begin{center}
-	    \includegraphics[scale=0.3]{header_vlan.png}
-	    \caption{Header VLAN (802.1q)}
-	 \end{center}
-      \end{figure}
-      \end{multicols}
-      Le Tag Protocol mis à 0x8100 permet au receveur de détecter la présence de ce header. Le Priority Code Point permet de définir des priorités dans les trames. Le champ C permet la compatibilité entre Ethernet et les réseaux Token Ring. Le dernier champ est l'identifiant de la VLAN (0 = pas un VLAN; 4095 est réservé).
-  
-    \subsubsection{802.11 Wireless networks}
-      Le spectre radio est une ressource limitée qui doit être partagée entre tous, il est reglementé par les instituions internationales et les gouvernements pour éviter les interférences. La seule exception de non-règlementation sont les ondes ISM (Industrial, Scientific and Medical). On utilise la bande 2400-2500Ghz pour le WiFi comme pour les micro-ondes, le bluetooth,... (il peut donc y avoir des interférences).
-      
-      IEEE a créé le groupe de travail 802.11 qui standardise les familles de réseaux sans fil WiFi :
-      
-      \begin{center}
-	\begin{tabular}{c|c|c|c|c}
-	  Standard & Fréquence & Débit typique & Bande passante max & Portée (m) intérieur/extérieur \\
-	  802.11 & 2.4 Ghz & 0.9 Mbps & 2 Mbps & 20/100 \\
-	  802.11a & 5 Ghz & 23 Mbps & 54 Mbps & 35/120 \\
-	  802.11b & 2.4 Ghz & 4.3 Mbps & 11 Mbps & 38/140 \\
-	  802.11g & 2.4 Ghz & 19 Mbps & 54 Mbps & 38/140 \\
-	  802.11n & 2.4-5 Ghz & 74 Mbps & 150 Mbps & 70/250 \\
-	\end{tabular}
-      \end{center}
-      
-      IEEE a pris la même approche quand ils ont standardisés le WiFi et Ethernet, le WiFi reprend donc CSMA/CA Medium Access Control et la même architecture ainsi que le même format de trame.
-      
-      L'architecture des réseaux WiFi est différente des LAN. Il y a deux types de réseaux WiFi : indépendant/adhoc et infrastructure. Typiquement, on utilise adhoc quand on ne le relie pas à Internet (par exemple pour une imprimante WiFi). Les réseaux les plus nombreux sont les réseaux d'infrastructure qui contiennent un ou plusieurs points d'accès attachés à un LAN (souvent Ethernet) qui lui est connecté à Internet. Le payload maximum théorique en 802.11 est de 2324 bytes mais le standard le limite à 1500.
-      \begin{multicols}{2}
-      \begin{figure}[!ht]
-	 \begin{center}
-	    \includegraphics[scale =0.5]{wifi_infrastructure.png}
-	    \caption{Réseau infrastructure 802.11}
-	 \end{center}
-      \end{figure}
-      
-      \begin{figure}[!ht]
-	  \begin{center}
-	      \includegraphics[scale=0.5]{wifi_access_point.png}
-	      \caption{Point d'accès WiFi}
-	  \end{center}
-      \end{figure}
-      \end{multicols}
-      \begin{figure}[!ht]
-	\begin{center}
-	  \include{wifi_data_frame_format.png}
-	  \caption{Format des trames de données en 802.11}
-	\end{center}
-      \end{figure}
-      
-      Le champ Frame Control indique le type de trame (data, RTS/CTS/ ack, management frames,...), si la trame est envoyée depuis un LAN,... Le champ Duration permet de réserver un temps de transmission (temps de transmission de l'ack + SIFS pour les data ; 0 pour multi/broadcast). Le champ Sequence Control continent un numéro de séquence incrémenté pour chaque trame de données.
-      
-      On se rend compte qu'il y a 3 champs d'adresse. La première est l'adresse MAC du point d'accès, la seconde est l'adresse source WiFi est l'adresse de destination final sur le LAN.
-      
-      Malgré l'utilisation d'acquittements, la couche 802.11 ne fournit qu'un service unreliable connectionless comme Ethernet. Les acquittements sont utilisés pour minimiser la probabilité de duplication de trame, ils n'assurent pas la livraison des données (haute probabilité mais pas garantie).
-      
-      L'encapsulation d'IP sur 802.11 ajoute 6 bytes au header 802.11, 4 bytes pour LLC/SNAP et 2 bytes de Ethernet Type (IP ou ARP).
-      
-      \begin{figure}[!ht]
-	  \begin{center}
-	      \includegraphics{ip_over_wifi.png}
-	      \caption{Paquet IP encapsulé dans une trame WiFi 802.11}
-	  \end{center}
-      \end{figure}
+\paragraph{Spanning Tree Protocol} 
+Permet de réduire un réseau à un \textbf{Spanning Tree}.
+\begin{itemize}
+    \item Les switches échangent les BPDU pour créer le spanning,
+        Les BPDU sont envoyé avec \textsc{ALL\_BRIDGES} comme destination multicast
+    \item Le plus petit 64bits identifier (48 lower avec MAC adresse, 16 higher
+        permette à l'admin d'influencer le réseau) est élu \textbf{root}, et les branches
+        sont composés avec les chemins les plus court permettant à tout les 
+        switchs du réseau d'être atteint
+\end{itemize}
+
+\subparagraph{BPU} (:= <R, c, T, P>) contient :
+
+\begin{itemize}
+    \item L'identifiant du switch racine (R)
+    \item Le coût du chemin le plus court entre le switch qui a envoyé le BPDU et la racine (c)
+    \item L'identifiant du switch qui a envoyé le BPDU (T)
+    \item Le numéro du port du switch qui a envoyé le BPDU (p)
+\end{itemize}
+
+\subparagraph{Priority vector} $V[q] = < T, c + cost(q), T, p, q>$
+
+\subparagraph{Port} 
+Chaque port d'un switch est \textbf{root, désigné} ou \textbf{bloqué}.
+Un port est \textbf{root} est celui qui est le plus proche du switch racine!
+
+\subparagraph{Fonctionnement} 
+
+\begin{itemize}
+    \item Chaque switch ecoute les BPDU sur ses ports
+    \item Pour les BPDU reçu, il calcule le \textbf{priority vector} associé au port d'où vient le BPDU et stocké le \textbf{meilleur pour chaque port}
+    \item Switch root est connu en regardant le plus petit identifiant stocké dans la
+        table des priority vector
+        \begin{enumerate}
+            \item Le switch root à $<R,O,R,p>$
+            \item Les autres switch au $<R, c, S, p>$ connaissent leur root port (celui avec le meilleur
+                priority vector)
+        \end{enumerate}
+    \item Un port est designé si le BPDU du switch est meilleur que le priority vector
+        du port sinon il est bloqué.
+    \item[$\to$] R : root switch, S : identifiant switch, c : cost best priority vector, p : number port d'où vient le BPDU
+\end{itemize}
+
+
+\subparagraph{Quand la version est stable}
+
+L'état de chaque port est important quand on prend en compte la transmission des BPDU. Le switch racine envoie régulièrement son propre BPDU qui est reçu sur le port Root des switchs directement connectés à la racine.
+
+Les switches écoutent tout de même sur le port Bloqué, mais si la topologie du réseau est stable, normalement aucun BPDU ne doit arriver dessus.
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+Etat du port & Réception de BPDU & Envoi de BPDU & Gestion de trames de données \\
+\hline
+Bloqué & OUI & NON & NON \\
+Racine & OUI & NON & OUI \\
+Désigné & OUI & OUI & OUI \\
+\hline
+\end{tabular}
+\end{center}
+
+Lors du calcul du Spanning Tree, plus aucune donnée n'est transmise dans le réseau. Après le spanning tree, l'algorithme de MAC learning se lance.
+
+Les switches, ports et liens peuvent foirer dans un réseau Ethernet avec des switches : quand ça arrive, il faut refaire le spanning tree. Pour les détecter, on envoie des BPDU régulièrement (le BPDU contient deux autres champs : son âge et l'age maximum).
+
+\paragraph{Les Virtual LANs} sont un ensemble de ports dans un ou plusieurs switches. Un switch peut gérer plusieurs LANs séparément et applique l'algorithme de MAC learning sur chacun des VLANs sans partager leurs informations respectives.
+
+Pour permettre au switch de distinguer les VLAN on met un identifiant à chaque VLAN qu'on met dans chaque header de frame échangée. Ce header est inséré directement après l'adresse MAC dans la frame Ethernet (avant EtherType).
+\begin{multicols}{2}
+\begin{figure}[!ht]
+\begin{center}
+  \includegraphics[scale=0.3]{virtual_local_area_networks.png}
+  \caption{3 Virtual Area Networks connectés par des switches}
+\end{center}
+\end{figure}
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[scale=0.3]{header_vlan.png}
+\caption{Header VLAN (802.1q)}
+\end{center}
+\end{figure}
+\end{multicols}
+Le Tag Protocol mis à 0x8100 permet au receveur de détecter la présence de ce header. Le Priority Code Point permet de définir des priorités dans les trames. Le champ C permet la compatibilité entre Ethernet et les réseaux Token Ring. Le dernier champ est l'identifiant de la VLAN (0 = pas un VLAN; 4095 est réservé).
+
+\subsubsection{802.11 Wireless networks}
+Le spectre radio est une ressource limitée qui doit être partagée entre tous, il est reglementé par les instituions internationales et les gouvernements pour éviter les interférences. La seule exception de non-règlementation sont les ondes ISM (Industrial, Scientific and Medical). On utilise la bande 2400-2500Ghz pour le WiFi comme pour les micro-ondes, le bluetooth,... (il peut donc y avoir des interférences).
+
+IEEE a créé le groupe de travail 802.11 qui standardise les familles de réseaux sans fil WiFi :
+
+\begin{center}
+\begin{tabular}{c|c|c|c|c}
+Standard & Fréquence & Débit typique & Bande passante max & Portée (m) intérieur/extérieur \\
+802.11 & 2.4 Ghz & 0.9 Mbps & 2 Mbps & 20/100 \\
+802.11a & 5 Ghz & 23 Mbps & 54 Mbps & 35/120 \\
+802.11b & 2.4 Ghz & 4.3 Mbps & 11 Mbps & 38/140 \\
+802.11g & 2.4 Ghz & 19 Mbps & 54 Mbps & 38/140 \\
+802.11n & 2.4-5 Ghz & 74 Mbps & 150 Mbps & 70/250 \\
+\end{tabular}
+\end{center}
+
+IEEE a pris la même approche quand ils ont standardisés le WiFi et Ethernet, le WiFi reprend donc CSMA/CA Medium Access Control et la même architecture ainsi que le même format de trame.
+
+L'architecture des réseaux WiFi est différente des LAN. Il y a deux types de réseaux WiFi : indépendant/adhoc et infrastructure. Typiquement, on utilise adhoc quand on ne le relie pas à Internet (par exemple pour une imprimante WiFi). Les réseaux les plus nombreux sont les réseaux d'infrastructure qui contiennent un ou plusieurs points d'accès attachés à un LAN (souvent Ethernet) qui lui est connecté à Internet. Le payload maximum théorique en 802.11 est de 2324 bytes mais le standard le limite à 1500.
+\begin{multicols}{2}
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[scale =0.5]{wifi_infrastructure.png}
+\caption{Réseau infrastructure 802.11}
+\end{center}
+\end{figure}
+
+\begin{figure}[!ht]
+\begin{center}
+  \includegraphics[scale=0.5]{wifi_access_point.png}
+  \caption{Point d'accès WiFi}
+\end{center}
+\end{figure}
+\end{multicols}
+\begin{figure}[!ht]
+\begin{center}
+\include{wifi_data_frame_format.png}
+\caption{Format des trames de données en 802.11}
+\end{center}
+\end{figure}
+
+Le champ Frame Control indique le type de trame (data, RTS/CTS/ ack, management frames,...), si la trame est envoyée depuis un LAN,... Le champ Duration permet de réserver un temps de transmission (temps de transmission de l'ack + SIFS pour les data ; 0 pour multi/broadcast). Le champ Sequence Control continent un numéro de séquence incrémenté pour chaque trame de données.
+
+On se rend compte qu'il y a 3 champs d'adresse. La première est l'adresse MAC du point d'accès, la seconde est l'adresse source WiFi est l'adresse de destination final sur le LAN.
+
+Malgré l'utilisation d'acquittements, la couche 802.11 ne fournit qu'un service unreliable connectionless comme Ethernet. Les acquittements sont utilisés pour minimiser la probabilité de duplication de trame, ils n'assurent pas la livraison des données (haute probabilité mais pas garantie).
+
+L'encapsulation d'IP sur 802.11 ajoute 6 bytes au header 802.11, 4 bytes pour LLC/SNAP et 2 bytes de Ethernet Type (IP ou ARP).
+
+\begin{figure}[!ht]
+\begin{center}
+  \includegraphics{ip_over_wifi.png}
+  \caption{Paquet IP encapsulé dans une trame WiFi 802.11}
+\end{center}
+\end{figure}
 
 \section{Algorithmes}
    \subsection{MAC Address Learning par les switches}
