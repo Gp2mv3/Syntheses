@@ -2208,19 +2208,20 @@ Permet de réduire un réseau à un \textbf{Spanning Tree}.
 Chaque port d'un switch est \textbf{root, désigné} ou \textbf{bloqué}.
 Un port est \textbf{root} est celui qui est le plus proche du switch racine!
 
-L'état de chaque port est important quand on prend en compte la transmission des BPDU. 
-
-\begin{center}
-\begin{tabular}{|c|c|c|c|}
-\hline
-Etat du port & Réception de BPDU & Envoi de BPDU & Gestion de trames de données \\
-\hline
-Bloqué & OUI & NON & NON \\
-Racine & OUI & NON & OUI \\
-Désigné & OUI & OUI & OUI \\
-\hline
-\end{tabular}
-\end{center}
+\begin{table}[ht]
+    \begin{center}
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        Etat du port & Réception de BPDU & Envoi de BPDU & Gestion de trames de données \\
+        \hline
+        Bloqué & OUI & NON & NON \\
+        Racine & OUI & NON & OUI \\
+        Désigné & OUI & OUI & OUI \\
+        \hline
+    \end{tabular}
+    \end{center}
+    \caption{Transmission des BPDU selon l'état de chaque port}
+\end{table}
 
 \subparagraph{Fonctionnement} 
 
@@ -2240,35 +2241,48 @@ Désigné & OUI & OUI & OUI \\
 \end{itemize}
 
 \subparagraph{Quand la version est stable}
-
 Le switch racine envoie régulièrement son propre BPDU qui est reçu sur le port Root des switchs directement connectés à la racine.
 
-Les switches écoutent tout de même sur le port Bloqué, mais si la topologie du réseau est stable, normalement aucun BPDU ne doit arriver dessus.
+\begin{itemize}
+    \item Les switches écoutent tout de même sur le port Bloqué, mais si la topologie du réseau est stable, normalement aucun BPDU ne doit arriver dessus.
+    \item Lors du calcul du Spanning Tree, \textbf{aucune donnée} n'est transmise dans le réseau.
+        
+        Après le spanning tree, l'algorithme de MAC learning se lance.
+\end{itemize}
 
 
-Lors du calcul du Spanning Tree, plus aucune donnée n'est transmise dans le réseau. Après le spanning tree, l'algorithme de MAC learning se lance.
-
+\subparagraph{Recover failure}
 Les switches, ports et liens peuvent foirer dans un réseau Ethernet avec des switches : quand ça arrive, il faut refaire le spanning tree. Pour les détecter, on envoie des BPDU régulièrement (le BPDU contient deux autres champs : son âge et l'age maximum).
+\begin{itemize}
+    \item Age=0 pour le root et il est incrémenté de 1 dés qu'il passe par un switch
+    \item Les switch stock age et l'incrémente chaque seconde. Si il dépasse le
+        max age, il y a donc une erreur et on refait STP
+\end{itemize}
 
 \paragraph{Les Virtual LANs} sont un ensemble de ports dans un ou plusieurs switches. Un switch peut gérer plusieurs LANs séparément et applique l'algorithme de MAC learning sur chacun des VLANs sans partager leurs informations respectives.
 
-Pour permettre au switch de distinguer les VLAN on met un identifiant à chaque VLAN qu'on met dans chaque header de frame échangée. Ce header est inséré directement après l'adresse MAC dans la frame Ethernet (avant EtherType).
-\begin{multicols}{2}
-\begin{figure}[!ht]
-\begin{center}
-  \includegraphics[scale=0.3]{virtual_local_area_networks.png}
-  \caption{3 Virtual Area Networks connectés par des switches}
-\end{center}
+\begin{figure}[ht]
+    \begin{center}
+      \includegraphics[width=9cm]{virtual_local_area_networks.png}
+      \caption{Trois Virtual Area Networks connectés par des switches}
+    \end{center}
 \end{figure}
 
+
+Pour permettre au switch de distinguer les VLAN on met un identifiant à chaque VLAN qu'on met dans chaque header de frame échangée. Ce header est inséré directement après l'adresse MAC dans la frame Ethernet (avant EtherType).
 \begin{figure}[!ht]
-\begin{center}
-\includegraphics[scale=0.3]{header_vlan.png}
-\caption{Header VLAN (802.1q)}
-\end{center}
+    \begin{center}
+    \includegraphics[width=14cm]{header_vlan.png}
+    \caption{Header VLAN (802.1q)}
+    \end{center}
 \end{figure}
-\end{multicols}
-Le Tag Protocol mis à 0x8100 permet au receveur de détecter la présence de ce header. Le Priority Code Point permet de définir des priorités dans les trames. Le champ C permet la compatibilité entre Ethernet et les réseaux Token Ring. Le dernier champ est l'identifiant de la VLAN (0 = pas un VLAN; 4095 est réservé).
+
+\begin{itemize}
+    \item Le Tag Protocol mis à 0x8100 permet au receveur de détecter la présence de ce header.
+    \item Le Priority Code Point (PCP) permet de définir des priorités dans les trames. 
+    \item Le champ C permet la compatibilité entre Ethernet et les réseaux Token Ring. 
+    \item Le dernier champ est l'identifiant de la VLAN (0 = pas un VLAN; 4095 est réservé).
+\end{itemize}
 
 \subsubsection{802.11 Wireless networks}
 Le spectre radio est une ressource limitée qui doit être partagée entre tous, il est reglementé par les instituions internationales et les gouvernements pour éviter les interférences. La seule exception de non-règlementation sont les ondes ISM (Industrial, Scientific and Medical). On utilise la bande 2400-2500Ghz pour le WiFi comme pour les micro-ondes, le bluetooth,... (il peut donc y avoir des interférences).
