@@ -1,365 +1,230 @@
-\input{../../lib.tex}
+\documentclass{report}
 
-\usepackage{multirow}
-\usepackage{multicol}
+\usepackage{tkz-orm}
+\usepackage[utf8x]{inputenc}
+\usepackage[frenchb]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{fullpage}
 \usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{framed}
+\usepackage{eurosym}
 
-% Footnote in tabular
-\usepackage{footnote}
-\makesavenoteenv{tabular}
-\makesavenoteenv{table}
+\usepackage{multicol}
 
-\hypertitle{en}{Computer Networks : Information transfer}{5}{INGI}{1341}
-{Nicolas Houtain\and Benoît Legat}
-{Olivier Bonaventure}
+%Caractères spéciaux
+\usepackage{pifont}
+\usepackage[margin=2cm]{geometry}
 
-\paragraph{French}
-There is some part in french because this is a merge between 2 summaries.
-It needs to be translated.
+% Affichage du graphique
+\usepackage{tikz}
+\usetikzlibrary{shapes, decorations.markings, shadows, arrows, positioning}
+\usepackage{xcolor}
 
-\section{Terminology}
+%inclure du code
+\usepackage{listingsutf8}
+
+% cfr http://en.wikibooks.org/wiki/LaTeX/Colors
+\usepackage{color}
+\usepackage{colortbl}
+%\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\definecolor{dkgreen}{rgb}{0.25,0.7,0.35}
+\definecolor{dkred}{rgb}{0.7,0,0}
+
+\usepackage{float}
+\usepackage{pict2e}
+
+\usepackage{listings}
+\lstset{
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  basicstyle=\rm\small\ttfamily,
+  keywordstyle=\bfseries\color{dkred},
+  frame=single,
+  commentstyle=\color{gray}=small,
+  stringstyle=\color{dkgreen},
+  %backgroundcolor=\color{gray!10},
+  %tabsize=2,
+  rulecolor=\color{black!30},
+  %title=\lstname,
+  breaklines=true,
+  framextopmargin=2pt,
+  framexbottommargin=2pt,
+  extendedchars=true,
+  inputencoding=utf8x
+}
+
+\lstset{language={C}}
+
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\newenvironment{proof}[1][Proof]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{definition}[1][Definition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{example}[1][Example]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+\newenvironment{remark}[1][Remark]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\newcommand{\qed}{\nobreak \ifvmode \relax \else
+          \ifdim\lastskip<1.5em \hskip-\lastskip
+                \hskip1.5em plus0em minus0.5em \fi \nobreak
+                      \vrule height0.75em width0.5em depth0.25em\fi}
+
+
+\colorlet{sblue}{blue!50}
+\colorlet{sred}{red!50}
+\colorlet{sgreen}{green!50}
+\colorlet{syellow}{yellow!50}
+\colorlet{spink}{dkgreen!50}
+
+\usepackage{titlesec}
+\titleformat{\chapter}
+{\normalfont\LARGE\bfseries}{\thechapter}{1em}{}
+
+\titlespacing*{\chapter}{0pt}{3.5ex plus 1ex minus .2ex}{2.3ex plus .2ex}
+\setcounter{secnumdepth}{3} 
+\begin{document}
+
+\author{Houtain Nicolas}
+\title{Synthese Network}
+
+\maketitle
+\tableofcontents
+
+\chapter{Terminologie}
 
 \begin{description}
-    \item[PDU] : \textit{Protocole data unit}. Unité de mesure des informations échangées
-        dans un réseau informatique.
-
-
     \item[DNS] : \textit{Domain Name System}. Service permettant de traduire un nom de domaine en informations de plusieurs types qui y sont associées, notamment une IP.
     \item[DIFS] : \textit{DCF Interframe Space}. Si une station détecte qu'il n'y a pas eu de transmission WiFi pendant DIFS microsecondes et que l'échange de la dernière trame a réussi, elle a le droit de transmettre. Cette valeur au sein de la gestion des collisions : DIFS = SIFS + (2 * Slot time)
     \item[EIFS] : \textit{Extended Interframe Space}. Similaire au DIFS mais activé uniquement si la dernière frame a échoué. EIFS = Temps de transmission d'un acquittement + SIFS + DIFS.
     \item[HTTP] : \textit{HyperText Transfer Protocol}
-    \item[RIFS] : \textit{Reduced Interframe Space}.
+    \item[RIFS] : \textit{Reduced Interframe Space}. 
     \item[SDU] : \textit{Service Data Unit}
     \item[SIFS] : \textit{Short Inter Frame Spacing}. Temps pour une interface sans-fil entre la gestion d'une trame reçue et l'envoi de l'acquittement correspondant (temps pour passer de download à upload pour un routeur).  -> CSMA/CA
     \item[TLV] : \textit{Type Length Value} est un format d'encodage tel que le premier byte est le type, le second la taille totale et puis la valeur.
 \end{description}
 
-\section{Layers}
 
-The different layers are represented by the \tabref{layers}.
-A router only has the 3 layers: Network, Datalink and Physical.
-\begin{table}[!ht]
-  \centering
-  \begin{tabular}{|c|c|c|p{4cm}|c|c|}
-    \hline
-    \multicolumn{3}{|c|}{Layers} & Protocols & PDU\footnote{Protocol Data Unit} & Id\footnote{I know it is a bit an overgeneralization.}\\
-    \cline{1-3}
-    CNP3 & TCP/IP & OSI & & & \\
-    \hline
-    \multirow{3}{*}{Application} & \multirow{3}{*}{Application}             & Application  & BGP, DHCP, DNS, FTP, HTTP, NFS, NTP, RIP, SMTP, SNMP, Telnet & ADU & \\
-    \cline{3-6}
-                                 &                                          & Presentation & MIME, XDR, SSL & & \\
-    \cline{3-6}
-                                 &                                          & Session      & RTP, TLS & SDU & \\
-    \hline
-    Transport                    & Transport                                & Transport    & UDP, MPTCP, TCP, SCTP & segment & Port\\
-    \hline
-    Network                      & Internet                                 & Network      & ICMP, IPsec, IPv4, IPv6, IPX, MPLS\footnote{MultiProtocol Label Switching operates at a layer that is generally considered to lie between traditional definitions of layer 2 (data link layer) and layer 3 (network layer), and thus is often referred to as a ``layer 2.5'' protocol} & packet & IP\\
-    \hline
-    Datalink                     & \multirow{2}{*}{Link}                    & Datalink     & IEEE 802.3 (Ethernet), IEEE 802.4, IEEE 802.5, ATM, ARP, Frame Relay, HDLC, IS-IS, LAPB, LLC, MAC, OSPF, PPP, SLIP & frame & MAC\\
-    \cline{1-1}
-    \cline{3-6}
-    Physical                     &                                          & Physical     & DSL, IEEE 802.3 (Ethernet), IEEE 802.11 (WiFi), ISDN, Modems & bit & \\
-    \hline
-  \end{tabular}
-  \caption{This table contains all the protocols of \cite{bonaventure2011computer}. See \cite{wiki:osimodel} for more protocols.}
-  \label{tab:layers}
-\end{table}
+\chapter{Principles}
 
-\begin{myexem}
-  An HTTPS request will use the following protocols in each layer of the OSI model:
-  \begin{description}
-    \item[Application] HTTP,
-    \item[Presentation] SSL,
-    \item[Session] TLS,
-    \item[Transport] TCP,
-    \item[Network] IPv6,
-    \item[Datalink] IEEE 802.3 (Ethernet),
-    \item[Physical] IEEE 802.3 or IEEE 802.11 (Wireless Local Area Network).
-  \end{description}
-\end{myexem}
+\section{Connecting two host}
 
-\subsection{Physical Layer}
-The Physical Layer service is provided by
+By electrical cable, optical fiber, wireless.
+
+\subsection{The physical layer}
+
+\begin{description}
+    \item[Bit rate] : Expressed in bits/sec
+    \item[Bandwith] : Range of frequency usable 
+\end{description}
+
+He is not perfect (unreliable), and for us is like a black box with this characteristics :
 \begin{itemize}
-  \item \textbf{Electrical cable} twisted pairs or coaxial cables;
-  \item \textbf{Optical fiber} multimode or monomode;
-  \item \textbf{Wireless} laser for point-to-point and radio-based for spread signal (e.g. WIFI).
-\end{itemize}
-Its PDU is the bit and the following terms are used
-\begin{itemize}
-    \item \textbf{Bit rate} : Expressed in bits/sec
-    \item \textbf{Bandwith} : Range of frequency usable
+    \item may change a bit being transmitted
+    \item may deliver more bits
+    \item may deliver fewer bits
 \end{itemize}
 
-\subsubsection{Characteristic}
-
-It is \textit{not perfect} (unreliable),
-and for us it is like a black box with these characteristics :
-\begin{itemize}
-    \item \textcolor{red}{change} the value of a bit (\textit{car interference electromagnétique});
-    \item deliver \textcolor{red}{more or fewer} bits than requested (\textit{car frequence horloge imprécise})
-\end{itemize}
-
-\paragraph{Manchester encoding}
+\subsubsection{Manchester encoding}
 TODO page 8
 
-\subsection{Datalink Layer}
-The PDU of Datalink Layer service is a \textbf{frame} (\textit{sequence of bit with a particular syntax or structure}) because we want to share data block.
-A frame is separated in 3 parts :
-\begin{itemize}
-    \item \textbf{Header} It contains a flag to tell whether it is an \textcolor{red}{ACK or DATA}, a \textcolor{red}{sequence number} and sometimes the length of the payload.
-  \item \textbf{Payload} It contains the information that needs to be transmitted.
-  \item \textbf{Error Detection Code} It allows the receiver to detect transmission errors.
-    It is either
-    \begin{itemize}
-        \item a \textsc{hamming code} which is simply a parity bit, it can only detect odd number of errors;
-        \item a \textsc{checksum such} as the Internet checksum chosen by the TCP/IP community and the
-        Fletcher checksum chosen by the OSI community;
-    \item or a \textsc{Cyclic Redundancy Check} (CRC).
-        It was slow to implement in software before 1995 and the publication of \cite{feldmeier1995fast}.
-        It is now preferred since it has better error detection \cite{stone1998performance}.
-        An $n$ bit CRC can detect errors if there are at most $n$
-        bits in error or if there is an odd number of bits in error.
-    \item an \textsc{hash function} like MD5 or SHA: however, these are built to be collision resistant against
-        an active adversary, not random modifications.
-        They are also a lot slower than CRC or checksums so they are only used in cryptography.
-    \end{itemize}
-  \item \textbf{Error Correction Code} It allow the receiver to correct transmission errors.
-    No widely used datalink protocol use this.
-\end{itemize}
+\subsection{The datalink layer}
+
+\begin{description}
+    \item[Frame] : sequence of bit with a particular synthax or structure.
+\end{description}
 
 \subsubsection{Framing}
 
-The separation of frames are done using \emph{bit stuffing}
-or \emph{character stuffing}.
-
 \begin{description}
-    \item[Bit stuffing] : \textbf{01111110} is a frame \textcolor{red}{boundary marker}, so he can't
-    be used when we transmit frames.
-    \textit{Adds a 0 after 5 consecutive 1 to ensure that this marker is not in the frame}
-    \begin{enumerate}
-      \item Easy to implement in hardware.
-      \item Increase number of bit transmited
-    \end{enumerate}
-\item[Character stuffing] : In software it's easier to work with character. 
-    (No imprimable character use as marker)
-    Begin of frame : \textsc{DLE STX}, end of frame : \textsc{DLE ETX}.
+    \item[Bit stuffing] : \textbf{01111110} is a frame boundary marker, so he can't
+        be used when we transmitted frame. 
+        \textit{Ajout un 0 pour assurer que ce marqueur n'est pas dans la frame}\\
+        \begin{enumerate}
+            \item Easy to implement in hardware.
+            \item Increase number of bit transmited
+        \end{enumerate}
 \end{description}
 
-\paragraph{Note} : Bit stuffing is implemented in hardware and character stuffing is usually
-implemented in software.
+\paragraph{Note} : Bit stuffing is implement in hardware and character stuffing is usually
+implement in software.
 
-\subsubsection{Recovering from failures}
-We can have errors due to different events:
-\begin{enumerate}
-  \item The frame has been \textbf{lost} or has been \textbf{corrupted}
-    by a transmission error
-  \item When we are to slow to treat incoming frames (\textbf{overflow} of the buffer)
-\end{enumerate}
+\subsubsection{Reliable transfert}
 
-\paragraph{ }
-Thanks to the ACK flag in the header,
-we have 2 types of frames: \textbf{data frame} and \textbf{acknowledgment frame}.
-Using to the  \textbf{Error Detection Code}, we can try  to recover from failures
-of the physical layers and provide a reliable service.
+On peut avoir plusieurs erreurs si on est trop lent à traiter les informations reçues
+(\textbf{overflow} du buffer), si la frame est \textbf{perdue} ou à été \textbf{corrumpue}
+par une erreur de transmission.
 
-\paragraph{Note: }
-Since the \textbf{Physical Layer does not reorder} the bits,
-the frames will not be reordered either.
-Providing a reliable service it therefore easier than for the Transport Layer that has to cope with the reordering of packets in the Network Layer (it has to discard packets to old packets and have maximal throughput because of that).
+\paragraph{}
+Two frames : \textbf{data frame} and \textbf{acknowledgment frame}.
+Frame = Header (\textit{CRC or checksum} and \textit{frame number}) + Payload (\textit{data})
 
-\paragraph{Pipelling:  }  This technique  allows  a  sender to  transmit
-several  consecutive frames  without being  forced to  wait for  and ack
-after each frame.
+\paragraph{error detection}
+ Hamming code \textit{is detection and correction error based on bit parity}, CRC 
+ \textit{is powerfull to detect error}, checksum \textit{is really easy to use}.
 
-\subsubsection{Reliable datalink layer}
-There are 3 ways of achieving a reliable Datalink Layer.
-\begin{enumerate}
-  \item \textbf{ABP} :
-    The Alternating Bit Protocol is
-    a particular case of go-back-n for $n = 2$.
-  \item \textbf{Go-back-n} :
-    is simple, the receiver discards all out of sequence frames
-    and the ACK always contains the last in sequence frame received.
-
-    The sender has simply one timer and when it expires, it retransmits \emph{all}
-    its unacked frames.
-
-    \begin{center}
-    \textit{Good performance if few frame are lost but else the performance is quickly
-    drop because of out-sequence frame not accepted and retransmittion of all
-unacked frames when it has detected a loss.}
-\end{center}
-
-  \item \textbf{Selective Repeat}
-      The difference with the go-back-n is that the receiver \textbf{stored out of sequence} frames received, even if cumulative acknowledgement is still used. (\textit{ACK
-      contains yet the last in sequence frame received even a out of sequence
-  frame is store in buffer})
-
-    The sender has  now a timer  for each frame  of the
-    sending window.
-
-    \begin{itemize}
-        \item[$\to$] The ACK sometimes also contains the list of out of sequence frame received (\emph{selective acknowledgement}) to avoid useless retransmission.
-    \end{itemize}
-\end{enumerate}
-
-\paragraph{Buffer size}
-If the sequence number has $n$ bits, we use $2^n$ \textbf{different sequence} numbers.
-A \textit{Sliding window} is use to manage the buffer of sequence numbers.
-
-Because the Physical Layer will not reorder the frames,
-the maximum window size for the go-back-n is $\bf 2^n-1$ and is $\bf 2^{n-1}$ for the Selective Repeat.
-
-\paragraph{  }  Not  all  Datalink Services  provide  a  \emph{reliable}
-service. As  a rule  of thumb, datalink  services above  very unreliable
-wireless physical services  (e.g. WIFI) does provide  a reliable service
-and datalink services above almost reliable wired physical sercies (e.g.
-cable or fiber)  do dot include additional  retransmission mechanism and
-are also \emph{almost reliable}.
-
-\paragraph{Piggybacking}
-When DATA is sent in both directions, an ACK frame and a DATA frame sent by one side are sometimes merged in one because an ACK frame does not need a lot of bit to do its job.
-(\textit{Used to reduce the overhead caused by acknowledgements})
-
-
-\subsubsection{Medium Access Control (MAC)}
-The first of the 3 resources that need to be shared inside a network is the link bandwidth (the 2 others are routers processing time and routers buffers).
-
-\textsc{Collisions} happens when two hosts try to send a frame simultaneously.
-It is the principal source of errors in Local Area Network.
-
-There are 2 types of MAC, deterministic ones and stochastic ones.
+\begin{multicols}{2} 
+\subsection{Go-back-n}
 \begin{itemize}
-  \item deterministic or pessimistic MACs: They ensure that there will be \emph{no} collision.
-    They are more appropriate in network where the load is constant (e.g. telephone, radio).
-  \item stochastics or optimistic MACS: They try to minimize the number of collisions.
-    They are more appropriate in network where the load has an on-off behaviour (e.g. internet).
+    \item N'accepte que les frames en séquence
+    \item 0-$2^n -1$ numéro de séquences sont utilisé
+    \item Ack contient la derniere frame reçue
 \end{itemize}
 
-The deterministic MACs are the following (the 3 first are \emph{static} allocation methods)
-\begin{description}
-  \item[Frequency Division Multiplexing]
-    If wireless medium, we can give a different frequency for devices.
-  \item[Wavelength Division Multiplexing]
-    In optical medium, we can give a different wavelength for devices.
-  \item[Time Division Multiplexing]
-    In any medium, we can just divide the time in separate slots and assign the slots to devices
-    statically or dynamically.
-  \item[IEEE 802.4 (Token Bus Network)]
-    Transmit a token in a network of bus topology.
-    To transmit data, wait for the token and then transmit the data instead of the token.
-    Once the data transmitted, put the token back in the network.
-  \item[IEEE 802.5 (Token Ring Network)]
-    Same than 802.4 but with a ring topology.
-\end{description}
+\subsection{Selective-repeat}
+\begin{itemize}
+    \item N'accepte les frames hors-séquence
+    \item 0-$2^{n-1}$ numéro de séquences sont utilisé
+    \item Ack contient la derniere frame reçue (\textit{Utilisation du selective ack pour
+            avoir des informations sur celle bien reçue hors-séquence})
+\end{itemize}
 
-\paragraph{[slotted] ALOHA}
-The first approach is ALOHA.
-The idea is simple.
-When no ack is received, we wait a random time instead of a fixed time to avoid synchronisation with other hosts.
-A simple improvement is \emph{slotted} ALOHA which divides the times into slots of the same size than the time require to transmit one frame.
-Transmisssion are only allowed to start at the beginning of a time slot.
-This avoids collison on part of a frame since that require the frame to be completely retransmitted anyway.
-
-\paragraph{[non-]persistent CSMA}
-An improvement to ALOHA is \emph{persistent} CSMA which sense the network before sending a frame but does not wait random time.
-To avoid synchronisation on with CSMA, \emph{non-persistent} CSMA waits a random time before sensing the network,
-it is is not free, it will wait a random time before sensing it again.
-
-More improvements can be made but depends on the technology
-\paragraph{CSMA/CD for IEEE 802.3 (Ethernet)}
-On ethernet, a host is able to detect a collision while it is listening.
-If $\tau$ is the diameter of the network (the largest time between 2 host),
-we know that if a frame of length $2\tau$ has a collision, the sending host will sense it (as any other hosts by the way).
-We therefore enforce $2\tau$ as the minimum frame size.
-
-Since Ethernet has not many transmission errors, CSMA/CD does not uses acknowledgment to avoid the collisions they would cause.
-
-The time waited by the hosts when a collision is detected is random to avoid synchronisation,
-is a multiple of $2\tau$ for the same reason as slotted ALOHA and is selected in a range multiplied by 2 after each collision,
-this is called a \emph{binary exponential back-off}.
-
-\paragraph{CSMA/CA for IEEE 802.11 (WiFi)}
-
-\begin{description}
-  \item[sifs] this is required to switch between upload and download in a router.
-  \item[difs]
-  \item[eifs]
-\end{description}
-
-% Network:
-% Datagram: connectionless-> most
-% Virtual circuit: connection-> few
-%
-% Transport
-% most on top on datagram so
-% UDP: datagraph: connectionless
-% TCP: connection oriented
-% UDP
-%
-% Resource Sharing
-% Resources that need to be shared:
-% * Links Bandwidth
-% * Buffers on the network nodes
-% * Packet processing capacity of nodes
+\end{multicols}
 
 
+\section{Building a network}
+Host and router sending packet.
 
-\subsection{Building a network}
-Network layer is used to send packet between two host that cannot directly relied
-by a cable. Host and router \textbf{sending packet}.
+\subsection{The datagram organisation}
 
-There are two possible organisation for the network layer.
-
-\subsubsection{The datagram organisation}
-
-\textit{Inspired by the postal service}, each host is identified by a \textbf{network layer address}.
-
-For each \textsc{packet}, sender must define his address, receiver address and data.
-
-
-\paragraph{Forwarding}
-In datagram organisation, router use \textbf{hop-by-hop} forwarding. (\textit{Each router
-forward the packet with his forwarding table})
-
-In a network, \textbf{black-hole} (\textit{when router discard packet because not entry
-in his forwarding table for this destination}) and \textbf{cycle} ({packet
-consume bandwith}) must be avoiding!
-
-
-\paragraph{Computing forwarding tables}
-\begin{description}
-  \item[port-address table] Si on a un \textbf{tree-shapped network} il suffit d'inspecter les packets
-    reçu pour créer sa table de forwarding sans risquer d'avoir de loop.
-    The problem with a tree-shapped network is that if a link fails, the network is split in two since there is no redundancy.
-    If the network is not a tree, we can also use port-address table but we need to use a distributed algorithm to ensure
-    that we have a tree (e.g. Spanning Tree Protocol for Ethernet (Datalink Layer)).
+\subsubsection{Computing forwarding tables}
+\begin{enumerate}
+    \item Si on a un \textbf{tree-shapped network} il suffit d'inspecter les packets
+        reçu pour créer sa table de forwarding sans risquer d'avoir de loop
     %TODO page 35
-\end{description}
+\end{enumerate}
 
-\paragraph{Flat or hierachical adresse}
+\subsubsection{Flat or hierachical adresse}
 Flat is like number telephone (small match to forwad packet) and hierachical is like a postal adress (smaller forwarding table, adress change when attached to other node\ldots question with mobile host).
 
-\paragraph{Dealing with heterogeneous datalink}
+\subsubsection{Dealing with heterogeneous datalink}
 Page 39
 
-\subsubsection{Vitual circuit organisation}
+\subsection{Vitual circuit organisation}
 
-\subsubsection{The control plane}
+\subsection{The control plane}
 
-\paragraph{Distance vector routing}
+\subsubsection{Distance vector routing}
 %TODO
 
-\paragraph{Link state routing}
+\subsubsection{Link state routing}
 %TODO
 
-\subsection{Application}
+\section{Application}
 %Big-little indian
 
 
-\subsection{The transport layer}
+\section{The transport layer}
 
 La couche de transport doit gérer les problèmes de la couche network :
 \begin{itemize}
@@ -370,7 +235,7 @@ La couche de transport doit gérer les problèmes de la couche network :
     \item duplicate data
 \end{itemize}
 
-\subsubsection{Connectionless}
+\subsection{Connectionless}
 On envoi les données et le service assure qu'elle arrive.
 Utilisé pour le transport de petit SDU.
 
@@ -386,12 +251,12 @@ Utilisé pour le transport de petit SDU.
 \end{description}
 % Characteristic page 56
 
-\paragraph{Note:} Pour passer du network layer au transport layer, il faut ajouter la
+\paragraph{Note:} Pour passer du network layer au transport layer, il faut ajouter la 
 gestion des erreurs et une technique de multiplexing (\textit{via port}).
 
 
-\subsubsection{Connection-oriented}
-Ici il y a trois phases : établir la connection, transferer les SDUs (\textit{la connection est
+\subsection{Connection-oriented}
+Ici il y a trois phases : établir la connection, transferer les SDUs (\textit{la connection est 
 bidirectionnel}) et fermer la connection.
 
 \begin{description}
@@ -399,7 +264,7 @@ bidirectionnel}) et fermer la connection.
         ``gracefully``, sinon des pertes peuvent être observé
 \end{description}
 
-\paragraph{Connection}
+\subsubsection{Connection}
 
 \paragraph{Refus:} Soit de la part du destinataire, soit du provider.
 
@@ -408,7 +273,7 @@ bidirectionnel}) et fermer la connection.
 Pour permettre le Three-way handshake, on utilise un transport clock.
 
 
-\paragraph{Data transfert}
+\subsubsection{Data transfert}
 
 \paragraph{Mode}
 \textsc{message-mode} : On envoie et reçois les messages tels quels.\\
@@ -420,9 +285,9 @@ transport portocols,  et le  numéro de séquence  placé dans  la frame
 correspond à la position du premier byte du payload dans le bytestream.
 
 \paragraph{Note} : Plusieurs différence par rapport au datalink layer pour assurer que les
-données soient délivré.
+données soient délivré. 
 
-\begin{enumerate}
+\begin{enumerate}  
     \item Dans  le datalink  layer quand  deux host  sont
 connecté le délai de transmission est fixe. Ici le delai varie car les
 paquets envoyés  ne prennent pas  forcément le  même path et  il peut
@@ -440,7 +305,7 @@ paquets envoyés  ne prennent pas  forcément le  même path et  il peut
 \end{enumerate}
 
 \paragraph{Go-back-n and selective repeat}
-Dans le transport layer on va préférer le sélective repeat puisque cette couche
+Dans le transport layer on va préférer le sélective repeat puisque cette couche 
 ne garantit pas l'arrivée en séquence, contrairement au datalink layer.
 
 De plus, dans le transport layer, plusieurs application concurrente peuvent communiquer
@@ -452,29 +317,29 @@ Le sender à un swin (\textit{taille de son buffer}), et rwin (\textit{taille du
 \textbf{Pour éviter un deadlock}, on utilise un persistent timer lorsque le sender reçoit une
 window size du receiver égale à 0. Quand le timer expire on force le renvoi du dernier segment.
 
-\paragraph{Connection release}
+\subsubsection{Connection release}
 Soit de manière \textbf{abrute}, soit de manière \textbf{gracefully} càd en fermant
 les deux sens de la connections avec un DR suivit d'un ACK.
 
 
-\subsubsection{Request-response service}
+\subsection{Request-response service}
 
 Page 61
 
-\subsection{Naming and addressing}
+\section{Naming and addressing}
 
-\subsubsection{Benefit}
+\subsection{Benefit}
 
-\subsection{Sharing ressources}
+\section{Sharing ressources}
 
 \textsc{bandwith} est la ressource la plus importante dans un réseau.\\
 \textsc{buffer of network node} est une autre ressource importante.\\
 \textsc{Processing capacity} to analyse packet and see on forwarding table.
 
-\subsubsection{Organisation to sharing bandwith}
+\subsection{Organisation to sharing bandwith}
 
 \paragraph{A full mesh}
-Le plus efficace, mais nécessite $\frac{n \times (n-1)}{2}$ lien, et chaque
+Le plus efficace, mais nécessite $\frac{n \times (n-1)}{2}$ lien, et chaque 
 host doit manager $n-1$ interface ce qui peut vite devenir impossible.
 
 \paragraph{Bus organisation}
@@ -483,7 +348,7 @@ ce qui peut être dur à maintenir.
 
 \paragraph{Star organisation}
 Le noeud du centre de l'étoile est vital pour le réseau, mais il permet aussi
-de centraliser le control en un seul point (\textit{C'est un excellent point de
+de centraliser le control en un seul point (\textit{C'est un excellent point de 
 control et un bon point d'observation}).
 
 Beaucoup plus facile à maintenir que le bus.
@@ -496,13 +361,13 @@ Un lien coupe l'entièrete du réseau, c'est pouquoi on utilise souvent un dual-
 Cela permet de connecté un large nombre de client avec un très petit coût.
 
 
-\subsubsection{Sharing bandwith}
+\subsection{Sharing bandwith}
 
 Le partage de bandwith dans les réseaux se veut être \textbf{max-min fairness}.
 
 \paragraph{ }Plusieurs algorithme sont expliqué dans la section Medium Access Control.
 
-\subsubsection{Network congestion}
+\subsection{Network congestion}
 
 Congestion lorsque $\sum demand > capacity$.
 
@@ -510,18 +375,18 @@ Congestion lorsque $\sum demand > capacity$.
 Cela arrive lorsque le réseau est un peu congestionné, et donc la transmission est ralenti.
 Si un protocole tel que \textsc{selective repeat} est utilisé, alors le sender peut
 croire que le packet est perdu et donc renvoyé le packet ce qui ne fait qu'augmenter
-la congestion!
+la congestion! 
 
 
 Pour régulere la congestion, une solution est de connaître la congestiona actuel afin que
 les hosts ajuste leur bandwith disponible pour diminuer la congestion.
 
-Tant que le buffer est peu ou pas du tout rempli, cela signifie que la demande est plus
+Tant que le buffer est peu ou pas du tout rempli, cela signifie que la demande est plus 
 petite que la capacité et que le buffer sert juste à \textit{lisser} les demandes dans le temps.
 
 
-\paragraph{Discard mechanism}
-On peut choisir d'écarter des paquets qd le buffer est full ou plutot quand il
+\subsubsection{Discard mechanism}
+On peut choisir d'écarter des paquets qd le buffer est full ou plutot quand il 
 augmente dangereusement afin de prévenir une congestion!
 Toutefois, discard a packet est la solution finale.
 
@@ -538,7 +403,7 @@ Attention, supprimer un paquet est pas la meilleur solution puisqu'on supprime u
 qui a consommé des ressources alors qu'on manque justement de ressource!
 
 \paragraph{Forward Explicit Congestion Notification}
-Pour les réseaux datagramme,
+Pour les réseaux datagramme, 
 on utilise un bit pour marquer si le paquet est passé par un endroit congestionné,
 et si c'est le cas le receiver envoi un paquet pour informer le sender du degré
 de congestion (càd $\frac{nbr congestion}{nbr paquet}$)
@@ -549,11 +414,11 @@ Même technique pour les réseaux virtuels, sauf qu'on marque l'acknowledgement.
 \paragraph{Control packet}
 TODO
 
-\paragraph{Scheduler mechanism}
+\subsubsection{Scheduler mechanism}
 Permet d'attribuer une FIFO par flow et un round robin choisit le prochain paquet
 
 
-\subsubsection{Distributing the load across the network}
+\subsection{Distributing the load across the network}
 
 \paragraph{Virtual network}
 Ici lorsque un host veut envoyer une information, il spécifie la destination et parfois la
@@ -561,20 +426,69 @@ bandwith nécessaire. On lui répond si il peut ou non se connecter.. Cette tech
 est utilisé notament par les téléphones.
 
 \paragraph{Datagram network}
-La technique du virtual ne peut être appliqué car dans le datagram un host n'a pas
+La technique du virtual ne peut être appliqué car dans le datagram un host n'a pas 
 besoin d'autorisation pour envoyer des packets.
 
 TODO page 82
 
 
-\paragraph{Shared popular file}
+\subsubsection{Shared popular file}
 
 \paragraph{Save on multi server}
 
 \paragraph{Using popular bittorent service}
 
 
-\subsubsection{Congestion control}
+\subsection{Medium Access Control Algorithms}
+
+\textsc{Collisions} arrive quand deux host essaye d'envoyer simultanément une frame. 
+C'est l'erreur principal sur les Local Area Network.
+
+\paragraph{Deterministic or pessimist MAC} qui dit que les collisions sont la mort, et 
+assure qu'il n'y en aura jamais.
+
+\paragraph{Stochastic ou optimist MAC} qui est plus cool et minimise au maximun
+les collisions.
+
+
+\subsubsection{Static allocation methods}
+
+\subsubsection{ALOHA}
+Pour éviter d'avoir des collisions à la retransmission qd la transmission à échoué
+par collision, chaque host attend un temps random avant de retransmettre par timeout.
+
+De plus une excellente amélioration proposé ($perf \times 2$) est de ne pas permettre
+que tout le monde retransmette quand il veut mais de donner à chaque host un timeslot
+auquel il peut retransmettre.
+
+\subsubsection{Carrier sense multiple access}
+CSMA essaye d'améliorer ALOHA lorsque le résau est fortement utilisé.
+
+Les host attendent que le channel soit libre avant d'envoyer une frame.
+
+\paragraph{Persistent CSMA} L'attente que le channel soit libre constitue en soi
+un point de synchronisation entre les hosts qui vont donc transmettre au même moment 
+et provoquer des collisions. (Voir page 86)
+
+\paragraph{Non-persistent CSMA} Propose lui d'écouter ponctuellement si il est libre
+et le cas échéant d'attendre un temps random.
+
+\subsubsection{Carrier sense multiple access with colision detection}
+
+
+\subsubsection{Carrier sense multiple access with colision avoidance}
+Utilisé pour le \textsc{wifi}, elle améliore le système de timeslot.
+
+\textsc{sifs} est l'écart entre la reception et l'envoi de l'ack (\textit{du au switch upload/download du router})\\
+\textsc{difs} 
+\textsc{eifs}
+
+TODO
+
+\subsubsection{Deterministic medium access control algorithm}
+TODO
+
+\subsection{Congestion control}
 
 Pour supprimer la \textbf{congestion collapse}, les hosts doivent réguler leur taux
 de transmission. (\textit{Note qu'il y a d'autre méchanisme pour réguler tel que celui
@@ -593,10 +507,10 @@ Le control de congestion est un algorithme qui adapte le taux de congestion :
     \item Additive increasing sinon :  $rate =  rate + \alpha, \alpha>0$
 \end{enumerate}
 
-\paragraph{Congestion control in window-based transport protocol}
+\subsubsection{Congestion control in window-based transport protocol}
 TODO
 
-\subsection{The reference models}
+\section{The reference models}
 
 \begin{description}
     \item[Application] : \textsc{SDU}
@@ -607,25 +521,25 @@ TODO
 \end{description}
 
 
-\section{Protocols}
+\chapter{Protocols}
 
-\subsection{Application layer}
+\section{Application layer}
 TODO
 
-\subsection{DNS}
+\section{DNS}
 Structure DNS message page 113.
 
-DNS permet d'obtenir l'adresse qui correpond à un certain nom, mais on peut
+DNS permet d'obtenir l'adresse qui correpond à un certain nom, mais on peut 
 faire un reverser DNS pour obtenir le nom d'une adresse.
 
-\subsection{Electronic mail}
+\section{Electronic mail}
 
-\subsubsection{Email message}
-\textsc{Header:} (\textit{From, Date, To, Subject,  cc, bcc}) and \textsc{Body}
+\subsection{Email message}
+\textsc{Header:} (\textit{From, Date, To, Subject,  cc, bcc}) and \textsc{Body} 
 
 Line to separate header and body is empty and contains only CR and LF.
 
-\subsubsection{Header field to support Multipurpose Internet Mail Extension}
+\subsection{Header field to support Multipurpose Internet Mail Extension}
 Header line :
 \begin{itemize}
     \item MIME-version : version de MIME pour l'encodage du mail
@@ -638,14 +552,14 @@ Header line :
     \item Content-transfert-encoding : Comment le message est encodé
 \end{itemize}
 
-\subsubsection{The Simple Mail Transfer Protocol}
+\subsection{The Simple Mail Transfer Protocol}
 
-\subsection{HTTP}
+\section{HTTP}
 Utilise des liens hypertext pour lier un fichier à un autre.
 
 \paragraph{Trois composant du world wide web}
 \begin{enumerate}
-    \item \textsc{uniform resource identifiers} : URI désigne une ressource sans aucune ambiguité
+    \item \textsc{uniform resource identifiers} : URI désigne une ressource sans aucune ambiguité 
 sur le world wide web. (page 126)
     \item \textsc{html}
     \item Le protocol \textsc{http} composé de request (\textit{method, header, MIME document}) et response(\textit{status line, header, MIME document}).
@@ -662,7 +576,7 @@ le serveur veulent personnaliser les réponses au préférence du client. Trois 
     \item En utilisant des cookies
 \end{enumerate}
 
-\subsection{Remote Procedure call}
+\section{Remote Procedure call}
 C'est comme appelé une procédure dans un code, sauf que l'on est pas sur
 un host seul mais dans le réseau.
 
@@ -673,10 +587,10 @@ un host seul mais dans le réseau.
 Un mécanisme simple est \textsc{json-rpc} qui peut être utilisé en connectionless ou
 connection-oriented, composé d'une requête et d'une réponse. (page 136)
 
-\subsection{Internet transport protocols}
+\section{Internet transport protocols}
 TODO page 137
 
-\subsection{The User Datagram Protocol (UDP)}
+\section{The User Datagram Protocol (UDP)}
 
 C'est un unreliable connectionless transport service, au dessus d'une unreliable
 connectionless network service, qui utilise les ports
@@ -695,39 +609,38 @@ caractéristique :
 
 TODO paragraph page 139
 
-\subsection{The transmission control protocol (TCP)}
+\section{The transmission control protocol (TCP)}
 
 Bi-directionnal bytestream d'une connection-oriented transport service, au dessus d'une unreliable connectionless network service.
 
 (Window-based transport protocol using go-back-n)
 
-\paragraph{Header} = Source port (16), dest port (16), sequence number (32), ack number (32),
+\paragraph{Header} = Source port (16), dest port (16), sequence number (32), ack number (32), 
 window size (16), checksum (16)
 
-\subsubsection{TCP connection etablishment}
+\subsection{TCP connection etablishment}
 Three-way handshake utilisant sequence number, ack number et SYN flag.
 
-\begin{figure}[!ht]
-  \centering
-  \includegraphics[width=10cm]{tcpconnect.jpg}
-  \caption{Connection TCP}
-  \label{fig:tcpconnect}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=10cm]{tcpconnect.jpg}
+\caption{Connection TCP}
 \end{figure}
 
 Durant l'établissement de la connection, le client/serveur negocie plusieurs options :
 \begin{enumerate}
-  \item Le \textsc{mms} qui est la taille du plus grand payload acceptable (\textit{536 au minimun})
-  \item La taille de la window
-  \item L'utilisation de SACK
-  \item Un ensemble d'option où client/server disent respectivemtn ce qu'il veut et ce
-    qu'il supporte
+    \item Le \textsc{mms} qui est la taille du plus grand payload acceptable (\textit{536 au minimun})
+    \item La taille de la window
+    \item L'utilisation de SACK
+    \item Un ensemble d'option où client/server disent respectivemtn ce qu'il veut et ce 
+        qu'il supporte
 \end{enumerate}
 
 \paragraph{Encodage des options} est fait en \textsc{TLV}.
 
-\subsubsection{TCP reliable data transfert}
+\subsection{TCP reliable data transfert}
 
-\paragraph{Segment transmission strategie}
+\subsubsection{Segment transmission strategie}
 
 Deux solutions extrêmes :
 \begin{enumerate}
@@ -740,18 +653,18 @@ Deux solutions extrêmes :
 un  \textsc{mms}  ou  si  l'on  vient  de  recevoir  un  acknwoledgement
 (\textit{càd au moins à chaque round trip time}).
 
-\subsubsection{TCP window}
+\subsection{TCP window}
 
 La négociation du  window scaling factor ($0 \leq scaling  \leq 14$) se
 fait  à la  connection, même  si certaines  implementations permettent
 d'automatiquement ajuster la taille.
 
-\subsubsection{TCP retransmission}
+\subsection{TCP retransmission}
 \textit{Go-back-n} a besoin d'un bon timer de retransmission (\textsc{rtt} est une
 bonne estimation même si il change pdt la connection)
 
 \textsc{rtt} = $\approx$ delai entre la transmission d'un segment et la reception de l'ack
-\paragraph{Measure RTT }
+\subsubsection{Measure RTT }
 Le problème est que l'on ne sait pas de quel segment l'ack est la réponse (càd qu'il pourrait
 y avoir plusieurs segment identique envoyé)
 
@@ -775,7 +688,7 @@ autre idée, il redéfini \textsc{rto} = $srtt + 4*rttvar$ avec \textsc{rttvar} 
 
 $\beta = \frac{1}{4}, \alpha = \frac{1}{8}$
 
-\subsubsection{Advanced retranmission strategie}
+\subsection{Advanced retranmission strategie}
 
 \paragraph{}
 \textsc{tcp} utilise de base \textbf{go-back-n}, et lorsque le même timer
@@ -790,7 +703,7 @@ de timer (\textit{delai cour}) ou si il reçoit un segment hors séquence puisqu
 l'ack a énormément d'importance
 
 \paragraph{Out-sequence}
-Il est très facile pour le receiver d'ajouter un buffer pour récupérer les
+Il est très facile pour le receiver d'ajouter un buffer pour récupérer les 
 segments hors séquence sans avoir besoin d'en informer le sender.
 
 \paragraph{Fast retransmit}
@@ -801,14 +714,14 @@ l'on reçoit 3 ack portant sur le même segment.
 Il nécessite l'ajout d'une variable dubpacks dans le \textsc{tcb}.
 
 \paragraph{Selective repeat}
-Avec une option de TCP, on peut activer les \textbf{SACK} qui permettent d'indiquer
+Avec une option de TCP, on peut activer les \textbf{SACK} qui permettent d'indiquer 
 les segments qui ont été reçu hors séquence. On utilise ici souvent Fast retransmit avec.
 
-\subsubsection{TCP connection release}
+\subsection{TCP connection release}
 Abrut (\textsc{rst}) ou gracefully.
 TODO page 156
 
-\subsection{The stream control transmission protocol (SCTP) }
+\section{The stream control transmission protocol (SCTP) }
 Alternative au TCP qui offre :
 \begin{enumerate}
     \item Supporte efficacement the \textit{multihomed host} càd avec plusieurs interface réseau. En TCP, une IP par interface et si tu te connecte en WIFI puis que ça
@@ -819,28 +732,28 @@ Alternative au TCP qui offre :
         plusieurs connection
 \end{enumerate}
 
-\subsubsection{Segment}
+\subsection{Segment}
 C'est un header suivit d'un ensemble de chunk.
 
 \paragraph{Header} = Source port number (16), dest port number (16), verification tag (32) and checksum (32).
 
 \paragraph{Chunk} = Type (8), flags (8), length (16) et value (32) pour permettre d'insérer facilement un ensemble d'option. STCP, contrairement à TCP, n'est pas limité sur le nombre d'option. C'est bon exemple de format de protocol facilement etendable.
 
-\subsubsection{Connection etablishment}
+\subsection{Connection etablishment}
 C'est un four-way handshake (pour contrer l'attaque ``Denial attack'')
 
 TODO image
 
-\subsubsection{Reliable data transfert}
+\subsection{Reliable data transfert}
 
 \paragraph{Data chunck}
-Les données sont envoyé via des \textbf{data chunck} qui utilise un TNS comme
+Les données sont envoyé via des \textbf{data chunck} qui utilise un TNS comme 
 numéro de séquence (augmenter de 1 a chaque data chunck). Lorsqu'un chunck est
 scindé on utilise le bit \textsc{b} et \textsc{e} pour spécifier le premier et dernier
 chunck.
 
 \paragraph{Sack chunk}
-Pour garantir l'arrivé, un TNS ack cumulatif est utilisé (Is on chunck level and not
+Pour garantir l'arrivé, un TNS ack cumulatif est utilisé (Is on chunck level and not 
 byte level). Il donne aussi des informations sur les chunck hors séquence.
 Plusieurs autre différence :
 \begin{enumerate}
@@ -848,14 +761,14 @@ Plusieurs autre différence :
     \item Il peut donner un feedback sur chunck dupplicate (Annonce une mauvaise heuristic du sender)
 \end{enumerate}
 
-\subsubsection{Connection release}
+\subsection{Connection release}
 Applique un three-way handshake pour cloturer la connection.
 TODO error
 
-\subsection{Congestion control}
-Le control est effectué dans la transport layer.
+\section{Congestion control}
+Le control est effectué dans la transport layer. 
 
-\textsc{tcp} control la congestion en agissant sur la window size puisque une connection
+\textsc{tcp} control la congestion en agissant sur la window size puisque une connection 
 ne peut pas envoyer des données plus vite que $\frac{window}{rtt}$
 
 \paragraph{Congestion window}
@@ -864,8 +777,8 @@ est $min(cwnd, rwin, swin)$.  \textit{Additive increase} : Chaque \textsc{rount 
 est detecté on divise \textsc{cwnd}.
 
 \paragraph{Initial value cwnd}
-est de MSS bytes afin de ne pas congestionner le réseau au démarrage.
-(Cette valeur de départ a été augmenter à 15Kbyte)
+est de MSS bytes afin de ne pas congestionner le réseau au démarrage. 
+(Cette valeur de départ à été augmenter à 15Kbyte)
 
 
 Toutefois, cwnd va augmenter lentement avant d'arriver a une valeur qui utilise efficacement le
@@ -884,16 +797,16 @@ de doubler \textsc{cwnd} chaque RTT.
    \caption{Congestion window with congestion}
 \end{figure}
 
-\subsubsection{Controlling congestion without losing data}
-L'idée est de détecter avant la perte de paquet la futur congestion avec un
-\textbf{Explicit Congestion Notification}. (Quant un paquet passe par un router
+\subsection{Controlling congestion without losing data}
+L'idée est de détecter avant la perte de paquet la futur congestion avec un 
+\textbf{Explicit Congestion Notification}. (Quant un paquet passe par un router 
 congestionné on met le bit à 1 et quand le receiver à cette information il la
 transmet au sender pour adapter son débit)
 
 \paragraph{}
 \begin{enumerate}
     \item Pour déployer la solution, il faut un autre bit pour spécifier si le packet utilise
-        ECN ou non. En effet, le cas échéant lorsque le router est congestionné ceux qui
+        ECN ou non. En effet, le cas échéant lorsque le router est congestionné ceux qui 
         n'implémente pas ECN sont avantagé
     \item Si le protocol est reliable ont peut informer le sender via l'ack. Soit via
         un flag dans le header soit via une option. TCP``choisi le flag, STCP l'option.
@@ -901,10 +814,10 @@ transmet au sender pour adapter son débit)
         durant le three-way handshake de connection
 \end{enumerate}
 
-Si le receiver detect une congestion, les prochain paquets envoyé auront cette information.
+Si le receiver detect une congestion, les prochain paquets envoyé auront cette information. 
 (Pour éviter que l'information ne se perde si l'ack est perdu)
 
-\paragraph{Router algorithm}
+\subsubsection{Router algorithm}
 Deux types de router, soit avec une FIFO soit un ensemble de FIFO et round robin scheduler.
 
 Au lieu de prendre une mesure instantanée du remplissage du buffer, on prend une moyenne
@@ -916,10 +829,10 @@ quand la moyenne augmente.
 Quand il y a plusieurs queue ont fait cette probabilité de manière indépendante pour
 garantir la justesse.
 
-\subsubsection{Modeling TCP congestion control}
+\subsection{Modeling TCP congestion control}
 TODO
 
-\subsection{Network layer}
+\section{Network layer}
 Trois type de datalink layer :
 \begin{enumerate}
     \item Utilise directement le lien physique du physical layer
@@ -929,19 +842,19 @@ Trois type de datalink layer :
 \end{enumerate}
 
 \paragraph{LAN} Dans une LAN Chaque host est identifié par un datalink layer adresse
-(\textbf{MAC adresse}).
+(\textbf{MAC adresse}). 
 LAN supporte broadcast and multicast datalink layer adresses. Une frame envoyé a l'adresse
 broadcast/multicast de la LAN est envoyé à tout les participants/participants correspondant
 au groupe.
 
-\subsubsection{IP version 6}
+\subsection{IP version 6}
 IPv4 ne pourra bientot plus supporter toute les adresses, d'ou le besoin
 de passer à une autre solution.
 
-\paragraph{IPv6 adressing architecture}
+\subsubsection{IPv6 adressing architecture}
 Support unicast, multicast and anycast.
 
-\paragraph{Unicast}
+\subsubsection{Unicast}
 TODO image 171
 
 Une allocation hierarchique des allocations d'adresse permet de minimiser
@@ -953,8 +866,8 @@ $2^{128}$ groupé dans $2^{64}$ subnet!
 
 Deux type d'allocation d'adresse :
 \begin{enumerate}
-    \item \textit{provider independent} (PI)
-    \item \textit{provider aggregatable} (PA)
+    \item \textit{provider independent} (PI) 
+    \item \textit{provider aggregatable} (PA) 
 \end{enumerate}
 TODO understand
 
@@ -964,7 +877,7 @@ TODO understand
 
 \paragraph{Utilisation IPv6 prefix}
 \textit{Longest prefix match} assure que la route qui match le plus avec
-l'adresse est celle employé.
+l'adresse est celle employé. 
 
 Note : ::/0 match avec tout le monde et est donc la \textit{default route}.
 
@@ -976,11 +889,11 @@ link local unicast.
 (Utilisé qd on ne peut pas avoir une IPv6 régulière, càd en LAN isolé)
 
 
-\paragraph{Multicast}
+\subsubsection{Multicast}
 Envoyé efficacement un packet à toute les personnes d'une même groupe, dans une LAN.
 TODO
 
-\paragraph{IPv6 packet format}
+\subsubsection{IPv6 packet format}
 
 \paragraph{No checksum}
 Il n'y a pas de checksum dans le header de packet IPv6 car il y a déja le checksum
@@ -1003,12 +916,12 @@ champ pour \textit{identifier} le packet original.
 La deuxieme solution permet au receiver de connaître la taille du paquet (et donc du buffer
 nécessaire).
 
-\subsubsection{ICMP version 6}
-\textit{Internet Control Message Protocol} version 6 est utilisé dans un paquet IPv6
+\subsection{ICMP version 6}
+\textit{Internet Control Message Protocol} version 6 est utilisé dans un paquet IPv6 
 (next header = 58). Deux type de messages :
 
 \begin{itemize}
-    \item Messages d'erreurs
+    \item Messages d'erreurs 
         \begin{enumerate}
             \item Destination unreachable (0: no route, 1: firewall refuse, 2: sender use link-local adresse to reach global unicast adresss, 3: adress unreachable, 4: port unreachable)
             \item Packet too big
@@ -1019,15 +932,15 @@ nécessaire).
 \end{itemize}
 TODO page 184
 
-\subsection{The IPv6 subnet}
+\section{The IPv6 subnet}
 TODO
 
-\subsubsection{Interactions between IPv6 and datalink layer}
+\subsection{Interactions between IPv6 and datalink layer}
 
 Dans une LAN sans internet, les hosts prennent une adresse IP grace au link-local adresse.
 Si la LAN est connecté à internet, on utilise \textit{Neighbor Discovery Protocol} (partie de ICMPv6) pour connaître l'adresse des autres
 
-\paragraph{Neighbor Discovery Protocol}
+\subsubsection{Neighbor Discovery Protocol}
 
 \begin{enumerate}
     \item Envoi un multicast ICMPv6 Neighbor Solicitation avec son adresse IPv6
@@ -1042,7 +955,7 @@ stocké temporairement dans la cache et quand il expire il faut revalider l'adre
 Pour cela il envoit un ICMPv7 NS à sonn adresse, et si il ne reçoit pas de réponse elle est
 donc unique.
 
-\paragraph{Automatically configure IPv6 adress}
+\subsubsection{Automatically configure IPv6 adress}
 \paragraph{Stateless Address Autoconfiguration} mechanism obtient sa link-local adresse
 en prenant 64 bits concaténé avec fe80::/64 et en verifiant avec un NS son unicité.
 
@@ -1057,14 +970,14 @@ TODO page 189
 \paragraph{Dynamic Host Configuration Protocol} (DHCP)
 TODO
 
-\paragraph{Multi router on subnet}
+\subsubsection{Multi router on subnet}
 TODO
 
 
 
 TODO image 189
 
-\subsection{Routing in IP networks}
+\section{Routing in IP networks}
 Deux classe de protocol entre les différents domaines pour echanger
 efficacement de l'information.
 
@@ -1079,22 +992,22 @@ acceptables), export  filter (spécifies  les routes dangereuses)  et un
 algorithme qui choisi.
 
 
-\subsection{Intradomain routing}
+\section{Intradomain routing}
 Echange des informations sur les destinations atteignables \textbf{dans} le domain.
 \textit{RIP} est protocol de distance vector et \textit{OSPF} utilise link-state routing.
 
-\subsubsection{RIP}
+\subsection{RIP}
 Les routers echanges periodiquement des RIP messages (inside UDP segment).
-Pour accélerer le processus (qd un router boot), il peut envoyer une RIP request à ff02::9
+Pour accélerer le processus (qd un router boot), il peut envoyer une RIP request à ff02::9 
 pour demander tout de suite les tables de routings (reçu via un RIP response).
 
 \paragraph{RIP response} contiennent les distance vectors des tabels de routing.
 
-\subsubsection{OSPF}
+\subsection{OSPF}
 
-\paragraph{Area}
+\subsubsection{Area}
 Avec le link-state routing, pour des grands réseaux c'est très couteux de stocker
-l'ensemble du réseau en mémoire. C'est pourquoi on décompose le réseau en un
+l'ensemble du réseau en mémoire. C'est pourquoi on décompose le réseau en un 
 ensemble d'\textsc{area} où les routers connaissent la topologie de sa propre
 région et comment rejoindre la \textit{backbone area}
 
@@ -1106,17 +1019,17 @@ L'inter-area routing est fait via un distance vector protocol.
 
 TODO image page 195
 
-\paragraph{LAN}
+\subsubsection{LAN}
 TODO point to point (R8-RC ? )
 
-\paragraph{Shortest path}
+\subsubsection{Shortest path}
 TODO page 196
 
-\subsection{Interdomain routing}
+\section{Interdomain routing}
 Echange de l'informations entre les domaines. Cette information est une information
 agrégé des routers et on considère ici les domaines comme des boîtes noires.
 
-\subsubsection{Connection}
+\subsection{Connection}
 
 \paragraph{Private peering link} permet de lier deux domaines. Pour des questions
 de performances plusieurs lien physique sont établi entre les domaines.
@@ -1124,7 +1037,7 @@ de performances plusieurs lien physique sont établi entre les domaines.
 \paragraph{Internet eXchange Point} Une solution moins couteuse est de les connecter
 via un IXP. TODO page 198
 
-\subsubsection{Connection cost} Le coût d'une route est très importante en interdomain
+\subsection{Connection cost} Le coût d'une route est très importante en interdomain
 alors qu'en intra on préfére la performance.
 
 Il existe deux types de relation entre domaine \textit{customer->provider} et \textit{
@@ -1135,16 +1048,16 @@ TODO image page 198
 Le customer paye pour que son domaine soit distribué dans Internet
 
 \paragraph{Shared cost}
-Cela arrive quand on a des domaines de taille similaire
+Cela arrive quand on a des domaines de taille similaire 
 
 \paragraph{Sibling}
 Ils échangenet les routes dans les deux directions (souvent c'est des routers
 de la même compagnie).
 
-\subsubsection{Interdomain routing policie}
+\subsection{Interdomain routing policie}
 TODO
 
-\subsubsection{The Border Gateway Protocol (BGP)}
+\subsection{The Border Gateway Protocol (BGP)}
 Dans BGP chaque domain est identifié par un unique \textit{Autonomous System} number (AS).
 
 BGP n'envois pas sa routing table entière mais le fait de manière incrémentale, càd en
@@ -1152,7 +1065,7 @@ envoyant uniquement les routes qui ont changé.
 
 De plus BGP utilise TCP pour garantir le bon délivrement des BGP messages.
 
-\paragraph{BGP session}
+\subsubsection{BGP session}
 
 \paragraph{Etablisment} doit être fait manuellement pour des raisons de sécurité.
 
@@ -1173,11 +1086,11 @@ De plus BGP utilise TCP pour garantir le bon délivrement des BGP messages.
 de même qu'une route reçue doit passer l'\textit{import filter}.
 TODO
 
-\paragraph{The BGP decision process}
+\subsubsection{The BGP decision process}
 En plus des import/export filter, il y a un algorithme qui choisit la meilleur route.
 Ce choix est fait sur base des BGP attribut attaché à chaque route.
 
-\paragraph{Local-pref}
+\paragraph{Local-pref} 
 Le premier attribut de cet algorithme est la local-preference, celui ci est attribué
 selon l'import filter. (Highest value est préféré)
 
@@ -1193,11 +1106,11 @@ plutôt qu'un autre via le local-pref en définissant les valeurs dans l'import 
 \end{enumerate}
 
 
-\paragraph{BGP convergence}
-Certaines routing policies peuvent interférer entre elles et aboutir (en théorie),
+\subsubsection{BGP convergence}
+Certaines routing policies peuvent interférer entre elles et aboutir (en théorie), 
 à des ping-pong infini.
 
-\paragraph{ } La convergence des BGP n'esy pas toujours garanti et verifier la
+\paragraph{ } La convergence des BGP n'esy pas toujours garanti et verifier la 
 convergence global est un problème NP-complet.
 
 \paragraph{Guideline to guarantee BGP convergence}
@@ -1206,12 +1119,12 @@ convergence global est un problème NP-complet.
     \item AS préfére une route reçue d'un customer plutôt qu'une shared-cost
 \end{enumerate}
 
-\subsubsection{Structure global internet}
+\subsection{Structure global internet}
 TODO page 209
 
-\subsection{Datalink layer technologie}
+\section{Datalink layer technologie}
 
-\subsubsection{The point to point protocol}
+\subsection{The point to point protocol}
 Protocol dévellopé après me \textit{Serial Line IP} (SLIP) qui a beaucoup de limitation.
 
 PPP est enfaite en famille de trois protocol :
@@ -1223,29 +1136,29 @@ PPP est enfaite en famille de trois protocol :
 
 PPP frame utilise le bit/caractère stuffing, supporte variable length (même si LCP négocie la MAX size).
 
-\subsubsection{Ethernet}
+\subsection{Ethernet}
 TODO changement + slot time
 
 \paragraph{Hubs}
-Les hosts peuvent être directement relié à un Ethernet hubs.
+Les hosts peuvent être directement relié à un Ethernet hubs. 
 \subparagraph{Complexe network hub} La topologie doit être un tree et le délai entre
 deux host ne peut pas être plus long que 51.2ms (slot time).
 
-\paragraph{Frame format}
+\subsubsection{Frame format}
 TODO image page 213
 
-\paragraph{Ethernet service}
+\subsubsection{Ethernet service}
 Ethernet network offre un unreliable connectionless service qui supporte unicast, multicast et
 broadcast.
 
 En pratique il délivre les frames au destinataire avec une \textbf{TRES} grande probabilité,
 et les frames arrivent en séquence.
 
-\paragraph{Fast ethernet}
+\subsubsection{Fast ethernet}
 TODO page 215
 
-\paragraph{Ethernet switches}
-Augmenter la bande passante comme \textit{fast ethernet} n'est pas la seule
+\subsubsection{Ethernet switches}
+Augmenter la bande passante comme \textit{fast ethernet} n'est pas la seule 
 manière d'améliorer les performances d'ethernet LAN, on peut aussi rendre
 les hubs intelligents en devenant des switchs.
 
@@ -1255,8 +1168,8 @@ TODO image page 217
 
 
 \paragraph{MAc adress}
-Quand deux host sont sur le même hub/segment ethernet, ils peuvent échanger de
-l'information sans configuration ce qui implique que un switche doit pouvoir
+Quand deux host sont sur le même hub/segment ethernet, ils peuvent échanger de 
+l'information sans configuration ce qui implique que un switche doit pouvoir 
 construire sa table de MAC adresse \textit{automatiquement}.
 
 $\rightarrow$ Pour chaque frame reçue, la MAC adress est extraite de la frame et mise dans la table.
@@ -1268,7 +1181,7 @@ sauf que cette topologie est dangereuse si l'un des switchs tombent en panne\ldo
 Toutefois, si ce n'est pas un arbre ont peu rapidement tomber dans une boucle infinie
 (si il n'y a pas de RTT ou Hop limit)!
 
-\paragraph{Spanning tree protocol}
+\subsubsection{Spanning tree protocol}
 Désactive automatiquement des ports pour rester dans une tree-shaped, mais si l'un
 des switchs crash, il y a un autre qui peut prendre le relais.
 
@@ -1284,18 +1197,18 @@ Ils utilisent des BPDUs qui contiennent :
 \end{itemize}
 
 
-Durant la création du spanning tree toutes les data frames sont écarté
+Durant la création du spanning tree toutes les data frames sont écarté 
 car on ne peut pas garantir l'absence de loop.
 
 
-\paragraph{Virtual LAN}
+\subsubsection{Virtual LAN}
 
 TODO page 222
 
-\subsubsection{802.11 Wireless networks}
+\subsection{802.11 Wireless networks}
 
 TODO page 223
 
-\biblio
+
 
 \end{document}
