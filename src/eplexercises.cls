@@ -1,8 +1,6 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{eplexercises}[2015/01/14 EPL exercises class]
 
-\ProcessOptions\relax
-
 \LoadClassWithOptions{../../../eplbase}
 
 \newcommand{\hypertitle}[7][e ]{%
