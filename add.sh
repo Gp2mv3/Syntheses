@@ -136,5 +136,5 @@ then
         subdirectory $s 
     done
 else
-    subdirectory $s 
+    subdirectory $4 
 fi
