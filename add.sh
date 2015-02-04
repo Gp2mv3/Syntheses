@@ -8,8 +8,9 @@
                                             
 args=("$@")
 nbr_arg=4
-section=( "summary" "notes" "exam" "exercises" "all" )
+section=( "summary" "notes" "exam" "exercises" )
 size_titre=10
+
 
 #     __                  _   _             
 #    / _|_   _ _ __   ___| |_(_) ___  _ __  
@@ -18,24 +19,26 @@ size_titre=10
 #   |_|  \__,_|_| |_|\___|\__|_|\___/|_| |_|
                                         
 
-function make {
-if ! [ -f $dir/$1"/Makefile" ]; then
-    echo "TYPE=$1"              >> $dir/$1"/Makefile"
-    echo "include ../$name.mk"  >> $dir/$1"/Makefile"
-fi
-
-}
-
 function subdirectory {
 mkdir -p "$dir/$1"
-make $1 
+
+if ! [ -f $dir/$1"/Makefile" ]; then
+    sed "s/section/$1/g; s/name/$name/g" ./templates/Makefile >> $dir/$1"/Makefile"
+fi
+
+sigle=3
+code=4
+import="epl$1"
+
+if ! [ -f $dir/$1"/$name-$1.tex" ]; then
+    sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g" ./templates/tex.tex > $dir/$1"/$name-$1.tex"
+fi
 }
 
 function mk {
 mk=$dir/$name.mk
 if ! [ -f $mk ]; then
-    echo "COURSE=$name"               >>$mk
-    echo "include ../../q$quadri.mk"  >>$mk
+    sed "s/quadri/$quadri/g; s/name/$name/g" ./templates/mk.mk >> $mk
 fi
 }
 
@@ -46,7 +49,12 @@ done
 
 }
 
+#TODO nettoyage
 function valid_section {
+if [ $1 = "all" ]; then
+    return 1
+fi
+
 for i in ${section[@]} ; do
     if [ $i = $1 ]; then 
         return 1
@@ -101,6 +109,7 @@ fi
 if [ $error = true ]; then
     exit
 fi
+
 
                                    
 #    _ __  _ __ ___   ___ ___  ___ ___ 
