@@ -68,10 +68,10 @@ show: $(FULL)
 
 release: all
 ifeq ($(TYPE),exam)
-	cd ../../../../..; python3 ~/git/smartcp/smartcp.py -vvvv -s \
+	cd ../../../../..; smartcp -vvvv -s \
 	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) config.yml
 else
-	cd ../../..; python3 ~/git/smartcp/smartcp.py -vv -s \
+	cd ../../..; smartcp -vv -s \
 	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) config.yml
 endif
 
