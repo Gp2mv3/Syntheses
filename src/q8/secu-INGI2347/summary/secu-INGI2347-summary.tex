@@ -1,0 +1,1873 @@
+\documentclass[fr]{../../../eplsummary}
+
+\newcommand{\syn}{\mathsf{SYN}}
+\newcommand{\ack}{\mathsf{ACK}}
+
+\hypertitle{Computer System Security}{6}{INGI}{2347}
+{Julien Bouilliez\and Julien Bergiers\and Quentin Cappart\and Thomas Haine\and Julien Henricot}
+{Gildas Avoine}
+
+\section{Introduction}
+\paragraph{Hacker célèbre :}
+\begin{itemize}
+  \item Kevin Mitnick (telephone hack et IP Spoofing)
+  \item Captain Krunch (appel longue distance gratuit)
+  \item David L. Smith (worm Melissa)
+\end{itemize}
+
+\paragraph{Analyse de risque:}
+\begin{itemize}
+  \item Importance des actifs (V).
+  \item Menaces potentielles (M).
+  \item Évaluer la probabilité de menace (P).
+  \item Nous devons parvenir à un risque résiduel raisonnable.
+\end{itemize}
+
+$$\mathsf{Risk} = \sum P(M_i) V_i$$
+
+\section{Spam :}
+\subsection{Généralités:}
+\begin{mydef}[Brad Templetons]
+  Je définis l'abus e-mail comme un e-mail qui répond aux les trois de critères suivants:
+  \begin{enumerate}
+    \item Il est non sollicitée.
+    \item Il fait partie d'un ``mailing de masse''.
+      (envois en nombre)
+    \item L'expéditeur est un inconnu pour le destinataire.
+      (Le destinataire n'a jamais eu de contact personnel volontaire avec l'expéditeur.)
+  \end{enumerate}
+\end{mydef}
+
+\subsection{Conséquence du spam}
+Infrastructure.
+\begin{itemize}
+  \item Bande passante.
+  \item Coût lors du téléchargement des données limitées ou GPRS.
+  \item Pare-feu, stockage de données, serveurs de messagerie, sauvegarde, etc.
+\end{itemize}
+Productivité.
+\begin{itemize}
+  \item Les utilisateurs sont perturbés au cours de leur travail.
+  \item E-mails utiles perdues.
+  \item Besoin de renouveler adresses e-mail.
+  \item Virus peut être inclus dans le spam.
+\end{itemize}
+Lois.
+\begin{itemize}
+  \item Les employés contre la compagnie.
+  \item Les utilisateurs contre les fournisseurs.
+\end{itemize}
+Modèle économique:
+Acteurs.
+\begin{itemize}
+  \item Publicitaire.
+  \item Spammer.
+  \item Récupérateur d'adresse.
+\end{itemize}
+Sources de bénéfices.
+\begin{itemize}
+  \item Bénéfices des ventes, escroquerie.
+  \item Partage des bénéfices.
+  \item Nombre d'adresses dans la liste.
+  \item Cliquez par clic.
+  \item Obtenir plus d'adresses.
+\end{itemize}
+
+\subsection{Spamming techniques:}
+\subsubsection{Méthode 1: utilisation de son propre serveur SMTP / ISP.}
+Le protocole utilisé par les serveurs de messagerie sur Internet est SMTP (Simple protocole de
+transfert de courrier), RFC 821, 1982.
+Comme ce protocole n'utilise aucune authentification, il est facile de forger des mails.
+Limitations :
+Le serveur qui reçoit le courrier initialement note:
+\begin{itemize}
+  \item Le contenu de la commande HELO.
+  \item L'adresse IP de l'expéditeur du courrier.
+  \item Le temps de réception.
+\end{itemize}
+
+Avec ces données, il est souvent facile de trouver l'auteur de l'e-mail. Il est souvent facile d'obtenir les
+mêmes résultats en seulement modifiant la configuration de votre programme de messagerie.
+Pour être non détectable, il faut lancer la connexion telnet sur une machine qui ne log pas les
+utilisateurs.
+\subsubsection{Méthode 2: Abus de relais ouverts (Open Relay).}
+Un seul message est déposé dans quelques serveurs SMTP avec des milliers d'adresses de destination
+chacun. Les serveurs abusés envoient poliment sur une copie du message à chaque destination.
+Éviter Open Relay:
+Pour qu'un message soit accepté par le serveur de messagerie, l'adresse du destinataire ou de
+l'expéditeur doivent appartenir au même domaine que le serveur.
+Ou encore que seul les machines appartenant au même domaine que le serveur de messagerie puisse
+transmettre des email avec un envoyeur du domaine, à celui-ci.
+
+\subsubsection{Méthode 3: l'abus d'un compte webmail.}
+Utilisez un script pour ouvrir de nombreux comptes webmail et envoyer du spam jusqu'a ce que les
+comptes soient fermés.
+
+\subsubsection{Méthode 4: pirater des ordinateurs personnels.}
+Utilisez un virus qui infecte les ordinateurs personnels (les transformant en «bots»).
+Utilisez un réseau de bots pour envoyer le spam.
+Note : Botnet
+Botnet = Un réseau de machines piratées contrôlées par un hacker.
+Généralement, les bots se connectent à un Relay chat Internet et
+attendent les commandes de leur maître.
+Récupération d'adresse e-mail :
+\begin{itemize}
+  \item Acheter un fichier d'adresses email.
+  \item Crawler (robot d'indexation) qui parcours le Web.
+  \item Dictionary, la force brute pour deviner des adresses email valides pour un domaine donné.
+  \item Hacking: attaquer une base de données.
+  \item Virus, logiciels espions: envoyez le fichier de contacts.
+  \item Hoax, chaîne de lettres.
+\end{itemize}
+
+\subsection{Fighting spam:}
+\subsubsection{Protection: Filtres}
+Logiciel de filtrage peut trier le spam des emails légitimes.
+Les filtres peuvent être basées sur:
+\begin{itemize}
+  \item Contenu du message.
+  \item Formats de message.
+\end{itemize}
+Filtres ne sont pas parfaits et ne peuvent pas éviter les faux positifs ou de faux négatifs.
+exemple de filtre: SpamAssassin
+\subsubsection{Filtre: listes noires}
+Logiciel de filtrage (Ex. Spamhaus ) utilisant les listes SBL et XBL.
+\begin{itemize}
+  \item SBL: adresses IP des opérateurs de spam connus.
+  \item XBL: adresses IP des systèmes détournés s'appuyant spams.
+\end{itemize}
+Les serveurs de messagerie peuvent utiliser cette base pour filtrer le trafic entrant.
+Avantages:
+\begin{itemize}
+  \item Pas cher.
+  \item Facile à mettre en pratique, mais nécessitent une liste noire centralisée pour que la technique soit efficace.
+\end{itemize}
+Inconvénient:
+\begin{itemize}
+  \item Beaucoup de faux négatifs.
+  \item Gestionnaire de la liste noire doit être réactif.
+\end{itemize}
+
+\subsubsection{Filtre: listes blanches}
+Au lieu de bloquer des e-mails, la réception n'est possible que si l'expéditeur (domaine, adresse IP, etc)
+appartient à la liste blanche.
+Avantages:
+\begin{itemize}
+  \item Pas cher.
+  \item Facile à mettre en pratique.
+\end{itemize}
+Inconvénient:
+\begin{itemize}
+  \item Expéditeurs autorisés doivent être connus a priori.
+  \item Beaucoup de faux positifs.
+\end{itemize}
+
+\subsubsection{Filtre: Spam Database}
+Base de données maintenue sur un serveur centralisé. Le logiciel vérifie si le message reçu apparaît
+dans la base de données.
+Avantages:
+\begin{itemize}
+  \item La base de données est partagée.
+  \item Peu de faux positif.
+\end{itemize}
+Inconvénient:
+\begin{itemize}
+  \item Ne pas détecter variante de spam.
+  \item Exiger calcul et de bande passante.
+  \item Beaucoup de faux négatifs.
+\end{itemize}
+
+\subsubsection{Filtre: Les listes grises}
+L'idée de base est de bloquer un mail si le comportement du serveur de l'expéditeur est anormal.
+Le serveur destinataire gère une base de données qui contient des «triplet» pour chaque courrier
+entrant:
+\begin{itemize}
+  \item L'adresse IP de l'hôte de connexion.
+  \item L'adresse de l'expéditeur de l'enveloppe.
+  \item L'adresse du destinataire de l'enveloppe.
+\end{itemize}
+Lorsque le serveur reçoit un e-mail, il vérifie s'il appartient déjà à la base de données.
+Si non, le courrier est greylisted pour une courte durée et un message d'erreur est renvoyé au serveur
+expéditeur. Si le serveur de l'expéditeur est conforme à RFC2821, il va réessayer la transmission après
+au moins 30 minutes. Le courrier greylisted est alors débloqué.
+Avantages:
+\begin{itemize}
+  \item Pas ou peu de faux négatifs.
+\end{itemize}
+Inconvénient:
+\begin{itemize}
+  \item Les retards dus au greylisting.
+\end{itemize}
+\subsubsection{Solutions alternatives :}
+\begin{description}
+  \item[Enregistrer les ordinateurs / utilisateurs.]
+    Désigner les machines autorisées à envoyer des e-mail avec une adresse d'expéditeur
+    d'origine dans le domaine (une norme est SPF - Sender Policy Framework).
+  \item[Challenge / Response.]
+    L'utilisateur doit répondre à un défi afin d'être ajouté à la liste blanche.
+  \item[Ajout coût aux e-mails.]
+    L'ordinateur doit effectuer un calcul pour envoyer un e-mail.
+\end{description}
+
+\section{Malwares \& Exploits}
+\subsection{Malwares}
+\paragraph{Définition :}
+\begin{description}
+  \item[Virus] fragment de code qui se propage à l'aide d'autres programmes.
+  \item[Worm] programme indépendant.
+  \item[Cheval de Troie (Trojan)] programme utile qui contient un programme malveillant (ou lui-
+même par extension).
+  \item[Backdoor] accès caché à un ordinateur.
+Le Programme permet d'accéder à distance à un système, sans que l'utilisateur le sache.
+Ils sont installé par les chevaux de Troie et donc souvent classés comme tels.
+  \item[Spyware] programme qui envoie les informations vous concernant à des tiers.
+  \item[Adware] programme qui provoque l'apparition d'annonces sur votre écran ou des
+    changements des résultats de votre recherche (manipule le navigateur)
+  \item[Rootkit] programme qui masque la présence de programmes malveillants sur votre ordinateur.
+    Il modifie votre système d'exploitation afin de cacher l'exécution des programmes,
+    des fichiers ou des configurations.
+\end{description}
+
+\paragraph{La période classique}
+Propagation passive à travers l'échange de disquettes. La propagation est lente et donc le virus à
+besoin d'être efficace.
+\begin{description}
+  \item[Les virus Stealth]$ $
+    \begin{description}
+      \item[Simple] le virus comprime le fichier original, et crée un fichier infecté de la même taille.
+      \item[Complexe] le virus modifie le système de manière à être invisible. Il modifie le fichier routines
+        de lecture afin qu'ils ne révèlent pas le virus.
+    \end{description}
+  \item[Les virus polymorphes]
+    Le virus se modifie après chaque infection de manière à rester indétectable.
+\end{description}
+
+\paragraph{La période moderne}
+Les virus modernes utilisent Internet pour propager activement et peuvent infecter la planète en
+quelques heures. Ils sont souvent, simple et facile à détecter. Cependant, ils sont efficace, car ils se
+propagent beaucoup plus rapidement que le logiciel antivirus ne peut être mis à jour.
+
+\subsection{Exploits on the web}
+\paragraph{Exploits}
+La plupart des logiciels contiennent des défauts.
+Ces bugs peuvent être exploitées par des pirates.
+Un `exploit' est une méthode ou un script qui permet d'exploiter les bugs.
+Le plus intéressant sont exploits sur les serveurs.
+Ils peuvent se faire à distance et les serveurs ont
+souvent des privilèges plus élevés.
+
+\subsubsection{Directory Traversal}
+Les documents du serveur Web sont accessibles à partir d'une racine. Si le serveur ne vérifie pas l'URL,
+nous pouvons accéder à d'autres fichiers.
+Exemple classique: traversée de répertoire.
+\begin{itemize}
+  \item \verb|../../../../|
+  \item Scripts faibles.
+\end{itemize}
+Pour éviter le Directory Traversal, certaines application web vérifie la chaîne : \verb|..| et \verb|../..| et \verb|/| dans l'URL.
+Cependant, ces applications sont encore vulnérables au encodage ``pour cent'' de l'URL (\verb|?%2e%2e/|
+qui est à \verb|../,?..%2F| qui est de \verb|../..|.),
+mais aussi l'encodage UTF8, etc. La Sécurité de l'application
+dépend du codage autorisé par le serveur web.
+
+\subsubsection{Cross-Site Scripting}
+Le «Cross-site» consiste à insérer un script dans une page Web.
+Souvent, la script lui-même est situé
+sur un autre serveur, c'est du "Cross-site scripting".
+(Exemple : <script src=http://www.evilsite.com/hack.js> )
+Dangers:
+\begin{itemize}
+  \item Réorientation de la session (par exemple, sur une copie du site original).
+  \item Afficher de fausses informations.
+  \item Afficher des formulaires de collecte de données (phishing).
+  \item Vole des cookies.
+\end{itemize}
+
+\subsubsection{Phishing}
+Le but est d'obtenir des informations et identification se faisant passer pour une entité digne de
+confiance.
+Le plus souvent par email, l'adresse ressemble à l'adresse valable.
+Par exemple
+\url{www.mybanck.com} ou
+\url{http://www.mybank.com.example.com}.
+On peut aussi avoir une image avec un lien hypertexte.
+
+\subsubsection{SQL Injection}
+Exploitation d'une faille de sécurité d'une application interagissant avec une base de données, en
+injectant une requête SQL non prévue par le système et pouvant compromettre sa sécurité.
+
+\subsection{Buffer Overflows}
+\subsubsection{Exploit: Buffer Overflow}
+Si un programme ne vérifie pas la quantité de données qu'il reçoit, il court le risque d'écraser la zone
+mémoire contenant des variables, des codes ou des adresses de saut.
+Connaissant bien l'architecture de la machine, nous pouvons fournir le code machine qui va être exécuter.
+\subsubsection{Difficultés}
+Les Buffer Overflow ne sont plus un problème de sécurité majeur.
+Les programmes sont maintenant mieux protégés contre le Buffer Overflow et concevoir un Buffer overflows intelligents est complexes.
+En effet, il est difficile de deviner la croissance de la pile et choisir adr et le programme injecté ne peut
+pas avoir un \verb|\0| octet,
+parce que cela marque la fin d'une chaîne de caractères peut empêcher la copie des octets restants.
+
+\section{Network Attacks}
+\subsection{Denial of Service}
+\subsubsection{Ping of death}
+La taille normale d'un Ping est de 64 octets (84 avec en-tête).
+On envoie des paquets IP qui dépassent la taille légale maximale (65535 octets).
+C'est l'une des premières attaque par déni de service.
+Unix, Linux, Mac, Windows, imprimantes, routeurs et étaient vulnérables ($<1997$).
+Rappel: TCP Handshake :
+L'établissement d'une connexion TCP se fait par un handshaking en trois temps:
+\begin{enumerate}
+  \item Le client envoie un segment $\syn(x)$ au serveur, avec $x$ son sequence number.
+  \item Le serveur lui répond par un segment $\syn+\ack(y,x+1)$, avec $y$ son sequence number.
+  \item Le client confirme par un segment $\ack(x+1,y+1)$.
+\end{enumerate}
+
+\subsubsection{Syn-Flooding}
+On envoit un grand nombre de demandes ouverture de connexion TCP ($\syn$).
+À la réception du paquet $\syn$,
+le serveur alloue de la mémoire nécessaire pour la connexion et l'inscrit dans une file d'attente de
+connexions à moitié ouvertes. Cette situation n'ayant pas été prévu, le serveur ne peut plus accepter
+de nouvelles connexions une fois que les débordements de file d'attente.
+L'attaquant peut forger l'adresse source de ses paquets $\syn$ rester anonyme.
+Les versions récentes des systèmes d'exploitation (Windows, Unix)
+sont protégés contre de telles attaques.
+Protections contre les $\syn$ Flooding :
+\begin{itemize}
+  \item Augmenter la taille de la file d'attente.
+  \item Réduire délai pendant lequel le serveur attend un $\ack$.
+  \item Dropper le plus ancien $\syn$ dans la file d'attente.
+  \item Filtrage, par exemple sur les adresses IP.
+  \item $\syn$-Cache: cache le $\syn$ et envoyer un $\syn$ / $\ack$. Si les $\ack$ arrive, une connexion complète
+    est créée.
+  \item $\syn$-Cookies: Une fois que la file d'attente de connexion est presque rempli, le serveur utilise
+    les cookies $\syn$.
+\end{itemize}
+\end{document}
+
+\subsubsection{Smurf Attack}
+Le but est de noyer la cible à l'aide d'amplificateurs de circulation.
+Cas typique: ICMP echo-request (ping).
+\begin{itemize}
+  \item Le pirate envoie un paquet de ping avec l'adresse cible
+comme adresse source.
+  \item La machine ``pings'' envoie sa réponse à la cible.
+  \item Si le pirate envoie le paquet à une adresse de diffusion
+    (broadcast) , toutes les machines du réseau répondront à
+    la cible.
+\end{itemize}
+Protection:
+\begin{itemize}
+  \item Configurer les hôtes et les routeurs individuels afin de ne pas répondre aux requêtes ping à
+    une adresse de broadcast.
+  \item Configurer les routeurs afin de ne pas transmettre les paquets dirigés vers des adresses de
+    broadcast.
+\end{itemize}
+
+\subsubsection{DDoS (Distributed Denial of Service)}
+Pour augmenter l'efficacité du déni de service, les pirates vont pirater plusieurs machines et installer
+des agents. Plusieurs machines maîtres contrôlent les agents. Le pirate envoie ensuite des commandes
+aux maîtres qui, vont exécuter l'attaque ordonnée par les agents.
+La puissance (bande passante) de l'attaque est multipliée par les agents.
+Il est plus difficile de retracer les pirates (2 couches intermédiaires).
+Puisque l'attaque provient de plusieurs sources, elle est beaucoup plus difficile à filtrer.
+
+\subsection{Spoofing}
+\subsubsection{IP Spoofing}
+Dans certains cas, l'adresse IP source est utilisé pour autoriser une connexion.
+Les routeurs et les pare-feu peuvent filtrer les paquets en fonction de leur source.
+Certains programmes (rlogin, rsh) peuvent
+autoriser certaines sources à se connecter sans authentification.
+Il est facile d'usurper l'adresse source d'un paquet et d'abuser de la confiance de cette source.
+La réponse à un message forgé est envoyé à l'adresse falsifiée.
+Facile à utiliser avec les protocoles basés sur UDP.
+
+\subsubsection{TCP/IP Spoofing}
+
+\subsubsection{TCP/IP Spoofing Dans un LAN}
+
+\subsubsection{TCP/IP Spoofing De l'extérieur}
+Prédiction de l'ISN (Incremental Sequence Number):
+La norme originale (RFC 793) exige que l'ISN est incrémenté une fois tous les quatre microsecondes.
+Dans certaines implémentations TCP simples le prochain ISN peut être prédit.
+La procédure du Hacker pour prédire l'ISN:
+\begin{itemize}
+  \item Il ouvre quelques liens authentiques (par exemple SMTP) pour obtenir les échantillons
+    d'incrémentation d'ISN actuels.
+  \item Il lance sa connexion forgée en utilisant le dernier ISN plus un incrément obtenu à partir de ces
+    échantillons.
+  \item Il peut lancer plusieurs connexions forgés avec des incréments différents en espérant qu'au
+    moins un d'entre eux est correct.
+\end{itemize}
+
+\subsubsection{ARP Spoofing}
+ARP = Address Resolution Protocol.
+L'ARP est un protocole qui permet de trouver une adresse de la couche 2 (Ethernet) à partir d'une
+adresse de couche 3 (IP). Il Très simple et non sécurisé:
+\begin{itemize}
+  \item Un client demande qui connaît l'adresse Ethernet 10.1.2.3?
+  \item Une personne répond 10.1.2.3 a l'Adresse Ethernet 010203040506.
+\end{itemize}
+Il est facile de forger des réponses (même les non-sollicité) pour rediriger le trafic!
+
+\subsection{Sniffing}
+De nombreux protocoles utilisent l'authentification par texte claire (pas d'encodage).
+Par l'écoute du traffic sur une partie du réseau, nous pouvons obtenir les noms d'utilisateur et mots de
+passe. Un mot de passe permet d'accéder à un ordinateur distant à partir de laquelle nous pouvons
+renifler à nouveau et obtenir des nouveaux mots de passe.
+
+\subsection{Session Hijacking}
+\subsubsection{Modem Session}
+Le modem permet d'accéder à une ligne série (par ex. Accès à distance).
+Un utilisateur peut supprimer la ligne sans quitter la session en ligne, la session du terminal reste alors
+actif pendant un certain temps. L'utilisateur suivant (ou le hacker) qui se connecte au modem peut
+trouver la session de l'utilisateur précédent et l'utiliser.
+
+\subsubsection{TCP Session}
+Si un pirate peut espionner sur une connexion TCP, il peut insérer un paquet TCP avec des numéros de
+séquence corrects.
+L'insertion d'un paquet supplémentaire dans une connexion TCP crée une avalanche de paquets:
+\begin{itemize}
+  \item La source, qui n'a jamais envoyé le paquet, n'est pas d'accord avec le numéro de séquence
+    reconnue et émet un accusé de réception.
+  \item La destination, qui a vu le paquet,
+    insiste sur le numéro de séquence et envoie un accusé de réception.
+\end{itemize}
+
+\subsubsection{HTTP Session}
+Le protocole HTTP n'a pas le concept d'une session.
+Il est fait de requêtes/réponses indépendants.
+Les sites d'e-commerce utilisent des moyens artificiels pour reconnaître les demandes appartenant à
+une session:
+\begin{itemize}
+  \item Cookies.
+  \item URL personnalisé.
+\end{itemize}
+Si le pirate peut espionner ces données, il peut créer des demandes qui feraient partie de la même session.
+
+\section{Firewall}
+\subsection{Introduction}
+\subsubsection{Introduction: Firewalls}
+Les pare-feu de réseau doivent empêcher la propagation d'une attaque, tout en permettant la
+circulation souhaité de le traverser.
+Un pare-feu peut être réalisé en une ou plusieurs composantes. Les pare-feu peuvent être logiciel ou
+de matériel.
+
+\subsubsection{Types de pare-feu}
+\begin{itemize}
+  \item Logiciel: Poste de travail standard avec un logiciel de pare-feu.
+  \item Hardware: Boîte noire spécialisé (qui contient également des logiciels)
+\end{itemize}
+Logiciel vs Hardware
+\begin{itemize}
+  \item Pare-feu logiciels héritent de toutes les vulnérabilités du système d'exploitation sur lequel ils
+    s'exécutent.
+  \item Architectures de pare-feu logiciels sont bien connus, il est plus facile d'exploiter ses
+    vulnérabilités (ex. débordement de la mémoire tampon).
+  \item Pare-feu logiciels ont souvent une meilleure performance: ils bénéficient des progrès rapides
+    et des prix bas dans le matériel PC.
+\end{itemize}
+
+\subsection{Basic Principles - The sevens Principle}
+\begin{enumerate}
+  \item Least privileges:
+    Chaque élément d'un système (utilisateur, logiciel) doit seulement avoir les droits minimaux
+    nécessaires pour mener à bien sa tâche.
+    Exemples:
+    \begin{itemize}
+      \item Les utilisateurs réguliers ne doivent pas être administrateurs.
+      \item Les administrateurs doivent également utiliser des comptes d'utilisateurs réguliers.
+      \item Un serveur Web s'exécute sous un compte non-privilégié.
+    \end{itemize}
+  \item Defense in depth:
+    Plusieurs mesures de sécurité sont mieux qu'un seul.
+    Exemple:
+    \begin{itemize}
+      \item Anti-virus sur les serveurs de messagerie et les ordinateurs de bureau.
+      \item Nous avons aussi des machines sécurisées (configuration, patches) qui sont protégés par un
+        pare-feu.
+      \item Même si les connexions FTP sont bloqués par le pare-feu, les postes de travail ne doivent pas
+        exécuter des serveurs FTP.
+    \end{itemize}
+  \item Choke point:
+    Il est plus facile de contrôler la sécurité si toutes les données doit passer par un point donné.
+    \begin{itemize}
+      \item Les utilisateurs ne devraient pas être autorisés à se connecter aux modems de leurs machines.
+      \item Interconnexions avec d'autres sociétés doivent passer par le pare-feu.
+    \end{itemize}
+  \item Weakest link:
+    Le pare-feu est aussi sûr que son maillon le plus faible.
+    \begin{itemize}
+      \item C'est inutile de dépenser de l'argent pour protéger une partie de la FW si les autres parties ne
+        sont pas protégés.
+    \end{itemize}
+  \item Deny by Default:
+    Il est préférable d'interdire tout ce qui n'est pas explicitement autorisé plutôt que d'autoriser tout ce
+    qui n'est pas explicitement interdit.
+    \begin{itemize}
+      \item Nous ne pouvons jamais savoir à l'avance toutes les menaces auxquelles nous seront exposés.
+    \end{itemize}
+  \item User participation:
+    Un système de protection est efficace seulement si tous les utilisateurs appuient.
+    \begin{itemize}
+      \item Le but d'un pare-feu est d'autoriser tout ce qui est utile et en même temps d'éviter les dangers.
+      \item Nous devons comprendre les besoins de l'utilisateur et assurez-vous que les raisons des
+        restrictions sont bien comprises par eux.
+    \end{itemize}
+  \item Simplicity
+    La plupart des problèmes de sécurité proviennent de l'erreur humaine.
+    Dans un système simple:
+    \begin{itemize}
+      \item Le risque d'erreur est plus faible.
+      \item Il est plus facile de vérifier son bon fonctionnement.
+      \item Surtout dans l'évolution des réseaux.
+      \item Surtout avec plusieurs administrateur.
+    \end{itemize}
+\end{itemize}
+
+\subsection{FW Features}
+\subsubsection{Stateless vs Stateful}
+\begin{itemize}
+  \item Sans mémoire (stateless): Ne se souvient pas que les paquets qu'il a déjà vu.
+  \item Avec la mémoire (stateful): Garde une trace des paquets qui passent et peux reconstruire
+    l'état de chaque connexion, ou même certains protocoles.
+\end{itemize}
+
+\subsubsection{Packet Analysis}
+Un FW peut analyser les paquets pour vérifier leur format et leur contenu.
+\begin{itemize}
+  \item Permet l'élimination des paquets malformés (DOS, exploits, par exemple. Ping de la mort).
+  \item Permet l'élimination des paquets qui ne correspondent pas à l'état actuel du protocole.
+  \item Permet d'éliminer des paquets dont le contenu indésirable.
+\end{itemize}
+
+\subsubsection{Filtering}
+Le filtrage permet de limiter le trafic à des services utiles. Il peut être basé sur plusieurs critères:
+\begin{itemize}
+  \item l'adresse IP src ou l'adresse IP dst.
+  \item Protocoles (TCP, UDP, ICMP, ...) et les ports.
+  \item Drapeaux et options (syn, ack, le type de message ICMP, ...).
+\end{itemize}
+
+\subsubsection{Network Address Translation (NAT)}
+Etant donné que les adresses IP publiques sont rares, au lieu de réserver 256 adresses pour 100 postes
+de travail, nous pouvons cacher ces 100 postes de travail derrière une seule adresse.
+
+\paragraph{Principe de base}
+\begin{itemize}
+  \item Nous utilisons les adresses privées dans le réseau interne et un / plusieurs adresses publiques
+    pour communiquer avec Internet.
+  \item Quand un paquet quitte le réseau interne, nous remplaçons son adresse source par une
+    adresse publique.
+  \item Quand un paquet arrive de l'Internet, nous remplaçons la destination du public par une
+    adresse privée
+  \item Nous utilisons une table de traduction pour stocker les relations entre les adresses internes et
+    externes.
+\end{itemize}
+
+\subsubsection{Propriétés de NAT Dynamique}
+Lorsque deux connexions ne se différencient que par leur adresse interne, nous avons une collision).
+\begin{itemize}
+  \item Nous pouvons changer le port source (port et l'adresse Translation - PAT).
+  \item Nous pouvons utiliser un pool d'adresses publiques et utiliser différents des adresses de
+source.
+\end{itemize}
+NAT dynamique ne permet pas l'établissement entrant connexions (une bonne protection par défaut).
+NAT statique:
+Pour autoriser les connexions entrantes, nous devons définir certaines entrées statiques dans la table
+de traduction. Typiquement, nous créons une entrée par protocole (SMTP, HTTP, ...). Différents ports
+de la même adresse externe peut conduire à différentes adresses internes.
+Problèmes et limites
+\begin{itemize}
+  \item TCP et UDP checksums
+  \item Certains protocoles ne supportent pas les modifications de paquets: IPSec.
+  \item Certains protocoles d'échanger leurs adresses IP
+  \item FTP, car peut avoir des connexions dans les deux sens (serveur - client)
+Avantages
+  \item Moins adresses publiques, des coûts limités
+  \item Facile à changer de fournisseur d'accès
+  \item Facile à réorganiser le réseau interne
+  \item Effet de protection automatique (réf. Static NAT)
+  \item Masque de la structure du réseau interne
+Authentication:
+Le FW peut exiger une authentification afin d'obtenir une connexion.
+  \item Outbound: permet de limiter l'accès à Internet uniquement pour les utilisateurs privilégiés.
+  \item Entrant: permet d'autoriser l'accès aux ressources internes pour les employés en voyage.
+Remote network access:
+Le FW permet aux utilisateurs externes d'accéder au réseau local. Pour cela, l'utilisateur externe
+établit une connexion cryptée (un tunnel) avec le FW et se retrouve comme s'il était à l'intérieur du
+réseau local. La connexion peut se faire via Internet ou modem.
+Encryption:
+Un FW peut crypter ou décrypter des données qui traverse une zone moins sûr.
+Logging:
+Il est important d'être protégé mais il faut aussi savoir quand nous sommes attaqués et réagir en
+conséquence.
+  \item Les logs garder une trace de tentatives d'attaques.
+  \item Ils permettent aussi de vérifier que les ports ou les destinations que nous autorisons sont
+vraiment nécessaires (moindre privilège).
+
+\subsection{5.4 Architectures}
+Personal Firewall:
+Le pare-feu personnel interdit d'abord toutes les connexions, et à chaque alarme, l'utilisateur peut
+autoriser l'application à se connecter, pour une fois ou pour toujours.
+NAT + filtering:
+Configuration.
+\begin{itemize}
+  \item NAT dynamique pour toutes les machines internes.
+  \item NAT statique pour tous les serveurs accessibles.
+  \item Filtrage sortant et filtrage entrant.
+Limites.
+  \item Aucune analyse de contenu (virus) à partir d'Internet.
+  \item Les connexions directes sur des serveurs internes (exploits, DoS).
+Application.
+  \item Faible niveau de sécurité.
+  \item Pas un grand serveur Web public.
+FW with demilitarized zone:
+La zone démilitarisée (DMZ) n'est relié ni à Internet ni au réseau interne.
+Configuration
+  \item Machines internes peuvent seulement se connecter au proxy.
+  \item Seul le proxy peut se connecter à Internet.
+  \item Outbound NAT dynamique.
+  \item Inbound NAT statique vers le proxy.
+  \item Filtrage sortant et filtrage entrant.
+Limitations (de l'exemple, pas du DMZ).
+  \item Le pare-feu est un point critique.
+  \item Tous les services passent par le même proxy, une vulnérabilité sur un seul service peut donner
+accès à l'ensemble du trafic.
+Application.
+  \item Sécurité moyenne a besoin.
+\end{itemize}
+
+Sandwiched demilitarized zone (DMZ):
+Configuration.
+  \item Machines internes peuvent seulement se connecter aux poxies (un protocole par proxy).
+  \item Seules les proxies peuvent se connecter à l'Internet.
+  \item Pas de routage dans proxies.
+  \item Outbound NAT dynamique, statique entrant.
+  \item Filtrage sortant et le filtrage entrant.
+Applications.
+  \item Haute sécurité.
+5.5 Filtering rules :
+Règles de filtrage:
+Les règles de filtrage sont spécifiées dans une liste.
+Le pare-feu parcourt la liste jusqu'à ce qu'il trouve une règle qui s'applique et exécute alors l'action
+spécifiée par la règle et se déplace sur le prochain paquet.
+La dernière règle doit interdire tout ce qui n'a pas été autorisée.
+Organisation des règles de filtrage:
+L'ordre dans lequel les règles sont spécifiées est important.
+Quand il ya beaucoup de règles, il est important de les organiser de manière systématique.
+Méthode :
+  \item Nous définissons un niveau de sécurité pour chaque zone.
+  \item Nous règles du groupe par zones dans l'ordre de niveau de sécurité décroissant.
+  \item Chaque groupe se compose de quatre parties:
+o Autorisations explicites pour le trafic entrant.
+o Interdiction générale pour le trafic entrant.
+o Autorisations explicites pour le trafic sortant.
+o Interdiction générale pour le trafic sortant.
+Propriétés
+  \item Pour chaque zone, il suffit de constater l'écoulement vers les zones moins sécurisées.
+  \item Le flux vers des zones plus sûres ne peut plus être influencé (but de l'opération): «tout» se
+réfère à des niveaux inférieurs.
+  \item Une règle qui implique 2 zones apparaît dans le bloc relatif à la zone plus sûre.
+  \item Le bloc liée à la dernière zone est vide.
+  \item La dernière règle (any-any) ne doit pas être nécessaire. En activant les journaux sur cette règle,
+nous pouvons détecter les erreurs éventuelles.
+- 18 -
+6. Proxies :
+6.1 Proxies' features and benefits :
+Le proxy est un intermédiaire entre le client et le serveur. Il fait office de serveur pour le client et de
+client pour le serveur. Il empêche le réseau interne d'avoir une connexion directe avec Internet.
+Un serveur proxy permet de réaliser :
+  \item Un goulot d'étranglement (chokepoint).
+  \item Un accès sur authentification : pour limiter l'accès à Internet à un certain nombre d'utilisateur.
+  \item Un système de cache : pour avoir un taux de transfert plus rapide et économiser sa bande
+passante, le proxy va garder une copie locale des documents téléchargés récemment.
+  \item Un filtre sur le contenu des paquets : DNS ou URL blacklisté, détection de virus, filtre un mot
+clé, une URL ou un MIME.
+  \item Un reformatage du contenu des paquets : pour transformer une page dans le format des PDAs
+et des Smartphones par exemple.
+  \item Faire des tests sur un réseau sans devoir sortir de celui-ci (en passant par un proxy situé à
+l'extérieur).
+  \item Permet de surfer anonymement au vu du serveur final mais le proxy peut conserver des traces
+du trafic et donc retrouver la source des requêtes.
+6.2 Types of Proxies :
+Transparent Proxy :
+Le serveur proxy transparent ne requière pas de configuration au niveau du navigateur web du client.
+Il est aussi appelé « intercepting proxy ». Tout le trafic avec le port 80 est automatiquement redirigez
+vers le serveur proxy par le firewall. Il est possible de détecter un proxy transparent par l'adresse IP
+(non NATé) ou encore le header http.
+Avantage :
+  \item Permet de forcer le client à utiliser le serveur proxy.
+  \item Pas de configuration chez le client.
+  \item Possibilité de faire du load balancing.
+Limitation :
+  \item Cela ne fonctionne pas pour tous les serveurs web (ceux n'utilisant pas les ports standards)
+FTP Proxy:
+Le protocole FTP établi deux connexions : une pour transmettre les actions à réaliser, une autre pour
+transmettre les documents. Le choix du port source pour le transfert des documents peut se faire du
+côté serveur (passif mode) ou du côté client (actif mode). Initialement, le protocole FTP n'a pas été fait
+pour être utilisé à travers un proxy. Il existe quand même deux manières d'y parvenir :
+1. FTP Proxy par HTTP:
+Par le biais d'un navigateur web en indiquant l'URL (FTP://server.com/file.txt). Le client va
+alors faire une requête HTTP vers le proxy qui va la convertir en une requête FTP pour ensuite
+retourné le fichier sous la forme d'une réponse HTTP.
+- 19 -
+2. FTP Proxy par User@:
+L'utilisation du user@ fonctionne comme une requête FTP standard. Pour indiquer au proxy
+les informations de connexion, le client doit indiquer son login@server.com pour établir une
+connexion avec le proxy. Celui-ci va ensuite établir une connexion entre lui et le serveur FTP
+final. La connexion peut être active ou passive.
+SMTP Proxy:
+Il est tout à fait possible de configurer un serveur proxy pour le protocole SMTP car celui-ci est de type
+hop by hop.
+  \item Mail sortant : Le serveur proxy est désigné comme étant le serveur SMTP pour les mails
+sortant.
+  \item Mail entrant : Le serveur proxy doit être enregistré dans le serveur DNS comme étant le SMTP
+pour ce domaine. Il doit être également configuré pour transmettre les mails au vrai serveur
+SMTP.
+DNS Proxy:
+Tout comme le proxy SMTP, le proxy DNS transfert les requêtes vers le vrai serveur. Il est possible
+d'implémenter un cache au sein du serveur proxy.
+SOCKS Proxy:
+Serveur proxy générique pour les connexions TCP et UDP. Il reçoit une connexion du client et en recrée
+une vers le serveur. Le SOCKS proxy ne prend pas en compte le type de protocole, il ne fait que
+transmettre les paquets.
+HTTPS Proxy:
+HTTPS est la version sécurisé du HTTP. Il n'est bien-sûr pas possible de faire un serveur HTTPS proxy
+sécurisé car cela va à l'encontre du principe du HTTPS. Il joue alors simplement un rôle de transfert
+entre le client et le serveur (un peu comme le SOCKS Proxy). Les ports disponibles sont souvent limités
+aux ports 443 et 563. Pour passer à travers un firewall avec n'importe quel protocole, il suffit de
+démarrer le serveur sur le port 443 et de passer par un proxy HTTPS.
+- 20 -
+6.3 Reverse Proxies :
+Lorsque le serveur proxy se trouve du côté client, le client sait qu'il parle à un proxy et peut adapter
+ses requêtes mais lorsque le serveur proxy se trouve du côté serveur, le client ne sait pas qu'il a affaire
+à un proxy. Le serveur proxy doit donc se comporter exactement comme un serveur. Pour les
+protocoles qui ne supportent pas le relaye (HTTP, FTP), le proxy ne peut relayer le paquet qu'à un seul
+serveur.
+Un proxy HTTP :
+  \item Permet de filtrer les requêtes vers le server.
+  \item Une authentification du client (impossible d'attaquer le serveur avant de s'être authentifié).
+  \item Accélérer le serveur : utiliser un cache, déléguer au proxy les fonctions statice (accessibilité de
+documents statices), Workload dispatcher (??).
+Un proxy HTTPS :
+  \item Un proxy HTTPS permet de décharger le serveur des calculs souvent gourment d'encryptage et
+de décryptage. C'est donc le proxy qui s'en charge et le liaison proxy serveur se fait en HTTP.
+
+Les serveurs proxy peuvent utiliser plusieurs protocoles différents pour un même paquet. Ainsi
+un web mail peut recevoir une requête HTTPS et générer une requête IMAP vers le serveur
+mail.
+
+\section{IDS}
+Systèmes de détection d'intrusion (IDS)
+Les systèmes de détection d'intrusion (IDS) analysent le trafic réseau (réseau IDS, NIDS), généralement
+en face du pare-feu et/ou les événements sur les serveurs (Host IDS, HIDS).
+En cas d'attaque, ils lancer une alarme (SMS, courrier, etc) et permettent de reconfigurer le pare-feu
+(filtrage de l'attaque) ou les serveurs.
+L'analyse peut se faire en temps réel ou en analysant les logs.
+IDS avec caractérisation du trafic (IDS with Traffic Characterization):
+IDS qui réalise des statistiques sur le trafic.
+Si la valeur va au-delà de ses limites habituelles, alors l'IDS suppose qu'il y a une attaque.
+  \item Ce système peut reconnaître de nouvelles attaques.
+  \item Il peut aussi ne pas les reconnaître ... (faux négatifs).
+  \item Il peut voire attaques où il n'y a pas (faux positifs).
+Le taux élevé auquel il génère des faux positifs rend ce type d'IDS impopulaire.
+IDS basés sur les signatures (Signature-based IDS):
+L'IDS dispose d'une base de données avec les attaques connues.
+Il ne reconnaît pas de nouvelles attaques (doit être constamment mis à jour).
+Les faux négatifs.
+  \item Attaques manuelles peuvent avoir des variations qui ne sont pas détectés.
+  \item Les signatures sont pas toujours précis.
+Les faux positifs.
+  \item L'IDS, dans la plus part des cas, ne sait pas si une tentative d'attaque a réussi.
+  \item L'IDS ne sait pas si la cible de l'attaque est vulnérable (par exemple attaque Linux sur serveur
+Windows).
+Exemple d'IDS basés sur les signatures : Snort
+IDS basé sur l'intégrité de l'host (Integrity-based Host IDS):
+Tripwire est un exemple typique d'un HIDS avec une analyse différée.
+  \item Il crée une signature numérique de tous les fichiers et répertoires qui ne doivent pas être
+modifiés.
+  \item Les signatures ne peuvent pas être modifiées par un pirate.
+  \item Il compare régulièrement les fichiers et les signatures pour détecter d'éventuelles
+modifications.
+  \item Il génère une alarme lorsqu'il détecte une modification et peut restaurer automatiquement la
+version originale du fichier.
+Systèmes de prévention des intrusions (IPS):
+Un IPS est un IDS qui réagit à une attaque.
+  \item Niveau IP: Filtres l'adresse IP source dans le pare-feu (pour un temps).
+  \item Niveau TCP: Envoie un spoofed paquet TCP 'reset' à la destination pour tuer la connexion.
+  \item Niveau application: «corrige» une requête Web pour enlever les caractères spéciaux.
+
+\section{Introduction of Cryptography}
+\subsection{Vocabulary}
+Cryptographie :
+Définition (cryptographie):
+  \item Origine: Science qui permet condentiality de communication à travers des canaux non
+sécurisés.
+  \item Aujourd'hui: Condentiality, l'authentification, l'intégrité des données (non-répudiation,
+Disponibilité, Signature).
+Définition (Condentiality, Secrecy)
+  \item Assurance que l'information donnée ne peut pas être consulté par des tiers non autorisés.
+Encryption Algorithm:
+Définition (algorithme de chiffrement):
+  \item Algorithme qui transforme un texte intelligible dans un texte qui est inintelligible pour les
+parties non autorisées. Il est généralement paramétré avec une clé cryptographique.
+Cryptographie asymétrique à clé:
+  \item Pour encrypter, décrypter, l'algorithme de décryptage.
+  \item Un cryptosystème = enc / dec algorithmes (+ génération de clé).
+Cryptographie à clé symétrique:
+  \item Pour chiffrer, déchiffrer.
+  \item Un ciffer: algorithme de chiffrement à clé symétrique.
+Plaintext & Ciphertext:
+Définition (Plaintext)
+  \item Entrée d'un algorithme de chiffrement.
+Définition (Cyphertext)
+  \item Sortie d'un algorithme de chiffrement.
+Définition (Cleartext)
+  \item Les informations codées en utilisant un code public.
+Cryptanalysis:
+Définition (cryptanalyse)
+  \item Science qui confirme ou infirme la sécurité d'un système de cryptographie.
+Définition (Casser un système de chiffrement)
+  \item Prouver l'insécurité d'un système de cryptographie.
+- Décryptage (totalement ou partiellement) un texte chiffré donné.
+- Récupérer la clé de la cryptographie.
+- Prouver qu'un système de chiffrement est moins sûr que ce qui est revendiqué.
+Définition (cryptologie)
+  \item Sciences de la cryptographie et la cryptanalyse.
+- 23 -
+8.2 Symmetric-key vs Asymmetric-key Cryptography :
+La cryptographie à clé symétrique:
+  \item Même clé secrète est utilisée pour le chiffrement et le déchiffrement.
+  \item Taille typique de la clé: 128 bits.
+  \item Basé sur des opérations sur les bits ou octets (substitutions, permutations).
+  \item Rapide dans les implémentations logicielles ou matérielles.
+La cryptographie à clé asymétrique:
+  \item Il s'agit d'une clé publique pour crypter et une clé privée pour décrypter.
+  \item Taille typique de la clé: 1024 bits.
+  \item Basé sur des problèmes mathématiques (FACT par exemple, DL)
+  \item Cryptages et décryptages sont lents.
+Comparaison Sym / Asym Cryptographie:
+  \item Speed.
+  \item Key-size.
+  \item La distribution des clés.
+8.3 Authentication :
+Authentification d'entité:
+  \item Asymétrique ou symétrique.
+  \item Exemples: Challenge / Response, Zero-Knowledge.
+Authentification des données:
+  \item Asymétrique (signature) ou symétrique (contrôle d'intégrité).
+  \item Exemples: RSA, MAC.
+8.4 Cryptographic Hash Functions :
+Idée intuitive:
+h: {0,1} * -> {0,1} ^ n.
+exemple: MD5, SHA-1.
+Propriétés:
+Définition (First preimage resistance)
+  \item Compte tenu d'une valeur de hachage y, il est impossible de trouver m tel que h (m) = y.
+Définition (Second preimage resistance)
+  \item Étant donné un message m1, il est impossible de trouver un message différent, m2 tel que
+h (m1) = h (m2).
+Définition (Collision Resistance)
+  \item Il est impossible à deux messages différents m1 et m2 tels que h (m1) = h (m2).
+Définition (Random Oracle Property)
+  \item h (m) est in-distinguable d'une valeur de n bits aléatoires.
+- 24 -
+Théorème du paradox de l'anniversaire:
+Si nous choisissons θ N nombres aléatoires, indépendant et uniforme, dans {1,2,3, ..., N}, nous
+obtenons au moins un chiffre deux fois avec une probabilité:
+8.5 Algorithm and Key :
+
+
+
+
+
+
+
+AES keys = 128 bits, 192 bits ou 256 bits.
+DES keys = 64 bits (56 key bits + 12 salt bits).
+AES block = 128 bits.
+DES block = 64 bits.
+SHA1 (output) = 160 bits.
+MD5 (output) = 128 bits.
+RSA keys = 1024 bits, 2048 bits ou 4096 bits.
+
+\section{Certificates}
+9.1 Basics :
+Bases:
+L'objectif d'un certificat est de relier une clé publique avec son propriétaire.
+Le couple (clé publique, propriétaire) est signé par un tiers de confiance appelé autorité de
+certification (CA). Pour vérifier la signature, la clé publique de le CA est nécessaire.
+Le couple (clé publique du CA, CA) est auto-signé: certificat racine. L'authenticité du certificat racine
+est fondamentale.
+Certificats X.509:
+Norme de l'Union internationale des télécommunications (UIT), sorti en 1988. Aussi IETF RFC-2459
+(mis à jour).
+Trois champs obligatoires.
+  \item TBS certificat (TBS = " To Be Signed "): La charge utile du certificat (voir ci dessous).
+  \item CA algorithme de signature: identificateur de l'algorithme cryptographique utilisé par l'AC pour
+signer le certificat.
+  \item Valeur de signature CA: Signature du certificat par le CA.
+X.509: TBS certificat:
+  \item Numéro de série: Numéro unique attribué par le CA à la certificat.
+  \item Domaine de la société: Identifies l'entité qui a signé et délivré le certificat.
+  \item Sujet: Identifies l'entité associée à la clé publique (O: organisation, C: pays, OU: Unité
+
+
+d'organisation, CN: nom commun par exemple DNS, ST:. Etat, L: ville, etc Aucune adresse IP).
+Validité: Pas avant, pas après.
+Subject Public Key Info: La clé publique et identification de l'algorithme avec lequel la clé est
+utilisée.
+9.2 Obtaining and verifying a Certificate :
+Comment obtenir un certificat
+1.
+ Le demandeur doit se présenter à la CA.
+2.
+ Le CA (physiquement) authentifie le demandeur.
+3.
+ Le CA demande au participant de générer des clés publiques / privées.
+4.
+ Le CA crée un certificat avec l'identité du demandeur, la clé publique, la date d'expiration, etc,
+et la signature du CA.
+5. Le CA fournit une copie de sa clé publique à la requérante.
+6. Le demandeur peut propager son certificat.
+Autorité d'enregistrement
+  \item Le CA peut déléguer l'enregistrement d'un candidat à l'autorité d'enregistrement (RA).
+  \item La RA n'a pas la clé privée de CA.
+  \item Le CA approuve le RA pour authentifier les demandeurs.
+  \item Après avoir authentifié le requérant, la RA permet au demandeur de générer une paire de clés
+
+et envoie la clé publique de la CA pour créer le certificat.
+Techniquement, le RA envoie un Certificate Signing Request signé (RSE) à l'AC.
+
+Vérification d'un certificat
+\begin{itemize}
+  \item Vérifiez le chemin de certification.
+  \item Vérifiez la période de validité.
+  \item Vérifiez que le certificat n'est pas révoqué.
+\end{itemize}
+\section{Passwords}
+\subsection{Basics \& Vulnerabilities}
+Basics:
+Les mots de passe ne sont jamais enregistrés en « clear », le risque de les récupérer par un hacker est
+trop grand. Ils sont alors stockés sous la forme d'un hash. Le hash d'un mot de passe est irréversible.
+Pour vérifier une authentification, il suffit de comparer le hash du login et le hash stocké sur le serveur.
+h: fonction de hash
+Avec un h(x) = y, il est impossible de retrouver x seulement avec y
+Vulnerabilities1.2.3.4.5.6.7.8.9.:
+Noter son mot de passe :
+Cacher un post-it avec ses mots de passe en dessous du clavier, à côté du bureau, etc. Les gens
+ont plus tendance à noter leur mot de passe lorsqu'ils sont obligés de le renouveler
+régulièrement.
+Les regards indiscrets :
+Un regard par-dessus une épaule, une mini caméra bien placée. Les mots de passe n'ayant pas
+de signification sont plus vulnérables à ce type d'attaque (pourquoi ?)
+Arnaque (social engineering) :
+Envoyer de faux mail demandant à l'utilisateur de renvoyer son mot de passe pour le valider
+dans la base de données (plus de 1/3 des gens réponde).
+Key logger, Rootkit :
+Software ou Hardware qui enregistre toutes les touches du clavier de la victime. Pour contrer
+cette attaque, on peut utiliser un clavier virtuel ou encore brouiller le mot de passe en
+changeant la position du curseur lors de l'écriture du mot de passe.
+Sniffer un réseau :
+Certain protocole (POP, FTP, Telnet) ne chiffre pas les mots de passe qu'ils envoient, ils sont
+donc visible si on analyse les paquets échangés sur le réseau.
+Utiliser plusieurs fois un mot de passe :
+Ne jamais utiliser le même mot de passe entre deux environnements (Windows, Linux). Ne
+jamais utiliser un mot de passe reçu par mail. Utiliser différent niveau de sécurité.
+Les traces :
+Faire attention au gestionnaire de mot de passe (qui les enregistre) sur les ordinateurs public.
+Faire attention au champ qui s'auto-remplit après avoir valider un formulaire où par erreur on
+a entré son mot de passe dans le login.
+Les attaques par essais :
+Cette attaque consiste à faire un grand nombre d'essayes avec des mots de passe différent. On
+distingue deux types d'attaque, les online attack et les offline attack (détaillé plus loin).
+
+\subsection{Online attack}
+Les online attack consistent à tester des mots de passe successivement à travers l'interface (web par
+exemple) qui sépare le pirate et le serveur. Le serveur va alors indiquer au pirate si le mot de passe est
+bon ou non et dans ce cas, essayer un autre (le serveur fonctionne comme une black box, une oracle).
+Ce système est lent, mais ne nécessite pas de connaitre la fonction de hash.
+Pour contrer ce genre d'attaque :
+\begin{itemize}
+  \item Ajouter un délai de réponse :Un délay est ajouté avant que le client (pirate ici) ne reçoit la
+réponse du serveur.
+  \item Notifier l'utilisateur (par mail) et bloquer son compte : Attention, cette mesure permet de faire
+du déni de service. En effet, un pirate peut essayer plusieurs mot de passe random pour
+bloquer le compte d'un utilisateur. L'utilisateur va alors contacter le service client et cela aura
+également un coup pour celui-ci.
+  \item Faire participer l'utilisateur : La machine du client doit faire un grand nombre d'opération
+avant de pouvoir soumettre un mot de passe (trouver un « r » tell que h(login,password,r)
+renvoie un nombre dont les derniers bits soit égaux à 0). Cela ralentit considérablement la
+vitesse des attaques tout en maintenant un temps de calcule raisonnable pour une simple
+connexion.
+  \item Captcha : La plupart des attaques se font par des ordinateurs alors que la vraie connexion par
+des humains. Il suffit donc de demander au client une réflexion simple pour un humain mais
+compliqué pour un ordinateur.
+\end{itemize}
+
+\subsection{Offline attack}
+Principe:
+Les offline attack consiste à voler le fichier qui contient tous les hash, trouver la fonction de hash et
+ensuite faire une attaque par dictionnaire, brute force, etc. En connaissant la fonction de hash, le
+pirate peut comparer des mots de passe hashé au fichier récupérer sur le serveur.
+Les attaques par dictionnaire :
+Beaucoup de gens utilise des mots de passe issus du dictionnaire (plus simple à retenir) mais celui-ci
+est fini (entre 150000 mots et 200000 mots) et est réduit donc considérément les possibilités. Un
+dictionnaire déjà hashé peut accélérer l'attaque. Un ordinateur peut calculer entre 200 000 hash et 10
+000 000 hash par second en fonction de la fonction de hash.
+Brute-force :
+Les attaques par brute-force consiste à essayer un grand nombre de possibilité même si celle-ci n'ont
+pas obligatoirement un sens (« aaa » puis « bbb » puis « abb », etc). Cette attaque permet de trouver
+les mots de passe abstrait sans signification qui ne se trouve pas dans un dictionnaire.
+Heuristique attaque :
+On peut combiner l'attaque par dictionnaire et l'attaque par brute force en appliquant certaines règles
+souvent utilisé par les gens :
+\begin{itemize}
+  \item Convertir majuscule/minuscule (FRED/fred).
+  \item Mettre la première lettre en majuscule (Fred).
+  \item Inverser les lettres d'un mot (Derf).
+  \item Dupliquer un mot (FredFred).
+  \item Réfléchir un mot (Fredderf).
+  \item Décaler les lettres vers la gauche ou la droite (Redf/Dfre).
+  \item Remplacer certain caractère par des similaires (Fr€d).
+  \item Ajouter X caractère au début ou à la fin du mot (aaaFred).
+\end{itemize}
+
+\subsection{Unix/Windows case}
+La fonction de hash peut être basé sur le DES, MD5, Blowfish, SHA256, SHA512.
+Unix (DES):
+pw : le mot de passe (56 bits).
+salt : un block généré aléatoirement (12bits)
+zero : un block comprenant uniquement des zéros (64 bits).
+DES(plaintext, key) : un block de 64 bits crypté.
+ hash(pw) = 25 x DES(zero, pw+salt)
+Le hash est stocké dans le fichier /etc/shadow sous la forme :
+LOGIN:SALT(2 char)HASH(11 char):etc
+Exemple: Smith:3Yr83xxCi/Ki2:12801:0:99999:7:-1::
+Unix (MD5):
+pw : le mot de passe (? bits).
+salt : un block généré aléatoirement (48 bits).
+MD5(plaintext) : un block que de 128 bits crypté.
+ hash(pw) = MD5(pw+salt)
+Le hash est stocké dans le fichier /etc/shadow sous la forme :
+LOGIN:$ALGO$SALT(8 char)$HASH(22 char):etc
+Exemple: Smith:$1$3YziHbd2$r83xxCi/Ki2uzGbd40sPzm:12801:0:99999
+Avant, les hash était stocké dans le fichier etc/passwd avec un accès en lecture seul. Maintenant pour
+plus de sécurité, ils sont stockés dans etc/shadow et ne peuvent être lu que par un administrateur (il
+est quand même possible de le récupérer en bootant sur un autre OS avec un CD ou une clé USB).
+Win 9x (LM Hash):
+Windows utilise le Lan Manager Hash pour hasher ses mots de passe. Le mot de passe est d'abord
+converti en majuscule puis divisé en deux blocks de 7 caractères. Les 7 bytes sont utilisé comme clé
+pour crypter une constante avec l'algorithme DES. Le LM Hash n'utilise pas de salt.
+- 30 -
+Les mots de passe LM alpha numérique sont déchiffrable en quelque secondes (99.9%).
+Les mots de passe LM alpha numérique avec 15 caractères spécieux sont déchiffrable en quelque
+minute (96%).
+Win NT/2000/XP/Vista/Seven (NT LM Hash):
+Ces versions de Windows utilisent le NT Lan Manager Hash (NT Hash). Cette fois, le mot de passe n'est
+pas séparé en deux, peut-être plus grand que 14 caractères et n'est pas converti en majuscule. Il
+n'utilise toujours pas de salt.
+Par défaut, LM Hash et NT Hash sont tous les deux conservés sur la machine (jusqu'à Windows XP
+compris). Il est donc possible de récupérer le mot de passe NT Hash en récupérant le mot de passe LM
+Hash. Il est possible de désactivé le LM Hash (désactivé par défaut à partir de Vista), dans le registre ou
+en choisissant un mot de passe de plus de 14 caractères.
+En dessous de W2K, XP et 2003, NT Hash et LN Hash sont stockés dans le Sécurity Account Manager ou
+dans le Active Directory (ntds.dit). Le fichier est crypté mais par défaut la clé est récupérable et le
+fichier de hash également avec les droits administrateur et un exploit ou en bootant sur un autre OS.
+10.5 Conclusion :
+Un mot de passe doit contenir au moins un élément de chaque point :
+- Digit (0..9)
+- Letter (a..Z)
+- Ponctuation (?!)
+- Caractère de contrôle (Ctrl+s, ^s)
+- Un caractère spécial dans les 7 premiers caractère (pourquoi 7 ?)
+Basé sur une phrase connue (en prenant la première lettre de chaque mot).
+Ne pas recyclé de mot de passe ou noter ses mots de passe.
+Utiliser des niveaux de sécurité.
+Modifier son mot de passe immédiatement si on pense avoir été victime d'une attaque.
+Ne pas utiliser l'option « retenir mon mot de passe ».
+
+\section{Time-memory Trade-off}
+\subsection{Motivations}
+Une fonction de hash est une fonction facile à calculer dans un sens, mais compliqué dans l'autre
+(inverse).
+DL problème (Discret logarithm) :
+Avec p et g tell que ga mod p, il est difficile de retrouver a.
+RSA problème :
+Avec n et e tell que me mod n, il est difficile de retrouver m.
+Exaustive search :
+- Recherche en temps réel : recherche (N) stockage (0) pré-calcule (0)
+- Recherche pré-calculé : recherche (0) stockage (N) pré-calcule (N)
+\subsection{Hellman Tables}
+Les table de Hellman est un principe de pré-calcul qui améliore considérablement la vitesse d'une
+attaque en temps réelle. (la page wikipédia des rainbow table est assez bien faites pour comprendre le
+principe donc n'hésitez pas : http://fr.wikipedia.org/wiki/Table_arc-en-ciel)
+Soit,
+h: A B La fonction de hashage de notre mot de passe.
+r: B  A Une fonction (arbitraire, rapide, surjective, déterministe) de réduction qui permet de
+revenir à l'ensemble (A) de départ de notre fonction de hashage.
+Un nombre M de chaine est généré avec comme une valeur arbitraire de départ dans A :
+Start1 = A1,1─h B1,1 ─r A1,2 ─ h  B1,2─ r... ─rA1,t-1─ h B1,t-1─r A1,t = End1
+Start2 = A2,1─h B2,1─r  A2,2─ h B2,2─r... ─rA2,t-1─ h B2,t-1─r A2,t = End2
+...
+Startm = Am,1─h Bm,1─ r Am,2─ h Bm,2─ r ... ─ r Am,t-1─ h Bm,t-1─ rAm,t = Endm
+Toutes les chaines doivent couvrir au final l'ensemble A. À la fin du pré-calcule d'une chaine,
+on ne garde que la première valeur et la dernière valeur de la chaine. Les valeurs intermédiaire son
+retrouvable avec la fonction de hashage et de réduction.
+Il est possible d'obtenir des collisions entre différentes chaine, celle-ci vont alors avoir les même
+valeurs jusqu'au bout de la chaine.
+Recherche dans la table :
+On considère une empreinte H engendrée à partir d'un mot de passe P. La première étape consiste à
+prendre H, lui appliquer la dernière fonction de réduction utilisée dans la table, et regarder si ce mot
+de passe apparaît dans la dernière colonne de la table. Si cette occurrence n'est pas trouvée alors on
+peut déduire que l'empreinte ne se trouvait pas à la fin de la chaîne considérée. Il faut revenir un cran
+- 32 -
+en arrière. On reprend H, on lui applique l'avant-dernière fonction de réduction, on obtient un
+nouveau mot de passe. On hache ce mot de passe, on applique la dernière fonction de réduction et on
+regarde si le mot de passe apparaît dans la table.
+Cette procédure itérative se continue jusqu'à ce que le mot de passe calculé en fin de chaîne
+apparaisse dans la table (si rien n'est trouvé, l'attaque échoue).
+Une fois le mot de passe découvert dans la dernière colonne, on récupère le mot de passe qui se
+trouve dans la première colonne de la même ligne. On calcule à nouveau la chaîne tout en comparant
+à chaque itération l'empreinte obtenue à partir du mot de passe courant avec l'empreinte H du mot de
+passe inconnu P. S'il y a égalité, alors le mot de passe courant correspond à celui recherché et l'attaque
+a réussi ; plus précisément, on a trouvé un mot de passe dont l'empreinte est la même que celle de P,
+ce qui est suffisant.
+Exemple :
+
+
+
+
+
+À partir d'une empreinte ("re3xes"), on calcule la dernière réduction utilisée dans la table et on
+regarde si le mot de passe apparaît dans la dernière colonne de la table (étape 1)
+Si le test échoue ("rambo" n'apparaît pas dans la table), on passe au point 2 où l'on calcule une
+chaîne avec les deux dernières réductions.
+Si ce test échoue à nouveau, on recommence avec 3 réductions, 4 réductions, etc. jusqu'à
+trouver une occurrence du mot de passe dans la table. Si aucune chaîne ne correspond alors
+l'attaque échoue.
+Si le test réussit (étape 3, ici "linux23" apparaît en fin de chaîne et également dans la table), on
+récupère le mot de passe à l'origine de la chaîne qui a abouti à "linux23". Il s'agit ici de
+"passwd".
+On génère la chaîne (étape 4) et on compare à chaque itération l'empreinte avec l'empreinte
+recherchée. Le test est concluant, on trouve ici l'empreinte "re3xes" dans la chaîne. Le mot de
+passe courant ("culture") est celui qui a engendré la chaîne : l'attaque a réussi.
+Pour les tables de Hellman, c'est le même principe que les table de Hellman à l'exception qu'il n'y a
+pas une seul fonction de réduction mais plusieurs selon la position dans les colonnes.
+Source : http://fr.wikipedia.org/wiki/Rainbow_table
+Les faux positifs (false alarm) :
+Étant donné un hash C compris dans l'ensemble B, tell que Y1 = r(C), alors il est possible que la chaine
+que nous reconstruisons lors de la recherche, converge sur la même valeur final Ej / Ys d'une chaine de
+notre table sans pour autant en faire partie:
+- 33 -
+Dans ce cas, l'algorithme détecte une valeur final commune à notre table (droite qui va de Sj vers Ej) et
+à la chaine (courbe qui va de Y1 vers Ys) que nous venons de reconstruire, il va alors falloir reconstruire
+la chaine à partir du début (Sj) et au final se rendre compte que c'est un faux positif lorsqu'il arrive à
+l'endroit où il devait trouver le hash recherché : C' ≠ C.
+
+\subsection{Rainbow tables}
+Les rainbow tables suivent le même principe que les tables de Hellman à la différence qu'elles n'ont
+pas une seule fonction de réduction mais une variété en fonction de la longueur des chaines. Souvent
+c'est un simple paramètre qui varie dans la fonction de réduction. Cela permet de les différencier selon
+la position dans la chaine. Ainsi, dès à présent, si deux chaines rentrent en collision à des colonnes
+différente, cela n'a pas d'effet sur la suite de la chaine, elles ne vont pas converger vers la même
+valeur car leurs fonctions de réduction varient légèrement. Dans le cas où la collision se fait à la même
+colonne, il est possible de le détecter (comment ?).
+Une rainbow table parfaite est une table qui n'a aucune collision entre deux chaines à une colonne
+donnée (qui ne se merge pas pour avoir au final, toutes les deux la même valeur de fin de chaine).
+Quelque théorème:
+-
+ Avec t et un nombre N suffisamment grand, le nombre maximum de chaines normalement
+requis pour une rainbow table parfaite (sans merge) est de :
+m max(t) ≈ (2.N)/(t+1)
+-
+ Avec t et pour un problème de taille N, le pourcentage de réussite espéré d'une rainbow
+table parfaite est de :
+Pmax(t) ≈ 1- (1- (2/(t+1)) )t
+Qui tend vers 1-e-2 ≈ 86% lorsque t est grand.
+-
+ Le dernier théorème sert à calculer « the average cryotanalysis time » avec N, m, l et t
+donné :
+
+\subsection{Conclusion}
+TMTO n'est jamais meilleur qu'une attaque Brute force, mais il a du sens dans certain cas (attaque
+répétée, temps limité pour l'attaque, etc).
+Il faut bien analyser le problème avant de s'attaquer à celui-ci. 56-bit DES est par exemple impossible à
+craquer : en brute force il faudrait 20 ans, avec TMTO 1 semaines, mais 8000 ans pour générer la table
+(ainsi que 512Gb).
+L'attaque consiste d'abord à pré calculer la table :
+\begin{itemize}
+  \item Éliminer les chaines qui se mergent.
+  \item Paralléliser le calcul.
+\end{itemize}
+Puis vient l'attaque à proprement parler, la recherche du hash dans la table :
+\begin{itemize}
+  \item Paralléliser l'attaque.
+  \item Pas besoin de beaucoup de mémoire.
+\end{itemize}
+
+\section{WEP}
+12.1 Introduction Wifi :
+Un point d'accès connecté via un câble au réseau. Plusieurs machines connectées via WIFI à ce point
+d'accès.
+Plusieurs manière : réseau ad hoc et mode infrastructure (cf cours de réseau). L'utilisation la plus
+simple et la plus courante des réseaux ad-hoc est faite par les réseaux sans fil Wi-Fi en permettant une
+mise en place rapide d'une connexion réseau entre deux ordinateurs.
+Les stations et le point d'accès communique via des ondes. (Non c'est vrai ?)
+Problème : n'importe qui peut capter/injecter des ondes avec une interface appropriée. (Record du
+monde : transmission de 382 km)
+War driving
+Un plouc peut se balader dans les rues en voitures et construire un carte des réseaux disponibles (un
+PC, un GPS et un bon software et le tour est joué).
+Security needs (en générale, valable pas uniquement pour le WEP)
+Vu que n'importe qui peut intervenir sur un réseau sans fil, on a besoin de s'assurer de trois choses :
+- L'authentification
+- L'intégrité des données
+- La confidentialité des données
+Authentification
+Plusieurs possibilités :
+- pas d'authentification : n'importe qui peut se connecter au réseau.
+c'est de moins en moins utilisé. Les providers donnent des boites contenant des clés par
+défaut. Il reste néanmoins certains endroits comme les cafés où on trouve des hots spots
+gratuits. A ne pas confondre avec les trucs de type FON.
+- Authentification via le SSID
+chaque modem broadcast son SSID. Tous les clients a porté peuvent découvrir le modem. On
+peut utiliser ce principe comme authentification : le client doit connaitre le SSID pour pouvoir
+se connecter. Pas du tout sécurisé car n'importe qui peut eavesdropper le SSID quand un client
+légitime se connecte.
+en pratique, il suffit de sniffer le réseau avec kismet ou Airodump.
+- MAC address authentification
+le routeur contient une liste de MAC adresses autorisées et vérifie si celle du client en fait
+partie. L'attaquant peut tjs sniffer une adresse MAC valable facilement. Il lui suffit de changer
+la sienne pour pouvoir se connecter au réseau. 3 lignes de commande en Unix :
+ifconfig INTERFACE down
+- 36 -
+-
+ifconfig INTERFACE hw ether NEW_MAC_ADR
+ifconfig INTERFACE up
+Authentification cryptée
+WEP ou WPA. C'est ce qui nous intéresse vraiment.
+WEP : wired equivalent privacy
+Le WEP fait partie du standard de l'IEEE 802.11 (standard de tout ce qui est réseau sans fil). Son but
+est de rendre les réseaux LAN aussi sécurisés que les réseaux câblés.
+Les grandes propriétés du WEP sont :
+- Pas de key management
+- Pas de protection contre les attaques replay
+- Authentification : une clé pour plusieurs utilisateurs
+- La confidentialité repose sur RC4 (stream cipher)
+- Dispose d'un system de vérification d'intégrité : CRC-32
+No key management
+Toutes les stations sans fils et le routeur ont la même clé pré-partagée. Cette clé est utilisée pour
+l'authentification et pour les encryptions.
+La clé est encodée manuellement sur chaque machine. Trop souvent, la clé entrée par le fabricant et
+n'est plus jamais modifiée.
+Replay attacks
+Vu que la clé n'est jamais changée, le méchant pirate peut attendre que le IV soit réutilisé et alors
+renvoyer un message qui est déjà passé. L'IV est sur 24 bits (16 777 216). Grace à notre ami le
+théorème des anniversaires, on sait qu'il y a 50% de chances qu'un IV se répète après 5000 paquets.
+Plusieurs solutions peuvent être implémentées pour éviter ca:
+- Nounce : challenge/réponse. A envoie un nonce (c.-à-d. un chiffre aléatoire fraichement
+généré). B l'encrypte et l'envoie à A. A vérifie que c'est bon.
+- Timestamp : A envoie son message accompagné d'un MAC (message authentification code : ça
+sert à être sûr de l'intégrité du message. Prenez le cours de crypto si vous voulez en savoir
+plus)
+- Sequence number : A et B discute en incrémentant un compteur.
+-
+Intégrité
+L'intégrité est assurée via CRC (contrôle de redondance cyclique). Cependant, CRC est designé pour
+détecter les erreurs de transmissions (erreurs aléatoires) mais pas les erreurs intelligentes des pirates.
+- 37 -
+Schéma d'encryptions
+La figure ci-dessous présente le schéma d'encryptions.
+On entre un message m. Celui-ci est coupé en byte mi et encodé via un xor avec le keystream.
+Le keystream est généré par RC4.
+RC4 est un stream cipher orienté byte. Il est donc très efficient en software (10x plus rapide que DES)
+et a l'avantage d'être simple. Il se passe en deux phases : l'initialisation et la génération de clé.
+Initialisation & scrambling
+RC4 comporte un registre principal: le registre d'état (N=256 bytes). Il est noté S dans la suite
+La clé et le vecteur d'initialisation servent à initialiser un second registre le registre K.
+Dans un premier temps, le tableau S est rempli des 0->N-1.
+Ensuite, le tableau est mélangé avec le registre de K de la manière suivante.
+Génération de clé
+Vient ensuite la génération de clé: elle est faite de la manière suivante :
+Maintenant que nous connaissons le fonctionnement du WEP, nous pouvons passer à
+l'authentification cryptée.
+- 38 -
+Je crois que l'image en dit suffisamment long. C'est comme d'habitude un challenge/réponse.
+12.2 Attaque contre le WEP :
+1ere attaque : Exhaustive search
+WEP: 40bits de clé + 24 bits de IV = 64 bits  264 bits c'est encore faisable avec un gros gros pc.
+Il existe des versions de WEP avec 104 bits de clé +24 bit d'IV. Là c'est plus possible.
+2eme attaque : CRC property
+CRC a une sale propriété : CRC est linéaire par rapport au XOR c.-à-d. que
+Ça craint vachement !
+Je m'explique : un attaquant connait l'adresse ip contenue dans le message M. Il peut calculer un ∆m
+tel que m xor ∆m = l'adresse ip du pirate. Il lui suffit ensuite de calculer CRC(∆m) et de xor le tout.
+L'attaquant a réussi à modifier un message sans connaitre la clé K tout en gardant l'intégrité du
+message.
+3eme attaque : Keystream Reused
+Comme dit précedement, le IV fait 24 bits=3bytes.
+Vu que les gens changent jamais de clé, un keystream donnée (cad un IV) revient relativement
+souvent.
+En général l'IV est un compteur. Il est donc possible de forcer la réutilisation d'un IV en reboutant le
+routeur (compteur réinitialisé). Il y a 50% de chances de revoir passer un IV dans 212 paquets (birthday
+paradox).
+Si on connait un message qui a été encrypté avec un certain IV, on peut retrouver un autre message
+encrypté avec un même IV.
+C= K xor M
+C'=K xor M'  M' = C' xor C xor M
+A nouveau pas besoin de la clé.
+on peut facilement connaitre un message M( entête de paquets connus, etc)
+4eme attaque : Cryptanalyse
+C'est ici que les choses marantes commencent !
+2 ans après la sortie de WEP, on commence à piger que y des IV qui font tout foirer. Ils permettent de
+retrouver certains états internes du registre S dont je vous parlais précédemment et parfois même la
+clé complète.
+Pour réaliser cette attaque, on doit connaitre l'IV et les premiers bytes d'un message et de son chiffré.
+(L'IV est envoyé en clair et le chiffré est sniffé)
+Le message est encrypté avec la clé (IV||key) = (K0, K1, K2, K3, K4,..., K7) = (3,255, X, K3,..., K7)
+- 39 -
+Donc l'IV est (3, 255, X) et X est supposé connu.
+On effectue les quatre premières étapes de l'initialisation :
+On suppose pour un instant que on s'arrete ici pour l'initialisation.
+Si on doit encoder un truc à ce stade, le keystream généré sera 6+X+K3 :
+Comme le keystream est connu, on peut trouver K3 pour i=3
+Cependant, on ne peut pas arrêter l'initialisation au 4eme stade.
+Quelle est la probabilité que les éléments 0,1 et 3 du tableau ne soient pas modifiés dans le reste de
+l'initialisation? Apparemment c'est
+ .
+Donc si on voit suffisamment de IV, on finira bien par en trouver un qui fera l'affaire.
+Une fois que K3 est connu, on refait la même chose avec un autre IV :
+Si IV = {4, 255, X}, on peut effectuer la même démarche. On trouve alors pour i=4,
+On peut donc trouver toute la clé byte par byte en continuant.
+En moyenne, il faut 4millions de IV pour retrouver une clé de 128 bits. Le nombre de IV nécessaire est
+linéaire en fonction de la longueur de clé (-> très mauvais).
+Further attacks
+Il existe des attaques du même styles mais plus puissantes mais elles ne sont (heureusement) pas
+détaillées dans le cours.
+
+\section{WPA}
+\subsection{WPA}
+Le WPA ou « Wifi protected access » a pour but de remplacer le WEP. Comme vous avez pu le voir, le
+WEP c'est de la merde. Ce remplacement est un patch assez urgent avant la publication de WPA2
+(802.11i).
+Depuis 2003, tous les appareils Wifi doivent implémenter le WPA.
+Propriétés-
+-
+-
+-
+-
+-
+et amélioration par rapport au WEP
+Un compteur est utilisé pour éviter les attaques par répétition.
+L'IV est sur 48 bits
+Chaque utilisateur est authentifié contrairement au WEP ou les machines seulement sont
+identifiées.
+Les clés sont dynamiquement rafraichies en utilisant TKIP.
+AES est utilisé dans WPAE au lieu de RC4 dans WEP et WPA2
+Il existe deux modes de fonctionnement du WPA :
+o Personnal : on utilise alors des « pre-shared key » (PSK)
+chaque appareil connecté utilise le même mot de passe de 256 bits.
+Cette clé peut être saisie soit sous forme de chaîne de 64 chiffres hexadécimaux, ou
+comme une phrase de passe de 8 à 63 caractères ASCII imprimables. Si les caractères
+ASCII sont utilisés, la clé de 256 bits est calculée en appliquant la fonction de
+dérivation de clé PBKDF2 au mot de passe, en utilisant le SSID comme le sel de 4096
+itérations de HMAC-SHA1. L'authentification de se fait via EAP-MD5. (MD5 +
+Extensible Authentication Protocol voir plus loin)
+o Entreprise : on utilise l « IEEE802.1x Authentification Server »
+chaque utilisateur doit s'identifier. On a besoin d'un serveur qui gère tous les comptes
+des utilisateurs (genre Radius)
+http://en.wikipedia.org/wiki/IEEE_802.1X
+13.2 Architecture et protocoles :
+On considère 3 acteurs :
+- Le client (supplicant)
+- Le point d'accès (authentificateur)
+- Le serveur d'authentification
+- 41 -
+Il y a quatre phases importantes
+- L'accord sur la politique de sécurité
+- L'authentification
+- La génération de clé et leur distribution
+- La confidentialité et l'intégrité des données
+Phase 1 : L'accord sur la politique de sécurité
+Phase 2: l'authentification
+Pour l'authentification, comme dit précédemment EAP est utilisé.
+EAP n'est vraiment un protocole d'authentification en lui-même. Seul, il ne sert à rien. Il a été créé
+pour transporter les messages selon un cadre bien défini. Il contient 4 sortes de message : request,
+response, succes et failure. Les paquets request sont émis par l'authentificateur (Acces Point). Le
+suppliant doit y répondre correctement afin de recevoir un paquet succes.
+- 42 -
+L'AP peut envoyer autant de paquets request qu'il a envie avant d'accorder ou non l'accès.
+EAP est utilisé avec plusieurs outils :
+- Legacy based methods : EAP-MD5
+- Méthodes basées sur un certificat : EAP-TLS, EAP-TTLS, PEAP
+- Méthodes basées sur des mots de passe : LEAP, SPEKE
+- ...
+EAP-MD5
+Utilisé uniquement en mode Personnal WPA.
+L'authentification se fait via le hash d'un challenge et du mot de passe. Cependant, MD5 est
+absolument plus suffisant de nos jours. Cette méthode n'est PAS sécurisée.
+Comme le dit Wikipédia: It offers minimal security; the MD5 hash function is vulnerable to dictionary
+attacks, and does not support key generation, which makes it unsuitable for use with dynamic WEP, or
+WPA/WPA2 enterprise.
+EAP-TLS
+EAP est utilisé avec le TLS. EAP se base sur les PKI (public key infrastructure -> certificat) pour sécuriser
+les communications entre le serveur d'authentification (AS). L'authentification est donc très fortement
+sécurisée mais nécessite la mise en place des PKI.
+Le client et le serveur ont un certificat.
+L'EAP-TLS est donc essentiellement utilisé en entreprise.
+EAP-TTLS
+C'est grosso modo la même chose sauf qu'ici il n'y a que l'AS qui a un certificat. On peut utiliser une
+méthode d'authentification moins sécurise pour le client (CHAP ou PAP)
+-
+-
+PAP : Password authentication protocol
+Quand l'AS te demande d'envoyer ton pass, tu l'envoies.
+CHAP: Challenge-Handshake Authentication Protocol
+lorsque tu reçois un challenge, le prouveur encrypte le challenge avec sa clé et envoie le chiffré
+au vérifieur
+- 43 -
+Phase 3 : key dérivation
+4 way hands shake:
+http://en.wikipedia.org/wiki/IEEE_802.11i-2004 -> c'est bien expliqué dans le cours y a que dale.
+The Master Key key is designed to last the entire session and should be exposed as little as possible.
+Therefore the four-way handshake is used to establish another key called the PTK (Pairwise Transient
+Key). The PTK is generated by concatenating the following attributes: PMK, AP nonce (ANonce), STA
+nonce (SNonce), AP MAC address, and STA MAC address. The product is then put through PBKDF2-
+SHA1 as the cryptographic hash function.
+The handshake also yields the GTK (Group Temporal Key), used to decrypt multicast and broadcast
+traffic.
+1.2.3.4.The AP sends a nonce-value to the STA (ANonce). The client now has all the attributes to
+construct the PTK.
+The STA sends its own nonce-value (SNonce) to the AP together with a MIC, including
+authentication, which is really a Message Authentication and Integrity Code: (MAIC).
+The AP sends the GTK and a sequence number together with another MIC. This sequence
+number will be used in the next multicast or broadcast frame, so that the receiving STA can
+perform basic replay detection.
+The STA sends a confirmation to the AP.
+- 44 -
+As soon as the PTK is obtained it is divided into five separate keys:
+PTK (Pairwise Transient Key – 64 bytes)
+1. 16 bytes of EAPOL-Key Confirmation Key (KCK)– Used to compute MIC on WPA EAPOL Key
+message
+2. 16 bytes of EAPOL-Key Encryption Key (KEK) - AP uses this key to encrypt additional data sent
+(in the 'Key Data' field) to the client (for example, the RSN IE or the GTK)
+3. 16 bytes of Temporal Key (TK) – Used to encrypt/decrypt Unicast data packets
+4. 8 bytes of Michael MIC Authenticator Tx Key – Used to compute MIC on unicast data packets
+transmitted by the AP
+5. 8 bytes of Michael MIC Authenticator Rx Key – Used to compute MIC on unicast data packets
+transmitted by the station
+Pour ceux qui veulent comparer avec le schéma du cours :
+- 45 -
+1.2.GEK (Group Encryption Key): Key for data encryption (used by CCMP for authentication and
+encryption and by TKIP).
+GIK (Group Integrity Key): Key for data authentication (used only by Michael with TKIP)
+Group key Hands shake
+The GTK used in the network may need to be updated due to the expiry of a preset timer. When a
+device leaves the network, the GTK also needs to be updated. This is to prevent the device from
+receiving any more multicast or broadcast messages from the AP.
+To handle the updating, 802.11i defines a Group Key Handshake that consists of a two-way handshake:
+1. The AP sends the new GTK to each STA in the network. The GTK is encrypted using the KEK
+assigned to that STA, and protects the data from tampering, by use of a MIC.
+2. The STA acknowledges the new GTK and replies to the AP.
+En gros à partir de la clé principale (master key), la station et l'AS vont générer toute une série de clé.
+Chaque clé est utilisée dans un but différent. Le schéma ci-dessous explique bien les relations entre ces
+différents clés.
+- 46 -
+Phase 4 : data integrity
+Deux algorithmes possibles peuvent être utilisés avec WPA :
+- TKIP : RCA+ MIC
+- CCMP : AES en mode compteur (WPA2 uniquement)
+TKIP: key mixing scheme and encryption
+MIC
+Mic utilise l'algorithme de Michael a la place de CRC32. Michael est utilisé avec une clé. Pourquoi
+Michael ? Simplement parce que c'était le plus puissant des MIC compatible avec les vieilles cartes.
+A cause des faiblesses de Michael, le réseau est coupé pendant une minute si 2 frames ne passent pas
+le check de Michael. Ensuite, des nouvelles clés doivent être régénérées.
+- 47 -
+13.3 Attaques :
+Attaque sur PSK
+Toutes les clés dérivent de la PSK :
+PMK = PBKDF2(SSID,PSK) suivi d'un 4-way hands shake.
+Sachant qu'on peut écouter ce hand shake, on peut tester toutes les clés possibles :
+Procédure :
+Pour chaque candidat de mot de passe, on calcule le PMK associé.
+On calcule ensuite la PTK
+Et finalement le MIC et on le compare avec celui qu'on a écouté.
+Il existe des rainbows tables pré calculée pour les 1000 SSID les plus courants.
+Attaque sur TKIP
+-
+ injection de paquets
+-
+ Décryptions de paquets de l'AP vers le client
+ \subsection{Conclusion}
+Glossaire:
+
+\section{IPsec}
+Protéger les données au network layer avec Virtual Private Networks (VPNs) construits avec IPSec
+(Internet Protocol Security).
+14.1 VPN :
+Les VPNs permettent d'étendre un réseau privé à travers un réseau public.
+Applications: Interconnexion de sites distants à travers Internet, accès au réseau de l'entreprise à
+partir d'un ordinateur connecté à Internet comme si on était à l'entreprise.
+Mécanisme :
+  \item 2 sets d'adresses : IP public pour échanger des données sur Internet et des adresses privées
+qui routent les paquets entre les hôtes sur le réseau privé.
+  \item Encapsulation : le paquet est encapsulé dans un paquet IP pour son voyage sur Internet.
+  \item Encryption : pour éviter le eavesdropping et les modifications de données sur le réseau
+public.
+Protocoles :
+  \item PPTP (Point to Point Tunneling Protocol) : développé par Microsoft.
+  \item L2TP (Layer 2 Tunneling Protocol) : développé par IETF, rassemble L2F de Cisco et PPTP de
+Microsoft.
+  \item IPSec (IP Security) : développé par IETF.
+14.2 IPSec :
+Le standard est ouvert et extensible. Des algorithmes publics sont utilisés pour la confidentialité,
+l'authentification et l'intégrité.
+14.2.1 Modes d'opération :
+  \item Transport : les données sont encryptées et/ou authentifiées. La sécurité est faite de
+manière end-to-end.
+  \item Tunnel : tout le paquet est encapsulé dans un nouveau paquet. La sécurité peut être faite
+par les routeurs intermédiaires.
+Chaque routeur contient une Security Policy Database qui défini quel paquet doit être sécurisé
+en fonction de sa destination et de sa source par exemple (e.g. : sécuriser le trafic telnet,
+UDP,...)
+14.2.2 Protocole d'échange de clés :
+Internet Key Exchange (IKE) :
+Protocole permettant l'installation d'un tunnel sécurisé entre partenaires.
+Objectifs :
+  \item Authentification du partenaire
+  \item Echange de clé entre partenaires
+  \item Négociation du paramètre
+- 51 -
+Phases :
+1. Négocier un IKE SA (Internet Key Exchange Security Association) pour protéger les négociations
+  \item Authentification : pre-shared secret (PSS), clés asymétriques, utiliser la clé publique
+d'une certification authority (X.509)
+  \item Echange de clés : clés générées avec Diffie-Hellman
+  \item Négocier le paramètre
+o Main mode : clé de session générée avec Diffie-Hellman (plein de paramètres) and
+utilisée pour protéger le reste de la transaction (négociation du paramètre et
+authentification).
+ un eavesdropper ne sait pas dire l'identité des paires.
+o Agressive mode : piggyback sur l'étape d'authentification pour l'échange de Diffie-
+Hellman, les identités et le pwd hash sont envoyés en clair. MAIS ne doit échanger
+que 3 paquets !
+ attaquable (CKY cookie dans les headers des paquets IKE)
+2.Définir les besoins du SA (Security Association) pour les flux ESP (Encapsulated Security
+Payload) ou AH (Authetification Header)
+Quick mode :
+  \item Sans Perfect Forward Secrecy (PFS) :
+o Les session keys sont rafraichies périodiquement (1h)
+o Les session keys sont issues du même secret
+o Voler ce secret compromet toutes les clés
+  \item Avec PFS
+o A chaque nouvelle session key, on fait un Diffie-Hellman (plus lent)
+o Voler 1 clé ne compromet pas les clés précédentes
+Security Association :
+Avant de pouvoir échanger des paquets en toute sécurité, les ordinateurs doivent établir une
+Security Association (SA) en utilisant IKE.
+Pour chaque communication sécurisée, le SA mémorise les algorithmes, les clés, la période de
+validité des clés, le numéro de séquence et l'identité du partenaire.
+Il faut 1 SA pour chaque flux unidirectionnel : une connexion TCP demande un SA pour chaque
+direction. (1 SA par destination par protocole, par port).
+Les SAs sont identifiés par un Security Parameter Index (SPI) :
+  \item La source indique le SPI sur tous les paquets qui sont envoyés (elle décide quels paquets
+doivent être exécuté avec quel SA)
+  \item La destination utilise le SPI pour trouver le SA qui décrit comment traiter ce paquet.
+14.2.3 Protocole sécurisé :
+Authentication Header (AH)
+Pour vérifier l'authenticité et l'intégrité du paquet.
+- 52 -
+L'authentification est calculée sur base de :
+  \item Données qui suivent le AH
+  \item Le header (mis à 0 quand il faut calculer l'information d'authentification)
+  \item Les champs importants dans l'IP header : source, destination, protocol, length, version,...
+  \item Les champs exclus de l'IP header : type of service, flags, fragment offset, TTL, header
+checksum.
+L'algorithme utilisé pour générer les données d'authentification est négocié à la création du SA.
+ utilise le HMAC : sécurité démontrable, peut être utilisé avec n'importe quelle hash function,
+maintient les performances de la hash function originale :
+HMAC(K,m) = H( (K xor opad) || H((K xor ipad) || m) )
+HMAC-SHA1-96 signifie HMAC calculé avec H=SHA1 et la sortie tronquée à 96 bits.
+Encapsulated Security Payload (ESP)
+Pour l'encryption et l'authentification du paquet.
+L'encryption est seulement faite sur l'encapsulated data et le trailer (à la fin du paquet). PAS
+d'encryption sur les champs du header, ni sur les données d'authentification.
+L'authentification (optionnelle) est faite sur l'ESP header et tout ce qui suit MAIS PAS sur l'IP
+header (différence avec AH).
+Exemple d'algorithme :
+  \item Encryption : DES-CBC, NULL
+  \item Authentification : HMAC-SHA-96, HMAC-MD5-96, NULL
+NULL ne peut pas être utilisé dans le même SA pour l'encryption et l'authentification.
+14.2.4 IPSec avec NAT
+AH : que ça soit en mode transport ou tunnel, AH authentifie l'IP header et donc ne
+permet pas au NAT de modifier l'IP source sans provoquer une perte d'intégrité.
+ESP :
+  \item Mode transport : en TCP ou UDP, les headers sont encryptés et donc le checksum ne peut
+pas être mis à jour
+  \item Mode tunnel : le checksum TCP ou UDP fait référence à l'IP header interne, qui n'est pas
+modifié par le NAT.
+ ESP en mode tunnel est le seul moyen de traverser un NAT !
+- 53 -
+Sécurité au transport layer.
+15. SSL :
+15.1 SSL
+SSL = Secure Socket Layer à été développé par NetScape
+15.1.1 Applications
+  \item Créer un nouveau protocole à partir d'un protocole existant : HTTP -> HTTPS
+o Désavantage : seuls les clients supportant TLS peuvent se connecter
+o Avantage : sur que la communication est sécurisée
+  \item Etendre un protocole pour négocier SSL/TLS : demander TLS avec STARTTLS
+o Avantage : le client ne doit pas forcément supporter TLS pour utiliser le service
+Exemples :
+  \item HTTPS :
+o L'utilisation de TLS n'est pas négociable
+o Garanti la confidentialité et l'authenticité des données transmises
+o Le server doit avoir un certificat
+o Le client peut en avoir un (e.g. : eBanking)
+  \item Mail
+o ESMTP, POP3, IMAP transmettent par défaut le mot de passe en clair
+o TLS protège le mot de passe et le contenu du mail
+15.2 TLS
+TLS = Transport Layer Security (version actuelle de SSL). Se situe entre l'application et le network layer.
+- 54 -
+15.2.1 Record Layer
+Traitement des données
+  \item Fragmentation
+  \item Compression (optionnel)
+  \item Authentification (MAC)
+  \item Encryption
+Transmets les fragments traités au transport layer
+Une fois, transmis, les opérations inverses sont effectuées.
+MAC :
+MAC= hash ( MAC_key || Pad2 ||
+
+hash(MAC_key || Pad1 || Seq_Nb || Length || Content))
+- MAC_key: secret shared by client and server.
+- Pad1: constant character 0x36 repeated 48 times (if MD5) or 40 times (if SHA1).
+- Pad2: constant character 0x5c repeated the same number of times.
+- Seq_Nb: sequence number of this message.
+- Hash: Either HMAC-MD5 or HMAC-SHA1
+- Length: Length in bytes of the compressed record.
+- Content: Compressed record.
+Encryption :
+Faite sur des records compresses et authentifiés.
+Soit avec du chiffrement par blocs:
+o DES (40 bits ou 56 bits), 3DES, IDEA, RC2 (40 bits)
+o AES (128 bits ou 256 bits) dans TLS v1.1 (256 bits pour les mails UCL)
+Soit avec du chiffrement en flux:
+o NULL, RC4 (40 bits ou 128 bits)
+ le client doit refuser des clés de 40 bits si cette longueur est suggérée par le serveur.
+15.2.2 Handshake protocol
+Négociation de:
+- protocole version (SSL 3.0, TLS 1.0, TLS 1.1).
+- algorithmes:
+o Key exchange (RSA, Diffie-Hellman).
+o Encryption (DES, 3DES, IDEA, RC4, RC2, AES).
+o MAC (HMAC-MD5, HMAC-SHA).
+- Le client propose les algorithmes par ordre de préférence, le serveur choisi.
+- Authentification optionnelle du partenaire en utilisant un certificat.
+- Les messages ne sont pas cryptés.
+- Le dernier message authentifie l'échange.
+- 55 -
+
+Client_Hello : utilisé par le client pour initialiser une connexion SSL (envoyé en clair sans
+signature)
+o Crypto : liste des algorithmes cryptographiques supportés (Authentication + key
+exchange + cipher + hash).
+Content:
+-
+-
+-
+-
+-
+-
+Protocol Version.
+32 bytes long random number.
+Composed of two parts:
+o 4 bytes Unix time (number of seconds since 01/01/1970)
+o 28 bytes random number
+Optional Session Identifier.
+o Each SSL session has an identifier which can be used later to restart a
+session.
+List of supported Ciphers.
+
+List of supported Compression Methods.
+  \item Server_Hello : réponse du serveur (envoyé en clair sans signature)
+Content:
+-
+-
+-
+-
+-
+Protocol version: highest version of the protocol supported by both client and
+server.
+Random number.
+Optional Session Identifier, if it allows sessions to be resumed.
+Cipher Suite: One of the cipher suites proposed by client.
+Compression Method.
+- 56 -
+
+Server_Certificate : le serveur s'authentifie (un serveur peut avoir plusieurs certificats à partir
+de différentes certification authorities). Le certificat peut aussi être envoyé par le client quand
+l'identification du client est demandée par le serveur avec Certificate_Request.
+Content:
+-
+A list of X.509 certificates:
+o Server certificate.
+o Certificates of certification authorities if any.
+
+
+Server Hello_Done : indique que le serveur a fini la 1ere phase du handshake (envoyé non
+crypté).
+Client_Key_Exchange : utilisé par le client pour envoyé le PreMasterSecret (encrypté avec la
+clé publique du serveur).
+o Utilise des nonce de 32B et un masterSecret de 48B
+Content:
+-
+Encrypted PreMasterSecret with the public key of the server.
+
+
+Change_Cipher_Spec :
+o Utilisé par le client et le serveur pour signaler qu'il vont utiliser une nouvelle clé.
+o Durant le handshake, indique que le prochain message sera encrypté avec la clé
+appropriée.
+Handshake_Finished :
+o Envoyé par le client et le serveur pour confirmer l'établissement d'une session SSL
+sécurisée. (Sécurisée ssi le client et le serveur ont reçu ce message).
+o Permet de détecter les man in the middle attack sur des messages Client_Hello et
+Server_Hello (e.g.: proposer un chiffrement plus faible).
+o Premier message encrypté dans chaque direction.
+Content:
+-
+-
+Keyed hash (MD5 or SHA-1) of all the handshake messages and the
+MasterSecret.
+
+\section{Kerberos}
+1.1 Motivation :
+Parfois plusieurs utilisateurs veulent avoir l'accès à plusieurs serveurs sur un même réseau. Une
+solution pour gérer la sécurité de l'authentification est que chaque serveur retienne les mots de passe
+de chaque utilisateur. Cette approche n'est cependant pas idéale :
+  \item Elle n'est pas sure. Un seul serveur compromis peut compromettre tous les utilisateurs.
+  \item Elle est inefficace. Les mots de passes doivent chaque fois être changés sur tous les serveurs.
+  \item Elle n'est pas pratique. Les mots de passes doivent être entrés pour chaque requête.
+Dès lors, il est plus raisonnable de centraliser les informations. Kerberos permet cela.
+1.2 Kerberos :
+Kerberos est un protocole d'authentification réseau qui repose sur un mécanisme de clés secrètes
+l'utilisation de tickets. Il est basé sur de la cryptographie à clef symétrique. Une fois que
+l'authentification est faire, on peut accéder au réseau sans devoir redonner son mot de passe ou nom
+d'utilisateur.
+1.3 Elements principaux :
+Kerberos utilise tous les éléments suivants :
+  \item Un client C. C'est la personne qui veut se connecter au réseau.
+  \item Un serveur d'authentification AS 1. Ce serveur va fournir au client un premier ticket (TGT 2 ), au
+client qui en fait la demande.
+  \item Un serveur de ticket (TGS 3). Une fois qu'un client présente son ticket à ce serveur, ce dernier
+peut lui donner un autre ticket pour accéder à certaines ressources.
+  \item un serveur S dont le client veut avoir l'accès. Pour avoir l'accès à ce serveur, le client doit avoir
+le ticket correspondant fourni par le TGS.
+Au final, pour qu'un client ait accès au serveur S, il doit avoir son ticket ainsi qu'un authentifiant.
+Le ticket contient les informations suivantes
+  \item Ic, l'identité du client.
+  \item v, la période de validité du ticket.
+  \item Kc,s, la clef symétrique de session à utiliser entre le client et le serveur.
+  \item D'autres trucs comme des flags, l'adresse IP, etc.
+Ce ticket est encryptée avec la clef Ks du serveur. L'authentifiant est juste l'identité du client (Ic) suivi
+d'un timestamp t. Regardons à présent tous les messages échangés pour obtenir ce fameux ticket. Le
+schéma ci dessous reprend l'ensemble des échanges.
+Analysons les séparément.
+1. Authentication server.
+2. Ticket-granting ticket.
+3. Ticket granting server.
+- 58 -
+1.3.1 Echange entre le client et AS:
+Le client doit être authentifié pour pouvoir accéder au TGS. Dès lors, il va en tout premier lieu faire une
+demande d'authentification à AS. Ce dernier va lui renvoyer un TGT encrypté avec la clef du TGS ainsi
+qu'une clef de session encryptée avec la clef de C. Plus particulièrement, on a les messages suivants :
+1. Ic, ITGS,N. Le client envoie à AS son identité, celle du TGS dont il veut faire une requête, ainsi
+qu'un nonce utilisé pour éviter les replay attaques.
+2. {ITGS,N,KC,TGS}KC , {IC, v,KC,TGS}KTGS . Le premier bloc peut être décrypté par le client pour
+qu'il puisse le KC,TGS nécessaire pour la suite du protocole. Le deuxième bloc ne peut être
+décrypté que par le TGS.
+1.3.2 Echange entre le client et TGS:
+Une fois le TGT reçu, le client va envoyer une requête au TGS. Le TGS va alors utiliser la clef de session
+pour vérifier le ticket. Il peut alors voir si le client est autorisé à accéder au serveur S.
+Si oui, il va donner au client un ticket lui accordant ce service. Pratiquement, on a les messages
+suivants
+1. Is,N0, {IC, v,KC,TGS}KTGS , {IC, t}Kc,TGS . On a l'identité du service voulu, un nounce, le TGT
+ainsi que d'autres données encryptées avec la clef KC,TGS entre le client et le TGS et qui
+comprend l'identité du client et un timestamp.
+2. {IS,N0,KC,S}KC,TGS , {IC, v,KC,S}Ks . Le TGS répond un message pouvant être décrypté par le
+client et qui contient une clef de session avec le service S, et un autre message ne pouvant être
+décrypté que par S.
+1.3.3 Echange entre le client et S:
+Finalement, le client va demander l'accès au serveur S à travers les messages suivants
+1. {Ic, v,KC,S}KS , {IC, t}KC,S . Le client envoie son ticket de service ainsi qu'un autre message que
+le serveur ne pourra décrypter que quand il aura obtenu le KC,S. Il pourra alors voir que les
+deux Ic correspondent bien.
+2. {t}KC,S . Le serveur lui renvoie simplement un timestamp que le client peut décrypter.
+Le client peut maintenant accéder au serveur !
+1.4 Commentaires :
+Avec Kerberos, la responsabilité de stocker les tickets revient exclusivement au client. Par
+ailleurs, une fois qu'un client a eu son authentification (il la garde environ 8 heures), il ne doit plus
+contacter AS. Il peut accéder aux autres services même si ce dernier est down. Et il est finalement
+impossible de révoquer le ticket d'un client qui a été authentifié.
+
+\section{PGP}
+Pretty Good Privacy (PGP) est un logiciel de chiffrement et de déchiffrement cryptographique.
+Il garantit la confidentialité et l'authentification pour la communication des données. Il est le plus
+souvent utilisé pour la signature de données, et sa gestion des clefs.
+17.1 Encryption hybride :
+PGP utilise pour encrypter les données à la fois des clefs asymétriques et symétriques, comme
+le montre le schéma suivant.
+Le système est donc hybride. Pour chiffrer un document, PGP utilise une clef symétrique aléatoire (clef
+de session). Ensuite, PGP chiffre la clef de session avec la clef publique du destinataire.
+Cela à d'une part l'avantage d'être rapide, au lieu de crypter l'entièreté du document avec la clef
+publique (fort lent), on ne l'utilise que pour crypter la clef de session qui est nettement plus petite, et
+d'autre part, le problème de distribution des clefs est réglé puisque la symétrique est encryptée. Pour
+l'encryption symétrique beaucoup d'algorithmes peuvent être utilisés (TDES, IDEA, AED, etc.), pour
+l'asymétrique on utilise généralement le RSA ou l'Elgamal qui se base sur le problème du logarithme
+discret.
+17.2 Signature de la clef publique :
+Pour la signature, on utilise généralement l'algorithme DSA ou RSA. L'Elgamal n'est plus
+recommandé du fait qu'une attaque a révélé que les clefs Elgemal n'étaient plus sûre lors qu'elles sont
+utilisées pour l'encryption et pour la signature. De manière générale, il ne faut jamais utiliser la même
+clef pour plusieurs choses.
+17.3 Protection des clefs privées :
+Les clefs privées sont encryptées sur le disque de l'utilisateur avec un algorithme se basant sur
+une passphrase. Quand la clef est nécessaire, l'utilisateur utilise sa passphrase pour déchiffrer sa clef.
+Cependant, pour préserver la sécurité, et respecter le principe du maillon le plus faible, la passphrase
+doit être choisie intelligemment de sorte qu'elle soit aussi solide que les clefs utilisées pour la
+signature ou l'encryption. Le tableau ci dessous reprend une correspondance de taille entre les clefs
+symétriques et asymétriques pour avoir une même solidité.
+- 60 -
+17.4 Validité des clefs publiques :
+Comment être sur qu'une clef qu'on utilise pour chiffrer un message est la clef correcte ? Une
+manière sûre de vérifier cela, est de faire une rencontre IRL, vérifier l'identité de la personne, vérifier
+le hash de la clef, et puis seulement signer la clef. En procédant comme cela, on peut être sûr que
+la clef n'a pas été modifiée par la suite. On peut aussi utiliser des certificats.
+17.5 Distribution des clefs publiques :
+Il y a deux notions importances dans PGP.
+1. La validité : Je sais à qui appartient cette clef.
+2. La confiance : Je sais que cette personne ne signe pas des clefs n'importe comment.
+Quand on signe une clef, on déclare sa validité. Sachant cela, on peut former un graphe dirigé
+où les sommets correspondent aux différentes personnes et où les arêtes A ! B signifient que A a validé
+la clef de B. On met aussi des poids sur les arêtes, 1 si A fait entièrement confiance à B, et 0.5 s'il lui
+fait partiellement confiance. Dès lors, une personne peut considérer les clefs d'autres personnes
+comme valide si d'une part, elle fait totalement confiance à une personne qui a vérifié l'adresses de
+ces autres personnes (A fait confiance à B, et B a validé la clef de C : La clef de C est valide pour A) , ou
+si d'autre part, elle fait moyennement confiance à plusieurs personnes qui ont vérifié la clef (A fait
+moyennement confiance à B et C, mais B et C ont tout deux validé la clef de D : le clef de D est valide
+pour A).
+17.6 Révocation de clef :
+Une manière naïve de procéder est de simplement enlever la clef du serveur. Cependant, il se
+peut que la clef a été dupliquée sur d'autres serveurs, que des personnes l'aient téléchargée, etc.
+On doit donc procéder autrement. On peut créer un certification de révocation de la clef quand on
+génère cette dernière. On l'envoie alors sur le serveur PGP quand on veut révoquer la clef. Pour bien
+faire, il faut aussi l'envoyer aux correspondants réguliers. Par ailleurs, lors de la génération d'une clef,
+on met une limite de validité qui fait que la clef expire après cette date.
+
+\end{document}
