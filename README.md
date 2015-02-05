@@ -148,7 +148,7 @@ Comme exemple, voici le mien
             - prostoch
             - sigsys
             - stat
-            - Telecom
+            - telecom
             - ELEC1370
             - ELEC2870
             - INGI1341
