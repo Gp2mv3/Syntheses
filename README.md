@@ -157,8 +157,10 @@ Comme exemple, voici le mien
             - INMA2380
             - INMA2471
             - MAT2440
-            - distributed-LSINF2345
+            - translator-INGI2132
+            - database-INGI2172
             - secu-INGI2347
+            - distributed-SINF2345
           type:
             - exercises
             - notes
