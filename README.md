@@ -1,9 +1,9 @@
 # Synthèses de l'EPL
 Les documents présents sur ce repository sont des documents
-mis à disposition pour les élèves de l'EPL.
+mis à disposition pour les étudiants de l'EPL.
 
-## Visualisation des Synthèses
-Les `.pdf` des synthèses dans leur dernière version sont disponibles
+## Visualisation des synthèses et correctifs
+Les `.pdf` des synthèses et correctifs dans leur dernière version sont disponibles
 [ici](https://www.dropbox.com/sh/mglnckwio1ug5x0/BgESQh2X2a).
 
 Vous pourriez aussi être intéressés par
@@ -54,32 +54,39 @@ Un `$ make clean` est dans ces cas très utile.
 Supposons que vous vouliez ajouter une synthèse d'`info`
 pour `q2`.
 Commencez par créer un dossier `info` dans le dossier `q2` et
-ajoutez-y le `Makefile` suivant
+ajoutez-y le `info.mk` suivant
 
-    MAIN_NAME=info
-    include ../q2.mk
-Ajoutez ensuite le fichier `info.tex` suivant,
+    COURSE=info
+    include ../../q2.mk
+
+Créer ensuite le dossier `summary`.
+Dedans, créez le fichier `Makefile` suivant
+
+    TYPE=summary
+    include ../info.mk
+
+Ajoutez ensuite le fichier `info-summary.tex` suivant,
 en supposant que vous vous appeliez Jean Dupont, que le cours
 soit `FSAB1402` et qu'il soit donné par John Doe
 
-    \input{../../lib.tex}
+    \documentclass[fr]{../../../eplsummary}
 
     \hypertitle[']{Informatique}{2}{FSAB}{1402}
     {Jean Dupont}
     {John Doe}
 
     \end{document}
-L'argument `[']` doit être enlevé si le nom du cours 
+L'argument `[']` doit être enlevé si le nom du cours
 ne commence pas par une voyelle.
 Le `\begin{document}`, le titre et la table des matières
 sont fait par `\hypertitle`.
 Pas mal de nouvelles commandes sont aussi créées.
-Ouvrez le fichier `lib.tex` pour plus d'information.
+Ouvrez le fichier `eplcommon.sty` pour plus d'information.
 
 Vous pouvez alors ajouter le contenu de votre synthèse entre
 `\hypertitle` et `\end{document}`.
 Vous pouvez aussi ajouter des choses dans le préambule en les
-ajoutant entre `\input` et `\hypertitle`.
+ajoutant entre `\documentclass` et `\hypertitle`.
 
 ### Package nécessaires pour compiler
 Il vous sera parfois nécessaire d'avoir une installation plutôt complète de
@@ -112,40 +119,77 @@ Comme exemple, voici le mien
     input_base: .
     output_base: /home/blegat/Dropbox
     clients:
-      - name: Officiel
+      - name: Official
         arguments: &all_args
-          quadri: [1, 2, 3, 4]
+          quadri: [1, 2, 3, 4, 5, 6, 7, 8]
           cours: &courses
+            - AnalyseQuantitatives
+            - autolin
+            - ca
+            - Calcu2
             - chimie
             - chimieorga
             - eco
             - edo
             - elec
+            - GRH
             - info
             - math
+            - mcp
             - meca
             - methodnum
+            - mmc
             - coo
             - opti
             - os
+            - oz
             - philo
             - physique
+            - prostoch
             - sigsys
+            - stat
+            - telecom
+            - ELEC1370
+            - ELEC2870
+            - INGI1341
+            - concu-LINGI2143
+            - ia-LINGI2261
+            - INMA2380
+            - INMA2471
+            - MAT2440
+            - translator-INGI2132
+            - database-INGI2172
+            - secu-INGI2347
+            - distributed-SINF2345
+          type:
+            - exercises
+            - notes
+            - summary
         input: &input_path
-          path_format: q{0}/{1}/{1}.pdf
+          path_format: q{0}/{1}/{2}/{1}-{2}.pdf
           parameters:
             - arg: quadri
             - arg: cours
+            - arg: type
         output:
           path_format: Synthèses_EPL/q{0}/{1}/{2}
           parameters:
             - arg: quadri
             - arg: cours
-            - &output_file
-              path_format: Synthèse_q{0}_{1}.pdf
+            - path_format: "{0}/{1}"
               parameters:
-              - arg: quadri
-              - arg: cours
+              - arg: type
+              - &output_file
+                path_format: "{0}_q{1}_{2}.pdf"
+                parameters:
+                - mapping:
+                    exercises: APE
+                    notes: CM
+                    summary: Synthèse
+                  key:
+                    arg: type
+                - arg: quadri
+                - arg: cours
       - name: EPL Backup
         arguments: *all_args
         input: *input_path
@@ -153,86 +197,119 @@ Comme exemple, voici le mien
           path_format: EPL-Backup/{0}
           parameters:
             - &EPL_style_output
-              path_format: Q{0}/{1}/{2}
+              path_format: "Q{0}/{1}/{2}"
               parameters:
               - arg: quadri
               - mapping:
+                  autolin: Automatique Linéaire - LINMA1510
                   chimie: CHIMIE
                   chimieorga: CHIMIEORGA
+                  coo: COO
                   eco: ECO
                   edo: EDO
+                  ca: Complément d'Analyse
                   elec: PHYSIQUE
                   info: INFO
                   math: MATH
                   meca: PHYSIQUE
                   methodnum: METHODNUM
-                  coo: COO
+                  mmc: MMC
                   opti: OPTIMISATION
                   os: OS
+                  oz: OZ
                   philo: PHILO
                   physique: PHYSIQUE
+                  prostoch: Processus Stochastiques
                   sigsys: SIGSYS
+                  stat: STAT
+                  INMA2380: TDM
+                  INMA2471: Opti
                 key:
                   arg: cours
-              - &output_end
-                path_format: Synthèses/{0}
+              - path_format: "{0}/{1}"
                 parameters:
+                - mapping:
+                    exercises: APE
+                    notes: CM
+                    summary: Synthèses
+                  key:
+                    arg: type
                 - *output_file
-      - name: EPL q3
-        arguments:
-          quadri: [3]
-          cours: *courses
-        input: *input_path
-        output:
-          path_format: EPL/{0}
-          parameters:
-            - *EPL_style_output
-      - name: EPL q4
-        arguments:
-          quadri: [4]
-          cours: [eco, sigsys]
-        input: *input_path
-        output:
-          path_format: EPL/{0}
-          parameters:
-            - *EPL_style_output
-      - name: UCL_EPL_BAC1
-        arguments:
-          quadri: [1, 2]
-          cours: *courses
-        input: *input_path
-        output:
-          path_format: UCL_EPL_BAC1/{0}
-          parameters:
-            - *EPL_style_output
       - name: MAP
         arguments:
-          quadri: [3, 4]
-          cours: [edo, opti]
+          quadri: &quadri_map
+            [5, 6, 7, 8]
+          cours: &cours_map
+            [prostoch, ca, INMA2380, INMA2471]
+          type: [exercises, notes, summary]
         input: *input_path
         output:
           path_format: MAP/{0}
           parameters:
             - *EPL_style_output
-      - name: INFO
-        arguments:
-          quadri: [3, 4]
-          cours: [coo, os]
-        input: *input_path
-        output:
-          path_format: INFO/{0}
+      - name: Official Exam
+        arguments: &all_args_exam
+          quadri: [3]
+          cours: [math]
+          type: [exam]
+          year: [2011, 2012, 2013]
+          month: [Janvier, Juin, Août]
+          sol: ['', '-Sol']
+        input: &input_path_exam
+          path_format: "q{0}/{1}/{2}/{3}/{4}/{1}-{2}-{3}-{4}{5}.pdf"
           parameters:
-            - *EPL_style_output
-      - name: FYKI
-        arguments:
-          quadri: [3, 4]
-          cours: [chimieorga]
-        input: *input_path
+            - arg: quadri
+            - arg: cours
+            - arg: type
+            - arg: year
+            - arg: month
+            - arg: sol
         output:
-          path_format: FYKI12/{0}/{1}
+          path_format: "Synthèses_EPL/{0}"
           parameters:
-            - mapping:
-                chimieorga: MAPR1230 CHIMIE ORGANIQUE
-              key:
-                arg: cours
-            - *output_end
+            - path_format: "q{0}/{1}/{2}/{3}"
+              parameters:
+                - arg: quadri
+                - arg: cours
+                - arg: type
+                - &output_end_exam
+                  path_format: "{0}_{1}/{3}-{0}-{1}{2}.pdf"
+                  parameters:
+                  - arg: year
+                  - arg: month
+                  - arg: sol
+                  - mapping:
+                      math: FSAB1103
+                    key:
+                      arg: cours
+      - name: EPL Backup Exam
+        arguments: *all_args_exam
+        input: *input_path_exam
+        output:
+          path_format: EPL-Backup/{0}
+          parameters:
+            - &EPL_style_output_exam
+              path_format: "Q{0}/{1}/{2}"
+              parameters:
+                - arg: quadri
+                - mapping:
+                    math: MATH
+                  key:
+                    arg: cours
+                - path_format: "{0}/{1}"
+                  parameters:
+                  - mapping:
+                      exam: Examens
+                    key:
+                      arg: type
+                  - *output_end_exam
+      - name: MAP Exam
+        arguments:
+          quadri: *quadri_map
+          cours: *cours_map
+          type: [exam]
+        input: *input_path_exam
+        output:
+          path_format: MAP/{0}
+          parameters:
+            - *EPL_style_output_exam
