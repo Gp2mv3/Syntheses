@@ -90,8 +90,8 @@ fi
 # errors, argument
 error=false
 
-re='^[1-7]+$'
-if ! [[ $1 =~ $re ]] ||  [ $1 -lt 1 ] || [ $1 -gt 7 ]; then
+re='^[1-8]+$'
+if ! [[ $1 =~ $re ]] ||  [ $1 -lt 1 ] || [ $1 -gt 8 ]; then
     echo "Quadrimestre must be a integer in range 1..7"
     error=true
 fi
