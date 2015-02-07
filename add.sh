@@ -9,7 +9,7 @@
 args=("$@")
 nbr_arg=4
 section=( "summary" "notes" "exam" "exercises" )
-size_titre=10
+size_titre=20
 
 
 #     __                  _   _             
