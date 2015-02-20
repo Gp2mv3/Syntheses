@@ -1,2 +1,2 @@
-COURSE=info
+COURSE=physique
 include ../../q3.mk
