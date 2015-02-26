@@ -1,2 +1,2 @@
 TYPE=summary
-include ../calculabilite-LINGI1123.mk
+include ../calcu-INGI1123.mk
