@@ -1,2 +1,2 @@
 QUADRI=3
-include ../../lib.mk
+include $(BASE_DIR)../../../root.mk
