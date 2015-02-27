@@ -1,2 +1,2 @@
 COURSE=name
-include ../../qquadri.mk
+include $(BASE_DIR)../../qquadri.mk
