@@ -20,7 +20,6 @@
 
 
 \usepackage{ifthen}
-\usepackage[framemethod=tikz]{mdframed}
 \usepackage{tikzpagenodes}
 \usetikzlibrary{calc, arrows}
 
@@ -38,6 +37,6 @@
 \newcommand{\QAlabel}{\IfLanguageName{english}{}{la }Question}
 \newcommand{\theQA}{\thesection}
 
-\RequirePackage{../../../../../eplqa}
+\RequirePackage[eval]{../../../../../eplqa}
 
 \endinput

@@ -8,4 +8,30 @@
 
 \RequirePackage{../../../eplcommon}
 
+\RequirePackage{titlesec}
+\titleformat
+{\section} % command
+[display] % shape
+{\bfseries\Large} % format
+{APE \thesection} % label
+{0.5ex} % sep
+{} % before-code
+
+\newcommand{\skipape}{\stepcounter{section}}
+
+\RequirePackage{titlesec}
+\titleformat
+{\subsection} % command
+[display] % shape
+{\bfseries\Large} % format
+{\IfLanguageName{english}{Exercise}{Exercice} \thesubsection} % label
+{0.5ex} % sep
+{} % before-code
+
+
+\newcommand{\QAlabel}{\IfLanguageName{english}{Exercise}{l'Exercice}}
+\newcommand{\theQA}{\thesection.\thesubsection}
+
+\RequirePackage{../../../eplqa}
+
 \endinput
