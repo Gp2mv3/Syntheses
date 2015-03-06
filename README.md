@@ -158,6 +158,7 @@ Comme exemple, voici le mien
             - INMA2471
             - MAT2440
             - translator-INGI2132
+            - network2-INGI2142
             - database-INGI2172
             - secu-INGI2347
             - distributed-SINF2345
@@ -254,15 +255,17 @@ Comme exemple, voici le mien
           type: [exam]
           year: [2011, 2012, 2013]
           month: [Janvier, Juin, Août]
+          minmaj: [All, Mineure, Majeure]
           sol: ['', '-Sol']
         input: &input_path_exam
-          path_format: "q{0}/{1}/{2}/{3}/{4}/{1}-{2}-{3}-{4}{5}.pdf"
+          path_format: "q{0}/{1}/{2}/{3}/{4}/{5}/{1}-{2}-{3}-{4}-{5}{6}.pdf"
           parameters:
             - arg: quadri
             - arg: cours
             - arg: type
             - arg: year
             - arg: month
+            - arg: minmaj
             - arg: sol
         output:
           path_format: "Synthèses_EPL/{0}"
@@ -273,10 +276,16 @@ Comme exemple, voici le mien
                 - arg: cours
                 - arg: type
                 - &output_end_exam
-                  path_format: "{0}_{1}/{3}-{0}-{1}{2}.pdf"
+                  path_format: "{0}_{1}/{4}-{0}-{1}{2}{3}.pdf"
                   parameters:
                   - arg: year
                   - arg: month
+                  - mapping:
+                      All: ''
+                      Mineure: -Mineure
+                      Majeure: -Majeure
+                    key:
+                      arg: minmaj
                   - arg: sol
                   - mapping:
                       math: FSAB1103

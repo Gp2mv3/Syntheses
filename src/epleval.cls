@@ -5,13 +5,13 @@
 % \LoadClassWithOptions because it ignores \PassOptionsToClass.
 % I need to pass every option manually with the 2 following lines
 % and then use \LoadClass
-\DeclareOption*{\PassOptionsToClass{\CurrentOption}{../../../../../eplbase}}
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{../../../../../../eplbase}}
 \ProcessOptions\relax
-\PassOptionsToClass{skiptoc}{../../../../../eplbase}
+\PassOptionsToClass{skiptoc}{../../../../../../eplbase}
 
 \RequirePackage{ifthen}
 
-\LoadClass{../../../../../eplbase}
+\LoadClass{../../../../../../eplbase}
 
 \newcommand{\hypertitle}[9][e ]{%
 \basehypertitle[#1]{#2}{#3}{#4}{#5}{#8}{#9}{\epltype{} \IfLanguageName{english}{of}{de} #7 #6}}
@@ -23,7 +23,7 @@
 \usepackage{tikzpagenodes}
 \usetikzlibrary{calc, arrows}
 
-\RequirePackage{../../../../../eplcommon}
+\RequirePackage{../../../../../../eplcommon}
 
 \RequirePackage{titlesec}
 \titleformat
@@ -37,6 +37,6 @@
 \newcommand{\QAlabel}{\IfLanguageName{english}{}{la }Question}
 \newcommand{\theQA}{\thesection}
 
-\RequirePackage[eval]{../../../../../eplqa}
+\RequirePackage[eval]{../../../../../../eplqa}
 
 \endinput
