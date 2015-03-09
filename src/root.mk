@@ -8,7 +8,7 @@ PDFVIEWER=xdg-open # Default pdf viewer - GNU/Linux
 #PDFVIEWER=open # Default pdf viewer - Mac OS
 MAIN_NAME=${COURSE}-${TYPE}
 ifeq ($(TYPE),exam)
-  MAIN_NAME=${COURSE}-${TYPE}-${YEAR}-${MONTH}
+  MAIN_NAME=${COURSE}-${TYPE}-${YEAR}-${MONTH}-${MINMAJ}
 else
   MAIN_NAME=${COURSE}-${TYPE}
 endif
@@ -68,8 +68,8 @@ show: $(FULL)
 
 release: all
 ifeq ($(TYPE),exam)
-	cd ../../../../..; smartcp -vvvv -s \
-	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) config.yml
+	cd ../../../../../..; smartcp -vvvv -s \
+	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) config.yml
 else
 	cd ../../..; smartcp -vv -s \
 	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) config.yml

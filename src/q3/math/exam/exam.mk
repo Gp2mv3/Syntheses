@@ -1,3 +1,3 @@
 TYPE=exam
-BASE_DIR=../../
+BASE_DIR=../../../
 include $(BASE_DIR)../math.mk
