@@ -1,0 +1,295 @@
+\documentclass[en]{../../../eplsummary}
+
+\hypertitle{Distributed}{8}{INGI}{2345}
+{Nicolas Houtain \and Gorby Nicolas Ndonda Kabasele}
+{Peter Van Roy}
+$$$$
+
+Attention : This summary is actually based on course note
+
+
+(Need slide to understand)
+
+\section{Parallel and distributed computing}
+\begin{itemize}
+    \item Parallel computing : many node, optimize performance, no
+        failure
+    \item[$\to$] Tightly coupled(low latency/delay and high performance)
+
+    \item Distributed computing : many node in collaboration with
+        \textcolor{red}{partial failure}
+    \item[$\to$] Loosely coupled(high latency and low perfomance)
+\end{itemize}
+
+\section{Consensus}
+
+Atomic broadcast $\equiv$ consensus (proof slide 13)
+
+It's possible to resolve consensus if we have atomic broadcast and vice-versa.
+\begin{enumerate}
+    \item broadcast $\to$ consensus : We take the first proposal as they have an order 
+    \item consensus $\to$ broadcast : The subject of the consensus is the order to take.
+\end{enumerate}
+
+Paxos est ce qui est le plus utilisé pour les consensus (TODO)
+
+\section{Modeling distributed system}
+
+\begin{itemize}
+    \item Asynchronous : There is no bound on the time for a message to arrive and to be computed, it resolve consensus iff 0 node crashes
+    \item Partially synchronous : It start asynchronous and then become
+        synchronous(it get an upper bound, we know it will happen but we
+        don't know when.)
+	  Consensus sit < $\frac{n}{2}$ crashes
+    \item Synchronous : Bound known for delivering and computation of message. Consensus with n-1 crashes
+\end{itemize}
+
+\paragraph{Asynchronous vs Synchronous}
+
+Bound is simulated with a expect bound to be in partially synchronous.
+
+\section{Failure detector}
+Bound exist but we don't know the exact value because this bound can
+change with time (if RTT increase for example)
+
+We need to adapt the bound.
+
+\begin{itemize}
+    \item \textbf{Byzantine faults} : Sending wrong information, omit
+        messages,\ldots
+        \begin{enumerate}
+            \item[$\to$] Byzantine algorithm tolerate $1/3$ faulty node and
+                non-byzantine only $1/2$
+        \end{enumerate}
+    \item \textbf{Self-stabilizing} : It's important to know that system
+        can be in a \textit{legitimate} or an
+        \textit{illegitimate} state.
+
+        It's robust to failure and don't need initialization!
+
+        \begin{enumerate}
+            \item[Need] 
+                \begin{enumerate}
+                    \item Convergence = from any illegitimate state,
+                        system can eventually goes to a legitimate state
+                    \item Closure = if in legitimate state, it remains
+                        in a legitimate state.
+                \end{enumerate}
+        \end{enumerate}
+\end{itemize}
+
+
+\section{Formal models of distributed system}
+
+\subsection{Modeling}
+
+\begin{itemize}
+    \item Continuous model : described by differential equations
+    \item \textbf{Discrete event models} : described by state transition systems
+\end{itemize}
+
+Modeling need to be : Complete, Correct and Concise!
+
+\subsubsection{State transition system}
+$STS \equiv$ a set of states + rule for transition function
++ set of initial states
+
+\begin{enumerate} 
+    \item[$\to$] like finite state machine but no input
+\end{enumerate}
+
+\begin{itemize}
+    \item A \textbf{configuration} is a snapshot of state of all node
+
+        $$ C =(q_0, q_1, q_2,\cdots, q_{n-1}) $$  where $q_i$ is state of node $p_i$.
+\end{itemize}
+
+\paragraph{Property}
+Determinism, I/O and atomicity.
+
+
+
+\subsubsection{Node}
+Can send, receive messages and do local computations.
+
+A state is define by triple $<l, O, s>$ :
+\begin{itemize}
+    \item $l$ : inbuffer set for each neighbor
+    \item $O$ : outbuffer set for each neighbor
+    \item $s$ : local state
+\end{itemize}
+
+\paragraph{Working}
+\begin{enumerate}
+    \item Waite for message
+    \item When receive message, do some computation and send message
+    \item Goto 1.
+\end{enumerate}
+
+\paragraph{Events}
+\begin{itemize}
+    \item comp(i) : computation event at node i. 
+
+        \textit{Apply transition function f on node i state}
+
+    \item del(i, j, m) : delivery event of msg m from i to j
+
+        \textit{Move m from outbuf of $p_i$ to inbuf p $p_j$}
+
+\end{itemize}
+
+\subsubsection{Transition functions}
+%TODO
+
+
+\subsubsection{Execution}
+An execution is a infinite sequencen of ``$config_0, event_1, config_1,
+event_2, config_2,\cdots$''
+
+
+\begin{itemize}
+    \item[If] $event_k = comp(i)$ : $config_{k-1}$ change to $config_k$
+        by applying $p_i$'s transition function on i's state in
+        $config_{k-1}$
+    \item[If] $event_k = del(i, j, m)$ : $config_{k-1}$ change to $config_k$
+        by moving m from i's outbuf to j's inbuf
+\end{itemize}
+
+
+\subsubsection{Property}
+
+\begin{itemize}
+    \item For each comp(i) is associated a \textbf{transition} $(state_1, state_2, i)$
+    \item Transition $(s_1, s_2, j)$ is \textbf{applicable} in
+        configuration c if $j$ is $s_1$ in c
+    \item del(i, j, m) \textbf{application} in configuration c if m is
+        in outbuf for link i-j of node i in c
+
+    \item \begin{enumerate}
+            \item if transition e=($s_1, s_2, i$) is applicable
+            \item or if e=($i, j, m$) is applicable
+        \end{enumerate}
+        to configuration c, then app(e,c) is the new configuration after
+        the event comp(i)
+
+\end{itemize}
+
+
+\subsection{Asynchronous (Schedules) / Synchronous}
+Non-determinism come from asynchrony\ldots
+
+%TODO
+
+
+\subsection{Order of event}
+The order in which two applicable computation events or
+two applicable delivery events are executed is irrelevant!
+
+\subsubsection{Causal order $<_H$}
+Causal order is \textbf{transitive}.
+
+\begin{itemize}
+    \item[$ a <_H b $]
+    \item if a occur befor b on the same process
+    \item if a produce m and b delivers m
+    \item if a deliver m and b consume m
+\end{itemize}
+
+\paragraph{Concurrent}
+a and b are concurrent, $a || b$, if not $a <_H b$ and not $b <_H a$
+
+\subsection{Similarity of execution}
+%TODO
+
+
+
+\subsection{Clock}
+Using to overving locally causality.
+
+\subsubsection{Lamport Clock}
+\begin{itemize}
+    \item Each process has a local logical clock, t initially t=0.
+
+        Node p piggyback (t, p) on every sent message.
+    \item On each event :
+    \begin{enumerate}
+        \item $t = max(t, t_q) + 1$ : when p receives message with
+            timestamp ($t_q, q$) (delivery)
+        \item $t = t+1$ : for every transistion (comp)
+    \end{enumerate}
+
+    \item[$\to$] 
+        \begin{itemize}
+            \item $(t_p, q) < (t_q, q) IFF (t_p <t_q || (t_p = t_q \&\& p <
+        q))$
+\end{itemize}
+\end{itemize}
+
+Lamport logical clock guarantee that if $a <_H b$, then $t(a) < t(b)$
+
+\subsubsection{Vector clock}
+\begin{itemize}
+    \item Each process has a local vector, $v_p$ of size n. Initially
+        $\forall_i v_p[i]=0$
+
+        Node p piggyback $v_p$ on every sent message.
+    \item On each event :
+    \begin{enumerate}
+        \item $v_p[p] = v_p[p] + 1$
+        \item $\forall_i : v_p[i] = max(v_p[i], v_q[i])$
+    \end{enumerate}
+
+\item[$\to$] \begin{itemize}
+        \item $v_p \leq v_q$ iff $\forall_i : v_p[i] \leq v_q[i]$
+        \item $v_p < v_q$ iff $v_p \leq v_q$ and $\exists i : v_p[i] <
+            v_q[i]$
+    \end{itemize}
+\end{itemize}
+
+Vector clock guarantee that if $v(a) < v(b)$ then $a <_H b$ but also if
+$a <_H b$ then $v(a) < v(b)$
+
+
+%TODO
+
+\subsection{Complexity}
+%TODO
+
+\section{Specification and implementation of distributed systems}
+
+\subsection{Event based component model}
+
+
+
+
+\section{Formalisation}
+
+\subsection{Local Vs Global}
+\begin{itemize}
+    \item Local (one node = State)
+        \begin{itemize}
+            \item Atomic
+            \item Deterministic
+        \end{itemize}
+    \item Global (many node = Configuration)
+        \begin{itemize}
+            \item Non-atomic (because piece of code in many node
+            \item Non deterministic (because network and reveiv order message)
+        \end{itemize}
+\end{itemize}
+
+\subsection{Synchronous Vs Asynchronous}
+\begin{itemize}
+    \item Asynchronous
+    \item Synchronous : Use round to synchronous (like clock) and this
+        is use to detect failure
+\end{itemize}
+
+
+
+\begin{thebibliography}{1}
+\bibitem{wikiadmheur} http://en.wikipedia.org/wiki/Admissible\_heuristic, {\em Wikipedia}
+%\bibitem{Propagation} P.G. Fontolliet, {\em Traité d'Electricité}, Volume XVIII, Ecole polytechnique fédéral de Lausanne, pp 72-73
+\end{thebibliography}
+
+\end{document}
