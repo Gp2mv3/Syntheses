@@ -134,7 +134,7 @@ A state is define by triple $<l, O, s>$ :
 
 \paragraph{Events}
 \begin{itemize}
-    \item comp(i) : computation event at node i. 
+    \item comp(i) : computation event at process i. 
 
         \textit{Apply transition function f on node i state}
 
@@ -149,7 +149,7 @@ A state is define by triple $<l, O, s>$ :
 
 
 \subsubsection{Execution}
-An execution is a infinite sequencen of ``$config_0, event_1, config_1,
+An execution is a infinite sequence of ``$config_0, event_1, config_1,
 event_2, config_2,\cdots$''
 
 
@@ -167,66 +167,106 @@ event_2, config_2,\cdots$''
 \begin{itemize}
     \item For each comp(i) is associated a \textbf{transition} $(state_1, state_2, i)$
     \item Transition $(s_1, s_2, j)$ is \textbf{applicable} in
-        configuration c if $j$ is $s_1$ in c
+        configuration c if  accesible state of node $j$ in c is $s_1$ 
     \item del(i, j, m) \textbf{application} in configuration c if m is
         in outbuf for link i-j of node i in c
 
     \item \begin{enumerate}
             \item if transition e=($s_1, s_2, i$) is applicable
-            \item or if e=($i, j, m$) is applicable
+            \item or if e=del($i, j, m$) is applicable
         \end{enumerate}
         to configuration c, then app(e,c) is the new configuration after
-        the event comp(i)
+        the event comp(i) or del($i,j,m$)
 
 \end{itemize}
 
 
 \subsection{Asynchronous (Schedules) / Synchronous}
-Non-determinism come from asynchrony\ldots
+Non-determinism come from asynchrony(messages take arbitrary time to 
+be delivered, and the time to compute varies)\ldots
 
 %TODO
 
 
 \subsection{Order of event}
 The order in which two applicable computation events or
-two applicable delivery events are executed is irrelevant!
+two applicable delivery events are executed is irrelevant!\\
+A schedule is a sequence of events. Given the initail configuration, it 
+determines the whole execution. Since:
+\begin{itemize}
+	\item del($i,j,m$) determines the message asynchrony
+	\item comp($i$) determines the proccess speed.
+\end{itemize}
+The non-determinism is embedded in schedule.
+\subsection{Admissible execution (Fairness)}
+An execution is admissible if:
+\begin{itemize}
+	\item Each process has infinite number of comp(i).
+	\item Every message m sent is eventually del($i,j,m$).
+\end{itemize}
+The infinity property permit messages to wait arbitrary long times before
+being delivered.
+\subsection{Synchronus Systems}
+The execution is partitionned into disjoints rounds.  A round consist of 
+deliver event for all message in outbuf and one compute event on 
+every process.
 
 \subsubsection{Causal order $<_H$}
 Causal order is \textbf{transitive}.
 
 \begin{itemize}
     \item[$ a <_H b $]
-    \item if a occur befor b on the same process
-    \item if a produce m and b delivers m
-    \item if a deliver m and b consume m
+    \item if a occurs befor b on the same process
+    \item if a produces m and b delivers m
+    \item if a delivers m and b consumes m
 \end{itemize}
 
 \paragraph{Concurrent}
 a and b are concurrent, $a || b$, if not $a <_H b$ and not $b <_H a$
 
 \subsection{Similarity of execution}
-%TODO
-
-
-
+\begin{itemize}
+	\item The view of $p_i$ in E, denoted E|$p_i$ is the subsequence 
+	of executions E restricted to events and state $p_i$.
+	\item 2 executions E,F are similar w.r.r if E|$p_i$ = F|$p_i$.
+\end{itemize}
+\paragraph{Computation Theorem}
+\begin{itemize}
+	\item Let E an execution ($c_0,e_1,c_1,e_2,...$) and V the 
+	schedule of event ($e_1,e_2,e_3,..$) s.t app$(e_i,e_{i-1})=c_i$
+	\item Let P be a permutation of V preserving casual order.
+\end{itemize}
+Then E is similar to the execution starting in $c_0$ with schedule P. 
+\subparagraph{Notations}
+similar execution of E,F is noted F~E.
+\begin{description}
+	\item[Computations or Equivalence class:] A class s.t all the elements
+are similar to each other.
+\end{description}
+Computation theorem implies two importants results:
+\begin{enumerate}
+	\item There is no algorithm that can observe the order of the sequence
+	of events for all executions. %TODO ADD PROOF
+	\item Computation theorem does not hold in a model extended s.t each
+	process read an hardware clock.%%TODO ADD PROOF
+\end{enumerate}}
 \subsection{Clock}
-Using to overving locally causality.
+A clock is used to tell locally if two events are causally related.
 
 \subsubsection{Lamport Clock}
 \begin{itemize}
     \item Each process has a local logical clock, t initially t=0.
-
         Node p piggyback (t, p) on every sent message.
     \item On each event :
     \begin{enumerate}
         \item $t = max(t, t_q) + 1$ : when p receives message with
-            timestamp ($t_q, q$) (delivery)
+            timestamp ($t_q, q$) (delivery from q)
         \item $t = t+1$ : for every transistion (comp)
     \end{enumerate}
 
     \item[$\to$] 
         \begin{itemize}
-            \item $(t_p, q) < (t_q, q) IFF (t_p <t_q || (t_p = t_q \&\& p <
+            \item $(t_p, q) < (t_q, q) IFF (t_p <t_q \vee (t_p = t_q \wedge p <
         q))$
 \end{itemize}
 \end{itemize}
@@ -255,11 +295,34 @@ Lamport logical clock guarantee that if $a <_H b$, then $t(a) < t(b)$
 Vector clock guarantee that if $v(a) < v(b)$ then $a <_H b$ but also if
 $a <_H b$ then $v(a) < v(b)$
 
-
-%TODO
+\subparagraph{Precisions}
+Vector clock cannot be done with smaller vector than size n for n nodes
+\begin{itemize}
+	\item The relation $<_H$ is a partial order
+	\item The relation < on Lamport is a total order
+	\item The relation < on vector is a partial order
+\end{itemize}
 
 \subsection{Complexity}
-%TODO
+Defined over the 
+\begin{itemize}
+	\item Number of messages used before terminating
+	\item Time it takes to terminate
+\end{itemize}
+An algorithm has terminated when all states in a config. are terminated
+states and there is no more messages in (in/out)bufs.\\
+\paragraph{Time Complexity}
+A message delay is at most 1 time unit while a computation events take
+0 time units. A \textbf{timed execution} is an exectuition s.t
+\begin{itemize}
+	\item Time is associated with each comp(i) event
+	\item First event happens at time 0
+	\item Time can never decrease and strictly increases locally.
+	\item Max time between comp(i) sending m and comp(j)
+	consuming m is 1 time unit.
+\end{itemize}
+Time complexity is maximum time until termination for all 
+admissible timed executions.
 
 \section{Specification and implementation of distributed systems}
 
