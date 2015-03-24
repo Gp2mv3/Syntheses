@@ -119,6 +119,12 @@ A state is define by triple $<l, O, s>$ :
     \item $s$ : local state
 \end{itemize}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=10cm]{img/node.png}
+    \caption{Example states}
+\end{figure}
+
 \paragraph{Working}
 \begin{enumerate}
     \item Waite for message
@@ -258,7 +264,216 @@ $a <_H b$ then $v(a) < v(b)$
 \section{Specification and implementation of distributed systems}
 
 \subsection{Event based component model}
+There is different model :
+\begin{enumerate}
+    \item Receive 1 msg and send 1msg
+    \item At most receive 1 msg and send at most 1 msg to each neighbor
+    \item Receive k msg and send at most 1 msg to each neighbor
+\end{enumerate}
 
+
+\paragraph{ }
+Each program consists of a set of \textbf{modules or component
+specifications}
+
+\subsubsection{Event}
+\begin{itemize}
+    \item upon event $<RequestEvent, attr_1, attr_2,\cdots>$ do
+            // local computation
+            trigger $<ResponseEvent, attr_3, attr_4,\cdots>$
+\end{itemize}
+
+
+There is three man type of event : \textbf{request, indications,
+confirmation}
+
+
+\subsubsection{Modules}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=10cm]{img/module.png}
+    \caption{Modules scheme}
+\end{figure}
+
+\begin{itemize}
+    \item receive instruction :  upon event $<delBcaast | src, [data_1,
+        data_2,\cdots] >$ do
+    \item send instruction :
+        trigger $<sendBcast | dest, [data_1, data_2,\cdots]>$
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=10cm]{img/ex_broadcast.png}
+    \caption{Example application uses a broadcast}
+\end{figure}
+
+
+\subsection{Specification of a service}
+
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/ex_inter1.png} & 
+        \includegraphics[width=8cm]{img/ex_inter1.png} \\
+        \includegraphics[width=8cm]{img/ex_inter1.png} & 
+        \includegraphics[width=8cm]{img/ex_inter1.png} 
+    \end{tabular}
+    \caption{Interface example}
+\end{figure}
+
+
+\subsection{Property}
+
+A property P is a function that takes an execution and returns
+true/false. (\textit{P is a predicate})
+
+\begin{center}
+    \textit{“Any [property] can be expressed as the
+conjunction of a safety property and a
+liveness property”}
+\end{center}
+
+\begin{itemize}
+    \item \textbf{Prefix} of a execution E is the first k (for
+        some k>0) configurations and events of E
+    \item \textbf{Extension} of a prefix P is any execution
+        that has P as a prefix
+
+    \item \textbf{Safety} : Properties that state that something bad \textcolor{red}{never}
+        happens
+
+        \begin{figure}[!h]
+            \centering
+            \includegraphics[width=6cm]{img/safety.png}
+            \caption{Safety is false if}
+        \end{figure}
+
+        \begin{itemize}
+            \item[Note:] safety can only be satisfied in infinite time and violated in
+                finite time
+        \end{itemize}
+
+    \item \textbf{Liveness} : Properties that state that something good
+        \textcolor{red}{eventually} happens
+
+
+        \begin{figure}[!h]
+            \centering
+            \includegraphics[width=6cm]{img/liveness.png}
+            \caption{Liveness is true if}
+        \end{figure}
+
+
+        \begin{itemize}
+            \item[Note:] liveness can only be satisfied in finite time and violated in
+                infinite time
+        \end{itemize}
+\end{itemize}
+
+
+\subsection{Failure}
+
+\subsubsection{Node}
+
+Nodes that don’t fail in an execution are
+correct. There is different fail :
+
+\begin{itemize}
+    \item \textbf{Crash-stop} : stops taking steps, stops sending/receiving msg
+
+        \begin{itemize}
+            \item[$\to$] Cannot recover this failure
+        \end{itemize}
+
+    \item \textbf{Omissions} : send (resp. receive) ommission. Formally, an
+        event removing element from outbuf[i] (resp. inbuf[i])
+
+    \item \textbf{Crash-recovery} : stops taking steps but receiving and
+        sending msg.
+
+        \begin{itemize}
+            \item[$\to$] We can recover after crashing with special $<Recovery>$ event
+                autmatically generated.
+
+                In practice, restarting in initial recovery state or on
+                the save state if we make some (expensive) storage on
+                permanent storage device.
+        \end{itemize}
+
+        A node is faulty in an execution if it crashes and never
+        recovers or crashes/recovers infinitely.
+
+        A correct node may crash and recover.
+
+    \item \textbf{Byzantine} : sending messages/updating its state
+        not specified by its algorithm.
+
+        \textit{may behave maliciously, attacking the system}
+
+\end{itemize}
+
+\begin{figure}[h]
+    \begin{tabular}{m{8cm}m{7cm}}
+        \includegraphics[width=8cm]{img/fault-tolerance.png}
+        &
+        \begin{itemize}
+            \item If node use stable storage : crash-recovery = omission
+            \item If node use volatile storage : crash-recovery extend omission
+                with amnesia
+        \end{itemize}
+    \end{tabular}
+
+    \caption{Fault tolerance}
+\end{figure}
+
+\subsubsection{Channel}
+
+\begin{itemize}
+    \item \textbf{Fair-loss links} : Channel delivers any message sent
+        with non-zero probability
+
+        \begin{figure}[h]
+            \centering
+            \includegraphics[width=6cm]{img/fairloss.png}
+            \caption{Fair-loss links interface}
+        \end{figure}
+
+        \begin{enumerate}
+            \item FL1. \textbf{Fair-loss} : If m is sent infinitely often by p i
+            to p j , and neither crash, then m is delivered infinitely
+            often by p
+            \item FL2. \textbf{Finite duplication} : If a m is sent a finite
+            number of times by p i to p j , then it is delivered a
+            finite number of times by p j
+        \item FL3. \textbf{No creation} : No message is delivered unless it
+            was sent
+    \end{enumerate}
+
+    \item \textbf{Stubborn links} : Channel delivers any message sent
+        infinitely many times
+
+        \begin{figure}[h]
+            \centering
+            \includegraphics[width=6cm]{img/subborn.png}
+            \caption{Stubborn links interface}
+        \end{figure}
+
+        \begin{enumerate}
+            \item SL1. \textbf{Stubborn delivery} : if a node p i sends a
+                message m to a correct node p j , and p i does not
+                crash, then p j delivers m an infinite number of
+                times
+
+            \item SL2. \textbf{No creation} : if a message m is delivered by
+                some node p j , then m was previously sent by
+                some node p i
+        \end{enumerate}
+
+    \item \textbf{Perfect links} : Channel that delivers any message
+        sent exactly once
+
+\end{itemize}
 
 
 
