@@ -1,7 +1,7 @@
 \documentclass[en]{../../../eplnotes}
 
 \hypertitle{network2-INGI2142}{8}{INGI}{2142}
-{Houtain Nicolas}
+{Houtain Nicolas, Gorby Nicolase Kabasele Ndondas}
 {Olivier Bonaventure}
 $$$$
 
@@ -94,8 +94,11 @@ service.})
     \item \begin{itemize}
         \item Realtime : Have more strict requirement on QoS and usually
             employ adaptive techniques to cope with network transients.
+            (Need short delay)
         \item Streaming : Can delay their payback point with the maximun
             delay of the network.
+            (Need bandwidth to be efficient and minimun bandwidth to
+            work)
     \end{itemize}
 
     \item \begin{itemize}
@@ -104,6 +107,12 @@ service.})
     \end{itemize}
 \end{enumerate}
 
+Notes to put :
+
+Main requirement : delay, bandwidth and packet losses.
+
+Check source/destination with MAC adresses and application
+classification by port (80/443 for HTTP and HTTPS)
 
 \subsection{QoS requirements}
 
@@ -112,7 +121,7 @@ service.})
 \begin{itemize}
     \item Throughput : effective number of data units trans-
         ported per unit time (e.g., bits/second).
-        $\to$ A rate ($r$) and burst size ($b$).
+        $\to$ A rate ($r$) and burst size ($b$). (See token bucket)
     \item Delay : between departure to the arrival.
         $\to$ A maximum delay bound ($D_{max}$)
     \item Jitter : delay variation.
@@ -161,6 +170,8 @@ with higher IP precedence bits have a lower probability of
 being dropped than packets with lower precedence.
 $\to$ WRED can make differentiated drop probabilities.
 
+\paragraph{Note:} IP precedence = 
+
 \subsubsection{Policing}
 
 The token buckets are the most common mechanisms used for policing
@@ -174,6 +185,9 @@ before it can be transmitted into the network.
 \textbf{in-profile} if bit rate $\leq r$ and burst size $\leq b$,
 \textbf{out-of-profile} else.
 
+\subsubsection{Shaping}
+%TODO
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=8cm]{img/QoS_building-blocks.png}
@@ -183,5 +197,228 @@ before it can be transmitted into the network.
 \subsection{ATM}
 
 
+\subsection{IP precedence and ToS}
+
+
+\subsection{IntServ and RSVP}
+
+\subsubsection{IntServ Model}
+IntServ was designed to provide QoS to individual flows
+(or an individual session in case of multicast applications).
+
+IntServ provisions virtual paths for each flow and sets up
+the required resources on these virtual paths. 
+
+However,
+routing is not affected by these virtual paths, and they follow
+the default routing paths provided by the Internet routing
+protocols.
+
+$\to$ It's done by using RSVP.
+
+
+\paragraph{Warning} Routing is not affected by these virtual path
+because the reservation follows the entire route of the data packet.
+\textbf{If route change, reservation is redone} (because of soft-state).
+
+
+\subsubsection{Services classes}
+
+IntServ services classes :
+\begin{itemize}
+    \item[-] Basic best-effort
+    \item[+] Guaranteed Service (GS) : Used by applications that 
+    requires strict bounds on the e2e delay. It use a token bucket
+    proffile$(r,b)$ where
+    \begin{itemize}
+    	\item Minimun sending rate ($r$) 
+    	\item Minimun burst size of the traffic ($b$)
+    \end{itemize}
+    Routers allocate a forwarding rate of R for each session with
+    a request if rate < R.
+    \item[+] Controlled load (CL) : Experience small queueing delays,
+    low loss and overall performance as if the network is not loaded.
+
+\end{itemize}
+
+
+\subsubsection{Reservation with RSVP}
+\begin{enumerate}
+    \item Sender sending \textbf{PATH message} (each 30sec) that carries :
+        \begin{itemize}
+            \item Tspec : Traffic specification object that describes
+                the traffic profile. 
+
+                rate ($r$), bucket ($b$), peak rate ($p$), minimum unit
+                ($m$) and max packet size ($M$).
+
+            \item ADspec : Advertisement specification object wich
+                compute the accumulated QoS parameters along the e2e
+                path.
+
+            \item Phop : It's the path to join the receiver. The
+                receiver juste send by the reverse path.
+
+                \begin{itemize}
+                    \item[Note:] There is a flowtable on each router to
+                        know the ``reverse'' path
+                \end{itemize}
+            
+        \end{itemize}
+
+    \item Receiver replies back with \textbf{RESV message} that carries :
+        \begin{itemize}
+            \item Rspec : Reservation specification
+        \end{itemize}
+
+    \item[Accepted] : if accepted by all routers along the path.
+
+        $\to$ Setut actual reservation and filters ont these router
+
+    \item[Error] : corresponding router send PATHerr or RESVerr
+
+    \item[End] : PATHtear and RESVtear message are sent to remove
+        reservation states
+\end{enumerate}
+
+
+\paragraph{Filter}
+\begin{itemize}
+    \item Fixed filter :
+    \item Shared filter :
+    \item Wildcard filter :
+\end{itemize}
+
+\subsubsection{Evalutation of the IntServ model}
+
+
+\subsection{Differentiated services}
+
+\subsubsection{Background}
+
+
+Packet are market on the edge router because their is lower bandwith
+than on the ``center'' network. (= put the computation on the edge)
+
+\subsubsection{IETF DiffServ Architecture}
+
+\begin{itemize}
+    \item Class selector : Using scheduling because classe selector need
+        a short delay point of view
+
+        \begin{itemize}
+            \item[Implementation]: Scheduling
+        \end{itemize}
+
+    \item Expedited forwarding : provide low delay, low loss, low jitter
+        service.
+        
+        \textit{Backbone :} Priority queue with a token buket on the higher priority queue
+        to avoid starvation on the lower priority queue
+
+        \textit{Edge :} Need also policing or shaping
+
+        \begin{itemize}
+            \item[Implementation]: WRR with $R_{EF}$ on EF queue and
+                $R-R_{EF}$ on the other.
+
+                Second solution is a WRR with $R-R_{EF}$ on EF queue and
+                $R_{EF}$ on the other BUT with a Token Buket on the EF
+                queue. This solution have the same rate but their is a
+                lower delay to forward packet.
+        \end{itemize}
+
+    \item Assured forwarding : 
+
+        \begin{itemize}
+            \item[Implementation]: With WRR
+        \end{itemize}
+
+\end{itemize}
+
+
+
+
+
+
+\section{Multiprotocol Label Switching}
+
+
+\begin{itemize}
+    \item Label switching router : 
+        that are capable of switching and routing packets on the basis
+        of a label which has been appended to each packet
+
+    \item Forwarding equivalence class : 
+        Set of packet for wich we have the same forwarding traitement
+
+    \item Label switched path : unidirectional
+
+\end{itemize}
+
+MPLS hearder + field ?
+
+\begin{itemize}
+    \item Label value : 
+    \item Exp : like DSCP
+    \item S : To define the last element of the stack of label
+    \item TTL : Time to live in hop
+\end{itemize}
+
+With the S bit, there is no limite to how many label attached to a
+packet.
+
+MPLS is only IN the network, not on the host! (ingress node add MPLS,
+egress edgre remove MPLS)
+
+\subsubsection{Size label forwarding table}
+Two possibly table :
+\begin{enumerate}
+    \item 20 inlabel, 3 inport, 4 outport, operation 
+
+        We can make a differenciation with same label on differente
+        port.
+    \item[OR]
+    \item 20 inlabel, 3 outport, operation
+
+        Lower informaiton keep in memory.
+\end{enumerate}
+
+
+
+\subsubsection{Unique labels}
+
+\begin{enumerate}
+    \item Globally :
+        \begin{itemize}
+            \item 1 label = 1 path
+            \item 1 label = 1 router
+            \item 1 stack = 1 path
+        \end{itemize}
+
+        Drawback : all router need to know the label, minimun size of
+        LFT
+        Avantage : ?
+
+        Actually, no use, but can change with ``SEGMENT ROUTING''
+
+    \item Locally :
+        \begin{itemize}
+            \item 
+        \end{itemize}
+
+        Drawback : need to
+        Label must be associated on router by DOWNSTREAM
+
+        Avantage : different size for LTF, 
+\end{enumerate}
+
+\subsubsection{Forwarding equivalende classes}
+\begin{enumerate}
+    \item For example for voice traffic
+    \item ?
+\end{enumerate}
+
 
 \end{document}
+

@@ -57,7 +57,7 @@
 \RequirePackage{multicol}
 
 \RequirePackage{tikz}
-\usetikzlibrary{positioning}
+\usetikzlibrary{positioning, calc}
 
 \RequirePackage{pdfpages}
 %\usepackage{subfig}

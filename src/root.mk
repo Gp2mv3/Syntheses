@@ -24,6 +24,14 @@ else
   FULL=${MAIN_NAME}.pdf
 endif
 
+ifdef SOL
+ifeq ($(SOL),only)
+  SETSOL=-s sol=-Sol
+else
+  SETSOL=-s sol=
+endif
+endif
+
 # You want latexmk to *always* run, because make does not have all the info.
 .PHONY: $(ALL)
 
@@ -69,7 +77,7 @@ show: $(FULL)
 release: all
 ifeq ($(TYPE),exam)
 	cd ../../../../../..; smartcp -vvvv -s \
-	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) config.yml
+	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) $(SETSOL) config.yml
 else
 	cd ../../..; smartcp -vv -s \
 	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) config.yml

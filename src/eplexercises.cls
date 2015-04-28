@@ -30,7 +30,9 @@
 
 
 \newcommand{\QAlabel}{\IfLanguageName{english}{Exercise}{l'Exercice}}
-\newcommand{\theQA}{\thesection.\thesubsection}
+\newcommand{\theQA}{\thesubsection}
+
+\def\Sol{true}
 
 \RequirePackage{../../../eplqa}
 

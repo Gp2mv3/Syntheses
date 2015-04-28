@@ -1,2 +1,2 @@
 COURSE=info
-include ../../q3.mk
+include $(BASE_DIR)../../q3.mk
