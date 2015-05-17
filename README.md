@@ -7,9 +7,7 @@ Les `.pdf` des synthèses et correctifs dans leur dernière version sont disponi
 [ici](https://www.dropbox.com/sh/mglnckwio1ug5x0/BgESQh2X2a).
 
 Vous pourriez aussi être intéressés par
-[EPL-Backup](https://www.dropbox.com/sh/5a1dfg8e17bbgkw/bgVWq1icjf)
-et
-[EPL-Heavy](https://www.dropbox.com/sh/tn2r9y2m4d4o03m/AzfvTnqwv5).
+[EPL-Backup](https://www.dropbox.com/sh/5a1dfg8e17bbgkw/bgVWq1icjf).
 
 ## Documentation
 Ce README donne quelques premières indications
