@@ -3,6 +3,9 @@
 \usepackage{multicol}
 \usepackage{pgfplots}
 
+\DeclareMathOperator{\Lin}{Lin}
+\DeclareMathOperator{\inte}{int}
+
 \hypertitle{Nonlinear programming}{8}{INMA}{2460}
 {Benoît Legat}
 {Yurii Nesterov}
@@ -359,6 +362,159 @@ With $A = f''(x)$ we have the classical approximation corresponding to the secon
 This is the Gradient method.
 Actually as we have seen we are also sure to have a relaxation sequence if $\frac{1}{L} < h < \frac{2}{L}$ but it is no more an upper approximation.
 
+The variable metric methods consist in using different matrices $A$ at each iteration.
+Those matrices are built only from the zero and first order oracle, not from the Hessian.
+Let $H_k = A_k^{-1}$.
+We do the iteration
+\[ x_{k+1} = x_k - h_kH_kf'(x_k) \]
+where $h_k$ is chosen the same way as with the gradient method (e.g. Goldstein-Armijo).
+
+$H_{k+1}$ is computed using $H_k$, $f(x_k),f(x_{k+1})$ and $f'(x_k),f'(x_{k+1})$.
+In the quadratic case, $f(x) = \alpha + \langle a, x \rangle + \langle Ax, x \rangle/2$, $f'(x) = Ax + a$ so
+$f'(x_{k+1}) - f'(x_k) = A(x_{k+1}-x_k)$.
+From this we have the \emph{quasi-Newton rule}:
+\[ H_{k+1}(f'(x_{k+1}-f'(x_k)) = x_{k+1} - x_k. \]
+
+There are several example of variable metric schemes, see \cite[Example~1.2.3]{nesterov1998introductory}.
+BFGS is considered as the most stable scheme.
+
+For quadratic functions, the variable metric usually terminates in $n$ iterations.
+For general functions,
+in the neighborhood of a strict minimum they have a \emph{superlinear} rate of convergence:
+For $x_0 \in \Rn$,  there exists $N$ such that for all $k \geq N$ we have
+\[ \|x_{k+1} - x^*\| \leq \constant \cdot \|x_k - x^*\| \cdot \|x_{k-n} - x^*\|. \]
+but in theory they do not have better global convergence than the gradient method.
+
+\subsubsection{Conjugate gradient method}
+The idea of the conjugate gradient is to base the scheme on the quadratic function
+\begin{align*}
+  f(x)
+  & = \alpha + \langle a, x \rangle + \frac{1}{2} \langle Ax, x \rangle\\
+  & = \alpha - \frac{1}{2} \langle Ax^*, x^* \rangle + \frac{1}{2} \langle A(x-x^*), x-x^* \rangle\\
+  & = \alpha - \frac{1}{2} \langle Ax^*, x^* \rangle + \frac{1}{2} \|x-x^*\|_A
+\end{align*}
+We see that $f'(x) = A(x-x^*)$.
+
+We define the sequence $\{x_k\}_{k = 1, 2, \ldots}$ (ideallic for now) as follows
+\[ x_k \eqdef \argmin \{f(x) | x \in x_0 + \mathcal{L}_k\} \]
+where
+\[ \mathcal{L}_k = \Lin \{A(x_0-x^*), \ldots, A^k(x_0-x^*)\}. \]
+
+We can see that for any $k \geq 1$, $\mathcal{L}_k = \Lin\{f'(x_0), \cdot, f'(x_{k-1})\}$~\cite[Lemma~1.3.1]{nesterov1998introductory}.
+
+Removing the constant terms of $f(x)$, we see that
+\[ x_k = \argmin \{\|x-x^*\|_A | x \in x_0 + \mathcal{L}_k\}. \]
+We now see that $(x_k-x^*)$ is $A$-orthogonal to $\mathcal{L}_k$%
+\footnote{otherwise, if $y \in \mathcal{L}_k$ is not orthogonal, let $z = \pm y$ so that the scalar product is positive,
+$\|x_k-x^*\|_A = \|x_k-z-x^*\|_A+\|z\|_A+2\langle x_k-z-x^*,z \rangle_A = \|x_k-z-x^*\|_A+2\langle x_k-x^*,z \rangle_A > \|x_k-z-x^*\|_A$}.
+In particular, for $i < k$,
+\[ \langle f'(x_k), f'(x_i) \rangle = \langle A(x_k-x^*), f'(x_i) \rangle = \langle (x_k-x^*), f'(x_i) \rangle_A = 0. \]
+We see that the gradients are conjugate.
+A simple consequence of this is that $\mathbb{L}^n = \Rn$ so after $n$ steps, $x_n = \argmin\{ f(x) | x \in \Rn\} = x^*$.
+
+Since $x_k$ minimize $\|x_k-x^*\|_A$, $x_k$ is the $A$-projection of $x^*$ in $\mathcal{L}_k$.
+Therefore $x_{k+1}-x_k = (x_{k+1}-x^*) - (x_k-x^*)$ is the $A$-projection of $x^*$ in $\mathcal{L}_{k+1}$ from which we remove the
+$A$-projection of $x^*$ in $\mathcal{L}_k$.
+$x_{k+1}-x_k$ is therefore $A$-orthogonal to $\mathcal{L}_k$.
+
+Let $\delta_k = x_{k+1}-x_k$.
+Since $\Lin\{\delta_0, \ldots, \delta_{k-1}\} = \mathcal{L}_k$,
+We see that the steps $\delta_k$ are $A$-conjugate.
+
+We will see now that $\delta_k$ is only a linear combination of $f'(x_k)$ and $\delta_{k-1}$.
+At first we can only say that there is $h_k, \lambda_0, \ldots, \lambda_{k-1}$ such that
+\[ \delta_k = -h_kf'(x_k) + \sum_{j=0}^{k-1} \lambda_j \delta_j \]
+but since the $\delta_k$ are $A$-conjugate and the gradients are conjugate,
+\begin{align*}
+  \langle \delta_i, \delta_k \rangle_A
+  & = -h_k \langle A(x_{i+1} - x_i),f'(x_k) \rangle + \sum_{j=0}^{k-1} \lambda_j \langle \delta_i, \delta_j \rangle_A\\
+  0 & = -h_k \langle f'(x_{i+1}-f'(x_i), f'(x_k) \rangle_A + \lambda_i \|\delta_i\|_A\\
+\end{align*}
+If $i < k-1$, we see that $\lambda_i = 0$ but for $i = k-1$, it gives the value of $\lambda_i$ so we have
+\[ x_{k+1} = x_k - h_k\left(f'(x_k) - \frac{\|f'(x_k)\|^2}{\|\delta_{k-1}\|_A} \delta_{k-1}\right). \]
+Using the properties we have seen we can rewrite this as
+\[ x_{k+1} = x_k - h_kp_k \] % TODO check +- because nesterov do not say h_k > 0 but I give the right h_k
+where
+\[ p_k = f'(x_k) - \beta_k p_{k-1}. \]
+where $\beta_k$ can be expressed as
+\begin{description}
+  \item[] $\|f'(x_{k})\|^2/\langle f'(x_{k}-f'(x_{-1}k),p_{k-1} \rangle$
+  \item[Fletcher-Rieves] $-\|f'(x_{k})\|^2/\|f'(x_{k-1})\|^2$
+  \item[Polak-Ribbière] $-\langle f'(x_{k}), f'(x_{k})-f'(x_{k-1}) \rangle/\|f'(x_{k-1})\|^2$
+\end{description}
+which are different expression of the same value in the quadratic case.
+In the quadratic case, we have
+\[ h_k = \frac{\|f'(x_k\|}{\|p_k\|_A}. \]
+
+When $f$ is not quadratic, the three expressions for $\beta_k$ do not give the same results and $h_k$
+is rather computed with a line search as with the gradient method.
+The method do not necessarily terminates in $n$ steps but after $n$ iterations we need to restart
+which consists in setting $\beta_k = 0$.
+After $n$ steps, we can ensure that
+\[ \|x_{n+1}-x^*\| \leq \constant \cdot \|x_0-x^*\|^2 \]
+if $x_0$ is close enought to $x^*$.
+This is slower than the variable metric but the iterations are cheaper.
+As far as the global convergence is concerned it is still not better than the gradient method.
+
+For a quadratic function $f$, we can compute the optimal $h_k$
+
+For complementary information about the Conjugate gradient method, we refer the reader to \cite{shewchuk1994introduction} or \cite[\S2.3]{vandooren2011inma1170}.
+
+\subsection{Constrained minimization}
+Let us now see what we can do in constrained minimization
+\begin{align*}
+  \min_x f_0(x)\\
+  f_i(x) & \leq 0
+\end{align*}
+
+Intuitively, a constrained problem is harder than an unconstrained problem so we won't try to find a faster scheme for constrained problem
+and we will rely on the scheme we already have.
+However, we will see in the next chapters that this is not always harder.
+
+Two methods can be used to transform the problem to a sequence of unconstrained minimization problems.
+\begin{multicols}{2}
+  \subsubsection{Penalty Function Method}
+  \begin{mydef}
+    A \emph{penalty function} for a closed set $Q$ is a continuous function $\Phi(x)$ such that $\Phi(x) = 0$ for $x \in Q$ and
+    $\Phi(x) > 0$ for $x \notin Q$.
+  \end{mydef}
+  If $\Phi_1(x)$ is a penalty function for $Q_1$ and $\Phi_2(x)$ is a penalty function for $Q_2$ then
+  $\Phi_1(x) + \Phi_2(x)$ is a penalty function for the intersection $Q_1 \cap Q_2$.
+
+  We choose $x_0 \in \Rn$ and a sequence of penalty coefficients $0 < t_k < t_{k+1}$, $t_k \to \infty$.
+  And at the iteration $k$ we search for $x_{k+1} = \argmin_{x \in \Rn} \Psi_k(x) = f_0(x) + t_k \Phi(x)$ using $x_k$ as starting point.
+
+  Let us assume that $x_{k+1}$ is a global minimum of $\Psi_k$.
+  If there exists $\bar{t} > 0$ such that the set $S = \{x \in \Rn | f_0(x) + \bar{t}\Psi(x) \leq f^*\}$ is bounded,
+  then
+  \begin{align*}
+    \lim_{k \to \infty} f_0(x_k) & = f_0^*\\ % TODO there wer no _0 in the book
+    \lim_{k \to \infty} \Psi(x_k) & = 0.
+  \end{align*}
+
+  \subsubsection{Barrier Function Method}
+  \begin{mydef}
+    A \emph{barrier function} for a closed set $Q$ with nonempty interior is a continuous function $F(x)$ such that
+    $F(x) \to \infty$ when $x$ approaches the boundary of the set $Q$.
+  \end{mydef}
+  If $F_1(x)$ is a penalty function for $Q_1$ and $F_2(x)$ is a penalty function for $Q_2$ then
+  $F_1(x) + F_2(x)$ is a penalty function for the intersection $Q_1 \cap Q_2$.
+
+  Since $Q$ must have a nonempty interior we mush satisfy the \emph{Slater condition}:
+  $\exists \bar{x}$ such that $f_i(\bar{x}) < 0$ for all $i$.
+
+  We choose $x_0 \in \inte Q$ and a sequence of penalty coefficients $0 < t_k < t_{k+1}$, $t_k \to \infty$.
+  And at the iteration $k$ we search for $x_{k+1} = \argmin_{x \in \Rn} \Psi_k(x) = f_0(x) + t_k^{-1} F(x)$ using $x_k$ as starting point.
+
+  Let us assume that $x_{k+1}$ is a global minimum of $\Psi_k$.
+  If the barrier $F(x)$ is below bounded then
+  \[ \lim_{k \to \infty} \min_{x \in Q} \Psi_k(x) = f^*. \]
+\end{multicols}
+
+There are still many questions that needs to be answered but in the framework on nonlinear programming,
+we cannot answer them.
+
+These questions are answered in smaller classes of problem such as convex optimization.
 
 \section{Smooth Convex Programming}
 \section{Nonsmooth Convex Programming}
