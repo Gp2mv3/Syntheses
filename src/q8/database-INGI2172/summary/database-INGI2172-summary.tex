@@ -527,14 +527,87 @@ handles SQL escaping automatically)
 \section{Transactions}
 Toutes les transactions doivent être ACID pour être relationnelles. ACID:
 \begin{itemize}
-    \item \textbf{Atomic}: toute la transaction se fait en une fois: si ça plante,
-        ça revient à l'état d'avant
-    \item \textbf{Concistant}: toutes les contraintes sont vérifiées
-    \item \textbf{Isolated}: il vaut pouvoir gérer les concurrences
-    \item \textbf{Durability}: une fois que la transaction est fini, l'état est
-        changé et il est durable...
+    \item \textbf{Atomic}: The whole process is done or none is.
+    \item \textbf{Concistant}: Database constraints are preserved.
+    \item \textbf{Isolated}: Appear to the user as if only one process executes at a time.
+        (Need to manage with concurrence)
+    \item \textbf{Durability}: Effect of a process do not get lost\ldots 
+        Modifications are permanent.
 
 \end{itemize}
+
+There is Read-only and Read-write access for a transaction\ldots Indeed, using 
+this may improve performance in practice.
+
+\paragraph{ } Use COMMIT to complete the transaction or ROLLBACK to abord
+the transaction.
+
+
+\subsection{Isolation levels}
+\begin{tabular}{|l|c|c|c|}
+    Level & Dirty read & Nonrep. read & Phantom read \\
+    \hline
+    Serializable (safest) & x & x & x \\
+    Repeatable read & x & x & v \\
+    Read committed & x & v & v \\
+    Read uncommitted (unsafest) & v & v & v \\
+    \hline
+\end{tabular}
+
+Serializable is the most safe solution because the observable 
+result is the same as if T1 and T2 were serial\ldots but it's not 
+the most efficient solution.
+
+\begin{itemize}
+    \item Dirty read : Read of data written by a concurren uncommited transaction.
+    \item Nonrepeatable read : re-read data and find it has been updated by
+        another transaction that committed since the initial read.
+    \item Phtantom read : re-read and sees new inserted/deleted record by
+        another transaction that commited since the initial read.
+\end{itemize}
+
+\section{Recovery}
+
+There is different failure like a system failures, a transaction failures and media
+failures but we need to ensure \textbf{atomicity} (reverte all transaction updates), 
+\textbf{consistency} (roolback from a inconsistent state) and \textbf{durability}.
+
+
+\subsection{Transaction log}
+
+The key problem is the unfinished transaction ! The solution
+is to use a transaction log and on failure recovery, unfinished transaction
+have start.
+
+Three solution to make the transaction log :
+\begin{itemize}
+    \item Undo logging (immediate changes) :
+    \item[Drawback] : Cannot commit transaction without lots of I/O and
+        cannot use the log to bring backup database copies up to date.
+    \item[]
+    \item Redo logging (deferred changes) :
+    \item[Drawback] : Need to kleep all modified block in memory until commit.
+    \item[]
+    \item Both of them
+\end{itemize}
+%TODO explain undo and redo and undo/redo
+
+\paragraph{Checkpointing the log} to avoid very long transaction logs.
+So peroidically :
+\begin{enumerate}
+    \item Do not accept new transactions
+    \item Waint until all transaction finish
+    \item Flush all log record to disk
+    \item Flush all buffers to disk
+    \item Write ``checkpoint'' record on disk
+    \item Resume transaction processing
+\end{enumerate}
+
+\subsection{Media failures}
+%TODO
+
+
+\section{Concurrency control}
 
 \section{Other Material}
 \subsection{S3}
