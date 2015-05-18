@@ -1,2 +1,2 @@
-COURSE=elec
+COURSE=math
 include ../../q1.mk
