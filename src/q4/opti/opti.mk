@@ -1,2 +1,2 @@
-MAIN_NAME=opti
-include ../q4.mk
+COURSE=opti
+include $(BASE_DIR)../../q4.mk
