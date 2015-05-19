@@ -295,7 +295,7 @@ Constraints express the integrity rules for a database.
 They enforcement of constraints by the DBMS ensures that the
 database is at all times in a consistent state.
 
-\subsection{KEY constraints}
+\subsection{KEY constraints}%\label{key}
 A key for a relvar r is a set of attributes of r (i.e, a subset of 
 r's heading) such that at no time does r contain more than one tuple
 having any given collection of valuers for those attributes.\\
@@ -325,13 +325,13 @@ when it is reduced to the minimum number of attributes.
 
 There is a \textbf{inclusion dependency} because the relation which
 contains a foreign key (SECOND) must be included into the relation which
-contains the key (FIRST) : $$ FIRST { StudentId } \supseteq SECOND {
+contains the key (FIRST) : $$ FIRST\ { StudentId } \supseteq SECOND \ {
 StudentId}$$
 
 
 
 \paragraph{Generalisation of inclusion dependency}
-$$ IS_EMPTY( SECOND NOT MATCHING FIRST )$$
+$$ IS\_EMPTY( SECOND\ NOT\ MATCHING\ FIRST )$$
 
 \paragraph{Multiple assignement} is used when we need to update several
 variable on the same time to respect some constraint.
@@ -350,6 +350,13 @@ The single relvar design is preferred so long as the constraint implied
 by it truly reflects the real world!
 
 \section{Normal Form}
+In database design, there are some requirement that can be used to check 
+the quality of database:
+\begin{itemize}
+	\item Orthogonality
+	\item Redundancy
+	\item Simplicity
+\end{itemize}
 
 \subsection{Fonctional dependency (FD)}\label{fd}
 
@@ -386,8 +393,24 @@ des attributs de la relation.
 On parle de \textit{join dependency triviale} si une des tables du join
 à tous les attributs de la relation initiale: bref que l'on ne peut
 plus faire de join dependency (voir exemple en section \vref{6NF}).
+\paragraph{Notation:}
+Si on a la relvar \texttt{WIFE\_OF\_HENRY\_VIII}  = \{Wife\#,FName,LName,Fate\}
+, une JD se note : * \{ \{ Wife\#,FName \}, \{Wife\#, LName , Fate \}\}
+
+
+\subsection{Normalisation}
+Normalisation is the act of decomposing a relvar that fails
+to satisfy a given normal form scuh that the result is an
+equivalent set of two or more ''smaller'' relvars that do satisfy
+that normal form. The goal of the normalisation are:
+\begin{itemize}
+	\item Remove redundancy
+	\item No update anomalies
+	\item Full orthogonality
+\end{itemize}
 
 \subsection{1 NF}
+\paragraph{Normalisation}
 
 A relation is in 1NF if attribute domains include only
 atomic (simple, indivisible) values and each tuple
@@ -434,6 +457,8 @@ On peut également définir par cette définition : Pour toute dépendance fonct
     \item chaque élément de $A \backslash \{X\}$ est \textit{prime} (est contenu dans une clé)
 \end{itemize}
 
+For example go check \url{http://www.studytonight.com/dbms/database-normalization.php}
+
 \subsection{BCNF}
 Pour toutes dépendances fonctionnelles (voir section \vref{fd}) $X \rightarrow A$, il doit y avoir au-moins une de ces 2 conditions respectées:
 \begin{itemize}
@@ -441,7 +466,8 @@ Pour toutes dépendances fonctionnelles (voir section \vref{fd}) $X \rightarrow 
     \item $X$ est une superkey (voir section \vref{key})
 \end{itemize}
 
-%TODO advantages of BCNF 
+BCNF allows to deal with the redundancy and the lack of orthogonality 
+through splitting.
 
 \subsection{5 NF}
 Une relation est 5NF si toutes \textit{join dependencies} (voir section \vref{jd}) non-triviales est implicite par les candidate keys (= super key quand il n'y a pas encore de clé primaire): \textit{join dependencies} à $\{A, B, ..., Z\}$ est implicite par les candidates keys si et seulement si chaque $A, B, ..., Z$ est superkey.
@@ -462,24 +488,54 @@ Une relation est 6NF si elle ne satisfait aucune \textit{join dependency} (autre
 \end{table}
 On ne peut plus faire de join dependency mais du coup, c'est dangereux: si on ajoute une nouvelle entrée dans la première table, il faut ajouter des contraintes pour être sûr d'ajouter aussi dans les autres tables si c'est nécessaire.
 
-\subsection{Heath's theorem}
-%TODO
+\subsection{FD-driven Logical Design}
+A general method for logical design is
+given a relvar R with heading H and some FDs, decompose R into
+relvars $R_1\  ...\  R_n$ s.t
+\begin{itemize}
+	\item $H\ =\ H_1\cup\ ...\ \cup\ H_n$
+	\item $R_i$ is in a particular NF, $\forall i$
+	\item Every FD appears in a $R_i$
+	\item R = JOIN\{$R_1,\ ...\ ,R_n$\}
+\end{itemize}
 
+\subsection{Heath's theorem}
+\begin{itemize}
+	\item Let A,B and C be subsets of the heading of a relvar R s.t every 
+	attribute appears in at least one subset and suppose FD $A\to B$ 
+	holds.
+	\item Then , the JD*$\{A\cup B,A\cup C\} $holds in R
+\end{itemize}
+
+%%TODO Algorithms
 
 \section{View, Rules \& Triggers}
 
 \subsection{View}
 
-View are relation variables (capture predicate extension, should be updatable,
-have constraints and have keys).
+View are computed relation variables (capture predicate extension, 
+should be updatable, have constraints and have keys). 
 
-But, unlike ``BASE'', they should be kept hidden to end-users.
+But, unlike ''BASE'', they should be kept hidden to end-users.
+Views allows the independence of the logical schema. If the schema
+evolves (i.e for a better design), views will shield users from
+breaking changes.
+
 %TODO
 
 \subsubsection{View updating}
-
-%TODO: pas compris
-
+\begin{description}
+	\item[Golden rule :] No database is ever allowed to violate its 
+	own databas constraint.
+	\item[Assigment principle :]After assignment og value v to 
+	variable V then v = V must evaluate to true.
+\end{description}
+Depending on how the view is defined, updating a view can be a problem.
+For example:
+\begin{lstlisting}
+V := SUPPLIERS{CITY} UNION PARTS {CITY}
+\end{lstlisting}
+If we want to insert something, do we have to do it in the both?
 
 \subsection{Rules \& Triggers}
 
