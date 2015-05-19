@@ -691,6 +691,18 @@ Data models is not the same: Key-value stores or document database. With one
 of these approach, it is easier to do a mapping with a programming languages.
 
 \section{Transactions}
+\subsection{Purposes}
+DBMS manages database variables, the variable are:
+\begin{itemize}
+	\item Mutable : different values at different times.
+	\item Shared : read \& updated by many users or processes
+	at the same time.
+	\item Complex: consistency constraints to be preserved whatever
+	happens.
+\end{itemize}
+Mutable shared state is one of the biggest source of complexity in
+software engineering. Transaction deals with this problem.
+\subsection{Properties}
 Toutes les transactions doivent être ACID pour être relationnelles. ACID:
 \begin{itemize}
     \item \textbf{Atomic}: The whole process is done or none is.
@@ -705,11 +717,12 @@ Toutes les transactions doivent être ACID pour être relationnelles. ACID:
 There is Read-only and Read-write access for a transaction\ldots Indeed, using 
 this may improve performance in practice.
 
-\paragraph{ } Use COMMIT to complete the transaction or ROLLBACK to abord
+\paragraph{ } Use COMMIT to complete the transaction or ROLLBACK to abort
 the transaction.
 
 
 \subsection{Isolation levels}
+
 \begin{tabular}{|l|c|c|c|}
     Level & Dirty read & Nonrep. read & Phantom read \\
     \hline
@@ -733,17 +746,20 @@ the most efficient solution.
 \end{itemize}
 
 \section{Recovery}
+\subsection{Aim of Recovery}
 
-There is different failure like a system failures, a transaction failures and media
-failures but we need to ensure \textbf{atomicity} (reverte all transaction updates), 
-\textbf{consistency} (roolback from a inconsistent state) and \textbf{durability}.
+There are different type of failure such as system failures,  
+transaction failures and media
+failures. The aim of recovery is to ensure \textbf{atomicity} 
+(revert all transaction updates),\textbf{consistency} (roolback from a 
+inconsistent state) and \textbf{durability}.
 
 
 \subsection{Transaction log}
 
 The key problem is the unfinished transaction ! The solution
 is to use a transaction log and on failure recovery, unfinished transaction
-have start.
+have start but no commit nor abort record.
 
 Three solution to make the transaction log :
 \begin{itemize}
@@ -752,25 +768,40 @@ Three solution to make the transaction log :
         cannot use the log to bring backup database copies up to date.
     \item[]
     \item Redo logging (deferred changes) :
-    \item[Drawback] : Need to kleep all modified block in memory until commit.
+    \item[Drawback] : Need to keep all modified block in memory until commit.
     \item[]
     \item Both of them
 \end{itemize}
+\subsubsection{Undo logging}
+The idea is to keep old value in the log records and do the real update 
+job on disk. Operation can be undo on failure recovery thanks to the log.
+(see example slide 16 in 10c)
+\subsubsection{Redo logging}
+The idea is to keep new values in log recodes and do the real update on
+in memory (not the disk!). Because update are not done on the disk,
+opetation can be redo on failure recovery thanks to the log.
 %TODO explain undo and redo and undo/redo
 
 \paragraph{Checkpointing the log} to avoid very long transaction logs.
-So peroidically :
+So periodically :
 \begin{enumerate}
     \item Do not accept new transactions
-    \item Waint until all transaction finish
+    \item Wait until all transaction finish
     \item Flush all log record to disk
     \item Flush all buffers to disk
     \item Write ``checkpoint'' record on disk
     \item Resume transaction processing
 \end{enumerate}
-
+When a recovery must be done, it starts at the last checkpoint.
 \subsection{Media failures}
 %TODO
+To cope with with Media Failure, there is no choice but making copies.
+There are different techniques:
+\begin{itemize}
+	\item Triple redundancy (keep 3 copies on separate disks)
+	\item Redundant writes/single reads
+	\item Backup database + log
+\end{itemize}
 
 
 \section{Concurrency control}
@@ -778,24 +809,49 @@ So peroidically :
 A process can \textbf{read(X)} and \textbf{write(X)} without any assumption
 on the sceduler.
 
+\subsection{Transaction Schedule}
+Two differents transactions are in conflict if they want to do an
+operation on the same data item and one of the operation is a write.\\
+Transation execute concurrently in an interleaved fashion, the order 
+of execution in which they operates is known as the transaction
+scedule. 
 \subsection{Serializability}
-
+\paragraph{Serial schedule}
+For every transaction T participating in the schedule, all the
+operations of T are executed consecutively in the schedule.
+\paragrah{Serializable schedule}
+A schedule S is serializable :
+\begin{itemize}
+	\item if it is equivalent to some serial 
+	schedule of the same n transactions
+	\item Allow interleaving of transcation operations
+\end{itemize}
+Serial and serializable schedule are correct (consistency of database).
+\subsection{Equivalences} %TODO ameliorer explication
+\begin{description}
+	\item[Result equivalent ] They produce the same final state of the
+	database
+	\item[Conflict equivalent] The order of any two conflicting operations
+	 is the same in both schedules
+	\item[Conflict serializable] Conflict equivalent to some serial schedule.
+	(It can be tested throug a directed graph (slide 15 in 11a))
+\end{description}
 \subsubsection{Lock}
 Lock and unlock need to be atomic operation.
 
 \begin{itemize}
     \item[MODES]
-    \item Read lock (X) : More than one transaction cas share read lock on X but
+    \item Read lock (X) : More than one transaction can share read lock on X but
         no write lock on X by other transaction
     \item Write lock (x) : only one write lock on X
     \item[CONVERSION]
-    \item Lock updrage : read lock on X to write lock on X (Need to have only
+    \item Lock upgrade : read lock on X to write lock on X (Need to have only
         one read lock on X)
     \item Lock downgrade : from write lock on X to read lock on X
 \end{itemize}
 
 \paragraph{Transactions requirement}
-A transaction shoumd be well-formed : lock data before access them, does not lock 
+A transaction should be well-formed : lock data before access them, does not lock 
 an already locked data item and not try to unlock an unlocked data item.
 
 \subsubsection{Two-phase locking}
