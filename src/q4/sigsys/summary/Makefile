@@ -1,2 +1,2 @@
-MAIN_NAME=sigsys
-include ../q4.mk
+TYPE=summary
+include ../sigsys.mk
