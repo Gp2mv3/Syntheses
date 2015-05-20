@@ -495,7 +495,23 @@ génération du code allant avec cette opération.
 
 \section{Chapitre 2 : Lexical Analysis} % LN, Matth
 \subsection{Introduction}
-La 1\iere{} étape est le cassage en tokens.
+
+\begin{figure}[!h]
+    \centering
+\begin{tikzpicture}
+	\node (A) {string};
+    \node[draw, shape=rectangle] (B) [right=of A] {Lexical Analysis};
+	\node[text width=4.5cm,align=center] (C)[right=of B] {Token : <Class, string>};
+    \node[draw, shape=rectangle] (D) [right=of C] {Parsing};
+	\path[->] (A) edge (B)
+              (B) edge (C)
+              (C) edge (D);
+\end{tikzpicture}
+
+    \caption{Lexical analysis}
+\end{figure}
+
+L'analyse lexical parse donc l'input en une série de \textbf{token}.
 
 \paragraph{Lexical tokens}: éléments composant les programmes. Ils
 sont décrits par la syntaxe lexicale du langage.
@@ -512,15 +528,17 @@ lexicaux en catégories:
 \subsection{Scanning tokens}
 
 \paragraph{Scanner} Un scanner est un programme
-écrit par le programmeur du compilateur ou bien générée
-automatiquement par une liste de regex. 
+écrit par le programmeur (\textit{handwritten}) ou bien générée
+automatiquement par une liste de regex . 
 
 Les espaces peuvent servir à séparer des tokens mais pas tout le temps, par 
 exemple si on est entrain de scanner un \texttt{integer} et que l'on tombe
 sur une lettre, on peut en conclure que l'\texttt{integer} est fini.
 
-$\to$ C'est pourquoi il est très utile de décrire le scanner
-comme un \textbf{state transition diagram}.
+\subsection{Lexical analysis hand written}
+
+Dans le cas d'un scanner écrit à la main, il est très utile de
+décrire le scanner comme un \textbf{state transition diagram}.
 
 \subsubsection{State transition diagram} diagramme dans lequel les nœuds
 représentent les états, les flèches dirigées représentes des
@@ -543,38 +561,84 @@ caractère scanné n'est sur aucune flèche, on choisi celle non
     \item Les commentaires sont ignorés
 \end{itemize}
 
-\subsection{Regular Expressions (regex)}
+
+\subsection{Lexical analysis generator}
+\subsubsection{Regular Expressions (regex)}
 
 On dit que les regex définissent un langage de strings sur un alphabet.
 
 Les regex peuvent prendre les formes suivantes:
 \begin{itemize}
-	\item Si $a$ est dans l'alphabet, alors le regex a décrit le langage consistant en les strings $a$. On appelle ce langage $L(a)$
-    \item Si $r$ et $s$ sont des regex, alors leur concaténation $rs$ est aussi une regex décrivant le langage de tous les strings possibles obtenus par concaténation d'un string du langage $r$ et d'un string de langage $s$. On appelle ce langage $L(rs)$
-    \item Si $r$ et $s$ sont des regex, $L(r|s)$ décrit le langage composé des strings de l'un ou l'autre langage
-    \item Si $r$ est un regex, $L(r*)$ décrit le langage formé par concaténation de zéro ou plusieurs instances de $r$ ($\epsilon$ représente la string vide)
+    \item Si $a$ est dans l'alphabet, alors le regex a décrit le langage
+        consistant en les strings $a$. On appelle ce langage $L(a)$
+
+    \item Si $r$ et $s$ sont des regex, alors leur concaténation $rs$
+        est aussi une regex décrivant le langage de tous les strings possibles
+        obtenus par concaténation d'un string du langage $r$ et d'un string de
+        langage $s$. On appelle ce langage $L(rs)$
+
+    \item Si $r$ et $s$ sont des regex, $L(r|s)$ décrit le langage
+        composé des strings de l'un ou l'autre langage
+
+    \item Si $r$ est un regex, $L(r*)$ décrit le langage formé par
+        concaténation de zéro ou plusieurs instances de $r$ ($\epsilon$
+        représente la string vide)
+
     \item $\epsilon$ est le langage contenant uniquement la string vide
-    \item $r$ et $(r)$ sont les mémes regex. Les parenthèses sont utilisées pour grouper les regex.
+
+    \item $r$ et $(r)$ sont les mémes regex. Les parenthèses sont
+        utilisées pour grouper les regex.
+
 \end{itemize}
 
-\subsection{Finite State Automate (FSA)}
-Pour tout langage décrit par une regex, il existe un diagramme à transition d'état.
-\paragraph{Automate à états finis} (Finite State Automate) c'est $F = (\Sigma, S, s_0, M, F)$ où:
+\subsubsection{Finite State Automate (FSA)}
+
+Pour tout langage décrit par une regex, il existe un diagramme à
+transition d'état. 
+
+\textit{Un automate fini reconnait un language.}
+
+\paragraph{Automate à états finis} (Finite State Automate) c'est $F =
+(\Sigma, S, s_0, M, F)$ où:
+
 \begin{itemize}
 	\item $\Sigma$ est l'alphabet
     \item $S$ est l'ensemble des états
     \item $s_0 \in S$ est l'état initial
-    \item $M$ est l'ensemble de mouvements possibles d'un état à un autre ; $m(r, a) = S$ où $r, s \in S$ et $a \in \Sigma$
+    \item $M$ est l'ensemble de mouvements possibles d'un état à un
+        autre ; $M(r, a) = S$ où $r, s \in S$ et $a \in \Sigma$
     \item $F \in S$ est l'ensemble des états finaux
 \end{itemize}
-On dit qu'un automate fini reconnait un langage. Une phrase sur l'alphabet appartient au langage si en partant du start, on arrive sur un état final après avoir suivit les changement d'états correspondant à la phrase. Il existe un moyen automatique de générer un FSA à partir de regex.
 
-\subsection{Non-Deterministic Finite State Automate (NFA) vs. Deterministic FSA (DFA)}
-\paragraph{DFA} automate à états finis où il n'y a pas de $\epsilon$-move et où un seul chemin peut -être pris suivant un même input.
-\paragraph{NFA} automate à états finis qui permet plusieurs chemins pour le même input ainsi que des mouvements.
+\paragraph{Une phrase appartient au language} si en partant du start, on
+arrive sur un état final après avoir suivit les changement d'états
+correspondant à la phrase.
 
-\subsection{Regular expressions to NFA}
-On utilise les constructions de Thompson:
+Il existe un moyen automatique de générer un FSA à partir de regex.
+
+\subsubsection{Non-Deterministic Finite State Automate (NFA) vs. Deterministic FSA (DFA)}
+
+\paragraph{\textbf{DFA}} automate à états finis où il n'y a pas de
+$\epsilon$-move et où un seul chemin existe à partir d'un état pour
+un input.
+
+On ne peut donc aps avoir $M(r, a) = s$ et $M(r, a) = t$ tel que $s \neq t$.
+
+\begin{itemize}
+    \item DFA are faster to execute and easy to implement (by
+        table driven implementation)
+\end{itemize}
+
+\paragraph{\textbf{NFA}} automate à états finis qui permet plusieurs chemins
+à partir d'un état pour le même input, et autorise $\epsilon$-move.
+
+\begin{itemize}
+    \item NFA are in general smaller (exponentially)
+\end{itemize}
+
+\subsubsection{Regular expressions to NFA}
+
+On utilise les constructions de \textbf{Thompson}:
 \begin{itemize}
 	\item $a$:\\
     \begin{tikzpicture}
@@ -632,16 +696,16 @@ On utilise les constructions de Thompson:
 	\end{tikzpicture}
 \end{itemize}
 
-\subsection{NFA to DFA}
+\subsubsection{NFA to DFA}
 Pour toutes NFA, il existe une DFA équivalente. On arrive à la trouver grâce aux $\epsilon$-closure.
 \paragraph{$\epsilon$-closure($s$)} c'est un ensemble incluant $s$ ainsi que tous les états atteignables à partir de $s$ grâce uniquement à des $\epsilon$-moves.
 \paragraph{$\epsilon$-closure($S$)} c'est un ensemble incluant $S$ ainsi que tous les états atteignables à partir de chaque élément $s$ de $S$ grâce uniquement à des $\epsilon$-moves.
 
 
-\subsection{Minimal DFA}
+\subsubsection{Minimal DFA}
 On cherche à combiner les états les plus probables. On va recréer des états grâce à des partitions. Les partitions initialles sont \textit{final} et \textit{non-final}. On doit s'assurer que pour chacun des états, le mouvement d'un symbole particulié reflète celui dans l'ancien DFA. Pour une partition particulière, chaque symbole d'input doit induire un mouvement vers la même partition.
 
-\subsection{JavaCC: Tool for generating scanner}
+\subsubsection{JavaCC: Tool for generating scanner}
 JavaCC est un outil pour générer une analyse lexicale à partir de regex ainsi qu'un parseur à partir d'une grammaire hors contexte.\\
 Lorsque l'on scanne un token, on considère tous les regex correspondant à l'état actuel et on choisi celui qui contient le plus de caractères.\\
 Il existe 4 types de regex:
