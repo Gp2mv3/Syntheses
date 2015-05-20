@@ -1045,22 +1045,89 @@ un token inatendu, scanne jusqu'à trouver celui qu'il veut jusqu'à se
 remettre dans un état à nouveau correct.
 
 \subsubsection{$LL(1)$ parsing}
-Contrairement au recursive descent, ici, la stack est explicite. Le 1\ier $L$ veut dire \textit{left-to-right scan}, le 2\ieme pour \textit{left-most derivative} et le $1$ pour le fait qu'on regarde un seul symbole à la fois.\\
-Au tout début, on place le symbole temrinal initial sur la pile. Suivant le token scanné, on remplace le symbole sur la pile par celui qui correspond suivant la table de parsing. Lorsqu'un terminal est trouvé sur la pile et si c'est bien celui qui est scanné, il est retiré de la pile et un nouveau token est scanné.\\
 
-Chaque grammaire a une table de parsing unique. Pour créer la table, si $\alpha$ et $\beta$ sont des strings (pouvant être vides) de terminaux et non terminaux, $table[Y,a]=i$ où $i$ est le numéro de la règle, $Y ::= X_1, X_2,..., X_n$ si soit $X_1, X_2,..., X_n \Rightarrow a\alpha$ ou $X_1, X_2,..., X_n \xrightarrow{*} \epsilon$ et il y a une dérivation $S$\# $ \Rightarrow \alpha Y a \beta$.\\
-Pour arriver à établir cette table, on fait usage de deux algorithmes: \texttt{first} et \texttt{follow}.\\
+Contrairement au recursive descent, ici, la stack est explicite.
+Le 1\ier $L$ veut dire \textit{left-to-right scan}, le 2\ieme pour
+\textit{left-most derivative} et le $1$ pour le fait qu'on regarde un
+seul symbole à la fois.\\
 
-Calcul de $first(X)$ pour tous les $X$ dans la grammaire:
-\begin{itemize}
-	\item For each terminal $x$, $first(x) = \{x\}$.
-	\item For each non-terminal $X$, $first(X) = \{\}$.
-	\item If there is a rule $X ::= \epsilon$ in $P$, add $\epsilon$ to $first(X)$.
-	\item Repeat until no new symbols are added to any set: For each rule$ Y ::= X_1 X_2 ... X_n \in P$, add all symbols from $first(X_1 X_2 ... X_n)$ to $first(Y)$.\\
-\end{itemize}
 
-Calcul de $first(X_1 X_2 ... X_n)$:
-\begin{lstlisting}[mathescape]
+Chaque grammaire a une table de parsing unique. Pour créer la table, si
+$\alpha$ et $\beta$ sont des strings (pouvant être vides) de terminaux
+et non terminaux : 
+\begin{center}
+$table[Y,a]=i$ où $i$ est le numéro de la règle,
+$Y ::= X_1, X_2,..., X_n$ si soit $X_1, X_2,..., X_n \Rightarrow
+a\alpha$ ou $X_1, X_2,..., X_n \xrightarrow{*} \epsilon$ et il y a une
+dérivation $S$\# $ \Rightarrow \alpha Y a \beta$.\\
+\end{center}
+
+Pour arriver à établir cette table, on fait usage de deux ensemble :
+\texttt{first} et \texttt{follow}.
+
+
+\paragraph{LL(1) parsing algorithm}
+
+Au tout début, on place le symbole terminal initial sur la pile.
+Suivant le token scanné, on remplace le symbole sur la pile par celui
+qui correspond suivant la table de parsing. 
+
+Lorsqu'un non-terminal est trouvé sur la pile et si c'est bien celui
+qui est scanné, il est retiré de la pile et un nouveau token est
+scanné.
+
+\begin{lstlisting}
+Initially,
+Stack stk initially contains the terminator # and the start symbol S, with S on top;
+Symbol sym points to the first symbol in the sentence w.
+for (;;) {
+    Symbol top = stk.pop();
+    if (top == sym == #) halt successfully;
+    else if (top is a terminal symbol) {
+        if (top == sym) {
+            advance sym to point to the next symbol in w;
+        } else {
+            halt with error: a sym found where a top was expected;
+        }
+    } else if (top is a non-terminal, Y) {
+        int index = table[Y,sym];
+        if (index != err)} {
+        rule = rules[index];
+        Say rule is Y ::= X 1 X 2 ...X n
+        Push X n,..., X 2, X 1 onto the stack stk, with X 1 on top
+        }
+        else {
+            halt with an error.
+        }
+    }
+}
+
+\end{lstlisting}
+
+\paragraph{First}
+%TODO : rendre joli
+
+Correspond à l'ensemble des terminaux qui peuvent commencer une règle.
+\textbf{First may contain $\epsilon$ ($X_1 X_2 ... X_n \Rightarrow *
+\epsilon$)}
+
+$$first(X_1 X_2 ... X_n) = \{ a \quad | \quad X_1 X_2 ... X_n
+\Rightarrow * a \alpha, a \in T\}$$
+
+\begin{enumerate}
+    \item Calcul de $first(X)$ pour tous les $X$ dans la grammaire:
+        \begin{lstlisting}[mathescape]
+For each terminal $x$, $first(x) = \{x\}$.
+For each non-terminal $X$, $first(X) = \{\}$.
+If there is a rule $X ::= \epsilon$ in $P$, add $\epsilon$ to $first(X)$.
+
+Repeat until no new symbols are added to any set: 
+    For each rule$ Y ::= X_1 X_2 ... X_n \in P$ 
+        add all symbols from $first(X_1 X_2 ... X_n)$ to $first(Y)$.
+        \end{lstlisting}
+
+    \item Calcul de $first(X_1 X_2 ... X_n)$:
+        \begin{lstlisting}[mathescape]
 Set S = first(X$_1$).
 i = 2
 While $\epsilon$ $\in$ S and i $\le$ n {
@@ -1069,18 +1136,29 @@ While $\epsilon$ $\in$ S and i $\le$ n {
     i = i+1
 return S
 \end{lstlisting}
+\end{enumerate}
 
-$Follow(X)$:
-\begin{itemize}
-	\item $follow(S) = \{$\#$\}$.
-	\item $follow(X) = \{\}$ for all non-terminals X $\ne$ S.
-	\item Repeat until no new symbols are added to any set:\\
-	\hspace*{1em} for each rule $Y ::= X_1 X_2... X_n \in P$,\\
-    \hspace*{2em} for each non-terminal $X_i$,\\
-	\hspace*{3em} add $first(X_{i+1} X_{i+2}... X_n) - {\epsilon}$ to $follow(X_i)$, and\\
-	\hspace*{4em} if $X_i$ is the rightmost symbol or $first(X_{i+1} X_{i+2}... X_n)$ contains $\epsilon$,\\
-    \hspace*{4em} add $follow(Y)$ to $follow(X_i)$.\\
-\end{itemize}
+\paragraph{Follow}
+
+Correspond à l'ensemble des terminaux qui peuvent suivre une règle.
+\textbf{First cannot contain $\epsilon$ }
+
+$$follow(X) = \{ a \quad | \quad S \Rightarrow * wX\alpha and \alpha \Rightarrow * a ...\}$$
+
+Calcul de $follow(X)$:
+\begin{lstlisting}[mathescape]
+$follow(S) = \{$\#$\}$.
+$follow(X) = \{\}$ for all non-terminals X $\ne$ S.
+Repeat until no new symbols are added to any set:
+    for each rule $Y ::= X_1 X_2... X_n \in P$,
+        for each non-terminal $X_i$,
+            add $first(X_{i+1} X_{i+2}... X_n) - {\epsilon}$ to $follow(X_i)$, and
+            if $X_i$ is the rightmost symbol or $first(X_{i+1} X_{i+2}... X_n)$ contains $\epsilon$,
+                 add $follow(Y)$ to $follow(X_i)$.
+
+\end{lstlisting}
+
+\paragraph{Parsing table}
 
 Construire une table de parsing $LL(1)$ pour une grammaire $G=(N,T,S,P)$:\\
 For each non-terminal $Y$ in $G$,\\
@@ -1098,6 +1176,53 @@ On peut avoir des grammaire non $LL(1)$ mais $LL(k)$ avec $k>1$ (on regarde alor
     X &::= \alpha \gamma & \Rightarrow X' &::= \beta\\
     & & X' &::= \gamma     
 \end{align*}
+
+\subsubsection{Left recursion removal}
+
+\paragraph{Regle typique pour supprimer la left recursion}
+\begin{center}
+\begin{tikzpicture}
+    \node[text width=2.5cm,align=center] (A) 
+    {{\begin{lstlisting}
+Y ::= Y a
+Y ::= b
+\end{lstlisting}}};
+
+	\node[text width=2.5cm,align=center,  right= of A] (B) 
+	{{\begin{lstlisting}[mathescape]
+Y  ::= bY'
+Y' ::= aY'
+Y' ::= $\epsilon$
+\end{lstlisting}}};
+		\path[->] (A) edge (B);
+
+\end{tikzpicture}
+\end{center}
+
+\paragraph{Indirect left recursion}
+Dans ce cas la, une première manipulation est nécessaire avant
+d'appliquer la régle de base.
+
+\begin{center}
+\begin{tikzpicture}
+    \node[text width=2.5cm,align=center] (A) 
+    {{\begin{lstlisting}
+S ::= A a | b
+A ::= S c | d
+\end{lstlisting}}};
+
+	\node[text width=2.5cm,align=center,  right= of A] (B) 
+	{{\begin{lstlisting}
+S ::= A a | b
+A ::= A ac | bc | d
+\end{lstlisting}}};
+		\path[->] (A) edge (B);
+
+\end{tikzpicture}
+\end{center}
+
+
+
 
 \subsection{Bottom-up deterministic parsing}
 On passe!!
