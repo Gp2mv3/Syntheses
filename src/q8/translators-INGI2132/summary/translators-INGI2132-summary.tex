@@ -69,7 +69,7 @@
 	  commentstyle=\ttfamily\textcolor{green},
 	  breaklines=true,
 	  extendedchars=true,
-	  basicstyle=\ttfamily\scriptsize,
+	  basicstyle=\ttfamily\footnotesize,
 	  showstringspaces=false
 	}
 
@@ -697,17 +697,134 @@ On utilise les constructions de \textbf{Thompson}:
 \end{itemize}
 
 \subsubsection{NFA to DFA}
-Pour toutes NFA, il existe une DFA équivalente. On arrive à la trouver grâce aux $\epsilon$-closure.
-\paragraph{$\epsilon$-closure($s$)} c'est un ensemble incluant $s$ ainsi que tous les états atteignables à partir de $s$ grâce uniquement à des $\epsilon$-moves.
-\paragraph{$\epsilon$-closure($S$)} c'est un ensemble incluant $S$ ainsi que tous les états atteignables à partir de chaque élément $s$ de $S$ grâce uniquement à des $\epsilon$-moves.
 
+Il est évident qu'un NFA nécessite du \textbf{backtracking} poour
+parser un input (puisqu'il peut emprunter le mauvais choix) qui prend du
+temps\ldots Heureusment, pour toutes NFA il existe une DFA équivalente.
+On arrive à la trouver grâce aux $\epsilon$-closure.
+
+
+\paragraph{$\epsilon$-closure($s$)} c'est un ensemble incluant $s$ ainsi
+que tous les états atteignables à partir de $s$ uniquement avec
+des $\epsilon$-moves.
+
+\paragraph{$\epsilon$-closure($S$)} c'est un ensemble incluant
+l'ensemble $S$ ainsi que tous les états atteignables à partir de
+chaque élément $s$ de $S$ uniquement avec des $\epsilon$-moves.
+
+\begin{figure}
+\begin{lstlisting}[mathescape]
+Input: a set of states, S.
+Output: $\epsilon$-closure(S)
+
+Stack P.addAll(S);     
+Set C.addAll(S);       
+while (!P .empty() ) {
+    s = P.pop();
+    for (r $\in$  move(s, $\epsilon$)){
+        if (r $\notin$ C) {
+            P.push( r );
+            C.add( r );
+        }
+    }
+}
+return C;
+\end{lstlisting}
+\caption{$\epsilon$-closure algorithm}
+\end{figure}
+
+\begin{figure}
+\begin{lstlisting}[mathescape]
+Input: an NFA, N = ($\sum$, S, $s_0$ , M, F)
+Output: DFA, D = ($\sum$, $S_D$ , $s_{D0}$ , $M_D$ , $F_D$ )
+
+Set $S_{D0}$ = $\epsilon$-closure($s_0$ );
+Set $S_D$ .add($S_D0$ );
+Moves $M_D$ ;
+Stack stk.push($S_{D0}$ );
+i = 0;
+while (! stk.empty()) {
+    t = stk.pop();
+    for (a : $\sum$) {
+        $S_{Di+1}$ = $\epsilon$-closure(M(t, a));
+        if ($S_{Di+1}$ != {}) {
+            if ($S_{Di+1}$ $\notin$ $S_D$ ) {
+                // We have a new state.
+                $S_D$ .add($S_{Di+1}$ );
+                stk.push($S_{Di+1}$ );
+                i = i+ 1;
+                $M_D$ .add($M_D$(t, a) = i ) ;
+            }
+            else if ($\exists$ j, $S_j \in S_D$ $\wedge$ $S_{Di+1} == S_j$ ) {
+                .. In the case that the state already exists.
+                $M_D$ .add($M_D$(t,a) = j ) ;
+            }
+        }
+    }
+}
+
+Set $F_D$ ;
+for ($s_D$ : $S_D$ )
+    for (s : $s_D$ )
+        if (s $\in$ F)
+            $F_D$ .add($s_D$ );
+
+return D = ($\sum$, $S_D$ , $s_{D0}$ , $M_D$ , $F_D$ );
+
+\end{lstlisting}
+\caption{DFA construction algorithm}
+\end{figure}
+
+%TODO : explication algorithm
 
 \subsubsection{Minimal DFA}
-On cherche à combiner les états les plus probables. On va recréer des états grâce à des partitions. Les partitions initialles sont \textit{final} et \textit{non-final}. On doit s'assurer que pour chacun des états, le mouvement d'un symbole particulié reflète celui dans l'ancien DFA. Pour une partition particulière, chaque symbole d'input doit induire un mouvement vers la même partition.
+
+L'idée est de fusionner des états non-distinguable (càd qu'on ne peut
+distinguer d'un autre pour chaque input). On va recréer des états
+grace à des partitions.
+
+\paragraph{Partitions}
+\begin{itemize}
+    \item Les partitions initialles sont \textit{final} et \textit{non-final}. 
+    \item On scinde en différente partition quand les états sont distinguables
+    \item Pour chaque partition, un input doit induire un mouvement vers
+        une même partition.
+
+    \item[Note:] On doit s'assurer que pour chacun des états, le mouvement d'un symbole
+        particulier reflète celui dans l'ancien DFA. 
+\end{itemize}
+
+\subsubsection{Table driven}
+
+For each DFA, a Table driven can be implemented as a 2D table (states
+and input).
+
+For every $M(r, a) = s$, $T[r, a] = s$.
+
+\paragraph{Recognize the longest match}
+
+Un automate reconnait les états finaux avec deux variables :
+\begin{itemize}
+    \item \texttt{Last-Final} : le dernier état final rencontré
+    \item \texttt{Input-Position-at-Last-Final}
+\end{itemize}
+
+On met à jour ces deux variables quand un état final est rencontré.
+Quand a \textit{dead} état (càd un état qui n'a pas l'ouput correspondant
+à l'input) est atteint, les variables disent quels tokens ont matché et où ils
+se sont fini.
 
 \subsubsection{JavaCC: Tool for generating scanner}
-JavaCC est un outil pour générer une analyse lexicale à partir de regex ainsi qu'un parseur à partir d'une grammaire hors contexte.\\
-Lorsque l'on scanne un token, on considère tous les regex correspondant à l'état actuel et on choisi celui qui contient le plus de caractères.\\
+
+JavaCC est un outil pour générer une analyse lexicale à partir de
+regex ainsi qu'un parseur à partir d'une grammaire hors contexte.
+
+
+Lorsque l'on scanne un token, on considère tous les regex correspondant
+à l'état actuel et on choisi celui qui contient le plus de
+caractères.
+
+
 Il existe 4 types de regex:
 \begin{itemize}
 	\item SKIP: regex jeté
