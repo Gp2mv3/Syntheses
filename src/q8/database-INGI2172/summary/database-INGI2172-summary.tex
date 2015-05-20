@@ -1019,8 +1019,30 @@ An index is an auxiliary file that makes it more
 efficient to search for records in the data file. 
 ( index file size <<< data )
 $$<field value, pointer>$$
-
-%TODO : example no index vs with index
+%%TODO : example no index vs with index
+%\begin{tabular}{|c|c|}
+%\hline
+%With index & without index\\
+%\hline
+%\begin{itemize}
+%	\item r = 30.000 records
+%	\item R = 100 bytes (record size)
+%	\item B(lock) = 1024 bytes
+%	\item Blocking factor = B/100 =~10 records per block
+%	\item Binary search = $log_2(3000)$ = 12
+%\end{itemize}
+%&
+%\begin{itemize}
+%	\item V = 9 bytes (ordering key size)
+%	\item  P = 6 bytes(logical pointer size)
+%	\item B(lock) = 1024 bytes
+%	\item Blocking factor = B/15 =~67
+%	\item Binary search = $log_2(45) $+1 =7
+%\end{itemize}
+%\\
+%\hline
+%number of access 12 & number of access 7\\
+%\end{tabular}
 
 \begin{itemize}
     \item Dense index : index for \textbf{every key value} in the data file
@@ -1032,9 +1054,12 @@ $$<field value, pointer>$$
 \subsubsection{Primary index}
 \begin{tabular}{m{7cm}m{8cm}}
 \begin{itemize}
-    \item The data file myst be ordered on a key field
+    \item The data file must be ordered on a key field
     \item One index entry for each block in the data file
         $\to$ \textbf{sparse index}
+        (Keys of anchor 
+        record rather than every search value)
+    \item Major problem with insertion and deletion of record
 \end{itemize}
 &
 \includegraphics[width=6cm]{img/primary.png}
@@ -1043,9 +1068,10 @@ $$<field value, pointer>$$
 \subsubsection{Clustering index}
 \begin{tabular}{m{7cm}m{8cm}}
 \begin{itemize}
-    \item The data file myst be ordered on a non-key field
+    \item The data file must be ordered on a non-key field (cluster field)
     \item One index entry for each distinct value with that field value
-        $\to$ \textbf{sparse index}
+    (block pointer points to the first occurence of this value)
+        $\to$ \textbf{sparse index} 
 \end{itemize}
 &
 \includegraphics[width=6cm]{img/clustering.png}
@@ -1055,11 +1081,12 @@ $$<field value, pointer>$$
 \begin{tabular}{m{7cm}m{7cm}m{7cm}}
 \begin{itemize}
     \item Accessing a file for which some
-        primary access already exists.
+        primary access already exists.(can be several for the same file)
         \begin{enumerate}
             \item With a candidate key
             \item or a non-key with duplicate values
         \end{enumerate}
+    \item Composed of two field : data type and (block pointer or recorde pointer)
     \item One entry for each record $\to$ \textbf{dense index}
 \end{itemize}
 &
@@ -1084,17 +1111,19 @@ $$<field value, pointer>$$
 
 \paragraph{B-Tree and B+-Tree}
 
+%TODO quick explanation on how B tree work
+
 \begin{figure}[!h]
 \includegraphics[width=6cm]{img/btree.png}
 \caption{B-tree}
 \end{figure}
 
-B-Tree solve the problem to insert and delet new entries in
+B-Tree solve the problem to insert and delete new entries in
 a multi level which must be ordered. (In this data-structure
 these operation are quite efficient)
 
 \begin{itemize}
-    \item Insert element in a node an split in two node if the 
+    \item Insert element in a node an split it in two node if the 
         node is full (Splitting may propagate to other levels)
     \item Deleted element from a node and if he become less than
         half full merged it with neighboring nodes.
@@ -1108,7 +1137,12 @@ where B+-Tree are pointer only at the \textbf{leaf level}
 %TODO ?
 
 \section{Query processing}
-
+\begin{description}
+	\item[Query processing] The process of translating from a high-level
+	query language to actual data access.
+	\item[Query optimization] The process of choosing a suitable execution
+	strategy for processing a query.
+\end{description}
 Two internal representations of a query : Tree or Graph.
 
 \includegraphics[width=9cm]{img/query.png}
@@ -1116,24 +1150,61 @@ Two internal representations of a query : Tree or Graph.
 \subsection{SQL $\to$ Relationnal algebra}
 
 Query block (Single SELECT-FROM-WHERE [GROUP BY] [HAVING]) is the basic unit
-that can be translated into \textbf{algebraic operator}.
+that can be translated into \textbf{algebraic operator}.\\
+Nested query within query are indentified as separate query blocks.
 
 \subsection{Relationnal algebra $\to$ Data access}
 For every abstract algebra operator (RESTRICT, PROJECT, JOIN,\ldots),
 various algorithms exist (Sort-driven, hash-driven, loop-driven).
 
+\subsubsection{External Sorting}
+\begin{itemize}
+	\tem External sorting refers to sorting algorithms that are suitable for 
+	large file of records on disk that do no fit in main memory.
+	\item It uses sort-merges strategy, it consist of sorting small subfiles
+	(runs) then merges them.
+	%TODO cost?
 \subsubsection{Restrict}
-%TODO
+There are diffent algorithm that can be use to implement the restrict
+\begin{itemize}
+	\item Linear search: Check on every record, if it satisfy a condition
+	\item Binary search : If restriction condition involves
+	 a equality comparison on a key attribute and the file is ordered.
+	\item Primary index (or hash key) : if restriction condition involves
+	equality comparison on a key attribute witth a primary index.
+	\item Primary index to retrieve multiple record: If there is a 
+	comparaison condition other that = on a key field with primary index.
+	\item Cluster index to retrieve multiple record : Restriction 
+	involves an equality comparison on a non-key attribute with clustering
+	index.
+\end{itemize}
+If the condition involves only one attribute , the brute force linear 
+search is used if there is no access path.\\
+If the condition involves many attributes, it's the role of the query 
+optimization to choose the best access path. 
 
 \subsubsection{Join}
-%TODO
+Different techniques to implement the join
+\begin{itemize}
+	\item Nested-loop join : Test the join codition t[A] = s[B] for every pair 
+	of record (where A and B are domain-compatible attribute and t and s
+	are record for R and S).
+	\item Single-loop join: If a index exists for one of the two join
+	attributes, use access structure to retrieve all matching records
+	that satisfy join condition.
+	\item Sort-merge join : %TODO
+	\item hash-join : %TODO
+
+\end{itemize}
 
 \subsubsection{Project}
 %TODO
-
-%TODO : What is external sorting?
-
-
+\subsubsection{Set}
+%TODO
+\subsection{Pipelining Operations}
+%TODO
+\subsection{Query Optimization}
+%TODO
 \section{Other Material}
 \subsection{S3}
 Pour l'union, elle est bien commutative (on s'en fout du résultat et du truc bizarre sur SQL, la question c'est "est-ce que l'union est commutative").
