@@ -910,50 +910,97 @@ depuis un symbole de départ (racine) pour arriver à une expression
 
 \subsubsection{Ambiguous Grammars and unambiguous grammars}
 
-\paragraph{Ambiguous sentence} Une phrase par laquelle il existe plusieurs dérivations possibles. (2 arbres pour représenter $id + id * id$
+\begin{itemize}
+    \item \textbf{Ambiguous sentence} : Une phrase par laquelle il existe
+        plusieurs dérivations possibles. (2 arbres pour représenter $id + id * id$)
+\item \textbf{Ambiguous grammar} : Une grammaire qui décrit au-moins une
+        phrase ambigüe.
+    \item \textbf{Unambiguous grammar} : Une grammaire ne décrivant que
+        des phrases à dérivation unique (qu'elle soit \textit{left} ou
+        \textit{right}). 
+\end{itemize}
 
-\paragraph{Ambiguous grammar} Une grammaire qui décrit au-moins une phrase ambigüe.
+\paragraph{IF..ELSE ambiguous}
+Pour résoudre cet ambiguité, on définit une règle telle que
+le \texttt{else} se groupe avec le \texttt{if} précédent.
 
-\paragraph{Unambiguous grammar} Une grammaire ne décrivant que des phrases à dérivation unique (qu'elle soit \textit{left} ou \textit{right}). Il y a néenmoins des ambiguités qui subsistent:
-\begin{lstlisting}
+\begin{center}
+\begin{tikzpicture}
+    \node[text width=2.5cm,align=center] (A) 
+    {{\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
 S ::= if (E) S
    | if (E) S else S
    | s
 E ::= e
 if (e) if (e) s else s
-\end{lstlisting}
-Deux représentations:\\
+\end{lstlisting}}};
 
-\begin{tabular}{ll}
-{\begin{lstlisting}[frame=leftline]
+	\node[text width=2.5cm,align=center,  above right=-1.5cm and 1.5cm of A] (B) 
+	{{\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
 if (e)
     if (e)
         s
     else
         s
-\end{lstlisting}}\hspace{1cm}
-&
-{\begin{lstlisting}[frame=leftline]
+\end{lstlisting}}};
+	\node[text width=2.5cm,align=center, below right=-1.5cm and 1.5cm of A] (C) 
+	{{\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
 if (e)
     if (e)
         s
 else
     s
-\end{lstlisting}}
-\end{tabular}
-\vspace{.5cm}
+\end{lstlisting}}};
 
-Pour résoudre cette ambiguité, on groupe le \texttt{else} avec le \texttt{if} précédent.\\
-Il y a aussi ambiguité avec $x.y.z$: est-ce un \textit{field selection}, un nom de package, un nom de class, etc. Pour résoudre cela, un nœud \textit{Ambiguous Name} est placé dans l'AST et est revurevu par le compileur après la déclation des types (\textit{type declaration}).\\
+		\path[->] (A) edge (B)
+		(A) edge (C);
 
-Pour les parseur des langages décrits par une grammaire \textit{context-free}, on utilise une \textit{pushdown} stack avec \textit{backtracking}. Lorsque le \textit{backtracking} n'est pas nécessaire, on parle de parsing déterministe. Deux types de parsing déterministes:
+\end{tikzpicture}
+\end{center}
+
+
+\paragraph{x.y.z ambiguous}
+
+Il y a aussi ambiguité avec $x.y.z$: est-ce un \textit{field
+selection}, un nom de package, un nom de class, etc. 
+
+
+Pour résoudre cela, un nœud \texttt{Ambiguous Name} est placé dans
+l'\textbf{AST} et est revu par le compileur après la déclation des types
+(\textit{type declaration}).
+
+
+\subsubsection{Parseur}
+
+Pour les parseur des langages décrits par une grammaire
+\textit{context-free}, on utilise une \textit{pushdown} stack avec
+\textit{backtracking}.
+
+Lorsque le \textit{backtracking} n'est pas nécessaire, on parle de
+parsing déterministe. Deux types de parsing déterministes:
+
 \begin{itemize}
-	\item Top-Down: on part du symbole de départ pour arriver à la fin.
-    \item Bottom-up: on part de la phrase et on remonte jusqu'au symbole de départ.
+    \item Top-Down: le parser commence avec le \texttt{start symbol}
+        et étape par étape dérive l'input sentence pour produire l'\textbf{AST}
+        du root aux feuilles.
+    \item Bottom-up: le parser commence avec l'input sentence et le scanne
+        de gauche à droite et applique les règles. L'\textbf{AST} est construit
+        du bas vers le root.
 \end{itemize}
 
+
 \subsection{Top-Down Deterministing Parsing}
-Deux types de top-down: recursive descent ou $LL(1)$. Tous deux vont de gauche à droite, regarde et scanne un seul symbole à la fois. Le parseur démarre du symbole initial comme goal initial. Il va scanner la phrase d'input et parser les entités syntaxique représentées par le symbole de départ.
+
+Deux types de top-down: 
+\begin{itemize}
+    \item recursive descent 
+    \item $LL(1)$. 
+\end{itemize}
+
+Tous deux vont de gauche à droite, regarde et scanne un seul symbole
+à la fois. Le parseur démarre du symbole initial comme goal initial.
+Il va scanner la phrase d'input et parser les entités syntaxique
+représentées par le symbole de départ.
 
 \subsubsection{Parsing by recursive descent}
 On doit avoir une méthode par parser, chaque non terminal suivant la règle de production adaptée. Suivant le prochain symbole non scanné, la méthode décide de la règle à appliquer et scanne les terminaux utiles et les non-terminaux en utilisant les méthodes par les parsers. Ces méthodes construisent également les nœuds AST. Le scanner a quelques méthodes utiles pour aider à décider de la règle de production adéquate :
