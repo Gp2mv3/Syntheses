@@ -1,7 +1,7 @@
 \documentclass[en]{../../../eplsummary}
 
 \hypertitle{Distributed}{8}{INGI}{2345}
-{Nicolas Houtain \and Gorby Nicolas Ndonda Kabasele}
+{Nicolas Houtain \and Gorby Nicolas Kabasele Ndonda}
 {Peter Van Roy}
 $$$$
 
@@ -11,6 +11,9 @@ Attention : This summary is actually based on course note
 (Need slide to understand)
 
 \section{Parallel and distributed computing}
+A distributed system is a set of nodes,connected by a network
+which appear to its users as a single coherent system.
+
 \begin{itemize}
     \item Parallel computing : many node, optimize performance, no
         failure
@@ -21,39 +24,53 @@ Attention : This summary is actually based on course note
     \item[$\to$] Loosely coupled(high latency and low perfomance)
 \end{itemize}
 
-\section{Consensus}
+\section{Core Problems}
+\subsection{Consensus}
+Consensus is the process of agreeing on a number.
+Problem is that all the nodes propose a value and some nodes might
+crash \& stop repsonding.
 
+\subsection{Atomic Broadcast}
+If a node broadcast a message, all nodes must deliver 
+the message in the same order.
+
+\subsection{Relation}
 Atomic broadcast $\equiv$ consensus (proof slide 13)
 
 It's possible to resolve consensus if we have atomic broadcast and vice-versa.
 \begin{enumerate}
-    \item broadcast $\to$ consensus : We take the first proposal as they have an order 
+    \item broadcast $\to$ consensus : We take the first proposal as 
+    messages are received in the same order.
     \item consensus $\to$ broadcast : The subject of the consensus is the order to take.
 \end{enumerate}
 
-Paxos est ce qui est le plus utilisé pour les consensus (TODO)
+Paxos est ce qui est le plus utilisé pour les consensus\footnote{\url{http://research.microsoft.com/en-us/um/people/lamport/pubs/paxos-simple.pdf}}
+ %J'ai vu un TODO mais je suis pas sur qu'il faille connaitre.
 
-\section{Modeling distributed system}
+\section{Concurrency Aspects}
 
 \begin{itemize}
-    \item Asynchronous : There is no bound on the time for a message to arrive and to be computed, it resolve consensus iff 0 node crashes
+    \item Asynchronous : There is no bound on the time for a message to
+     arrive and to be computed, it resolve consensus iff 0 node crashes
     \item Partially synchronous : It start asynchronous and then become
         synchronous(it get an upper bound, we know it will happen but we
         don't know when.)
-	  Consensus sit < $\frac{n}{2}$ crashes
+	  Consensus up to $\frac{n}{2}$ crashes
     \item Synchronous : Bound known for delivering and computation of message. Consensus with n-1 crashes
 \end{itemize}
 
 \paragraph{Asynchronous vs Synchronous}
 
-Bound is simulated with a expect bound to be in partially synchronous.
+Bound is simulated with an expected bound to be in partially synchronous.
 
-\section{Failure node}
-Bound exist but we don't know the exact value because this bound can
-change with time (if RTT increase for example)
-
+\section{Failure Aspects}
+Each node use a failure detector that is implemented by 
+heartbeat and waiting.\\
+Problem $\to$ bound exist but we don't know the exact value because
+this bound can change with time (if RTT increase for example), 
 We need to adapt the bound.
 
+Other kinds fault than crash can appears
 \begin{itemize}
     \item \textbf{Byzantine faults} : Sending wrong information, omit
         messages,\ldots
@@ -77,7 +94,11 @@ We need to adapt the bound.
                 \end{enumerate}
         \end{enumerate}
 \end{itemize}
-
+For example in a token ring algorithm:
+\begin{itemize}
+	\item Illegitimate state: 0,2,3... token.
+	\item Legitimate state : only one token.
+\end{itemize}
 
 \section{Formal models of distributed system}
 
@@ -125,9 +146,11 @@ A state is define by triple $<l, O, s>$ :
     \caption{Example states}
 \end{figure}
 
+
+
 \paragraph{Working}
 \begin{enumerate}
-    \item Waite for message
+    \item Wait for message
     \item When receive message, do some computation and send message
     \item Goto 1.
 \end{enumerate}
@@ -145,7 +168,19 @@ A state is define by triple $<l, O, s>$ :
 \end{itemize}
 
 \subsubsection{Transition functions}
-%TODO
+
+Formally a transaction functions requires for any two
+$f(<I_1,O_1,s_f1>)=<I_2,O_2,s_2> \ and \ f(<I_3,O_3,s_3>)=<I_4,O_4,s_4>$
+\begin{itemize}
+	\item $I_2=I_4 =<\emptyset,...,\emptyset$ (all inbufs are empty)
+	\item if $I_2=I_4 and s_1=s_3$ then
+	\begin{itemize}
+		\item $s_2=s_4$ (don't observe channel)
+		\item $O_1[i] \subseteq O_2[i] \ and \ O_3[i] \subseteq O_4[i]$ 
+		(only add msg to outbuf)
+		\item $O_2[i]-O_1[i] = O_4[i]-O_3[i]$ (don't observe channel)
+	\end{itemize}
+\end{itemize}
 
 
 \subsubsection{Execution}
@@ -170,6 +205,8 @@ event_2, config_2,\cdots$''
         configuration c if  accesible state of node $j$ in c is $s_1$ 
     \item del(i, j, m) \textbf{application} in configuration c if m is
         in outbuf for link i-j of node i in c
+        
+        %TODO EXAMPLE SLIDE 11?
 
     \item \begin{enumerate}
             \item if transition e=($s_1, s_2, i$) is applicable
@@ -182,22 +219,30 @@ event_2, config_2,\cdots$''
 
 
 \subsection{Asynchronous (Schedules) / Synchronous}
-Non-determinism come from asynchrony(messages take arbitrary time to 
-be delivered, and the time to compute varies)\ldots
+Processes are deterministic,
+Non-determinism comes from asynchrony(messages take arbitrary time to 
+be delivered, and the time to compute varies)\ldots\\
+A \textbf{schedule} is the sequence of events. The event are the
+one that determine the properties(del($i,j,m$) determines the message
+asynchrony and comp($i$) determines the proccess speed.)
+ so all non-determinism is embedded in schedule.
 
-%TODO
-
+\begin{itemize}
+	 \item Given the initial conf, the schedule determines the whole 
+	 execution.
+	 \item Not all schedules are allowed for initial conf. (some 
+	 event may be impossible to occurs.
+\end{itemize}
 
 \subsection{Order of event}
 The order in which two applicable computation events or
 two applicable delivery events are executed is irrelevant!\\
-A schedule is a sequence of events. Given the initail configuration, it 
-determines the whole execution. Since:
-\begin{itemize}
-	\item del($i,j,m$) determines the message asynchrony
-	\item comp($i$) determines the proccess speed.
-\end{itemize}
-The non-determinism is embedded in schedule.
+The idea of the proof is that if you two differents comp
+events $a$ and $b$( meaning on different node!) applicable in a
+configuration then appliying $a$ first will not change the state of the
+node related to $b$ (vice-versa). 
+\paragraph{Note} It is only true for event that are not causally
+related!
 \subsection{Admissible execution (Fairness)}
 An execution is admissible if:
 \begin{itemize}
@@ -206,7 +251,7 @@ An execution is admissible if:
 \end{itemize}
 The infinity property permit messages to wait arbitrary long times before
 being delivered.
-\subsection{Synchronus Systems}
+\subsection{Synchronous Systems}
 The execution is partitionned into disjoints rounds.  A round consist of 
 deliver event for all message in outbuf and one compute event on 
 every process.
@@ -246,9 +291,9 @@ are similar to each other.
 Computation theorem implies two importants results:
 \begin{enumerate}
 	\item There is no algorithm that can observe the order of the sequence
-	of events for all executions. %TODO ADD PROOF
+	of events for all executions. %TODO ADD PROOF (pas compris)
 	\item Computation theorem does not hold in a model extended s.t each
-	process read an hardware clock.%%TODO ADD PROOF
+	process read an hardware clock.%%TODO ADD PROOF (pas compris)
 \end{enumerate}
 \subsection{Clock}
 A clock is used to tell locally if two events are causally related.

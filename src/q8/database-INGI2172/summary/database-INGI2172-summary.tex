@@ -1,4 +1,10 @@
 \documentclass[fr]{../../../eplsummary}
+
+\renewcommand{\labelitemi}{$\bullet$}
+\renewcommand{\labelitemii}{$\cdot$}
+\renewcommand{\labelitemiii}{$\diamond$}
+\renewcommand{\labelitemiv}{$\ast$}
+
 \usepackage[french]{varioref} % \vref and \vpageref
 \usepackage{graphicx} % images
 \usepackage{float} % images
@@ -52,10 +58,11 @@
 
 %%%%%%%%%%%%%%%%%%%%
 
+
 \title{LINGI2172 - Exams}
 \author{Matth, LN, Alex, Ben, Leader, Houtain Nicolas}
 \hypertitle{Databases}{8}{INGI}{2172}
-{Matthieu Baerts\and Benoît Baufays\and Julien Colmonts\and Alex Vermeylen\and Hélène Verhaeghe}
+{Houtain Nicolas \and Matthieu Baerts\and Benoît Baufays\and Julien Colmonts\and Alex Vermeylen\and Hélène Verhaeghe}
 {Bernard Lambeau}
 \section{Intro}
 A database is a collection og related data, where data means fact that
@@ -250,8 +257,44 @@ TODO slide 4b
 
 \subsection{PostgreSQL}
 
-TODO
+\subsubsection{Tuple Calculus and Relational Algebra }
+A tuple relational calculus have the form:
+$${t_1.A_j,t_2.A_k,...,t_n.A_m|COND(t_1...t_n)}$$ 
+\paragraph{Example:} \{t.Fname,t.Lname,t.Address | EMPLOYEE(t) AND ($\exists d$)(DEPARTMENT(d)
+AND d.Dname = 'Research' AND d.Dnumber = t.Dno\} which corresponds to a query listing the name and 
+address of all employees who work fot the 'Research' department.\\
+While in relational algebra you build the solution (X = 98+2) , in Tuple
+calculus you describe it (find x s.t X-2=98).
 
+\subsubsection{SQL relationnal operator}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|l|l|}
+        \hline
+        \textbf{Logic} & \textbf{SQL} \\
+        \hline
+        AND & JOIN \\
+        & WHERE (restriction) \\
+        & GROUP BY  (HAVING)\\
+        \hline
+        EXISTS & EXISTS (projection) \\
+        & DISTINCT\\
+        & IN\\
+        \hline
+        OR & UNION \\
+        \hline
+        (AND) NOT & EXCEPT (difference) \\
+        &NOT EXISTS\\
+        & NOT IN (semi-difference) \\
+        \hline
+        & AS \\
+        \hline
+    \end{tabular}
+    \caption{Link Logic operate and SQL}
+\end{table}
+
+%TODO EXAMPLE WITH 5b slide 30 WHERE FAILS
 
 \section{Constraint}
 
@@ -259,30 +302,46 @@ Constraints express the integrity rules for a database.
 They enforcement of constraints by the DBMS ensures that the
 database is at all times in a consistent state.
 
-\subsection{KEY constraints}
+\subsection{KEY constraints}%\label{key}
+A key for a relvar r is a set of attributes of r (i.e, a subset of 
+r's heading) such that at no time does r contain more than one tuple
+having any given collection of valuers for those attributes.\\
+A key must have the property of irreducibility meaning that we cannot 
+take any attribute away from a key and still have a key.\\
+A relvar can have several keys : the nominated one is called 
+''primary key'' and the others ''alternate keys''.
 
-The key of a relation must be uniqueness. 
-A relvar can have several keys : the nominate on is called ``primary key'' and the
-other ``alternate keys''.
+\paragraph{Definition from the book}
+\begin{description}
+	\item[SuperKey :] Let K be a subset of a ther heading of the relvar $r$. Then K is a 
+	\textbf{superkey} for $r$ iff , at all times , t1 and t2 both appear
+	in the body of $r$ and the projection t1\{K\} is equal to the
+	projection t2\{K\},then t1 = t2(i.en they are the same tuple)
+	\item[Key :] K is \textbf{key} for $r$ iff:
+	 \begin{itemize}
+	 	\item K is a superkey for $r$
+	 	\item No proper subset of K is a superkey for $r$.
+	 \end{itemize}
+\end{description}
+
+In others word, a superkey is a set of attributes that uniquely identifies
+any tuples within the body of the relvar. A superkey become a key 
+when it is reduced to the minimum number of attributes.
 
 \subsection{Foreign key}
 
 There is a \textbf{inclusion dependency} because the relation which
 contains a foreign key (SECOND) must be included into the relation which
-contains the key (FIRST) : $$ FIRST { StudentId } \supseteq SECOND {
+contains the key (FIRST) : $$ FIRST\ { StudentId } \supseteq SECOND \ {
 StudentId}$$
 
-\paragraph{Superkey} is a combination of columns that uniquely identifies
-any row within a function. A superkey become a key when he is reduced to
-the minimum number of columns.
+
 
 \paragraph{Generalisation of inclusion dependency}
-$$ IS_EMPTY( SECOND NOT MATCHING FIRST )$$
+$$ IS\_EMPTY( SECOND\ NOT\ MATCHING\ FIRST )$$
 
 \paragraph{Multiple assignement} is used when we need to update several
 variable on the same time to respect some constraint.
-
-
 
 \subsection{Implicit constraint}
 
@@ -298,6 +357,13 @@ The single relvar design is preferred so long as the constraint implied
 by it truly reflects the real world!
 
 \section{Normal Form}
+In database design, there are some requirement that can be used to check 
+the quality of database:
+\begin{itemize}
+	\item Orthogonality
+	\item Redundancy
+	\item Simplicity
+\end{itemize}
 
 \subsection{Fonctional dependency (FD)}\label{fd}
 
@@ -334,8 +400,24 @@ des attributs de la relation.
 On parle de \textit{join dependency triviale} si une des tables du join
 à tous les attributs de la relation initiale: bref que l'on ne peut
 plus faire de join dependency (voir exemple en section \vref{6NF}).
+\paragraph{Notation:}
+Si on a la relvar \texttt{WIFE\_OF\_HENRY\_VIII}  = \{Wife\#,FName,LName,Fate\}
+, une JD se note : * \{ \{ Wife\#,FName \}, \{Wife\#, LName , Fate \}\}
+
+
+\subsection{Normalisation}
+Normalisation is the act of decomposing a relvar that fails
+to satisfy a given normal form scuh that the result is an
+equivalent set of two or more ''smaller'' relvars that do satisfy
+that normal form. The goal of the normalisation are:
+\begin{itemize}
+	\item Remove redundancy
+	\item No update anomalies
+	\item Full orthogonality
+\end{itemize}
 
 \subsection{1 NF}
+\paragraph{Normalisation}
 
 A relation is in 1NF if attribute domains include only
 atomic (simple, indivisible) values and each tuple
@@ -382,6 +464,8 @@ On peut également définir par cette définition : Pour toute dépendance fonct
     \item chaque élément de $A \backslash \{X\}$ est \textit{prime} (est contenu dans une clé)
 \end{itemize}
 
+For example go check \url{http://www.studytonight.com/dbms/database-normalization.php}
+
 \subsection{BCNF}
 Pour toutes dépendances fonctionnelles (voir section \vref{fd}) $X \rightarrow A$, il doit y avoir au-moins une de ces 2 conditions respectées:
 \begin{itemize}
@@ -389,7 +473,8 @@ Pour toutes dépendances fonctionnelles (voir section \vref{fd}) $X \rightarrow 
     \item $X$ est une superkey (voir section \vref{key})
 \end{itemize}
 
-%TODO advantages of BCNF 
+BCNF allows to deal with the redundancy and the lack of orthogonality 
+through splitting.
 
 \subsection{5 NF}
 Une relation est 5NF si toutes \textit{join dependencies} (voir section \vref{jd}) non-triviales est implicite par les candidate keys (= super key quand il n'y a pas encore de clé primaire): \textit{join dependencies} à $\{A, B, ..., Z\}$ est implicite par les candidates keys si et seulement si chaque $A, B, ..., Z$ est superkey.
@@ -410,24 +495,54 @@ Une relation est 6NF si elle ne satisfait aucune \textit{join dependency} (autre
 \end{table}
 On ne peut plus faire de join dependency mais du coup, c'est dangereux: si on ajoute une nouvelle entrée dans la première table, il faut ajouter des contraintes pour être sûr d'ajouter aussi dans les autres tables si c'est nécessaire.
 
-\subsection{Heath's theorem}
-%TODO
+\subsection{FD-driven Logical Design}
+A general method for logical design is
+given a relvar R with heading H and some FDs, decompose R into
+relvars $R_1\  ...\  R_n$ s.t
+\begin{itemize}
+	\item $H\ =\ H_1\cup\ ...\ \cup\ H_n$
+	\item $R_i$ is in a particular NF, $\forall i$
+	\item Every FD appears in a $R_i$
+	\item R = JOIN\{$R_1,\ ...\ ,R_n$\}
+\end{itemize}
 
+\subsection{Heath's theorem}
+\begin{itemize}
+	\item Let A,B and C be subsets of the heading of a relvar R s.t every 
+	attribute appears in at least one subset and suppose FD $A\to B$ 
+	holds.
+	\item Then , the JD*$\{A\cup B,A\cup C\} $holds in R
+\end{itemize}
+
+%%TODO Algorithms
 
 \section{View, Rules \& Triggers}
 
 \subsection{View}
 
-View are relation variables (capture predicate extension, should be updatable,
-have constraints and have keys).
+View are computed relation variables (capture predicate extension, 
+should be updatable, have constraints and have keys). 
 
-But, unlike ``BASE'', they should be kept hidden to end-users.
+But, unlike ''BASE'', they should be kept hidden to end-users.
+Views allows the independence of the logical schema. If the schema
+evolves (i.e for a better design), views will shield users from
+breaking changes.
+
 %TODO
 
 \subsubsection{View updating}
-
-%TODO: pas compris
-
+\begin{description}
+	\item[Golden rule :] No database is ever allowed to violate its 
+	own databas constraint.
+	\item[Assigment principle :]After assignment og value v to 
+	variable V then v = V must evaluate to true.
+\end{description}
+Depending on how the view is defined, updating a view can be a problem.
+For example:
+\begin{lstlisting}
+V := SUPPLIERS{CITY} UNION PARTS {CITY}
+\end{lstlisting}
+If we want to insert something, do we have to do it in the both?
 
 \subsection{Rules \& Triggers}
 
@@ -461,26 +576,61 @@ En outre, la rule peut être utilisé avec une view, alors que le
 trigger, ne peut pas.
 
 \section{Database programming}
-
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Techinique} & \textbf{Examples} & \textbf{What is exposed} & \textbf{Data transfer}\\
+\hline
+Active Database & PSM,PL/SQL& SQL code& Shared variables and cursors\\
+\hline
+Embedded SQL &&SQL code & Shared variables and cursors\\
+\hline
+Call-level APIs&JDBC,ODBC&SQL as string repr.&Cursor-like ResultSet\\
+\hline
+Query builders& Sequel,JOOQ& SQL ASTs&Cursor-like ResultSet\\
+\hline
+ORMS&Hibernate & Object model & Class instances(one at a time)\\
+\hline
+First-class Relation &Alf & Relations and Relvars& Relation instances (set at a time)\\
+\hline
+\end{tabular}
+\caption{Various approaches to Database Programming}
+\end{table}
+An host language is a language in which SQL calls are embedded.
 %TODO table slide 9c (64)
-
 \subsection{Active database} 
 SQL with statement, trigger and stored procedures
 
 \begin{itemize}
-    \item IF .. THEN .. ELSE, WHILE .. DO .., REPEAD .. UNTIL ..
-    \item SELEC .. INTO .., Curso
+    \item Branching/loops : IF .. THEN .. ELSE, WHILE .. DO .., REPEAT.. UNTIL ..
+    \item Interaction :SELECT .. INTO .., Cursors
 \end{itemize}
-
+A cursors is a tuple-variable that ranges over all tuples in the result 
+of some query. We can get the result from the cursor through the 
+\texttt{FETCH} command.
 \begin{itemize}
     \item[Pros]
-    \item Easy, efficient
-    \item[Cons]
-    \item Bad language, difficult to test and maintain
+    \begin{itemize}
+		\item Easy to use \& deploy.
+		\item Efficiency (treaments close to data)
+		\item Transactions made easy
+     \end{itemize}
+     \item[Cons]
+    \begin{itemize}
+		\item Difficult to test \& deploy (incompatibility)
+		\item Hard to scale/distribute processing
+		\item Bad programming language design
+	\end{itemize}
 \end{itemize}
 
 \subsection{Embedded SQL}
-%TODO
+In Embedded SQL a preprocessor is used. SQL statements are turned into
+procedure calls that fit with the host-language code surronding. (Key word
+EXEC is used to easiliy recognize SQL calls\\
+To interact with each other,  SQL and the host-language share variable. 
+Embedded SQL is no longer used because it is hard to maintain programs with 
+mixed styles and there is a need for higher-level construts.
 
 \subsection{Call-level interface} 
 Use a external library to connect and execute some statement on
@@ -510,21 +660,56 @@ handles SQL escaping automatically)
 \end{itemize}
 
 \subsection{ORM} 
-
+Expose a Class diagram(Object model) instead of a relational schema to 
+the application layer. Then map that diagram to the relational schema. 
 \begin{itemize}
     \item[Pros]
-    \item Really simple, natural layer for object-minded people
+    \begin{itemize}
+		\item Simple and less prone to SQL injections
+		\item Natural data layer for object-minded people
+	\end{itemize}
     \item[Cons]
-    \item Risk of loosing control of the database (hide database connect/transaction),
+    \begin{itemize}
+		\item OO/ Relation Mismatch (one-at-a-time vs set-at-at-a-time ways of thinking)
+		\item Software coupling (Huge OO model where all is already implemented
+		\item Require control of the SQL schema
+		\item Hide database connections and transaction
+	\end{itemize}
         %TODO
 \end{itemize}
 
 \subsection{Relation as first-class citizen}
-%TODO
+Expose relation concepts at application layer (relational algebra)
+\begin{itemize}
+	\item[Pros]
+	\begin{itemize}
+		\item Algebra cleaner than SQL query builders
+		\item Simpler and sounder %%SOunder?
+	\end{itemize}
+	\item[Cons]
+	\begin{itemize}
+		\item Risk of loosing control of generated SQL.
+		\item Not widely available.
+	\end{itemize}
+\end{itemize}
 
-
+\subsection{The NOSQL Cases}
+Data models is not the same: Key-value stores or document database. With one
+of these approach, it is easier to do a mapping with a programming languages.
 
 \section{Transactions}
+\subsection{Purposes}
+DBMS manages database variables, the variable are:
+\begin{itemize}
+	\item Mutable : different values at different times.
+	\item Shared : read \& updated by many users or processes
+	at the same time.
+	\item Complex: consistency constraints to be preserved whatever
+	happens.
+\end{itemize}
+Mutable shared state is one of the biggest source of complexity in
+software engineering. Transaction deals with this problem.
+\subsection{Properties}
 Toutes les transactions doivent être ACID pour être relationnelles. ACID:
 \begin{itemize}
     \item \textbf{Atomic}: The whole process is done or none is.
@@ -539,11 +724,12 @@ Toutes les transactions doivent être ACID pour être relationnelles. ACID:
 There is Read-only and Read-write access for a transaction\ldots Indeed, using 
 this may improve performance in practice.
 
-\paragraph{ } Use COMMIT to complete the transaction or ROLLBACK to abord
+\paragraph{ } Use COMMIT to complete the transaction or ROLLBACK to abort
 the transaction.
 
 
 \subsection{Isolation levels}
+
 \begin{tabular}{|l|c|c|c|}
     Level & Dirty read & Nonrep. read & Phantom read \\
     \hline
@@ -567,17 +753,20 @@ the most efficient solution.
 \end{itemize}
 
 \section{Recovery}
+\subsection{Aim of Recovery}
 
-There is different failure like a system failures, a transaction failures and media
-failures but we need to ensure \textbf{atomicity} (reverte all transaction updates), 
-\textbf{consistency} (roolback from a inconsistent state) and \textbf{durability}.
+There are different type of failure such as system failures,  
+transaction failures and media
+failures. The aim of recovery is to ensure \textbf{atomicity} 
+(revert all transaction updates),\textbf{consistency} (roolback from a 
+inconsistent state) and \textbf{durability}.
 
 
 \subsection{Transaction log}
 
 The key problem is the unfinished transaction ! The solution
 is to use a transaction log and on failure recovery, unfinished transaction
-have start.
+have start but no commit nor abort record.
 
 Three solution to make the transaction log :
 \begin{itemize}
@@ -586,25 +775,40 @@ Three solution to make the transaction log :
         cannot use the log to bring backup database copies up to date.
     \item[]
     \item Redo logging (deferred changes) :
-    \item[Drawback] : Need to kleep all modified block in memory until commit.
+    \item[Drawback] : Need to keep all modified block in memory until commit.
     \item[]
     \item Both of them
 \end{itemize}
+\subsubsection{Undo logging}
+The idea is to keep old value in the log records and do the real update 
+job on disk. Operation can be undo on failure recovery thanks to the log.
+(see example slide 16 in 10c)
+\subsubsection{Redo logging}
+The idea is to keep new values in log recodes and do the real update on
+in memory (not the disk!). Because update are not done on the disk,
+opetation can be redo on failure recovery thanks to the log.
 %TODO explain undo and redo and undo/redo
 
 \paragraph{Checkpointing the log} to avoid very long transaction logs.
-So peroidically :
+So periodically :
 \begin{enumerate}
     \item Do not accept new transactions
-    \item Waint until all transaction finish
+    \item Wait until all transaction finish
     \item Flush all log record to disk
     \item Flush all buffers to disk
     \item Write ``checkpoint'' record on disk
     \item Resume transaction processing
 \end{enumerate}
-
+When a recovery must be done, it starts at the last checkpoint.
 \subsection{Media failures}
 %TODO
+To cope with with Media Failure, there is no choice but making copies.
+There are different techniques:
+\begin{itemize}
+	\item Triple redundancy (keep 3 copies on separate disks)
+	\item Redundant writes/single reads
+	\item Backup database + log
+\end{itemize}
 
 
 \section{Concurrency control}
@@ -612,24 +816,49 @@ So peroidically :
 A process can \textbf{read(X)} and \textbf{write(X)} without any assumption
 on the sceduler.
 
+\subsection{Transaction Schedule}
+Two differents transactions are in conflict if they want to do an
+operation on the same data item and one of the operation is a write.\\
+Transation execute concurrently in an interleaved fashion, the order 
+of execution in which they operates is known as the transaction
+scedule. 
 \subsection{Serializability}
-
+\paragraph{Serial schedule}
+For every transaction T participating in the schedule, all the
+operations of T are executed consecutively in the schedule.
+\paragraph{Serializable schedule}
+A schedule S is serializable :
+\begin{itemize}
+	\item if it is equivalent to some serial 
+	schedule of the same n transactions
+	\item Allow interleaving of transcation operations
+\end{itemize}
+Serial and serializable schedule are correct (consistency of database).
+\subsection{Equivalences} %TODO ameliorer explication
+\begin{description}
+	\item[Result equivalent ] They produce the same final state of the
+	database
+	\item[Conflict equivalent] The order of any two conflicting operations
+	 is the same in both schedules
+	\item[Conflict serializable] Conflict equivalent to some serial schedule.
+	(It can be tested throug a directed graph (slide 15 in 11a))
+\end{description}
 \subsubsection{Lock}
 Lock and unlock need to be atomic operation.
 
 \begin{itemize}
     \item[MODES]
-    \item Read lock (X) : More than one transaction cas share read lock on X but
+    \item Read lock (X) : More than one transaction can share read lock on X but
         no write lock on X by other transaction
     \item Write lock (x) : only one write lock on X
     \item[CONVERSION]
-    \item Lock updrage : read lock on X to write lock on X (Need to have only
+    \item Lock upgrade : read lock on X to write lock on X (Need to have only
         one read lock on X)
     \item Lock downgrade : from write lock on X to read lock on X
 \end{itemize}
 
 \paragraph{Transactions requirement}
-A transaction shoumd be well-formed : lock data before access them, does not lock 
+A transaction should be well-formed : lock data before access them, does not lock 
 an already locked data item and not try to unlock an unlocked data item.
 
 \subsubsection{Two-phase locking}
@@ -648,10 +877,361 @@ The scheduler maintains a \textbf{wait-for-graph} and if he detect a cycle
 then a deadlock exist. In this case, one transaction involved in the cycle
 is selected and rolled-back.
 
-\subsection{Timestamps}
+\subsection{Timestamps (TS)}
+Variable which is monotonically increase to indicate the age of an
+operation/transaction.
+
+To guarantee conflict serializability because we can detect
+conflicting operation occuring in incorrect order.
+
+\begin{itemize}
+    \item Transaction T issues a write(X) operation :
+        \begin{itemize}
+            \item If read\_TS(X) > TS(T) or write\_TS(X) > TS(T) $\to$ roll-back T 
+                because a younger transaction has already read/wrote X
+            \item Else execute write(X) and write\_TS(X) = TS(T)
+        \end{itemize}
+    \item Transaction T issues a read(X) operation :
+        \begin{itemize}
+            \item If write\_TS(X) > TS(T) $\to$ roll-back T 
+                because a younger transaction has already wrote X
+            \item Else execute read(X) and read\_TS(X) = max(TS(T), read\_TS(X))
+        \end{itemize}
+\end{itemize}
+
+\section{Storage}
+\begin{description}
+	\item[Primary Storage :] This category includes storage media that can be
+	operated on directly by the computer CPU. Usually provides fast access
+	to data but is of limited storage capacity.
+	\item[Secondary Storage :] This category includes SSD disks,
+	 optical disk,tape... Cannot be processed by the CPU must first copied 
+	 in primary storage (slower access).
+\end{description}
+\url{http://mathcomp.uokufa.edu.iq/staff/kbs/file/2/Fundamentals\%20of\%20Database\%20Systems\%20-\%20Ramez\%20Elmasri\%20&\%20Navathe.pdf}
+\subsection{Disk}
+\paragraph{Terminology}
+Information is stored on a disk surface in concenctric circles of small
+widith, each having a distinct diameter. Each circle is called a \textbf{track}.\\
+In disk packn the tracks with the same diameter on the various surfaces
+are called \textbf{cylinder}.\\
+A \textbf{sector} is a part of a track, it is hard-coded on the disk surface and cannot be
+changed. The operating system also divides the track into equal-sized disk 
+\textbf{blocks}. The size is fixed at initialization and cannot be changed dynamically.\\
+Blocks are separated by fixed-size \textbf{gap} which contains information to 
+determine which block on the track follows each gap.\\ %Ease the search?
+The \textbf{head} is used to read/write on the disk and its attached to 
+a mechanical arm. Each arms are connected to an \textbf{actuator} which
+moves the heads over cylinder of tracks.\\
+
+
+Access time 
+\begin{tabular}{p{6cm}|cc}
+     & DDR & SSD \\
+ = Seek time (moving the head) & 4ms $\to$ 15 ms& 0.08ms $\to$ 0.16ms \\
+    + Rotation delay & (2ms $to$ 7ms) & 0 \\
+    + Transert rate & 1000Mbit/sec & 3000Mbit/sec \\
+\end{tabular}
+
+\subsubsection{Double buffering}
+When blocks transfering block from disk to main memory, use
+several buffer to speed up the process. The idea is, while one 
+buffer is being read/written, the CPU can process the data in an 
+other buffer.
+
+
+\paragraph{Note :} Only possible if there is a an I/O processor 
+independent of the CPU
+\subsection{Disk organisation}
+
+\subsubsection{Data items} 
+The data item is its value (fixed/variable length) and has a type that
+tell us how to interpre it and its representation size.
+\subsubsection{Records} 
+
+Collection of related data item called field. A format specified how to read
+this record.
+
+\begin{itemize}
+    \item Fixed format : Defined in advance by the algorithm
+    \item Variable format : Some byte is used before the
+        record to say how to read it\ldots
+
+        Useful but may waste space
+\end{itemize}
+
+\subsubsection{Blocks} 
+\begin{itemize}
+    \item \underline{Separate record} : 
+        \begin{enumerate}
+            \item Used fixed size for the record (no need to separate)
+            \item Use special marker
+            \item Give record lengths (within each record or in block header)
+        \end{enumerate}
+    \item \underline{Unspanned} : record must be within one block. 
+
+        Simpler but may waste space.
+    \item \underline{Spanned} : essential if record size > block size.
+    In that case, a pointer at the end of the first block points to 
+    the block containing the remainder of the record.
+
+        Sequencing options :
+        \begin{enumerate}
+            \item Next record physically contiguous
+            \item Linked (after the record there is the reference to the next one)
+            \item Overflow area : It is used to store new records
+            without rewriting the sequential file. References to the new
+            records are placed in the header of the file.
+            \item Indirection %TODO
+        \end{enumerate}
+\end{itemize}
+
+\subsubsection{Files} 
+\begin{enumerate}
+    \item Heap files : Not sorted, insertion at the end
+    \item Sorted files : Record are contained in a certain order.
+    \item Hash files : Similar to hashtables 
+\end{enumerate}
+There are many operations that can be done on the files such 
+as OPEN,READ,DELETE,...
+\paragraph{Heap files}
+\begin{itemize}
+	\item Searching for a record is done in a linear search.
+	\item May lead to wasted storage space (when deleting a record
+	it leaves a ''hole''.)
+	\item Require periodic reorganization.
+\end{itemize}
+\paragraph{Sorted files}
+\begin{itemize}
+	\item Sorting based on a ordering field. (If this field is the key 
+	then it's a called an ordering fields).
+	\item Search more efficient. (logharitmic)
+\end{itemize}
+\paragraph{Hash files}
+\begin{itemize}
+	\item Hashing based on hash field (if key field then it is called
+	an hash key).
+	\item Very fast acces to records.
+\end{itemize}
+
+\subsection{Indexing}
+An index is an auxiliary file that makes it more
+efficient to search for records in the data file. 
+( index file size <<< data )
+$$<field value, pointer>$$
+%%TODO : example no index vs with index
+%\begin{tabular}{|c|c|}
+%\hline
+%With index & without index\\
+%\hline
+%\begin{itemize}
+%	\item r = 30.000 records
+%	\item R = 100 bytes (record size)
+%	\item B(lock) = 1024 bytes
+%	\item Blocking factor = B/100 =~10 records per block
+%	\item Binary search = $log_2(3000)$ = 12
+%\end{itemize}
+%&
+%\begin{itemize}
+%	\item V = 9 bytes (ordering key size)
+%	\item  P = 6 bytes(logical pointer size)
+%	\item B(lock) = 1024 bytes
+%	\item Blocking factor = B/15 =~67
+%	\item Binary search = $log_2(45) $+1 =7
+%\end{itemize}
+%\\
+%\hline
+%number of access 12 & number of access 7\\
+%\end{tabular}
+
+\begin{itemize}
+    \item Dense index : index for \textbf{every key value} in the data file
+    \begin{itemize}\item[$\to$] can tell if record exist without accessing file \end{itemize}
+    \item Sparse index : index for some search value
+\end{itemize}
+
+
+\subsubsection{Primary index}
+\begin{tabular}{m{7cm}m{8cm}}
+\begin{itemize}
+    \item The data file must be ordered on a key field
+    \item One index entry for each block in the data file
+        $\to$ \textbf{sparse index}
+        (Keys of anchor 
+        record rather than every search value)
+    \item Major problem with insertion and deletion of record
+\end{itemize}
+&
+\includegraphics[width=6cm]{img/primary.png}
+\end{tabular}
+
+\subsubsection{Clustering index}
+\begin{tabular}{m{7cm}m{8cm}}
+\begin{itemize}
+    \item The data file must be ordered on a non-key field (cluster field)
+    \item One index entry for each distinct value with that field value
+    (block pointer points to the first occurence of this value)
+        $\to$ \textbf{sparse index} 
+\end{itemize}
+&
+\includegraphics[width=6cm]{img/clustering.png}
+\end{tabular}
+
+\subsubsection{Secondary index}
+\begin{tabular}{m{7cm}m{7cm}m{7cm}}
+\begin{itemize}
+    \item Accessing a file for which some
+        primary access already exists.(can be several for the same file)
+        \begin{enumerate}
+            \item With a candidate key
+            \item or a non-key with duplicate values
+        \end{enumerate}
+    \item Composed of two field : data type and (block pointer or recorde pointer)
+    \item One entry for each record $\to$ \textbf{dense index}
+\end{itemize}
+&
+\includegraphics[width=6cm]{img/secondary1.png}
+&
+\includegraphics[width=6cm]{img/secondary2.png}
+\end{tabular}
+
+\subsubsection{Multi-level index}
+\begin{tabular}{m{7cm}m{8cm}}
+\begin{itemize}
+    \item Multi-level index is done with a B-Tree data structure
+        by repeat a primary/clustering index on multiple level 
+    \item[]
+    \item[Remarque:] Multi-level is is useless if add levels don't separate they element in
+        different block
+\end{itemize}
+&
+\includegraphics[width=6cm]{img/multi.png}
+\end{tabular}
+
+
+\paragraph{B-Tree and B+-Tree}
+
+%TODO quick explanation on how B tree work
+
+\begin{figure}[!h]
+\includegraphics[width=6cm]{img/btree.png}
+\caption{B-tree}
+\end{figure}
+
+B-Tree solve the problem to insert and delete new entries in
+a multi level which must be ordered. (In this data-structure
+these operation are quite efficient)
+
+\begin{itemize}
+    \item Insert element in a node an split it in two node if the 
+        node is full (Splitting may propagate to other levels)
+    \item Deleted element from a node and if he become less than
+        half full merged it with neighboring nodes.
+\end{itemize}
+
+
+\paragraph{ } B-Tree are pointers on \textbf{all level} of the three
+where B+-Tree are pointer only at the \textbf{leaf level}
+
+\subsubsection{Using indexes}
+%TODO ?
+
+\section{Query processing}
+\begin{description}
+	\item[Query processing] The process of translating from a high-level
+	query language to actual data access.
+	\item[Query optimization] The process of choosing a suitable execution
+	strategy for processing a query.
+\end{description}
+Two internal representations of a query : Tree or Graph.
+
+\includegraphics[width=9cm]{img/query.png}
+
+\subsection{SQL $\to$ Relationnal algebra}
+
+Query block (Single SELECT-FROM-WHERE [GROUP BY] [HAVING]) is the basic unit
+that can be translated into \textbf{algebraic operator}.\\
+Nested query within query are indentified as separate query blocks.
+
+\subsection{Relationnal algebra $\to$ Data access}
+For every abstract algebra operator (RESTRICT, PROJECT, JOIN,\ldots),
+various algorithms exist (Sort-driven, hash-driven, loop-driven).
+
+\subsubsection{External Sorting}
+\begin{itemize}
+	\item External sorting refers to sorting algorithms that are suitable for 
+	large file of records on disk that do no fit in main memory.
+	\item It uses sort-merges strategy, it consist of sorting small subfiles
+	(runs) then merges them.
+	%TODO cost?
+\end{itemize}
+\subsubsection{Restrict}
+There are diffent algorithm that can be use to implement the restrict
+\begin{itemize}
+	\item Linear search: Check on every record, if it satisfy a condition
+	\item Binary search : If restriction condition involves
+	 a equality comparison on a key attribute and the file is ordered.
+	\item Primary index (or hash key) : if restriction condition involves
+	equality comparison on a key attribute witth a primary index.
+	\item Primary index to retrieve multiple record: If there is a 
+	comparaison condition other that = on a key field with primary index.
+	\item Cluster index to retrieve multiple record : Restriction 
+	involves an equality comparison on a non-key attribute with clustering
+	index.
+\end{itemize}
+If the condition involves only one attribute , the brute force linear 
+search is used if there is no access path.\\
+If the condition involves many attributes, it's the role of the query 
+optimization to choose the best access path. 
+
+\subsubsection{Join}
+Different techniques to implement the join
+\begin{itemize}
+	\item Nested-loop join : Test the join codition t[A] = s[B] for every pair 
+	of record (where A and B are domain-compatible attribute and t and s
+	are record for R and S).
+	\item Single-loop join: If a index exists for one of the two join
+	attributes, use access structure to retrieve all matching records
+	that satisfy join condition.
+	\item Sort-merge join : %TODO
+	\item hash-join : %TODO
+
+\end{itemize}
+
+\subsubsection{Project}
+%TODO
+\subsubsection{Set}
+%TODO
+\subsection{Pipelining Operations}
+%TODO
+\subsection{Query Optimization}
 %TODO
 
+\section{NoSQL}
 
+No SQL has been created to answer the problem of the scalabilility/
+velocity/volume of data.  Goal is not replace RDBMS but rather act
+as a complement.\\
+Oriented on aggregate which is a collection of related objects that 
+treated as a unit.\\
+There are four basic type of database:
+\begin{description}
+	\item[Key/value]: Similar to a hashmap. Data are represented by 
+	key/value couple. All intelligence is left to the querier. Basic 
+	operation are : PUT,GET,DELETE.
+	\item[Column-family Stores]: The number of column is variable. It allows
+	to avoid NULL value. To achieve this variation in the number of column,
+	many columns are associated with a row key.
+	\item[Document] Based on the key/value paradigme. Value is a document
+	(JSON or XML). It's easy with only the key , to get information 
+	organized in a hierarchical way.
+	\item[Graph] Entities are stored as node and relation are depicted via
+	the edges.
+\end{description}
+\url{http://blog.neoxia.com/nosql-5-minutes-pour-comprendre/}
+
+\subsection{Data Distribution}
+%TODO
 
 \section{Other Material}
 \subsection{S3}
