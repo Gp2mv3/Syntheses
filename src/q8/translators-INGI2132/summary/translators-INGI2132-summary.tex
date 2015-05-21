@@ -916,6 +916,9 @@ depuis un symbole de départ (racine) pour arriver à une expression
 
 \subsubsection{Ambiguous Grammars and unambiguous grammars}
 
+Detecter si une context free grammar est ambiguous est \textbf{indécidable}.
+Notons que les grammaires LL(k) et LR(k) sont non-ambiguous.
+
 \begin{itemize}
     \item \textbf{Ambiguous sentence} : Une phrase par laquelle il existe
         plusieurs dérivations possibles. (2 arbres pour représenter $id + id * id$)
@@ -1177,6 +1180,11 @@ On peut avoir des grammaire non $LL(1)$ mais $LL(k)$ avec $k>1$ (on regarde alor
     & & X' &::= \gamma     
 \end{align*}
 
+
+\paragraph{Error recovery}
+Si il reçoit un input non attendu pour terminal/non-terminal ($T$) dans la stack,
+il va simplement skipper les tokens jusqu'a obtenir un token $\in$ Follow($T$).
+
 \subsubsection{Left recursion removal}
 
 \paragraph{Regle typique pour supprimer la left recursion}
@@ -1222,14 +1230,25 @@ A ::= A ac | bc | d
 \end{center}
 
 
-
-
 \subsection{Bottom-up deterministic parsing}
 On passe!!
 
 \subsection{Parser Generation using Java CC}
-On utilise une structure syntaxique EBNF (\textit{extended BNF}. On peut définir ainsi des parseurs $LL(k)$ récursive descent. Le fichier \texttt{j--.jj} contient donc les regex pour la structure lexicale ainsi que les règles syntaxiques du langage.\\
-Entre \texttt{PARSER\_BEGIN(JavaCCParser)} et \texttt{PARSER\_END(JavaCCParser)} sont définies des fonctions utiles et utilisées dans le parser généré. On définit premièrement le symbole de départ (\texttt{compilationUnit}) en fonction de non-terminaux de niveaux inférieurs.\\
+
+On utilise une structure syntaxique EBNF (\textit{extended BNF}). On
+peut définir ainsi des parseurs $LL(k)$ récursive descent. Le fichier
+\texttt{j--.jj} contient donc les regex pour la structure lexicale ainsi
+que les règles syntaxiques du langage.
+
+
+Entre \texttt{PARSER\_BEGIN(JavaCCParser)} et
+\texttt{PARSER\_END(JavaCCParser)} sont définies des fonctions utiles
+et utilisées dans le parser généré : \texttt{reportParserError()} et
+\texttt{recoverFromError()}.
+
+
+\subsubsection{Specification syntaxique}
+
 La syntaxe EBNF est:
 \begin{itemize}
 	\item $[a]$: 0 ou 1
@@ -1237,8 +1256,34 @@ La syntaxe EBNF est:
 	\item $a|b$: $a$ ou $b$
     \item $()$: grouping
 \end{itemize}
-La déclaration de non terminaux ressemble à une méthode java. Il y a un type de retour, un nom, peut avoir des arguments et à un corps de méthode. Il y a un bloc précédent celui-là dans lequel les variables locales sont déclarées.\\
-Lorsqu'il est nécessaire de regarder plusieurs symboles après l'actuel, on utilise la méthode \texttt{LOOKAHEAD(<token>)}. Il y a deux méthodes pour récupérer des erreurs : \textit{shallow} et \textit{deep} (utilisé par j-\--). Dans le corps d'un non terminal, on catch les erreurs du parseur. On choisit alors à quel token on veut reprendre (\textit{skip to token}). Il y a donc premièrement affichage d'une erreur puis récupération par shipping. Les avantages d'un parser autogénéré (JavaCC) sont:
+
+\subsubsection{Déclaration de symbol non-terminaux}
+
+On définit premièrement un symbole de départ
+(\texttt{compilationUnit}) qui est un ``haut niveau'' de non-terminal
+et référence le niveau inférieur de non-terminal. Ceux ci reference
+les tokens définit dans la spécification lexical.
+
+La déclaration de non terminaux ressemble à une méthode java. Il y a
+un type de retour, un nom, peut avoir des arguments et à un corps de
+méthode. Il y a un bloc précédent celui-là dans lequel les variables
+locales sont déclarées.
+
+%TODO : example page 70 chapitre 03
+
+\subsubsection{Lookahead}
+Lorsqu'il est nécessaire de regarder plusieurs symboles après
+l'actuel, on utilise la méthode \texttt{LOOKAHEAD(<token>)}. 
+
+Il y a deux méthodes pour récupérer des erreurs : \textit{shallow}
+et \textit{deep} (utilisé par j-\--). Dans le corps d'un non terminal,
+on catch les erreurs du parseur. On choisit alors à quel token on veut
+reprendre (\textit{skip to token}). Il y a donc premièrement affichage
+d'une erreur puis récupération par shipping. 
+
+\subsubsection{Avantage}
+Les avantages d'un parser autogénéré (JavaCC) sont:
+
 \begin{itemize}
 	\item Structure lexicale mieux expliquée
     \item Construction EBNF possible
@@ -1250,7 +1295,12 @@ Lorsqu'il est nécessaire de regarder plusieurs symboles après l'actuel, on uti
 
 \subsection{Bactracking parsing (not in the book)} %LN
 
-Avec le backtracking parsing, on peut parser n'importe quel langage décrit par une CFG. On va dériver en left most à partir du symbol initial en choisisant la première règle de dérivation. Tant que les terminaux déjà obtenu match le string qu'on veut matcher alors on continue, sinon on revient à l'étape pérédente et on choisit la règle de dérivation suivante.
+Avec le backtracking parsing, on peut parser n'importe quel langage
+décrit par une CFG. On va dériver en left most à partir du symbol
+initial en choisisant la première règle de dérivation. Tant que les
+terminaux déjà obtenu match le string qu'on veut matcher alors on
+continue, sinon on revient à l'étape pérédente et on choisit la
+règle de dérivation suivante.
 
 Exemple:
 
@@ -1299,13 +1349,15 @@ S => ASA => aSA => aASBA => aaSBA
 
 \subsection{Packrat parsing (not in the book)} %LN
 
-Pour éviter le coût du backtrack parsing (qui peut être exponentiel si à chaque fois on se retrouve à devoir prendre la dernière dérivation), on utilise de la mémorization. On obtient donc un algorithme en O(input*\#production).
+Pour éviter le coût du backtrack parsing (qui peut être exponentiel
+si à chaque fois on se retrouve à devoir prendre la dernière
+dérivation), on utilise de la mémorization. On obtient donc un
+algorithme en O(input*\#production).
 
-On va pour chaque index dans l'input essayer de parser via toutes les règles possibles et stocker le résultat ainsi que l'index de fin de l'expression. On peut ainsi aller de l'index le plus grand au plus petit en utilisant les résultats précedemment calculés.
-
-
-
-
+On va pour chaque index dans l'input essayer de parser via toutes les
+règles possibles et stocker le résultat ainsi que l'index de fin de
+l'expression. On peut ainsi aller de l'index le plus grand au plus petit
+en utilisant les résultats précedemment calculés.
 
 \section{Chapitre 4 : Type checking}
 
