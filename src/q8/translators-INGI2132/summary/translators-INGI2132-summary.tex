@@ -1735,11 +1735,190 @@ dans ce cas la variable est analyser différement.
 \subsection{Visitor Pattern and the AST traversal Mechanism}
 
 \section{Chapitre 5 : JVM and Bytecode}
-Voir slides...
+
+\subsection{Introduction}
+
+Une machine virtuelle est un programme implémentant une machine 
+qui exécute un programe comme une machine physique.
+
+\begin{figure}[!h]
+    \centering
+    \begin{tikzpicture}[->]
+        \node (A) { Byte code (.class) } 
+        child{ node {JVM} child{ node {windows}} }
+        child{ node {JVM} child{ node {Linux}} }
+        child{ node {JVM} child{ node {Mac}} };
+
+        \node (B) [above= of A] {Javac};
+        \node (C) [above= of B] {Java code (.java)};
+
+        \node (D) [right= of B] {Scalac};
+        \node (E) [right= of C] {Scala};
+
+        \node (F) [right= of D] {\ldots compilers};
+        \node (G) [right= of E] {\ldots languages};
+
+        \path[->] (C) edge (B)
+                  (B) edge (A)
+                  (E) edge (D)
+                  (D) edge (A)
+                  (G) edge (F)
+                  (F) edge (A);
+    \end{tikzpicture}
+    \caption{JVM}
+\end{figure}
+
+D'autres language choisissent de rejoindre la JVM car c'est facile de générer
+le code et le byte code est compacte, le code est sur une architecture indépendante
+et donc compatible et finalement JVM est efficace et très testé!
+
+
+\begin{tabular}{m{4.5cm}m{8cm}}
+Une instruction \textbf{bytecode} = 
+&
 \begin{itemize}
-	\item \texttt{ifge, ifeq, ifnull, ifnonnull}, etc.: compare l'élément au top de la stack par rapport à 0
-    \item \texttt{if\_icmeq, if\_icmgt}, etc.: compare les 2 éléments au top de la stack
+    \item Un byte \textbf{opcode}
+    \item Un nombre variable d'argument
+    \item Offset ou pointeur vers la Constant pool
 \end{itemize}
+\end{tabular}
+
+Une instuction byte code consumme et produit certain élément de la stack.
+Constantes, locals et les éléments de la stack sont typé (adresse ou type
+primitifs).
+
+\begin{tabular}{m{4.5cm}m{8cm}}
+Un fichier \textbf{.class} = 
+&
+\begin{itemize}
+    \item Magic number (0xCAFEBABE)
+    \item Version
+    \item Constant pool
+    \item Access flag
+    \item This class
+    \item Super class 
+    \item Interfaces
+    \item Fields
+    \item Methods
+    \item Atrributes
+\end{itemize}
+\end{tabular}
+
+\subsection{Components}
+
+\begin{itemize}
+    \item Stack par thread : stocke les stack frames
+    \item Heap : mémoire alloué dynamiquement
+    \item Constant pool : stocke les constantes et les références
+        vers les champs/méthodes
+    \item Code segment : stocke code du programme (JVM instruction)
+    \item Counter du programme par thread : contient l'addresse de la prochaine instruction
+\end{itemize}
+
+\subsection{Stack}
+
+JVM a décidé d'utiliser une stack machine car cela réduit la taille
+du byte-code et surtout toutes les opérations travailles sur peu d'élément
+au dessus de la stack!
+
+\begin{center}
+(\textit{Pour une operation de division d'entier, la machine RISC à
+32 registres on a besoin $32*31$ différents opcode (pour chaque paire
+possible de registre), alors que la stacke machine n'a besoin que de 1
+opcode puisqu'il travaille toujours sur la deux éléments en haut de la
+stack})
+\end{center}
+
+\subsubsection{Stack loading process}
+
+Les classes (dont le nom doit correspondre avec celui du fichier) sont
+chargées de manière \textit{lazy} lors du premier accès, juste après
+les super-classes dont elles dépendent. Ensuite le byte-code est vérifié,
+les fiels static sont alloué et recoivent leur valeur par défault. Enfin, 
+les initialiseur static sont exécuté.
+
+\subsubsection{Frame}
+Une nouvelle frame est créé et push sur la stack pour chaque appel
+de méhtode. Les stacks sont ensuite pop lorsque la méthode se termine
+normalement ou si une exception est \textit{throw}.
+
+\begin{tabular}{m{2.5cm}m{9cm}m{3cm}}
+Une frame = 
+&
+\begin{itemize}
+    \item Un tableau de variable locale
+    \item Une valeur de retour
+    \item Operand stack
+    \item Référence vers le \texttt{runtime constant pool} pour la
+        classe de la méthode courante.
+\end{itemize}
+&
+\includegraphics[width=3cm]{img/frame.png}
+\end{tabular}
+
+\subsubsection{Operand stack}
+
+Appliquer des opérations se fait toujours sur les deux éléments
+en haut de la stack. 
+
+\begin{figure}[!h]
+\begin{tikzpicture}
+    \node[text width=6.5cm,align=center] (A) 
+    {{\begin{lstlisting}
+public int add(int v1, int v2) {
+    int c = 8;
+    return v1+v2+c;
+}
+\end{lstlisting}}};
+
+\node[text width=3.5cm,align=center] (B) [right= of A] 
+    {{\begin{lstlisting}
+0 bipush 8
+2 istore_3 [c]
+3 iload_1 [v1]
+4 iload_2 [v2]
+5 iadd
+6 iload_3 [c]
+7 iadd
+8 ireturn
+\end{lstlisting}}};
+
+	\path[->] (A) edge (B);
+\end{tikzpicture}
+\caption{Exemple d'utilisation des opérations de stack}
+\end{figure}
+
+
+\subsection{JVM instruction}
+
+\paragraph{Arithmetic}
+\texttt{ineg, i2c, iadd, isub, imul, idiv, irem, iinc k i}
+
+\paragraph{Branch}
+\texttt{goto L, ifeq L, ifne L, ifnull L, ifnonnull L} : compare
+l'élément au top de la stack par rapport à 0.
+
+\texttt{if\_icmpeq L, if\_icmpne L, if\_icmplt L, if\_icmple L,
+if\_acmpeq L, if\_acpmne L, if\_icmgt, if\_icmpge} : compare les 2
+éléments au top de la stack
+
+\paragraph{Constant loading}
+\texttt{iconst\_0, ..., iconst\_5, aconst\_null, ldc i, lds string}.
+
+\paragraph{Field}
+\texttt{getfield f sig, putfield f sig, getstatic f sig, putstatic f sig}
+
+\paragraph{Stack}
+\texttt{dup, pop, swap, nop, dup\_x1, dup\_x2}
+
+\paragraph{Class}
+\texttt{new C, instanceof C, checkcast C}
+
+\paragraph{Méthode}
+\texttt{invokestatic name sig, invokevirtual name sig, ireturn, areturn, return}
+
+
+\subsection{Verification}
 
 
 \section{Chapitre : Garbage Collection} \todo{quel chapitre?} %LN
