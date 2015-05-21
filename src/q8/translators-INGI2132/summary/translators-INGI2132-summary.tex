@@ -916,6 +916,9 @@ depuis un symbole de départ (racine) pour arriver à une expression
 
 \subsubsection{Ambiguous Grammars and unambiguous grammars}
 
+Detecter si une context free grammar est ambiguous est \textbf{indécidable}.
+Notons que les grammaires LL(k) et LR(k) sont non-ambiguous.
+
 \begin{itemize}
     \item \textbf{Ambiguous sentence} : Une phrase par laquelle il existe
         plusieurs dérivations possibles. (2 arbres pour représenter $id + id * id$)
@@ -1177,6 +1180,11 @@ On peut avoir des grammaire non $LL(1)$ mais $LL(k)$ avec $k>1$ (on regarde alor
     & & X' &::= \gamma     
 \end{align*}
 
+
+\paragraph{Error recovery}
+Si il reçoit un input non attendu pour terminal/non-terminal ($T$) dans la stack,
+il va simplement skipper les tokens jusqu'a obtenir un token $\in$ Follow($T$).
+
 \subsubsection{Left recursion removal}
 
 \paragraph{Regle typique pour supprimer la left recursion}
@@ -1222,14 +1230,25 @@ A ::= A ac | bc | d
 \end{center}
 
 
-
-
 \subsection{Bottom-up deterministic parsing}
 On passe!!
 
 \subsection{Parser Generation using Java CC}
-On utilise une structure syntaxique EBNF (\textit{extended BNF}. On peut définir ainsi des parseurs $LL(k)$ récursive descent. Le fichier \texttt{j--.jj} contient donc les regex pour la structure lexicale ainsi que les règles syntaxiques du langage.\\
-Entre \texttt{PARSER\_BEGIN(JavaCCParser)} et \texttt{PARSER\_END(JavaCCParser)} sont définies des fonctions utiles et utilisées dans le parser généré. On définit premièrement le symbole de départ (\texttt{compilationUnit}) en fonction de non-terminaux de niveaux inférieurs.\\
+
+On utilise une structure syntaxique EBNF (\textit{extended BNF}). On
+peut définir ainsi des parseurs $LL(k)$ récursive descent. Le fichier
+\texttt{j--.jj} contient donc les regex pour la structure lexicale ainsi
+que les règles syntaxiques du langage.
+
+
+Entre \texttt{PARSER\_BEGIN(JavaCCParser)} et
+\texttt{PARSER\_END(JavaCCParser)} sont définies des fonctions utiles
+et utilisées dans le parser généré : \texttt{reportParserError()} et
+\texttt{recoverFromError()}.
+
+
+\subsubsection{Specification syntaxique}
+
 La syntaxe EBNF est:
 \begin{itemize}
 	\item $[a]$: 0 ou 1
@@ -1237,8 +1256,34 @@ La syntaxe EBNF est:
 	\item $a|b$: $a$ ou $b$
     \item $()$: grouping
 \end{itemize}
-La déclaration de non terminaux ressemble à une méthode java. Il y a un type de retour, un nom, peut avoir des arguments et à un corps de méthode. Il y a un bloc précédent celui-là dans lequel les variables locales sont déclarées.\\
-Lorsqu'il est nécessaire de regarder plusieurs symboles après l'actuel, on utilise la méthode \texttt{LOOKAHEAD(<token>)}. Il y a deux méthodes pour récupérer des erreurs : \textit{shallow} et \textit{deep} (utilisé par j-\--). Dans le corps d'un non terminal, on catch les erreurs du parseur. On choisit alors à quel token on veut reprendre (\textit{skip to token}). Il y a donc premièrement affichage d'une erreur puis récupération par shipping. Les avantages d'un parser autogénéré (JavaCC) sont:
+
+\subsubsection{Déclaration de symbol non-terminaux}
+
+On définit premièrement un symbole de départ
+(\texttt{compilationUnit}) qui est un ``haut niveau'' de non-terminal
+et référence le niveau inférieur de non-terminal. Ceux ci reference
+les tokens définit dans la spécification lexical.
+
+La déclaration de non terminaux ressemble à une méthode java. Il y a
+un type de retour, un nom, peut avoir des arguments et à un corps de
+méthode. Il y a un bloc précédent celui-là dans lequel les variables
+locales sont déclarées.
+
+%TODO : example page 70 chapitre 03
+
+\subsubsection{Lookahead}
+Lorsqu'il est nécessaire de regarder plusieurs symboles après
+l'actuel, on utilise la méthode \texttt{LOOKAHEAD(<token>)}. 
+
+Il y a deux méthodes pour récupérer des erreurs : \textit{shallow}
+et \textit{deep} (utilisé par j-\--). Dans le corps d'un non terminal,
+on catch les erreurs du parseur. On choisit alors à quel token on veut
+reprendre (\textit{skip to token}). Il y a donc premièrement affichage
+d'une erreur puis récupération par shipping. 
+
+\subsubsection{Avantage}
+Les avantages d'un parser autogénéré (JavaCC) sont:
+
 \begin{itemize}
 	\item Structure lexicale mieux expliquée
     \item Construction EBNF possible
@@ -1250,7 +1295,12 @@ Lorsqu'il est nécessaire de regarder plusieurs symboles après l'actuel, on uti
 
 \subsection{Bactracking parsing (not in the book)} %LN
 
-Avec le backtracking parsing, on peut parser n'importe quel langage décrit par une CFG. On va dériver en left most à partir du symbol initial en choisisant la première règle de dérivation. Tant que les terminaux déjà obtenu match le string qu'on veut matcher alors on continue, sinon on revient à l'étape pérédente et on choisit la règle de dérivation suivante.
+Avec le backtracking parsing, on peut parser n'importe quel langage
+décrit par une CFG. On va dériver en left most à partir du symbol
+initial en choisisant la première règle de dérivation. Tant que les
+terminaux déjà obtenu match le string qu'on veut matcher alors on
+continue, sinon on revient à l'étape pérédente et on choisit la
+règle de dérivation suivante.
 
 Exemple:
 
@@ -1299,54 +1349,166 @@ S => ASA => aSA => aASBA => aaSBA
 
 \subsection{Packrat parsing (not in the book)} %LN
 
-Pour éviter le coût du backtrack parsing (qui peut être exponentiel si à chaque fois on se retrouve à devoir prendre la dernière dérivation), on utilise de la mémorization. On obtient donc un algorithme en O(input*\#production).
+Pour éviter le coût du backtrack parsing (qui peut être exponentiel
+si à chaque fois on se retrouve à devoir prendre la dernière
+dérivation), on utilise de la mémorization. On obtient donc un
+algorithme en O(input*\#production).
 
-On va pour chaque index dans l'input essayer de parser via toutes les règles possibles et stocker le résultat ainsi que l'index de fin de l'expression. On peut ainsi aller de l'index le plus grand au plus petit en utilisant les résultats précedemment calculés.
-
-
-
-
+On va pour chaque index dans l'input essayer de parser via toutes les
+règles possibles et stocker le résultat ainsi que l'index de fin de
+l'expression. On peut ainsi aller de l'index le plus grand au plus petit
+en utilisant les résultats précedemment calculés.
 
 \section{Chapitre 4 : Type checking}
 
 \subsection{Introduction}
 
-Du \textit{type checking}, c'est faire de l'analyse sémantique. On y applique les opérations suivantes :
+Du \textit{type checking}, c'est faire de l'analyse sémantique. On y
+applique les opérations suivantes :
+
 \begin{itemize}
-	\item Détermine le type de tous les noms et expressions
-    \item type checking: on vérifie les types des opérations
-    \item analyse du stockage pour savoir la place reprise par les variables locales
-    \item réécriture de l'arbre AST pour rendre explicite certaines constructions.
+	\item Détermine le type de tous les noms et expressions.
+    \item Type checking: on vérifie les types des opérations
+    \item Analyse du stockage pour savoir la place reprise par les variables locales
+    \item Réécriture de l'arbre AST pour rendre explicite certaines constructions.
 \end{itemize}
 
 \subsection{j-\-- types}
 \subsubsection{Introduction}
-On a soit des types primitifs (\texttt{int, boolean, char}), soit des types référentiels (\texttt{array}, type définit par une déclaration de classe, \texttt{java.lang.Object}, etc.).
+
+On a soit des \textbf{types primitifs} (\texttt{int, boolean, char}), soit des
+\textbf{types référentiels} (\texttt{array}, type définit par une déclaration
+de classe, \texttt{java.lang.Object}, etc.).
 
 \subsubsection{Type representative and class objects}
-On défini deux objets \textit{placeholder} pour prendre la place des types non résolu encore :
+
+On défini deux objets \textit{placeholder} pour prendre la place des
+types non résolu encore :
+
 \begin{itemize}
-	\item Type Name: est résolu en faisant un lookup dans le contexte (représentation dy symbol table)
-    \item Array Type Name: on résoud le type des éléments de l'array et on l'encapsule dans une \textit{Class Object} utilisé ensuite dans l'array.
+    \item Type Name: est résolu en faisant un lookup dans le contexte
+        (représentation dy symbol table)
+    \item Array Type Name: on résoud le type des éléments de l'array
+        et on l'encapsule dans une \textit{Class Object} utilisé ensuite dans
+        l'array.
 \end{itemize}
-On utilise cette technique car le type défini ce qu'il nous faut et on peut utiliser des types temporaire avant la résolution.
+
+On utilise cette technique car le type défini ce qu'il nous faut et on
+peut utiliser des types temporaire avant la résolution.
 
 \subsection{j-\-- Symbol Table}
+
 \subsubsection{Contexts And Idefns: Declaring and Looking Up Types and Local Variables}
-La table des symboles est représentée par un arbre d'objets contexts, chacun correspondant à une région de scope du programme et contenant un mapping des noms vers ce qu'ils sont. Dans chacun des contextes asociés aux méthodes de classes, on associe un champ \textit{surrounding context} qui pointe vers le contexte englobant le bloc correspondant. Deux types de Idefns dans les entrées de la table:
+
+La table des symboles est représentée par un arbre d'objets
+contexts, chacun correspondant à une région de scope du programme
+et contenant un mapping des noms vers leur définition (type, parameter, local variables). 
+
+\begin{figure}[!h]
+    \centering
+    \begin{tikzpicture}[level/.style={sibling distance = 5cm}]
+        \node { Context } 
+        child{ node {CompilationUnitContext} }
+        child{ node {LocalContext} }
+        child{ node {ClassContext} };
+
+    \end{tikzpicture}
+    \caption{Context tree}
+\end{figure}
+
+Dans chacun des contextes associés aux méthodes de classes, on associe
+un champ \textit{surrounding context} qui pointe vers le contexte
+englobant le bloc correspondant. 
+
+\paragraph{Contexts}
+A chaque point d'execution, la table des symbols ressemble à une \textbf{stack
+de context} : 
+
+\begin{figure}[!h]
+\begin{tikzpicture}
+	\node[draw, shape=rectangle] (A) {LocalContext};
+    \node[draw, shape=rectangle] (B) [right=of A] {MethodContext};
+    \node[draw, shape=rectangle] (C) [right=of B] {ClassContext};
+    \node[draw, shape=rectangle] (D) [right=of C] {CompilationUnitContext};
+	\path[->] (A) edge (B)
+              (B) edge (C)
+              (C) edge (D);
+\end{tikzpicture}
+\caption{Stack context at time t}
+\end{figure}
+
+Durant l'analyse, quand le compilateur rencontre une \textbf{variable} il regarde à
+cette variable dans la table des symbols en commencant par le \texttt{localContext}.
+
 \begin{itemize}
-	\item Type Name defn qui encapsule juste un type
-    \item Local variable defs qui défini une variable locale en encapsulant son nom, type et un offset dans la frame stack.
+    \item \texttt{CompilationUnitContext} : scope du programme 
+        entier et contient un mapping des noms vers les \textbf{types}:
+        \begin{enumerate}
+            \item Les type implicits (java.lang.Object, java.lang.String,\ldots)
+            \item Les types importés
+            \item Les types introduit dans la déclaration de classe
+        \end{enumerate}
+    \item \texttt{ClassContext} : scope d'une classe et ne contient pas
+        de mapping. (Constructor, methodes et champs sont enregistré dans l'objet
+        Class)
+    \item \texttt{MethodContext} : scope d'une méthode dont les paramètres
+        sont déclarés dedans
+    \item \texttt{LocalContext} : scope d'un block (\{ \}) contenant les variables locales
 \end{itemize}
+
+
+\begin{figure}[!h]
+    \includegraphics[width=10cm]{img/structure-context.png}
+    \caption{Structure d'un context}
+\end{figure}
+
+\paragraph{Idefns} est un type d'interface pour la définition de la 
+table des symboles.
+
+Deux types de Idefns dans les entrées de la table:
+\begin{itemize}
+    \item \texttt{TypeNameDefn} qui encapsule juste un type
+    \item \texttt{LocalVariableDefs} qui défini une variable locale en
+        encapsulant son nom, type et un offset dans la frame stack.
+\end{itemize}
+
+
+\begin{figure}
+\begin{tabular}{l}
+    \includegraphics[height=19cm]{img/AST-context.png}
+\\
+\begin{lstlisting}
+package pass;
+import java.lang.System;
+
+public class Factorial {
+    public static int factorial(int n) {
+        if (n <= 0) return 1;
+        else return n * factorial(n - 1);
+    }
+    public static void main(String[] args) {
+        int x = n;
+        System.out.println(x + "! = " + factorial(x));
+    }
+    static int n = 5;
+}
+\end{lstlisting}
+\end{tabular}
+\caption{Example AST with context }
+\end{figure}
 
 \subsubsection{Finding Method and Field Names in Type Objects}
 \todo{LN}
 
-\subsection{Pre-Analysus of j-\-- program}
+\subsection{Pre-Analysis of j-\-- program}
 \subsubsection{An introduction to pre-analysis}
-L'analyse sémantique requiert 2 traversés de l'AST car des classes et méthodes peuvent être déclarées après une référence. La première analyse est un une \texttt{preAnalyze()} qui va:
+
+L'analyse sémantique requiert 2 traversés de l'AST car des classes et
+méthodes peuvent être déclarées après une référence. La première
+analyse est un une \texttt{preAnalyze()} qui va:
+
 \begin{itemize}
-	\item déclarer les types importés (\texttt{JCompilationUnit} level)
+    \item déclarer les types importés (\texttt{JCompilationUnit} level)
     \item déclarer les class définies par l'user (\texttt{JClassDeclaration} level)
     \item déclarer des champs (\texttt{JFieldDeclaration} level)
     \item déclarer les méthodes (\texttt{JMethodDeclaration} et \texttt{JConstructorDeclaration} level)
@@ -1355,17 +1517,19 @@ L'analyse sémantique requiert 2 traversés de l'AST car des classes et méthode
 \subsubsection{\texttt{JCompilationUnit.preAnalyse()}}
 Rôle:
 \begin{itemize}
-	\item Créer le \texttt{CompilationUnitContext}
-    \item Déclarer les types implicites \texttt{java.lang.String} et \texttt{java.lang.Object}
+    \item Créer le \texttt{CompilationUnitContext}
+    \item Déclarer les types implicites \texttt{java.lang.String} 
+        et \texttt{java.lang.Object}
     \item Déclarer les types importés
     \item Déclarer les types définis par les déclarations de classe
-    \item Invoquer \texttt{preAnalyze()} pour chacun des déclarations de type dans la Compilation Unit
+    \item Invoquer \texttt{preAnalyze()} pour chacun des déclarations
+        de type dans la Compilation Unit
 \end{itemize}
 
 \subsubsection{\texttt{JClassDeclaration.preAnalyse()}}
 Rôle:
 \begin{itemize}
-	\item Crée le \textit{Class context}
+    \item Crée le \textit{Class context}
 	\item Résoud le type \texttt{super} de la classe
 	\item Crée le \texttt{CLEmitter} associé
 	\item Ajoute header, name et modifier du CLE
@@ -1409,7 +1573,7 @@ Lors de l'analyse, on va effectuer une discrete recursive:
 \subsubsection{Declaring Formal parameters ad local variable}
 \subsection{Visitor Pattern and the AST traversal Mechanism}
 
-\section{Chapitre 5: JVM and Bytecode}
+\section{Chapitre 5 : JVM and Bytecode}
 Voir slides...
 \begin{itemize}
 	\item \texttt{ifge, ifeq, ifnull, ifnonnull}, etc.: compare l'élément au top de la stack par rapport à 0
