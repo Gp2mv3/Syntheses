@@ -1500,22 +1500,28 @@ public class Factorial {
 \subsubsection{Finding Method and Field Names in Type Objects}
 \todo{LN}
 
+\subsection{Two phase analysis}
+
+L'analyse sémantique besoin de deux traversés de l'AST car des classes et
+méthodes peuvent être déclarées après une référence. 
+
+Globalement, \textbf{preAnalyze()} fait ComputationUnitcontext et ClassContext 
+ainsi que les informations à propose des types importés/déclaré.
+\textbf{analyze()} fait MethodContext et LocalContext, continue la création
+des tables de symbol, réécrit l'arbre et fait plusieurs checking.
+
 \subsection{Pre-Analysis of j-\-- program}
-\subsubsection{An introduction to pre-analysis}
 
-L'analyse sémantique requiert 2 traversés de l'AST car des classes et
-méthodes peuvent être déclarées après une référence. La première
-analyse est un une \texttt{preAnalyze()} qui va:
-
+\texttt{PreAnalyze()} va:
 \begin{itemize}
     \item déclarer les types importés (\texttt{JCompilationUnit} level)
     \item déclarer les class définies par l'user (\texttt{JClassDeclaration} level)
     \item déclarer des champs (\texttt{JFieldDeclaration} level)
-    \item déclarer les méthodes (\texttt{JMethodDeclaration} et \texttt{JConstructorDeclaration} level)
+    \item déclarer les méthodes (\texttt{JMethodDeclaration} et
+        \texttt{JConstructorDeclaration} level)
 \end{itemize}
 
-\subsubsection{\texttt{JCompilationUnit.preAnalyse()}}
-Rôle:
+\subsubsection{\texttt{JCompilationUnit.preAnalyse(Context c)}}
 \begin{itemize}
     \item Créer le \texttt{CompilationUnitContext}
     \item Déclarer les types implicites \texttt{java.lang.String} 
@@ -1526,29 +1532,38 @@ Rôle:
         de type dans la Compilation Unit
 \end{itemize}
 
-\subsubsection{\texttt{JClassDeclaration.preAnalyse()}}
-Rôle:
+\subsubsection{\texttt{JClassDeclaration.preAnalyse(Context c)}}
 \begin{itemize}
-    \item Crée le \textit{Class context}
-	\item Résoud le type \texttt{super} de la classe
-	\item Crée le \texttt{CLEmitter} associé
-	\item Ajoute header, name et modifier du CLE
-	\item Invoque \texttt{preAnalyze} sur les membres de la classe
-	\item Rajoute un constructeur explicite s'il n'y a pas
-	\item Produit le \textit{Class object}.
+    \item Créer le \textit{Class context} avec \texttt{surroundingContext} 
+        qui pointe vers \texttt{CompilationUnitContext}
+	\item Résoudre le type \texttt{super} de la classe (check si on n'étend
+        pas un class \textit{final})
+	\item Créer le \texttt{CLEmitter} associé et y ajoute le class header,
+	    le nom et tout les modifications
+	\item Invoquer \texttt{preAnalyze} sur les membres de la classe
+	\item Rajouter un constructeur explicite s'il n'y a pas
+	\item Produire le \textit{Class object}.
 \end{itemize}
 
-\subsubsection{\texttt{JMethodDeclaration.preAnalyse()}}
-Rôle:
+\subsubsection{\texttt{JMethodDeclaration.preAnalyse(Context c, CLEmitter cle)}}
 \begin{itemize}
 	\item Résoud les types des paramètres et du \texttt{return}
 	\item Vérifie si l'\textit{abstract modifier} est propre
-	\item Calcule du descripteur de méthode (codification de la signature en string (\texttt{(I)I}: consomme un \texttt{int}, renvoie un \texttt{int} ; ([L\texttt{java.lang.String;})V : prend une liste ([) de strings (L\texttt{java.lang.String;}), revoie \texttt{void})
-	\item Appelle \texttt{partialCodeGen()} pour générer le code de la méthode sans le corp pour que l'objet class ait au-moins les informations de l'interface des méthodes (paramètre et le type du \texttt{return}
+
+    \item Calcule du descripteur de méthode (codification de la
+    signature en string)
+
+        (\texttt{(I)I}: consomme un \texttt{int}, renvoie un
+        \texttt{int} ; ([L\texttt{java.lang.String;}])V : prend une
+        liste ([]) de strings (L\texttt{java.lang.String;}), revoie
+        \texttt{void})
+    \item Appelle \texttt{partialCodeGen()} pour générer le code
+        de la méthode sans le corp pour que l'objet class ait au-moins les
+        informations de l'interface des méthodes (paramètre et le type du
+        \texttt{return})
 \end{itemize}
 
-\subsubsection{\texttt{JFieldDeclaration.preAnalyse()}}
-Rôle:
+\subsubsection{\texttt{JFieldDeclaration.preAnalyse(Context c, CLEmitter cle)}}
 \begin{itemize}
 	\item Vérifie qu'un champs n'est pas déclaré \texttt{abstract}
 	\item Résoud le type du champ
@@ -1556,12 +1571,18 @@ Rôle:
 \end{itemize}
 
 \subsubsection{Symbol Table built by \texttt{preAnalyse()}}
-L'étape de pré-analyse ne déclare aucune variable locale. On a donc un arbre partiel qui est construit.
+
+L'étape de pré-analyse ne déclare aucune variable locale. On a donc
+un arbre partiel qui est construit.
+
+%TODO: image?
 
 \subsection{Analayse of j-\-- programs}
-Lors de l'analyse, on va effectuer une discrete recursive:
+Lors de l'analyse, on va effectuer une discrete analyze recursive:
+
 \begin{itemize}
-	\item Réécriture de champs et d'initialisation de variables locales comme des assignements de variables normales
+    \item Réécriture de champs et d'initialisation de variables locales
+        comme des assignements de variables normales
     \item Déclaration des paramètre formet et des variables locales
     \item Allocation des ressources sur la stack frame
     \item Calcul des types des expressions
@@ -1569,8 +1590,119 @@ Lors de l'analyse, on va effectuer une discrete recursive:
     \item Modification de l'arbre
 \end{itemize}
 
-\subsubsection{Top the AST}
+
+\subsubsection{\texttt{JCompilationUnit.analyse(Context c)}}
+Appelle analyze() pour descendre dans l'arbre pour chaque type
+de déclaration.
+
+\subsubsection{\texttt{JClassDeclaration.analyse(Context c)}}
+Après avoir fait l'analyze() pour chaque field, 
+il copie l'initialisation des fields dans son node. 
+
+Il va aussi les séparer en deux : \texttt{staticFieldInitializations}
+et \texttt{instanceFieldInitializations}.
+
+\subsubsection{\texttt{JFieldDeclaration.analyse(Context c)}}
+
+Récrit le field initialisé comme un assignement explicit stocké dans
+la liste d'initialisation. 
+
+\subsubsection{\texttt{JMethodDeclaration.analyse()}}
+
+\begin{enumerate}
+    \item Crée un \textbf{MethodContext} dont \texttt{surroundingContext}
+        pointe vers le \texttt{ClassContext} précédant
+    \item Le premier stack frame offset  =  0.
+
+        (0 is allocate for \texttt{this} for a instance method)
+    \item Les paramètres sont déclaré comme des variables locales
+        et alloué sur des offsets consécutif
+    \item Il analyse le corps de la méthode comme un context différent.
+\end{enumerate}
+
+
+\paragraph{Stack-frame method}
+Nous avons besoin de calculer les offsets de tout les paramètres
+ainsi que des variables local pour savoir l'espace nécessaire à
+la méthode.
+
+\subsubsection{\texttt{JBlock.analyse()}}
+
+\begin{enumerate}
+    \item Crée un nouveau \texttt{LocalContext} dont \texttt{surroundingContext}
+        pointe vers le \texttt{MethodContext} précédent et le \textbf{newtOffset} 
+        est copié du précédent context.
+    \item Analyze son body et chaque \texttt{JVariableDeclarations} declare
+        sa variable dans le \texttt{LocalContext} du step 1
+\end{enumerate}
+
+
+\subsubsection{Rewriting a field}
+
+\begin{figure}[!h]
+    \includegraphics[width=15cm]{img/field-init.png}
+    \caption{Rewriting a field Initialization.
+JClassDeclaration (c) et JFieldDeclaration (b) analyse}
+\end{figure}
+
+\subsubsection{Method context and local context}
+
+\begin{figure}[!h]
+\begin{tabular}{m{6cm}m{4cm}m{4cm}}
+\begin{lstlisting}
+public class Locals {   
+    public int foo(int t, String u) {   
+        int v = u.length(); 
+        {   
+            int w = v + 5, x = w + 7;   
+            v = w + x;  
+        }   
+        {   
+            int y = 3;  
+            int z = v + y;  
+            t = t + y + z;  
+        }   
+        return t + v;   
+    }   
+}
+\end{lstlisting}
+&
+    \includegraphics[width=4cm]{img/method-context1.png}
+&
+    \includegraphics[width=4cm]{img/method-context2.png}
+\end{tabular}
+\caption{Example method context and local context }
+\end{figure}
+
+
+\subsubsection{Analysing local variable declaration and their initialization}
+
+Avant d'effectuer la méthode analyze(), l'AST contient uniquement les 
+\texttt{JVariableDeclarator}.
+
+L'analyse va :
+\begin{itemize}
+    \item Créer une \texttt{JVariableDefns} avec l'offset de la stack-frame
+        correspondant
+    \item Vérifié que la variable déclaré n'a pas un nom déja existant
+    \item Déclaré la variable dans le \texttt{LocalContext}
+    \item Réécrire tout les initialization comme des assignements
+        explicits
+\end{itemize}
+
+\begin{figure}[!h]
+    \includegraphics[width=\linewidth]{img/analysis-variable.png}
+    \caption{Rewriting a field Initialization.
+JClassDeclaration (c) et JFieldDeclaration (b) analyse}
+\end{figure}
+
+\subsubsection{Simple variable}
+
+
+
+
 \subsubsection{Declaring Formal parameters ad local variable}
+
 \subsection{Visitor Pattern and the AST traversal Mechanism}
 
 \section{Chapitre 5 : JVM and Bytecode}
