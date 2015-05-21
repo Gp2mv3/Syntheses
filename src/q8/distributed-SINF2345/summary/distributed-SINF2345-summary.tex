@@ -372,7 +372,14 @@ admissible timed executions.
 \section{Specification and implementation of distributed systems}
 
 \subsection{Event based component model}
-There is different model :
+Each node models a sequential program. There is a global clock
+and at each tick either a node takes a one of the following step
+\begin{itemize}
+	\item Computation step : Perfoms computation(local) or
+	sends/receives one message to/from other nodes(global)
+	\item Communication step: deliver a message.
+\end{itemize}
+There are different models for the delivery :
 \begin{enumerate}
     \item Receive 1 msg and send 1msg (Guerraoui)
     \item At most receive 1 msg and send at most 1 msg to each neighboor (Lynch)
@@ -485,7 +492,7 @@ liveness property”}
 \subsubsection{Node}
 
 Nodes that don’t fail in an execution are
-correct. There is different fail :
+correct. There are different way of failure :
 
 \begin{itemize}
     \item \textbf{Crash-stop} : stops taking steps, stops sending/receiving msg
@@ -560,7 +567,9 @@ correct. There is different fail :
         \end{enumerate}
 
     \item \textbf{Stubborn links} : Channel delivers any message sent
-        infinitely many times
+        infinitely many times (to implement it,
+        a list of all previously sent msg is kept, after a timeout all 
+        the message will be resent)
 
         \begin{figure}[h]
             \centering
@@ -580,7 +589,7 @@ correct. There is different fail :
         \end{enumerate}
 
     \item \textbf{Perfect links} : Channel that delivers any message
-        sent exactly once
+        sent exactly once (keep a set of delivered msg)
 
         \begin{figure}[h]
             \centering
@@ -676,7 +685,7 @@ Need completeness and accuracy.
     \item Periodically exchange \textbf{heartbeat} messages
     \item Timeout based on worst case RTT
     \item if timeout, then suspect node
-    \item if rcv msg from suspected node thent revise suspicion and
+    \item if rcv msg from suspected node then revise suspicion and
         increase time-out
 \end{enumerate}
 
@@ -786,9 +795,11 @@ Thi lower ID or better the lowest number of crash.
 \begin{itemize}
     \item Leader election (LE) which matches P
         \begin{itemize}
-            \item Eventual completeness (detects failure)
-            \item agreement 
-            \item Local accuracy (if a node is elected leader by p i ,
+            \item Eventual completeness : Eventually every correct
+            node trusts some correct node. (detects failure)
+            \item agreement : No two correct nodes different correct
+            nodes.
+            \item Local accuracy (if a node is elected leader by p i,
             all previously elected leaders by p i have crashed)
         \end{itemize}
     \item Eventual leader election (LE) which matches $<>$P
@@ -819,24 +830,81 @@ Thi lower ID or better the lowest number of crash.
 
 
 \subsection{Reductions}
-
+We say X $\preceq$ Y (X is reducible to Y)
+ if X can be solved given a solution of Y.
+ 
 \paragraph{Preorder $\preceq$} :
 \begin{itemize}
     \item Reflexivity
     \item Transitivity
 \end{itemize}
-
+It is not antisymmetric, thus it's not a partial order.
+ We say that X $\simeq$ Y (equivalent) if X $\preceq$ Y and Y $\preceq$ X.
 \paragraph{Partial order} :
 Preorder + antisymmetric
 
-
 \section{Reliable broadcast}
-
-
-
-
-
-\begin{thebibliography}{1}
+\subsection{Best-effort broadcast}
+\begin{itemize}
+	\item Best-effort-Validity : if $p_i$ and $p_j$ are correct,
+	then any broadcast by $p_i$ is eventually delivered by $p_j$
+	\item No duplication : No message delivered  more than once
+	\item No creation : No message delivered unless broadcast.
+\end{itemize}
+BeB gives no guarantee if the sender crash. Implementation
+is straightforward , simple loop on all nodes.
+\subsection{Reliable Broadcast}
+\begin{itemize}
+	\item Validity: same as BeB
+	\item No duplication.
+	\item No creation.
+	\item Agreement : if a correct node delivers m, then every correct
+	node delivers m.
+\end{itemize}
+\subsubsection{Uniform Reliable Broadcast}
+If a failed node delivers, everyone must delivers.
+It add the Uniform agreement: For any message m, 
+if a process delivers m, then every correct process delivers m.
+\subsubsection{Implementation}
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/lrb_1.png} &
+        \includegraphics[width=8cm]{img/lrb_2.png}
+    \end{tabular}
+        \caption{Lazy broadcast}
+\end{figure}
+\paragraph{Proof correctness}
+If correct $p_j$ delivers msg broadcast by $p_i$
+\begin{itemize}
+	\item If $p_i$ is correct, BeB ensures correct delivery
+	\item If $p_i$ crashes,
+		\begin{itemize}
+			\item $p_j$ detects this (completeness).
+			\item $p_j$ uses BeB to ensure every correct node gets it.
+		\end{itemize}
+\end{itemize}
+If we use a eventually perfect detector, it only affects 
+performance, not correctness.
+\paragraph{Eager RB}
+The exists a eager version of reliable broadcast that does not use a 
+perfect detector. It simply use a BeB broadcast upon receive of a 
+message.
+\subparagraph{Correctness of Eager RB}
+if correct $p_j$ delivers message bcast by $p_i$,
+$p_j$ uses BeB to ensure every correct node gets it. 
+\subsubsection{Uniformity RB}
+In the above version, uniformity is not respected. If a sender
+p immediately RB delivers and crashes, only p will have delivered 
+the message.\\
+The idea is the following, message are pending until all correct
+nodes get it. Node that gets the message exchange ack. The 
+message is deliver once all the nodes acked.
+\begin{figure}[h]
+	\centering
+	\includegraphics{img/urb.png}
+\end{figure}
+%TODO CORRECTNESS AND MAJORITY ACK
+\begin{thebibliography}{1} 
 \bibitem{icampus} http://www.icampus.uclouvain.be, {\em Icampus}
 \end{thebibliography}
 
