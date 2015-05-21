@@ -1363,42 +1363,152 @@ en utilisant les résultats précedemment calculés.
 
 \subsection{Introduction}
 
-Du \textit{type checking}, c'est faire de l'analyse sémantique. On y applique les opérations suivantes :
+Du \textit{type checking}, c'est faire de l'analyse sémantique. On y
+applique les opérations suivantes :
+
 \begin{itemize}
-	\item Détermine le type de tous les noms et expressions
-    \item type checking: on vérifie les types des opérations
-    \item analyse du stockage pour savoir la place reprise par les variables locales
-    \item réécriture de l'arbre AST pour rendre explicite certaines constructions.
+	\item Détermine le type de tous les noms et expressions.
+    \item Type checking: on vérifie les types des opérations
+    \item Analyse du stockage pour savoir la place reprise par les variables locales
+    \item Réécriture de l'arbre AST pour rendre explicite certaines constructions.
 \end{itemize}
 
 \subsection{j-\-- types}
 \subsubsection{Introduction}
-On a soit des types primitifs (\texttt{int, boolean, char}), soit des types référentiels (\texttt{array}, type définit par une déclaration de classe, \texttt{java.lang.Object}, etc.).
+
+On a soit des \textbf{types primitifs} (\texttt{int, boolean, char}), soit des
+\textbf{types référentiels} (\texttt{array}, type définit par une déclaration
+de classe, \texttt{java.lang.Object}, etc.).
 
 \subsubsection{Type representative and class objects}
-On défini deux objets \textit{placeholder} pour prendre la place des types non résolu encore :
+
+On défini deux objets \textit{placeholder} pour prendre la place des
+types non résolu encore :
+
 \begin{itemize}
-	\item Type Name: est résolu en faisant un lookup dans le contexte (représentation dy symbol table)
-    \item Array Type Name: on résoud le type des éléments de l'array et on l'encapsule dans une \textit{Class Object} utilisé ensuite dans l'array.
+    \item Type Name: est résolu en faisant un lookup dans le contexte
+        (représentation dy symbol table)
+    \item Array Type Name: on résoud le type des éléments de l'array
+        et on l'encapsule dans une \textit{Class Object} utilisé ensuite dans
+        l'array.
 \end{itemize}
-On utilise cette technique car le type défini ce qu'il nous faut et on peut utiliser des types temporaire avant la résolution.
+
+On utilise cette technique car le type défini ce qu'il nous faut et on
+peut utiliser des types temporaire avant la résolution.
 
 \subsection{j-\-- Symbol Table}
+
 \subsubsection{Contexts And Idefns: Declaring and Looking Up Types and Local Variables}
-La table des symboles est représentée par un arbre d'objets contexts, chacun correspondant à une région de scope du programme et contenant un mapping des noms vers ce qu'ils sont. Dans chacun des contextes asociés aux méthodes de classes, on associe un champ \textit{surrounding context} qui pointe vers le contexte englobant le bloc correspondant. Deux types de Idefns dans les entrées de la table:
+
+La table des symboles est représentée par un arbre d'objets
+contexts, chacun correspondant à une région de scope du programme
+et contenant un mapping des noms vers leur définition (type, parameter, local variables). 
+
+\begin{figure}[!h]
+    \centering
+    \begin{tikzpicture}[level/.style={sibling distance = 5cm}]
+        \node { Context } 
+        child{ node {CompilationUnitContext} }
+        child{ node {LocalContext} }
+        child{ node {ClassContext} };
+
+    \end{tikzpicture}
+    \caption{Context tree}
+\end{figure}
+
+Dans chacun des contextes associés aux méthodes de classes, on associe
+un champ \textit{surrounding context} qui pointe vers le contexte
+englobant le bloc correspondant. 
+
+\paragraph{Contexts}
+A chaque point d'execution, la table des symbols ressemble à une \textbf{stack
+de context} : 
+
+\begin{figure}[!h]
+\begin{tikzpicture}
+	\node[draw, shape=rectangle] (A) {LocalContext};
+    \node[draw, shape=rectangle] (B) [right=of A] {MethodContext};
+    \node[draw, shape=rectangle] (C) [right=of B] {ClassContext};
+    \node[draw, shape=rectangle] (D) [right=of C] {CompilationUnitContext};
+	\path[->] (A) edge (B)
+              (B) edge (C)
+              (C) edge (D);
+\end{tikzpicture}
+\caption{Stack context at time t}
+\end{figure}
+
+Durant l'analyse, quand le compilateur rencontre une \textbf{variable} il regarde à
+cette variable dans la table des symbols en commencant par le \texttt{localContext}.
+
 \begin{itemize}
-	\item Type Name defn qui encapsule juste un type
-    \item Local variable defs qui défini une variable locale en encapsulant son nom, type et un offset dans la frame stack.
+    \item \texttt{CompilationUnitContext} : scope du programme 
+        entier et contient un mapping des noms vers les \textbf{types}:
+        \begin{enumerate}
+            \item Les type implicits (java.lang.Object, java.lang.String,\ldots)
+            \item Les types importés
+            \item Les types introduit dans la déclaration de classe
+        \end{enumerate}
+    \item \texttt{ClassContext} : scope d'une classe et ne contient pas
+        de mapping. (Constructor, methodes et champs sont enregistré dans l'objet
+        Class)
+    \item \texttt{MethodContext} : scope d'une méthode dont les paramètres
+        sont déclarés dedans
+    \item \texttt{LocalContext} : scope d'un block (\{ \}) contenant les variables locales
 \end{itemize}
+
+
+\begin{figure}[!h]
+    \includegraphics[width=10cm]{img/structure-context.png}
+    \caption{Structure d'un context}
+\end{figure}
+
+\paragraph{Idefns} est un type d'interface pour la définition de la 
+table des symboles.
+
+Deux types de Idefns dans les entrées de la table:
+\begin{itemize}
+    \item \texttt{TypeNameDefn} qui encapsule juste un type
+    \item \texttt{LocalVariableDefs} qui défini une variable locale en
+        encapsulant son nom, type et un offset dans la frame stack.
+\end{itemize}
+
+
+\begin{figure}
+\begin{tabular}{l}
+    \includegraphics[height=19cm]{img/AST-context.png}
+\\
+\begin{lstlisting}
+package pass;
+import java.lang.System;
+
+public class Factorial {
+    public static int factorial(int n) {
+        if (n <= 0) return 1;
+        else return n * factorial(n - 1);
+    }
+    public static void main(String[] args) {
+        int x = n;
+        System.out.println(x + "! = " + factorial(x));
+    }
+    static int n = 5;
+}
+\end{lstlisting}
+\end{tabular}
+\caption{Example AST with context }
+\end{figure}
 
 \subsubsection{Finding Method and Field Names in Type Objects}
 \todo{LN}
 
-\subsection{Pre-Analysus of j-\-- program}
+\subsection{Pre-Analysis of j-\-- program}
 \subsubsection{An introduction to pre-analysis}
-L'analyse sémantique requiert 2 traversés de l'AST car des classes et méthodes peuvent être déclarées après une référence. La première analyse est un une \texttt{preAnalyze()} qui va:
+
+L'analyse sémantique requiert 2 traversés de l'AST car des classes et
+méthodes peuvent être déclarées après une référence. La première
+analyse est un une \texttt{preAnalyze()} qui va:
+
 \begin{itemize}
-	\item déclarer les types importés (\texttt{JCompilationUnit} level)
+    \item déclarer les types importés (\texttt{JCompilationUnit} level)
     \item déclarer les class définies par l'user (\texttt{JClassDeclaration} level)
     \item déclarer des champs (\texttt{JFieldDeclaration} level)
     \item déclarer les méthodes (\texttt{JMethodDeclaration} et \texttt{JConstructorDeclaration} level)
@@ -1407,17 +1517,19 @@ L'analyse sémantique requiert 2 traversés de l'AST car des classes et méthode
 \subsubsection{\texttt{JCompilationUnit.preAnalyse()}}
 Rôle:
 \begin{itemize}
-	\item Créer le \texttt{CompilationUnitContext}
-    \item Déclarer les types implicites \texttt{java.lang.String} et \texttt{java.lang.Object}
+    \item Créer le \texttt{CompilationUnitContext}
+    \item Déclarer les types implicites \texttt{java.lang.String} 
+        et \texttt{java.lang.Object}
     \item Déclarer les types importés
     \item Déclarer les types définis par les déclarations de classe
-    \item Invoquer \texttt{preAnalyze()} pour chacun des déclarations de type dans la Compilation Unit
+    \item Invoquer \texttt{preAnalyze()} pour chacun des déclarations
+        de type dans la Compilation Unit
 \end{itemize}
 
 \subsubsection{\texttt{JClassDeclaration.preAnalyse()}}
 Rôle:
 \begin{itemize}
-	\item Crée le \textit{Class context}
+    \item Crée le \textit{Class context}
 	\item Résoud le type \texttt{super} de la classe
 	\item Crée le \texttt{CLEmitter} associé
 	\item Ajoute header, name et modifier du CLE
@@ -1461,7 +1573,7 @@ Lors de l'analyse, on va effectuer une discrete recursive:
 \subsubsection{Declaring Formal parameters ad local variable}
 \subsection{Visitor Pattern and the AST traversal Mechanism}
 
-\section{Chapitre 5: JVM and Bytecode}
+\section{Chapitre 5 : JVM and Bytecode}
 Voir slides...
 \begin{itemize}
 	\item \texttt{ifge, ifeq, ifnull, ifnonnull}, etc.: compare l'élément au top de la stack par rapport à 0
