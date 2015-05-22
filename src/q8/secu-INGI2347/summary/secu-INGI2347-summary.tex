@@ -146,6 +146,8 @@ int read_req(void) {
         \cline{2-2}
         & \\
     \end{tabular}};
+    \node(C) [right= of A] {
+    $\downarrow$ Stack grows down};
 \path[->] (B) edge (A);
 \end{tikzpicture}
 
@@ -175,7 +177,7 @@ déterminer l'adresse du buffer.
 De manière général l'attaquant peut utiliser les privilèges du process
 pour faire ce qu'il veut!
 
-\subsubsection{Suppression buffer overflow}
+\subsubsection{Difficulté}
 
 Les Buffer Overflow ne sont plus un problème de sécurité majeur.
 Les programmes sont maintenant mieux protégés contre le Buffer
@@ -186,12 +188,131 @@ choisir adr et le programme injecté ne peut pas avoir un \verb|\0|
 octet, parce que cela marque la fin d'une chaîne de caractères peut
 empêcher la copie des octets restants.
 
-\paragraph{Conseil}
-\begin{itemize}
-    \item Utiliser des functions standards \textbf{safe} plutôt que
-        leur égaux unsafe
-    \item Utiliser des méchanismes déja testé
-\end{itemize}
+\subsubsection{Prévention buffer overflow}
+
+\begin{enumerate}
+    \item Eviter les bug dans le code C en utilisant des
+        fonctions standard safe. (Certains compilateur lance un Warning
+        quand des fonctions unsafe sont utilisés.)
+
+        \begin{itemize}
+            \item[Pour:] Evite la première source de problème
+            \item[Contre:] Toujours difficile d'être sur que le
+                programme est \textit{bug-free}\ldots 
+                
+                En plus on peut faire de la manipulation de buffer
+                sans utiliser les primitives unsafe.
+        \end{itemize}
+
+    \item Utiliser des outils pour trouver des bugs.
+        D'une part on peut faire une analyse static (détecter les variables
+        non-initialisés), d'autre part il existe des programme (comme \textbf{symbolic
+        execution}) qui analyse tout les chemins possibles dans un programme donnés.
+        \begin{center}
+            \textit{SE parcourt tout les chemins en considérant les ``input'' des
+                functions comme des inconnues et en ajoutant des contraintes selon
+                les chemins empruntés. (Si il passe if x > 5, alors dans ce chemin
+            x > 5)}
+        \end{center}
+
+        \begin{itemize}
+            \item[Pour:] Toute analyse du programme est utile pour
+                diminuer les bugs du programmes
+            \item[Contre:] Difficile de prouver l'absence total de bug
+        \end{itemize}
+
+    \item Utiliser des languages \textit{memory-safe} comme JS, C\#, Python,\ldots
+
+        \begin{itemize}
+            \item[Pour:] Prévient toute corruption de la mémoire en n'exposant pas
+                les adresses mémoires au programmeurs et par l'utilisation d'un
+                garbage collector.
+            \item[Contre:] 
+                \begin{tabular}{p{14cm}}
+                \begin{itemize}
+                    \item Il y a toujours un grand nombre de language \textit{unsafe}.
+                    \item Certain programme nécessite un language de bas niveau
+                        (ex: device driver)
+                    \item Les performances sont meilleurs dans un language de bas
+                        niveau
+                \end{itemize}
+            \end{tabular}
+        \end{itemize}
+\end{enumerate}
+
+\subsubsection{Fix buffer overflow avec des codes buggés}
+
+\begin{enumerate}
+    \item \textbf{Canaries} :
+        L'idée est d'autoriser l'overflow \textsc{mais} de le capturer 
+        avant d'invoquer un pointeur overwrite.
+
+        \paragraph{StackGuard (gcc Stack Smashing Protector)} : 
+
+        \begin{tabular}{m{9cm}m{1cm}}
+            \begin{itemize}
+                \item Place un \textsc{canary} sur la stack à l'arrivée
+                    et check la valeur avant de \texttt{return}
+                \item Nécessite le source code pour inséré les checks
+                    de \textsc{canary} à la compilation
+            \end{itemize}
+            &
+            \begin{tikzpicture}
+                \node (A) {
+                    \scriptsize
+                    \begin{tabular}{r|c|}
+                        & \\
+                        \cline{2-2}
+                        entry \%esp $\to$ & return address  \\
+                        \cline{2-2}
+                        new \%ebp  $\to$& saved \%ebp \\
+                        \cline{2-2}
+                        & \textcolor{red}{CANARY} \\
+                        \cline{2-2}
+                        & buf[127] \\
+                        & \ldots \\
+                        & buf[0] \\
+                        \cline{2-2}
+                        new \%esp  $\to$& \ldots \\
+                        \cline{2-2}
+                        & \\
+                    \end{tabular}
+                };
+            \end{tikzpicture}
+        \end{tabular}
+
+        \paragraph{Canary value}: 
+        \begin{itemize}
+            \item[\textsc{Terminator}]: Avec une valeur tel que (0, CR, LF, -1), 
+                si l'attaquant veut faire un overflow il doit ajouter un caractère 
+                qui est considéré par la plus part des functions comme un caractère
+                de fin de String!
+            \item[\textsc{Random}]: Soit il doit être très dur à trouver sans
+                quoi l'attaquant n'a qu'a inséré cette valeur dans son overflow.
+        \end{itemize}
+
+        \paragraph{Limitations}:
+        \begin{itemize}
+            \item Le canary ne prévient pas des attaques qui overwrite
+                un pointer avant le canary
+            \item Overflow sur le heap
+            \item Malloc/free overflow 
+                %TODO
+
+        \end{itemize}
+
+
+    \item \textbf{Bounds checking}
+        %TODO
+
+
+\end{enumerate}
+
+
+
+\subsection{Injection vulnerabilities}
+
+\subsection{Memory safety}
 
 
 
