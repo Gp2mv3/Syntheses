@@ -993,6 +993,175 @@ Does not require the delivery of both message
 	\centering
 	\includegraphics[scale=0.7]{img/hierarchy_ord.png}
 \end{figure}
+\section{Consensus}
+Nodes proposes value and they must agree on one of these values.
+\subsection{Property}
+\begin{description}
+	\item[Validity] Any value decided is a value proposed
+	\item[Agreement] No two correct nodes decide differently 
+	(in a \textbf{uniform consensus}, node does not need to be correct)
+	\item[Termination] Every correct node eventually decides
+	\item[intergrity] A node decides at most once
+\end{description}
+\subsection{Hierachical Consensus}
+Each nodes stores its proposal and the identifier of the  last adopted 
+proposal.
+There are up to N round and at round i:
+\begin{itemize}
+	\item node i is leader and broadcasts and decide its proposal  v
+	\item Other nodes adopt i proposal v (save it in lastprop) or 
+	detect crash of i.
+\end{itemize}
+Future round will only propose v
+\subsubsection{Orphan message}
+Problem is that broadcast can be delayed and the leader crash
+and a node can receive two proposal in the next round. It will
+therefore affect future round.\\
+Counter measure $\to$ ranking of the node based on there identifier
+($p_1>p_2>p_3>...$
+\subsubsection{Implementation}
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/hc_1.png} &
+        \includegraphics[width=8cm]{img/hc_2.png}
+    \end{tabular}
+        \caption{Implementation hierarchical}
+\end{figure}
+\subsubsection{Correctess}
+\begin{itemize}
+	\item Validity? $\to$ Always decide own proposal or adopted value
+	\item Integrity? $\to$ Rounds increase monotonically, node only 
+	decide when leader.
+	\item Termination? $\to$ Every correct node makes it to the round it 
+	is leader in:
+	\begin{itemize}
+		\item If some leader fails, ccompleteness of P ensure progress.
+		\item If leader correct, validity of BeB ensures delivery. 
+	\end{itemize}
+	\item Agreement? $\to$ take correct leader with minimum id i.
+\end{itemize}
+Failute-torerant up to N-1 
+%TODO Formalism and notation important
+\subsection{Uniform consensus}
+Compare to nonuniform consensus where node i decides in round i,in
+uniform consensus with P, node move the decision to the end.
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/hc_fd.png} &
+        \includegraphics[width=8cm]{img/uhc_fd.png}
+    \end{tabular}
+        \caption{lnaccuracy with failure detector}
+\end{figure}
+\subsubsection{Uniform with S}
+The algorithm works with a S (strong dectector). The difference between
+Strong detector and a Perfect detecor comes from the accuracy w.r.t one node.
+%TODO correcteness (2)
+\subsection{With Eventual failure detector}
+Evenutally perfect detector cannot solve consensus with resilience t $\geq$ n/2\\
+Resilience = how many failures it tolerates.
+%Proof?
+\begin{itemize}
+	\item Rotating coordinator from before will not work because
+	''eventually'' might be after the first N rounds
+	\item The idea is to rotate forever and eventually all nodes
+	correct w.r.t 1 coordinator (coordinator's value becomes
+	agreed value)
+\end{itemize}
+\paragraph{Termination}
+There will be a bound on the number of failures $\to$ less (f<n/3) than a third
+can fail. This will allow to decide using majority.\\
+ Algo will works as follow:
+ \begin{enumerate}
+	\item Everyone send vote to coordinator C
+	\item C picks majority vote V, and broadcasts V
+	\item Every node get broadcast, change vote to V
+	\item Change coordinator C and go to 1
+\end{enumerate}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.6]{img/rotating_coord.png}
+	\caption{Rotating Coordinator}
+\end{figure}
+If at least n-f nodes vote V in round r, every leader will see a majority for V
+in all rounds > r. Proof:
+\begin{itemize}
+	\item We know that at most f nodes don't vote V
+	\item We also know n/3<(n-f)/2 (because f<n/3 implies n-f>2n/3)
+		$\to$ f<(n-f)/2 (because f<n/3 and n/3<(n-f)/2)
+	\item So less than half of any n-f nodes do not vote V
+\end{itemize}
+%TODO correctenness
+\section{Terminating Reliable Broadcast}
+With normal reliable broadcast, no idea when or if a message will be delivered.
+In TRB, sender broadcast M and receiver await delivery M. All nodes
+either deliver M or ''abort'' (<SF> sender Faulty message)
+\subsection{Property}
+\begin{description}
+	\item[Termination] Every correct node eventually delivers one message
+	\item[Validity] If correct src sends m, then src will deliver m
+	\item[Uniform agreement] If any node delivers m, then every correct node
+	eventually delivers m
+	\item[Intergrity] If a node delivers m, then either m=<SF> or m was
+	broadcast by src.
+\end{description}
+\subsection{Consensus based TRB}
+\begin{itemize}
+	\item Src RB broadcast m (deliver <SF> if src is suspected by P)
+	\item Src BeB broadcast m
+	\item Nodes propose whichever comes first: crash suspicion(<SF>) or 
+	BeB delivery from src (M)
+	\item Deliver consensus decision
+\end{itemize}
+%TODO correctness and Hardness of TRB
+\section{Shared Memory}
+In real shared memory there is no message-passing, node access one
+shared memory. But in distributed system we simulate shared memory 
+using message passing.
+\begin{itemize}
+	\item A register represents each memory location (objects)
+	\item Node can read/write to registers
+	\item Simplification of key-value stores
+\end{itemize}
+\paragraph{Basic Assumptions}
+Nodes are sequential, they can only do one operation at a time. 
+invocation,response,invocation,response,...\\
+The values are positive integers initially zero.
+\paragraph{Definitions}
+In an execution, an operation is 
+\begin{itemize}
+	\item Complete if both invocation \& response occured
+	\item Failed if invoked, but no response arrives
+\end{itemize}
+$op_1$ precedes $op_2$ if (denoted $<_p$) if response of $op_1$ 
+precedes invocation of $op_2$. Otherwise they are concurrent.
+\paragraph{Terminology}
+\begin{itemize}
+	\item (1,N)-algorithm : 1 designated writer, multiple readers
+	\item (N,N)-algorithm : Multiple writers, multiple readers
+\end{itemize}
+\subsection{Regular Registers}
+\subsubsection{Regular Register (1,N)}
+\begin{itemize}
+	\item Termination : Each read and write operation of a correct node 
+	completes.
+	\item Validity : Read return last value written if
+		\begin{itemize}
+			\item Read is not concurrent with another write, and 
+			\item Read is not concurrent with a failed operation
+		\end{itemize}
+	Otherwisz the read must return the last value 
+	written or a concurrent value being written.
+\end{itemize}
+\paragraph{Centralized Algorithm}
+One process is designated as leader. For reading, the latest value must
+be ask to the leader. For writing, leader value is updated.
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/bogus_1.png} &
+        \includegraphics[width=8cm]{img/bogus_2.png}
+    \end{tabular}
+        \caption{Bogus algorithm}
+\end{figure}
 \begin{thebibliography}{1} 
 \bibitem{icampus} http://www.icampus.uclouvain.be, {\em Icampus}
 \end{thebibliography}
