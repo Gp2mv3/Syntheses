@@ -901,9 +901,98 @@ nodes get it. Node that gets the message exchange ack. The
 message is deliver once all the nodes acked.
 \begin{figure}[h]
 	\centering
-	\includegraphics{img/urb.png}
+	\includegraphics[scale=0.7]{img/urb.png}
 \end{figure}
 %TODO CORRECTNESS AND MAJORITY ACK
+\section{Causal-Order Broadcast}
+Uniform reliable broadcast doesn't deal with the order in which the
+message are deliver. The causal-order broadcast remedy to this 
+problem.\\
+We that $m_1 \to m_2$ ($m_1$ causally precedes $m_2$) if
+\begin{itemize}
+	\item FIFO order: Some process $p_i$ broadcasts $m_1$ before
+	broadcasting $m_2$
+	\item Network order: Some process $p_i$ delivers $m_1$ and
+	later broadcasts $m_2$
+	\item Transitivity: There is a message m' s.t $m_1 \to m' \ and \ m'\to m_2$
+\end{itemize}
+\paragraph{Property}
+\begin{itemize}
+	\item \textbf{CB:} If node $p_i$ delivers $m_1$, then $p_i$ must have 
+	delivered every message causally preceding ($\to$) $m_1$ before $m_1$.
+	\item \textbf{CB':} If $p_j$ delivers $m_1$ and $m_2$,and $m_1\to m_2$
+	then $p_j$ must deliver $m_1$ berfore $m_2$.
+\end{itemize}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.7]{img/cbs_properties.png}
+\end{figure}
+\subsection{Implementation}
+The idea is to broadcast the message along with its history( message 
+that were sent before it). This history is an ordered list of
+causally preceding messages called $past_m$
+\subsubsection{First algorithm}
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/cob_1.png} &
+        \includegraphics[width=8cm]{img/cob_2.png}
+    \end{tabular}
+        \caption{Implementation Causal broadcast First implem}
+\end{figure}
+The problem with this algorithm is that the size of the message
+grows. The idea to improve the algorithm is to detect  with 
+ack when all correct node got the message and delete from
+past if it's the case (Garbage Collector).\\
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.7]{img/gc.png}
+\end{figure}
+%TODO Question on GC
+\subsubsection{Second algorithm}
+In the first algortihm, the history was a list, in the second its a
+\textbf{vector timestamp}(vector clock).
+Each node has a vector clock s.t a node $p_i$:
+\begin{itemize}
+	\item VC[i] : number of messages $p_i$ coBroadcasted
+	\item VC[j], j $\neq$i: number of messages $p_i$ coDelivered from $p_j$
+\end{itemize}
+The delivery of m is only done if $VC_m$(attached VC) precedes $VC_i$ 
+(local clock)
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/cob_2-1.png} &
+        \includegraphics[width=8cm]{img/cob_2-2.png}
+    \end{tabular}
+        \caption{Implementation Causal broadcast Second implem}
+\end{figure}
+\subsection{Different Possible Orderings}
+\subsubsection{FIFO order}
+\begin{itemize}
+	\item Message form same node delivered in order sent.
+	\item For all messages $m_1$ and $m_2$ and all $p_i$ $p_j$:
+	\begin{itemize}
+		\item if $p_i$ broadcasts $m_1$ before $m_2$, and 
+		if $p_j$ delivers $m_1$ and $m_2$, then $p_j$ delivers
+		$m_1$ before $m_2$.
+	\end{itemize}
+\end{itemize}
+This definition doesn't require the delivery if both messages.
+\subsubsection{Total order}
+\begin{itemize}
+	\item Everyone delivers everythings in exact same order.
+	\item For all messages $m_1$ and $m_2$ and all $p_i$ $p_j$:
+	\begin{itemize}
+		\item if  both $p_i$ and $p_j$  delivers both messages
+		then they deliver them in the same order.
+	\end{itemize}
+\end{itemize}
+The order is not necessarily the one in which the message where sent.
+Does not require the delivery of both message 
+\subsubsection{Hierarchy of Orderings}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.7]{img/hierarchy_ord.png}
+\end{figure}
 \begin{thebibliography}{1} 
 \bibitem{icampus} http://www.icampus.uclouvain.be, {\em Icampus}
 \end{thebibliography}
