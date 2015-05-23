@@ -196,8 +196,8 @@ empêcher la copie des octets restants.
         quand des fonctions unsafe sont utilisés.)
 
         \begin{itemize}
-            \item[Pour:] Evite la première source de problème
-            \item[Contre:] Toujours difficile d'être sur que le
+            \item[\underline{Pour}:] Evite la première source de problème
+            \item[\underline{Contre}:] Toujours difficile d'être sur que le
                 programme est \textit{bug-free}\ldots 
                 
                 En plus on peut faire de la manipulation de buffer
@@ -216,18 +216,18 @@ empêcher la copie des octets restants.
         \end{center}
 
         \begin{itemize}
-            \item[Pour:] Toute analyse du programme est utile pour
+            \item[\underline{Pour}:] Toute analyse du programme est utile pour
                 diminuer les bugs du programmes
-            \item[Contre:] Difficile de prouver l'absence total de bug
+            \item[\underline{Contre}:] Difficile de prouver l'absence total de bug
         \end{itemize}
 
     \item Utiliser des languages \textit{memory-safe} comme JS, C\#, Python,\ldots
 
         \begin{itemize}
-            \item[Pour:] Prévient toute corruption de la mémoire en n'exposant pas
+            \item[\underline{Pour}:] Prévient toute corruption de la mémoire en n'exposant pas
                 les adresses mémoires au programmeurs et par l'utilisation d'un
                 garbage collector.
-            \item[Contre:] 
+            \item[\underline{Contre}:] 
                 \begin{tabular}{p{14cm}}
                 \begin{itemize}
                     \item Il y a toujours un grand nombre de language \textit{unsafe}.
@@ -302,25 +302,115 @@ empêcher la copie des octets restants.
         \end{itemize}
 
 
-    \item \textbf{Bounds checking}
-        %TODO
+    \item \textbf{Bounds checking}: Prevenir l'utilisation de pointeur invalide.
 
+        \paragraph{Difficulté}: En c, un pointeur n'encode pas d'information
+        sur la sémantique de l'usage de ce pointeur. De plus les unions peuvent
+        rendre les choses difficiles puisqu'une variables peut être différente chose..
 
+        La solution (qui est weakness puisque l'utilisation d'invalide poiteur est 
+        toujours possible) consiste à checker les bornes de la mémoire. Cela
+        évite la réécriture arbitraire de la mémoire.
+
+        \begin{itemize} 
+            \item[\underline{Contre}]: Nécessite un nouveaux compilateur et donc les l'accès
+        aux fichiers sources.
+\end{itemize}
+
+        \begin{enumerate}
+            \item Electric fences : Ajout à chaque objet dans le heap d'un \textbf{guard page}
+                qui cause une page exception quand il est overwrite.
+                \begin{figure}[!h]
+                    \centering
+                \begin{tabular}{|c|}
+                    \hline
+                    Guard page \\
+                    \hline
+                    Heap object \\
+                    \hline
+                \end{tabular}
+                \caption{Guard page}
+            \end{figure}
+                \begin{itemize}
+                    \item[\underline{Pour}]: Il ne faut pas changer de compilateur, juste relinker
+                        avec une nouvelle version de malloc
+                    \item[\underline{Contre}]: Gros overhead pour les objets du heap.
+                \end{itemize}
+            \item Fat pointer : Modifier la représentation du pointeur pour ajouter
+                les informations sur les bornes des objets de cette zone mémoire.
+
+                L'assignation d'une nouvelle valeur à un pointeur peut donc créer une 
+                erreur lorsqu'il n'est pas dans les bornes.
+                \begin{figure}[!h]
+                    \centering
+                    \begin{tabular}{|c|m{2cm}|c|c|c|}
+                        \cline{1-1}
+                        \cline{3-5}
+                    4 byte addr & & 4 byte obj\_base & 4-byte obj\_end & 4-byte curr\_adr \\
+                        \cline{3-5}
+                        \cline{1-1}
+                \end{tabular}
+                \caption{Représentation fat pointeur}
+            \end{figure}
+                \begin{itemize}
+                    \item[\underline{Contre}]: Couteux de vérifié tout les pointeurs
+                        déférencé\ldots surtout que le c veut des performances
+                    \item[\underline{Contre}]: Fat pointeur est incompatible avec bcp de
+                        programme existant
+                \end{itemize}
+        \end{enumerate}
+
+    \item \textbf{Non executable memory}: Généralement, on empeche qu'en zone mémoire
+        soit exécutable et écrivable! Typiquement, la stack ne sera pas exécutable et
+        on ne pourra pas y faire exécuter un code malicieux.
+        (\textsc{DEP}, \textsc{NX},\ldots)
+        \begin{itemize}
+            \item[\underline{Pour}]: Facile à mettre en oeuvre.
+            \item[\underline{Contre}]: Dur de générer du code dynamiquement
+        \end{itemize}
+
+    \item \textbf{Randomize memory addresses} (Stack ou espace mémoire complet): Les shell-code use souvent des 
+        adresses hardcodés, donc en randomisant les adresses c'est plus dur d'avoir
+        un pointeur valide.
+        (\textsc{ASLR},\ldots)
+
+        \paragraph{Note}: Adversaire peut prendre extraire la randomisation, 
+        surtout dans le cas des machines 32bits.
+        
 \end{enumerate}
 
-
+En pratique on utilise surtout gcc, la randomization et la mémoire non exécutable.
 
 \subsection{Injection vulnerabilities}
-
-\subsection{Memory safety}
-
+%TODO
 
 
 \section{Malwares}
-\paragraph{Définition :}
+
+Code malicieux qui tourne sur le système d'une victime.
+
+\paragraph{Actions}
+
+Ils peuvent faire à peut près n'importe quoi\ldots cela dépend
+surtout des permissions sous lequel ils s'exécutent.
+(pop up, endommagé l'hardware, spam, DoS, keylogging, encrypt files)
+
+\paragraph{Time bomb} Les malwares peuvent aussi être retardé en attendant 
+qu'une condition arrive.
+
+\subsection{Type de malware}
 \begin{description}
-  \item[Virus] fragment de code qui se propage à l'aide d'autres programmes.
-  \item[Worm] programme indépendant.
+  \item[Virus] fragment de code qui se propage à travers des systèmes en s'arrangeant
+      pour être \textit{éventuellement} executé. $\to$ infecte en altérant du
+      code \textbf{enregistré}
+  \item[Worm] programme indépendant qui se prograge/réplique à travers un système
+      en s'arrangeant pour être \textit{immédiatement} executé. $\to$ infecte
+      en altérant du code qui \textbf{s'exécute}. (pas d'intervention de l'utilisateur)
+
+  \item[$\to$] Les virus et worms sont des malwares qui se propage automatiquement.
+\paragraph{But virus/worm}: Dur à détecter/détruire/désactiver, infection rapide, 
+peut réinfecteur d'autre host, facile à créer et indépendant de l'OS. 
+  \item[]
   \item[Cheval de Troie (Trojan)] programme utile qui contient un programme malveillant (ou lui-
 même par extension).
   \item[Backdoor] accès caché à un ordinateur.
@@ -334,24 +424,38 @@ Ils sont installé par les chevaux de Troie et donc souvent classés comme tels.
     des fichiers ou des configurations.
 \end{description}
 
-\paragraph{La période classique}
-Propagation passive à travers l'échange de disquettes. La propagation est lente et donc le virus à
-besoin d'être efficace.
-\begin{description}
-  \item[Les virus Stealth]$ $
-    \begin{description}
-      \item[Simple] le virus comprime le fichier original, et crée un fichier infecté de la même taille.
-      \item[Complexe] le virus modifie le système de manière à être invisible. Il modifie le fichier routines
-        de lecture afin qu'ils ne révèlent pas le virus.
-    \end{description}
-  \item[Les virus polymorphes]
-    Le virus se modifie après chaque infection de manière à rester indétectable.
-\end{description}
+\subsection{Virus}
 
-\paragraph{La période moderne}
-Les virus modernes utilisent Internet pour propager activement et peuvent infecter la planète en
-quelques heures. Ils sont souvent, simple et facile à détecter. Cependant, ils sont efficace, car ils se
-propagent beaucoup plus rapidement que le logiciel antivirus ne peut être mis à jour.
+\subsubsection{Virus problem}
+Le virus (comparé au worm) est opportuniste puisque le code n'est pas forcément
+exécuté\ldots il le sera si le user effectue une action (ex: démarrer une app,\ldots)
+
+\begin{itemize}
+\item \textbf{Les virus Stealth}
+    \begin{enumerate}
+      \item Simple: le virus comprime le fichier original, et crée un
+fichier infecté de la même taille.
+      \item Complexe: le virus modifie le système de manière à être
+      invisible. Il modifie le fichier routines de lecture afin qu'ils
+      ne révèlent pas le virus.
+    \end{enumerate}
+\item \textbf{Les virus polymorphes}
+    Le virus se modifie après chaque infection de manière à rester indétectable.
+\end{itemize}
+
+%TODO -----v
+\subsection{La période classique}
+
+Propagation passive à travers l'échange de disquettes. La propagation
+est lente et donc le virus à besoin d'être efficace.
+
+\subsection{La période moderne}
+
+Les virus modernes utilisent Internet pour propager activement et
+peuvent infecter la planète en quelques heures. Ils sont souvent,
+simple et facile à détecter. Cependant, ils sont efficace, car ils se
+propagent beaucoup plus rapidement que le logiciel antivirus ne peut
+être mis à jour.
 
 
 \section{Introduction of Cryptography}
