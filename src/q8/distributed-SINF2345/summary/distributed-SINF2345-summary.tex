@@ -1218,6 +1218,141 @@ Liveness requirements : three progressively weaker versions
 	(no deadlocks, maybe livelocks,maybe starvation)
 \end{itemize}
 \subsection{Atomic/Linearizable Registers}
+\begin{itemize}
+	\item Termination(Wait-freedom): If a node is correct,each read and write op
+	eventually completes
+	\item Linearization Points:
+	\begin{itemize}
+		\item \textbf{Read ops} appears as if immediately happened at all nodes
+		at some time between invocation and response.
+		\item \textbf{Write ops} appears as if immediately happened at all nodes
+		at some time between invocation and response
+		\item \textbf{Failed ops} appears as either completed at every node
+		either never occured at any node
+	\end{itemize}
+\end{itemize}
+There is a a problem with the majority voting as the system could appear
+as non atomic. The solution to resolve this problem is 
+to use causality to enforce atomicity
+$\to$ When reading, also make a write before responding
+\begin{figure}[h]
+	\begin{tabular}{cc}
+		\includegraphics[width=8cm]{img/maj_prob.png}
+		\includegraphics[width=8cm]{img/maj_sol.png}
+	\end{tabular}
+		\caption{Majority Voting Problem and Solution}
+\end{figure}
+\subsubsection{Atomic Registers (N,N)}
+With multiple writer, their seq num might be non-synchronized
+which as the effect of ignoring some write operation.\\
+Idea is the following:
+\begin{itemize}
+	\item Get seq num before writing by reading from
+	the majority (to get last seq num)
+	\item Send Ack if receive write with old seq num
+\end{itemize}
+\paragraph{Message passing}
+Message passing can be simulated using shared memory. The idea
+consist of using a register AB to simulate the channel between A and B.
+$\to$ Message passing and shared memory equivalent in functionnality
+but not in always in efficiency.
+\subsection{Formalism}
+\subsubsection{Linearizability}
+\begin{itemize}
+	\item $R-inv_i(X)$ Read invocation by node i on register X
+	\item $R-res_i(a)$ Response with value a to read by node i
+	\item $W-inv_i(X,a)$ Write invocation by node i on register
+	X with value a.
+	\item $W-res_i$ Response (confirmation) to write by node i
+\end{itemize}
+\subsubsection{Executions}
+Every execution consists of:
+\begin{itemize}
+	\item Read operations composed of two events : 
+	$R-inv_i(X)$ and $R-res_i(a)$
+	\item Write operations which consist of two events:
+	$W-inv_i(X,a)$ and $W-res_i$
+	\item An execution is sequential if:
+	\begin{itemize}
+		\item X-inv by i immediately followed by a corresponding X-res at i
+		\item X-res by i immediately follows a corresponding X-inv by i
+		\item no concurrency, read x by p1, write y by p5,...
+	\end{itemize}
+\end{itemize}
+%TODO basic assumptions + rest formalism
+\section{Consensus With Total order}
+The order imposed by causal broadcast is partial. Some message might 
+be delivered in different order by different process.\\
+With \textbf{total order} broadcast, process must deliver all
+messages according to the same order.
+\subsection{Specification}
+The specification of the total order broadcast are roughly the same as the reliable broadcast
+there only a little modification
+\begin{description}
+	\item[Uniform agreement] For any message m: if any process delivers
+	m, then every correct process delivers m.
+\end{description}
+\subsection{Type of total order}
+\subsubsection{Total order}
+\begin{itemize}
+	\item Let m1 and m2 be any two messages and let pi and pj be any two 
+	correct processes that deliver m1 and m2
+	\item If pi delivers m1 before m2, then pj delivers m1 before m2
+\end{itemize}
+\subsubsection{Uniform total order}
+\begin{itemize}
+	\item Let m1 and m2 be any two messages and let pi and pj be any two
+	processess that deliver m2 (only m2!).
+	\item If pi delivers m1 before m2, then pj delivers m1 before m2
+\end{itemize}
+\subsection{Algorithm}
+\begin{figure}[h]
+	\begin{tabular}{cc}
+		\includegraphics[width=8cm]{img/tob_1.png}
+		\includegraphics[width=8cm]{img/tob_2.png}
+	\end{tabular}
+		\begin{center}
+		\includegraphics[scale=0.6]{img/tob_3.png}
+		\end{center}
+		\caption{Total-order broadcast}
+\end{figure}
+\section{Group Membership}
+Sometimes, process need to know which processes are participating in the 
+computation and which are not. Failure detectors provide such 
+information however it's not coordinated. (Crash detected at different
+time for different processes)
+\begin{itemize}
+	\item Like FD, processes are informed about failures; we say that
+	the processes install \textbf{views}.
+	\item Like PFD, processes have accurate knowledge about failures.
+	\item Unlike a PFD, the information about failures are 
+	coordinated, the processes install the same sequence of view.
+\end{itemize}
+\subsection{Properties}
+\begin{description}
+	\item[Local Monotonicity] If a process install view (j,M) after 
+	installing (k,N), then j > k and M $\subset$ N %TODO join pas compris
+	\item[Agreement] No two processes install views (j,M) and (j,M') such that
+	M $\neq$ M'
+	\item[Completeness] If a process p crashes, then there is an integer
+	j such that every correct process eventually installs view (j,M) such that 
+	p is not in M
+	\item[Accuracy] If some process install a view (i,M) and p is not in M
+	,then p has crash (might not be true in general case)
+\end{description}
+\subsection{Algorithm}
+\begin{figure}[h]
+	\begin{tabular}{cc}
+		\includegraphics[width=8cm]{img/gmp_1.png}
+		\includegraphics[width=8cm]{img/gmp_2.png}
+	\end{tabular}
+	\begin{center}
+		\includegraphics[scale=0.5]{img/gmp_3.png}
+	\end{center}
+	\caption{Group membership}
+\end{figure}
+%TODO Non-Blocking Atomic Commit
+
 
 \begin{thebibliography}{1} 
 \bibitem{icampus} http://www.icampus.uclouvain.be, {\em Icampus}
