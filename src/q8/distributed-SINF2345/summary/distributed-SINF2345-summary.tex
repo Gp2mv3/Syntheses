@@ -1,7 +1,8 @@
-\documentclass[en]{../../../eplsummary}
 
+\documentclass[en]{../../../eplsummary}
+\usepackage{listings}
 \hypertitle{Distributed}{8}{INGI}{2345}
-{Nicolas Houtain \and Gorby Nicolas Ndonda Kabasele}
+{Nicolas Houtain \and Gorby Nicolas Kabasele Ndonda}
 {Peter Van Roy}
 $$$$
 
@@ -11,6 +12,9 @@ Attention : This summary is actually based on course note
 (Need slide to understand)
 
 \section{Parallel and distributed computing}
+A distributed system is a set of nodes,connected by a network
+which appear to its users as a single coherent system.
+
 \begin{itemize}
     \item Parallel computing : many node, optimize performance, no
         failure
@@ -21,39 +25,53 @@ Attention : This summary is actually based on course note
     \item[$\to$] Loosely coupled(high latency and low perfomance)
 \end{itemize}
 
-\section{Consensus}
+\section{Core Problems}
+\subsection{Consensus}
+Consensus is the process of agreeing on a number.
+Problem is that all the nodes propose a value and some nodes might
+crash \& stop repsonding.
 
+\subsection{Atomic Broadcast}
+If a node broadcast a message, all nodes must deliver 
+the message in the same order.
+
+\subsection{Relation}
 Atomic broadcast $\equiv$ consensus (proof slide 13)
 
 It's possible to resolve consensus if we have atomic broadcast and vice-versa.
 \begin{enumerate}
-    \item broadcast $\to$ consensus : We take the first proposal as they have an order 
+    \item broadcast $\to$ consensus : We take the first proposal as 
+    messages are received in the same order.
     \item consensus $\to$ broadcast : The subject of the consensus is the order to take.
 \end{enumerate}
 
-Paxos est ce qui est le plus utilisé pour les consensus (TODO)
+Paxos est ce qui est le plus utilisé pour les consensus\footnote{\url{http://research.microsoft.com/en-us/um/people/lamport/pubs/paxos-simple.pdf}}
+ %J'ai vu un TODO mais je suis pas sur qu'il faille connaitre.
 
-\section{Modeling distributed system}
+\section{Concurrency Aspects}
 
 \begin{itemize}
-    \item Asynchronous : There is no bound on the time for a message to arrive and to be computed, it resolve consensus iff 0 node crashes
+    \item Asynchronous : There is no bound on the time for a message to
+     arrive and to be computed, it resolve consensus iff 0 node crashes
     \item Partially synchronous : It start asynchronous and then become
         synchronous(it get an upper bound, we know it will happen but we
         don't know when.)
-	  Consensus sit < $\frac{n}{2}$ crashes
+	  Consensus up to $\frac{n}{2}$ crashes
     \item Synchronous : Bound known for delivering and computation of message. Consensus with n-1 crashes
 \end{itemize}
 
 \paragraph{Asynchronous vs Synchronous}
 
-Bound is simulated with a expect bound to be in partially synchronous.
+Bound is simulated with an expected bound to be in partially synchronous.
 
-\section{Failure node}
-Bound exist but we don't know the exact value because this bound can
-change with time (if RTT increase for example)
-
+\section{Failure Aspects}
+Each node use a failure detector that is implemented by 
+heartbeat and waiting.\\
+Problem $\to$ bound exist but we don't know the exact value because
+this bound can change with time (if RTT increase for example), 
 We need to adapt the bound.
 
+Other kinds fault than crash can appears
 \begin{itemize}
     \item \textbf{Byzantine faults} : Sending wrong information, omit
         messages,\ldots
@@ -77,7 +95,11 @@ We need to adapt the bound.
                 \end{enumerate}
         \end{enumerate}
 \end{itemize}
-
+For example in a token ring algorithm:
+\begin{itemize}
+	\item Illegitimate state: 0,2,3... token.
+	\item Legitimate state : only one token.
+\end{itemize}
 
 \section{Formal models of distributed system}
 
@@ -125,9 +147,11 @@ A state is define by triple $<l, O, s>$ :
     \caption{Example states}
 \end{figure}
 
+
+
 \paragraph{Working}
 \begin{enumerate}
-    \item Waite for message
+    \item Wait for message
     \item When receive message, do some computation and send message
     \item Goto 1.
 \end{enumerate}
@@ -145,7 +169,19 @@ A state is define by triple $<l, O, s>$ :
 \end{itemize}
 
 \subsubsection{Transition functions}
-%TODO
+
+Formally a transaction functions requires for any two
+$f(<I_1,O_1,s_f1>)=<I_2,O_2,s_2> \ and \ f(<I_3,O_3,s_3>)=<I_4,O_4,s_4>$
+\begin{itemize}
+	\item $I_2=I_4 =<\emptyset,...,\emptyset$ (all inbufs are empty)
+	\item if $I_2=I_4 and s_1=s_3$ then
+	\begin{itemize}
+		\item $s_2=s_4$ (don't observe channel)
+		\item $O_1[i] \subseteq O_2[i] \ and \ O_3[i] \subseteq O_4[i]$ 
+		(only add msg to outbuf)
+		\item $O_2[i]-O_1[i] = O_4[i]-O_3[i]$ (don't observe channel)
+	\end{itemize}
+\end{itemize}
 
 
 \subsubsection{Execution}
@@ -170,6 +206,8 @@ event_2, config_2,\cdots$''
         configuration c if  accesible state of node $j$ in c is $s_1$ 
     \item del(i, j, m) \textbf{application} in configuration c if m is
         in outbuf for link i-j of node i in c
+        
+        %TODO EXAMPLE SLIDE 11?
 
     \item \begin{enumerate}
             \item if transition e=($s_1, s_2, i$) is applicable
@@ -182,22 +220,30 @@ event_2, config_2,\cdots$''
 
 
 \subsection{Asynchronous (Schedules) / Synchronous}
-Non-determinism come from asynchrony(messages take arbitrary time to 
-be delivered, and the time to compute varies)\ldots
+Processes are deterministic,
+Non-determinism comes from asynchrony(messages take arbitrary time to 
+be delivered, and the time to compute varies)\ldots\\
+A \textbf{schedule} is the sequence of events. The event are the
+one that determine the properties(del($i,j,m$) determines the message
+asynchrony and comp($i$) determines the proccess speed.)
+ so all non-determinism is embedded in schedule.
 
-%TODO
-
+\begin{itemize}
+	 \item Given the initial conf, the schedule determines the whole 
+	 execution.
+	 \item Not all schedules are allowed for initial conf. (some 
+	 event may be impossible to occurs.
+\end{itemize}
 
 \subsection{Order of event}
 The order in which two applicable computation events or
 two applicable delivery events are executed is irrelevant!\\
-A schedule is a sequence of events. Given the initail configuration, it 
-determines the whole execution. Since:
-\begin{itemize}
-	\item del($i,j,m$) determines the message asynchrony
-	\item comp($i$) determines the proccess speed.
-\end{itemize}
-The non-determinism is embedded in schedule.
+The idea of the proof is that if you two differents comp
+events $a$ and $b$( meaning on different node!) applicable in a
+configuration then appliying $a$ first will not change the state of the
+node related to $b$ (vice-versa). 
+\paragraph{Note} It is only true for event that are not causally
+related!
 \subsection{Admissible execution (Fairness)}
 An execution is admissible if:
 \begin{itemize}
@@ -206,7 +252,7 @@ An execution is admissible if:
 \end{itemize}
 The infinity property permit messages to wait arbitrary long times before
 being delivered.
-\subsection{Synchronus Systems}
+\subsection{Synchronous Systems}
 The execution is partitionned into disjoints rounds.  A round consist of 
 deliver event for all message in outbuf and one compute event on 
 every process.
@@ -238,7 +284,7 @@ a and b are concurrent, $a || b$, if not $a <_H b$ and not $b <_H a$
 \end{itemize}
 Then E is similar to the execution starting in $c_0$ with schedule P. 
 \subparagraph{Notations}
-similar execution of E,F is noted F~E.
+similar execution of E,F is noted F\textasciitilde E.
 \begin{description}
 	\item[Computations or Equivalence class:] A class s.t all the elements
 are similar to each other.
@@ -246,9 +292,9 @@ are similar to each other.
 Computation theorem implies two importants results:
 \begin{enumerate}
 	\item There is no algorithm that can observe the order of the sequence
-	of events for all executions. %TODO ADD PROOF
+	of events for all executions. %TODO ADD PROOF (pas compris)
 	\item Computation theorem does not hold in a model extended s.t each
-	process read an hardware clock.%%TODO ADD PROOF
+	process read an hardware clock.%%TODO ADD PROOF (pas compris)
 \end{enumerate}
 \subsection{Clock}
 A clock is used to tell locally if two events are causally related.
@@ -327,11 +373,18 @@ admissible timed executions.
 \section{Specification and implementation of distributed systems}
 
 \subsection{Event based component model}
-There is different model :
+Each node models a sequential program. There is a global clock
+and at each tick either a node takes a one of the following step
+\begin{itemize}
+	\item Computation step : Perfoms computation(local) or
+	sends/receives one message to/from other nodes(global)
+	\item Communication step: deliver a message.
+\end{itemize}
+There are different models for the delivery :
 \begin{enumerate}
-    \item Receive 1 msg and send 1msg
-    \item At most receive 1 msg and send at most 1 msg to each neighbor
-    \item Receive k msg and send at most 1 msg to each neighbor
+    \item Receive 1 msg and send 1msg (Guerraoui)
+    \item At most receive 1 msg and send at most 1 msg to each neighboor (Lynch)
+    \item Receive k msg and send at most 1 msg to each neighboor (Welch)
 \end{enumerate}
 
 
@@ -440,7 +493,7 @@ liveness property”}
 \subsubsection{Node}
 
 Nodes that don’t fail in an execution are
-correct. There is different fail :
+correct. There are different way of failure :
 
 \begin{itemize}
     \item \textbf{Crash-stop} : stops taking steps, stops sending/receiving msg
@@ -515,7 +568,9 @@ correct. There is different fail :
         \end{enumerate}
 
     \item \textbf{Stubborn links} : Channel delivers any message sent
-        infinitely many times
+        infinitely many times (to implement it,
+        a list of all previously sent msg is kept, after a timeout all 
+        the message will be resent)
 
         \begin{figure}[h]
             \centering
@@ -535,7 +590,7 @@ correct. There is different fail :
         \end{enumerate}
 
     \item \textbf{Perfect links} : Channel that delivers any message
-        sent exactly once
+        sent exactly once (keep a set of delivered msg)
 
         \begin{figure}[h]
             \centering
@@ -631,7 +686,7 @@ Need completeness and accuracy.
     \item Periodically exchange \textbf{heartbeat} messages
     \item Timeout based on worst case RTT
     \item if timeout, then suspect node
-    \item if rcv msg from suspected node thent revise suspicion and
+    \item if rcv msg from suspected node then revise suspicion and
         increase time-out
 \end{enumerate}
 
@@ -741,9 +796,11 @@ Thi lower ID or better the lowest number of crash.
 \begin{itemize}
     \item Leader election (LE) which matches P
         \begin{itemize}
-            \item Eventual completeness (detects failure)
-            \item agreement 
-            \item Local accuracy (if a node is elected leader by p i ,
+            \item Eventual completeness : Eventually every correct
+            node trusts some correct node. (detects failure)
+            \item agreement : No two correct nodes different correct
+            nodes.
+            \item Local accuracy (if a node is elected leader by p i,
             all previously elected leaders by p i have crashed)
         \end{itemize}
     \item Eventual leader election (LE) which matches $<>$P
@@ -774,24 +831,686 @@ Thi lower ID or better the lowest number of crash.
 
 
 \subsection{Reductions}
-
+We say X $\preceq$ Y (X is reducible to Y)
+ if X can be solved given a solution of Y.
+ 
 \paragraph{Preorder $\preceq$} :
 \begin{itemize}
     \item Reflexivity
     \item Transitivity
 \end{itemize}
-
+It is not antisymmetric, thus it's not a partial order.
+ We say that X $\simeq$ Y (equivalent) if X $\preceq$ Y and Y $\preceq$ X.
 \paragraph{Partial order} :
 Preorder + antisymmetric
 
-
 \section{Reliable broadcast}
+\subsection{Best-effort broadcast}
+\begin{itemize}
+	\item Best-effort-Validity : if $p_i$ and $p_j$ are correct,
+	then any broadcast by $p_i$ is eventually delivered by $p_j$
+	\item No duplication : No message delivered  more than once
+	\item No creation : No message delivered unless broadcast.
+\end{itemize}
+BeB gives no guarantee if the sender crash. Implementation
+is straightforward , simple loop on all nodes.
+\subsection{Reliable Broadcast}
+\begin{itemize}
+	\item Validity: same as BeB
+	\item No duplication.
+	\item No creation.
+	\item Agreement : if a correct node delivers m, then every correct
+	node delivers m.
+\end{itemize}
+\subsubsection{Uniform Reliable Broadcast}
+If a failed node delivers, everyone must delivers.
+It add the Uniform agreement: For any message m, 
+if a process delivers m, then every correct process delivers m.
+\subsubsection{Implementation}
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/lrb_1.png} &
+        \includegraphics[width=8cm]{img/lrb_2.png}
+    \end{tabular}
+        \caption{Lazy broadcast}
+\end{figure}
+\paragraph{Proof correctness}
+If correct $p_j$ delivers msg broadcast by $p_i$
+\begin{itemize}
+	\item If $p_i$ is correct, BeB ensures correct delivery
+	\item If $p_i$ crashes,
+		\begin{itemize}
+			\item $p_j$ detects this (completeness).
+			\item $p_j$ uses BeB to ensure every correct node gets it.
+		\end{itemize}
+\end{itemize}
+If we use a eventually perfect detector, it only affects 
+performance, not correctness.
+\paragraph{Eager RB}
+The exists a eager version of reliable broadcast that does not use a 
+perfect detector. It simply use a BeB broadcast upon receive of a 
+message.
+\subparagraph{Correctness of Eager RB}
+if correct $p_j$ delivers message bcast by $p_i$,
+$p_j$ uses BeB to ensure every correct node gets it. 
+\subsubsection{Uniformity RB}
+In the above version, uniformity is not respected. If a sender
+p immediately RB delivers and crashes, only p will have delivered 
+the message.\\
+The idea is the following, message are pending until all correct
+nodes get it. Node that gets the message exchange ack. The 
+message is deliver once all the nodes acked.
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.7]{img/urb.png}
+\end{figure}
+%TODO CORRECTNESS AND MAJORITY ACK
+\section{Causal-Order Broadcast}
+Uniform reliable broadcast doesn't deal with the order in which the
+message are deliver. The causal-order broadcast remedy to this 
+problem.\\
+We that $m_1 \to m_2$ ($m_1$ causally precedes $m_2$) if
+\begin{itemize}
+	\item FIFO order: Some process $p_i$ broadcasts $m_1$ before
+	broadcasting $m_2$
+	\item Network order: Some process $p_i$ delivers $m_1$ and
+	later broadcasts $m_2$
+	\item Transitivity: There is a message m' s.t $m_1 \to m' \ and \ m'\to m_2$
+\end{itemize}
+\paragraph{Property}
+\begin{itemize}
+	\item \textbf{CB:} If node $p_i$ delivers $m_1$, then $p_i$ must have 
+	delivered every message causally preceding ($\to$) $m_1$ before $m_1$.
+	\item \textbf{CB':} If $p_j$ delivers $m_1$ and $m_2$,and $m_1\to m_2$
+	then $p_j$ must deliver $m_1$ berfore $m_2$.
+\end{itemize}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.7]{img/cbs_properties.png}
+\end{figure}
+\subsection{Implementation}
+The idea is to broadcast the message along with its history( message 
+that were sent before it). This history is an ordered list of
+causally preceding messages called $past_m$
+\subsubsection{First algorithm}
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/cob_1.png} &
+        \includegraphics[width=8cm]{img/cob_2.png}
+    \end{tabular}
+        \caption{Implementation Causal broadcast First implem}
+\end{figure}
+The problem with this algorithm is that the size of the message
+grows. The idea to improve the algorithm is to detect  with 
+ack when all correct node got the message and delete from
+past if it's the case (Garbage Collector).\\
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.7]{img/gc.png}
+\end{figure}
+%TODO Question on GC
+\subsubsection{Second algorithm}
+In the first algortihm, the history was a list, in the second its a
+\textbf{vector timestamp}(vector clock).
+Each node has a vector clock s.t a node $p_i$:
+\begin{itemize}
+	\item VC[i] : number of messages $p_i$ coBroadcasted
+	\item VC[j], j $\neq$i: number of messages $p_i$ coDelivered from $p_j$
+\end{itemize}
+The delivery of m is only done if $VC_m$(attached VC) precedes $VC_i$ 
+(local clock)
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/cob_2-1.png} &
+        \includegraphics[width=8cm]{img/cob_2-2.png}
+    \end{tabular}
+        \caption{Implementation Causal broadcast Second implem}
+\end{figure}
+\subsection{Different Possible Orderings}
+\subsubsection{FIFO order}
+\begin{itemize}
+	\item Message form same node delivered in order sent.
+	\item For all messages $m_1$ and $m_2$ and all $p_i$ $p_j$:
+	\begin{itemize}
+		\item if $p_i$ broadcasts $m_1$ before $m_2$, and 
+		if $p_j$ delivers $m_1$ and $m_2$, then $p_j$ delivers
+		$m_1$ before $m_2$.
+	\end{itemize}
+\end{itemize}
+This definition doesn't require the delivery if both messages.
+\subsubsection{Total order}
+\begin{itemize}
+	\item Everyone delivers everythings in exact same order.
+	\item For all messages $m_1$ and $m_2$ and all $p_i$ $p_j$:
+	\begin{itemize}
+		\item if  both $p_i$ and $p_j$  delivers both messages
+		then they deliver them in the same order.
+	\end{itemize}
+\end{itemize}
+The order is not necessarily the one in which the message where sent.
+Does not require the delivery of both message 
+\subsubsection{Hierarchy of Orderings}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.7]{img/hierarchy_ord.png}
+\end{figure}
+\section{Consensus}
+Nodes proposes value and they must agree on one of these values.
+\subsection{Property}
+\begin{description}
+	\item[Validity] Any value decided is a value proposed
+	\item[Agreement] No two correct nodes decide differently 
+	(in a \textbf{uniform consensus}, node does not need to be correct)
+	\item[Termination] Every correct node eventually decides
+	\item[intergrity] A node decides at most once
+\end{description}
+\subsection{Hierachical Consensus}
+Each nodes stores its proposal and the identifier of the  last adopted 
+proposal.
+There are up to N round and at round i:
+\begin{itemize}
+	\item node i is leader and broadcasts and decide its proposal  v
+	\item Other nodes adopt i proposal v (save it in lastprop) or 
+	detect crash of i.
+\end{itemize}
+Future round will only propose v
+\subsubsection{Orphan message}
+Problem is that broadcast can be delayed and the leader crash
+and a node can receive two proposal in the next round. It will
+therefore affect future round.\\
+Counter measure $\to$ ranking of the node based on there identifier
+($p_1>p_2>p_3>...$
+\subsubsection{Implementation}
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/hc_1.png} &
+        \includegraphics[width=8cm]{img/hc_2.png}
+    \end{tabular}
+        \caption{Implementation hierarchical}
+\end{figure}
+\subsubsection{Correctess}
+\begin{itemize}
+	\item Validity? $\to$ Always decide own proposal or adopted value
+	\item Integrity? $\to$ Rounds increase monotonically, node only 
+	decide when leader.
+	\item Termination? $\to$ Every correct node makes it to the round it 
+	is leader in:
+	\begin{itemize}
+		\item If some leader fails, ccompleteness of P ensure progress.
+		\item If leader correct, validity of BeB ensures delivery. 
+	\end{itemize}
+	\item Agreement? $\to$ take correct leader with minimum id i.
+\end{itemize}
+Failute-torerant up to N-1 
+%TODO Formalism and notation important
+\subsection{Uniform consensus}
+Compare to nonuniform consensus where node i decides in round i,in
+uniform consensus with P, node move the decision to the end.
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/hc_fd.png} &
+        \includegraphics[width=8cm]{img/uhc_fd.png}
+    \end{tabular}
+        \caption{lnaccuracy with failure detector}
+\end{figure}
+\subsubsection{Uniform with S}
+The algorithm works with a S (strong dectector). The difference between
+Strong detector and a Perfect detecor comes from the accuracy w.r.t one node.
+%TODO correcteness (2)
+\subsection{With Eventual failure detector}
+Evenutally perfect detector cannot solve consensus with resilience t $\geq$ n/2\\
+Resilience = how many failures it tolerates.
+%Proof?
+\begin{itemize}
+	\item Rotating coordinator from before will not work because
+	''eventually'' might be after the first N rounds
+	\item The idea is to rotate forever and eventually all nodes
+	correct w.r.t 1 coordinator (coordinator's value becomes
+	agreed value)
+\end{itemize}
+\paragraph{Termination}
+There will be a bound on the number of failures $\to$ less (f<n/3) than a third
+can fail. This will allow to decide using majority.\\
+ Algo will works as follow:
+ \begin{enumerate}
+	\item Everyone send vote to coordinator C
+	\item C picks majority vote V, and broadcasts V
+	\item Every node get broadcast, change vote to V
+	\item Change coordinator C and go to 1
+\end{enumerate}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.6]{img/rotating_coord.png}
+	\caption{Rotating Coordinator}
+\end{figure}
+If at least n-f nodes vote V in round r, every leader will see a majority for V
+in all rounds > r. Proof:
+\begin{itemize}
+	\item We know that at most f nodes don't vote V
+	\item We also know n/3<(n-f)/2 (because f<n/3 implies n-f>2n/3)
+		$\to$ f<(n-f)/2 (because f<n/3 and n/3<(n-f)/2)
+	\item So less than half of any n-f nodes do not vote V
+\end{itemize}
+%TODO correctenness
+\section{Terminating Reliable Broadcast}
+With normal reliable broadcast, no idea when or if a message will be delivered.
+In TRB, sender broadcast M and receiver await delivery M. All nodes
+either deliver M or ''abort'' (<SF> sender Faulty message)
+\subsection{Property}
+\begin{description}
+	\item[Termination] Every correct node eventually delivers one message
+	\item[Validity] If correct src sends m, then src will deliver m
+	\item[Uniform agreement] If any node delivers m, then every correct node
+	eventually delivers m
+	\item[Intergrity] If a node delivers m, then either m=<SF> or m was
+	broadcast by src.
+\end{description}
+\subsection{Consensus based TRB}
+\begin{itemize}
+	\item Src RB broadcast m (deliver <SF> if src is suspected by P)
+	\item Src BeB broadcast m
+	\item Nodes propose whichever comes first: crash suspicion(<SF>) or 
+	BeB delivery from src (M)
+	\item Deliver consensus decision
+\end{itemize}
+%TODO correctness and Hardness of TRB
+\section{Shared Memory}
+In real shared memory there is no message-passing, node access one
+shared memory. But in distributed system we simulate shared memory 
+using message passing.
+\begin{itemize}
+	\item A register represents each memory location (objects)
+	\item Node can read/write to registers
+	\item Simplification of key-value stores
+\end{itemize}
+\paragraph{Basic Assumptions}
+Nodes are sequential, they can only do one operation at a time. 
+invocation,response,invocation,response,...\\
+The values are positive integers initially zero.
+\paragraph{Definitions}
+In an execution, an operation is 
+\begin{itemize}
+	\item Complete if both invocation \& response occured
+	\item Failed if invoked, but no response arrives
+\end{itemize}
+$op_1$ precedes $op_2$ if (denoted $<_p$) if response of $op_1$ 
+precedes invocation of $op_2$. Otherwise they are concurrent.
+\paragraph{Terminology}
+\begin{itemize}
+	\item (1,N)-algorithm : 1 designated writer, multiple readers
+	\item (N,N)-algorithm : Multiple writers, multiple readers
+\end{itemize}
+\subsection{Regular Registers}
+\subsubsection{Regular Register (1,N)}
+\begin{itemize}
+	\item Termination : Each read and write operation of a correct node 
+	completes.
+	\item Validity : Read return last value written if
+		\begin{itemize}
+			\item Read is not concurrent with another write, and 
+			\item Read is not concurrent with a failed operation
+		\end{itemize}
+	Otherwisz the read must return the last value 
+	written or a concurrent value being written.
+\end{itemize}
+\paragraph{Centralized Algorithm}
+One process is designated as leader. For reading, the latest value must
+be ask to the leader. For writing, leader value is updated. Problem
+is that it does not work if leader crashes.
+\paragraph{Bogus Algorithm}
+\begin{figure}[h]
+    \begin{tabular}{cc}
+        \includegraphics[width=8cm]{img/bogus_1.png} &
+        \includegraphics[width=8cm]{img/bogus_2.png}
+    \end{tabular}
+        \caption{Bogus algorithm}
+\end{figure}
+\paragraph{Majority Voting Algorithm}
+Main idea is based on a quorum principle,
+\begin{itemize}
+	\item Always write to and read from a majority of nodes
+	\item At least one node knows most recent value
+\end{itemize}
+\subparagraph{Quorum Principle}
+Divide the system into quorums, any two quorums should intersect.
+There are different type of quorum
+\begin{itemize}
+	\item Majority Quorum
+		\begin{itemize}
+			\item Pro : tolerate up to $\lceil N/2 \rceil$ -1 crashes
+			\item Con: Have to read/write $\lfloor N/2 \rfloor$ + 1values
+		\end{itemize}
+	\item Maekawa Quorum
+		\begin{itemize}
+			\item Arrange nodes in MxM grid (M=sqrt(N))
+			\item Write to rows, read to columns (always overlap)
+			\item Pro : Only need to read/write sqrt(N) nodes
+			\item Tolerate at most sqrt(N)-1 crashes
+		\end{itemize}
+\end{itemize}
+\begin{figure}[h]
+	\begin{tabular}{cc}
+		\includegraphics[width=8cm]{img/maj_voting.png}
+		\includegraphics[width=8cm]{img/maj_voting_2.png}
+	\end{tabular}
+		\caption{Majority Voting Algorithm}
+\end{figure}
+The problem with the first algorithm is that old write can override
+new write.
+\subsection{Single Storage}
+\paragraph{Safety requirements}
+\begin{itemize}
+	\item Sequential Consistency: Only allow executions whose results
+	appear as if there is a single system image and ''local time'' is
+	obeyed
+	\item Linearizability/Atomicity: Only allow executions whose 
+	results appear as if there is a single system image and 
+	''global time'' is obeyed.
+\end{itemize}
+\paragraph{Liveness : progress}
+Liveness requirements : three progressively weaker versions
+\begin{itemize}
+	\item Wait-free(strongest) : Every correct node should ''make progress''
+	(no deadkocks,no livelocks,no starvation)
+	\item Lock-free/non-blocking : At least one correct node should 
+	''make progress'' (no deadlocks,no livelock, maybe starvation)
+	\item Obstruction free/solo-termination : If a single node executes
+	without interference (contention) it makes progress
+	(no deadlocks, maybe livelocks,maybe starvation)
+\end{itemize}
+\subsection{Atomic/Linearizable Registers}
+\begin{itemize}
+	\item Termination(Wait-freedom): If a node is correct,each read and write op
+	eventually completes
+	\item Linearization Points:
+	\begin{itemize}
+		\item \textbf{Read ops} appears as if immediately happened at all nodes
+		at some time between invocation and response.
+		\item \textbf{Write ops} appears as if immediately happened at all nodes
+		at some time between invocation and response
+		\item \textbf{Failed ops} appears as either completed at every node
+		either never occured at any node
+	\end{itemize}
+\end{itemize}
+There is a a problem with the majority voting as the system could appear
+as non atomic. The solution to resolve this problem is 
+to use causality to enforce atomicity
+$\to$ When reading, also make a write before responding
+\begin{figure}[h]
+	\begin{tabular}{cc}
+		\includegraphics[width=8cm]{img/maj_prob.png}
+		\includegraphics[width=8cm]{img/maj_sol.png}
+	\end{tabular}
+		\caption{Majority Voting Problem and Solution}
+\end{figure}
+\subsubsection{Atomic Registers (N,N)}
+With multiple writer, their seq num might be non-synchronized
+which as the effect of ignoring some write operation.\\
+Idea is the following:
+\begin{itemize}
+	\item Get seq num before writing by reading from
+	the majority (to get last seq num)
+	\item Send Ack if receive write with old seq num
+\end{itemize}
+\paragraph{Message passing}
+Message passing can be simulated using shared memory. The idea
+consist of using a register AB to simulate the channel between A and B.
+$\to$ Message passing and shared memory equivalent in functionnality
+but not in always in efficiency.
+\subsection{Formalism}
+\subsubsection{Linearizability}
+\begin{itemize}
+	\item $R-inv_i(X)$ Read invocation by node i on register X
+	\item $R-res_i(a)$ Response with value a to read by node i
+	\item $W-inv_i(X,a)$ Write invocation by node i on register
+	X with value a.
+	\item $W-res_i$ Response (confirmation) to write by node i
+\end{itemize}
+\subsubsection{Executions}
+Every execution consists of:
+\begin{itemize}
+	\item Read operations composed of two events : 
+	$R-inv_i(X)$ and $R-res_i(a)$
+	\item Write operations which consist of two events:
+	$W-inv_i(X,a)$ and $W-res_i$
+	\item An execution is sequential if:
+	\begin{itemize}
+		\item X-inv by i immediately followed by a corresponding X-res at i
+		\item X-res by i immediately follows a corresponding X-inv by i
+		\item no concurrency, read x by p1, write y by p5,...
+	\end{itemize}
+\end{itemize}
+%TODO basic assumptions + rest formalism
+\section{Consensus With Total order}
+The order imposed by causal broadcast is partial. Some message might 
+be delivered in different order by different process.\\
+With \textbf{total order} broadcast, process must deliver all
+messages according to the same order.
+\subsection{Specification}
+The specification of the total order broadcast are roughly the same as the reliable broadcast
+there only a little modification
+\begin{description}
+	\item[Uniform agreement] For any message m: if any process delivers
+	m, then every correct process delivers m.
+\end{description}
+\subsection{Type of total order}
+\subsubsection{Total order}
+\begin{itemize}
+	\item Let m1 and m2 be any two messages and let pi and pj be any two 
+	correct processes that deliver m1 and m2
+	\item If pi delivers m1 before m2, then pj delivers m1 before m2
+\end{itemize}
+\subsubsection{Uniform total order}
+\begin{itemize}
+	\item Let m1 and m2 be any two messages and let pi and pj be any two
+	processess that deliver m2 (only m2!).
+	\item If pi delivers m1 before m2, then pj delivers m1 before m2
+\end{itemize}
+\subsection{Algorithm}
+\begin{figure}[h]
+	\begin{tabular}{cc}
+		\includegraphics[width=8cm]{img/tob_1.png}
+		\includegraphics[width=8cm]{img/tob_2.png}
+	\end{tabular}
+		\begin{center}
+		\includegraphics[scale=0.6]{img/tob_3.png}
+		\end{center}
+		\caption{Total-order broadcast}
+\end{figure}
+\section{Group Membership}
+Sometimes, process need to know which processes are participating in the 
+computation and which are not. Failure detectors provide such 
+information however it's not coordinated. (Crash detected at different
+time for different processes)
+\begin{itemize}
+	\item Like FD, processes are informed about failures; we say that
+	the processes install \textbf{views}.
+	\item Like PFD, processes have accurate knowledge about failures.
+	\item Unlike a PFD, the information about failures are 
+	coordinated, the processes install the same sequence of view.
+\end{itemize}
+\subsection{Properties}
+\begin{description}
+	\item[Local Monotonicity] If a process install view (j,M) after 
+	installing (k,N), then j > k and M $\subset$ N %TODO join pas compris
+	\item[Agreement] No two processes install views (j,M) and (j,M') such that
+	M $\neq$ M'
+	\item[Completeness] If a process p crashes, then there is an integer
+	j such that every correct process eventually installs view (j,M) such that 
+	p is not in M
+	\item[Accuracy] If some process install a view (i,M) and p is not in M
+	,then p has crash (might not be true in general case)
+\end{description}
+\subsection{Algorithm}
+\begin{figure}[h]
+	\begin{tabular}{cc}
+		\includegraphics[width=8cm]{img/gmp_1.png}
+		\includegraphics[width=8cm]{img/gmp_2.png}
+	\end{tabular}
+	\begin{center}
+		\includegraphics[scale=0.5]{img/gmp_3.png}
+	\end{center}
+	\caption{Group membership}
+\end{figure}
+%TODO Non-Blocking Atomic Commit
+%%FROM here on I'm not sure of what to study for the exam
+\section{Peer-to-Peer}
+\subsection{Overview P2P systems}
+P2P computing is distributed computing with the following desirable properties:
+\begin{itemize}
+	\item Resource sharing
+	\item Dual client/server role
+	\item Decentralization/autonomy
+	\item Scalability
+	\item Robustness/self-organization
+\end{itemize}
+\subsection{Distributed Hash Table}
+DHT are third generation of P2P, the idea constist of a dynamic 
+distribution of a hash table onto a set of cooperating nodes.
+(different node contains different parts of the table)
+Each node has a routing table that points to some other nodes.
+Interface with two functions:
+\begin{itemize}
+	\item put(key,value).
+	\item get(key)
+\end{itemize}
+\subsubsection{Chord}
+TODO
+\begin{itemize}
+	\item \url{https://www.cs.cmu.edu/~dga/15-744/S07/lectures/16-dht.pdf}
+	\item \url{http://www.powershow.com/view/11c359-NWZjO/Distributed_kary_System_Algorithms_for_Distributed_Hash_Tables_powerpoint_ppt_presentation}
+\end{itemize}
 
+\subsubsection{DKS}
+\subsection{Broadcast in DHTs}
+\section{Gossip}
+Gossip is the process by which an information will spread among 
+entities. Two operations, push (Telling to)  and pull (asking to).
+\subsection{Protocol Characterisitc}
+\begin{itemize}
+	\item Cyclic/periodic, pair-wise interaction between peers
+	\item The amount of information exchanged is of (small)
+	bounded size per cycle
+	\item The state each peer is bounded(small)
+	\item Reflection of the state of one of both peers by the 
+	change of the state of the other during interaction. 
+	\item Selection of peer is random (full peer set or small set of neighbors)
+	\item Reliable communication is not assumed
+	\item Protocol cost is negligible
+\end{itemize}
+\subsection{Protocol Usage}
+\begin{itemize}
+	\item Dissemenitation : Spread information in a manner that produces
+	bounded worst-case loads.
+	\item Repairing : Anti-entropy  protocols for reparing replicated data
+	, which operate by comparing replicas and reconciling differences.
+	\item Membership : Track processes 
+	\item ...
+\end{itemize}
+\subsection{Information dissemination}
+Dissemination begins with one peer that wants to 
+disseminate some message. Then every peer
+does the following:
+\begin{itemize}
+	\item Buffers every message (information unit) it receives up to a 
+	certain buffer capacity $b$
+	\item Forwards that message a limited number of hops or  time steps $t$
+	\item  Forwards the message each time to frandomly selected set of 
+	processes 
+\end{itemize}
+\subsubsection{Infect-forever Model}
+\begin{itemize}
+	\item Fixed population of size n (at round 1, one is infected)
+	\item If infected, stays infected forever
+	\item $Y_r$ is the number of individuals infected at round r
+	\item f is the number of individuals that infected ones try to infect
+\end{itemize}
+$Y_r \approx \frac{1}{1+n.e^{-f.r}}$ (ratio of \# infected to \# 
+uninfected increases exponentially).
+Number of round $R$ to infect all population:
+$$R = log_{f+1}(n)+\frac{1}{f}log(n)+O(1)$$
+\subsubsection{Infect-die Model}
+In this model, infectious process ''remains infectious'' for just one round\\
+proportion $\pi$ of process eventually contaminated satisfies the
+following fixpoint equation : $\pi = 1-e^{-\pi.f}$ where
+$\pi$ is the proportion of processes eventually contaminated.\\
+Number of round $R$ to infect all population:
+$$R = \frac{log(n)}{log(log(n))}+O(1)$$
+\subsubsection{Membership}
+To ensure scalability, each process has a partial view (random sample 
+of node).
+\begin{itemize}
+	\item When a process forwards a message, it 
+	includes in this message a set of processess it knows.
+	\item Hence, the process that receives the message can enhance the 
+	list of processes it knows by adding new processes.
+\end{itemize}
+%%TODO Requirements?
+\subsubsection{Buffer Management}
+Depending on broadcast rate , buffer capacity if processes may be 
+insufficient to ensure that every message is buffered long enough.\\
+To counter that, message are classiied according to their
+age (the number of processes the message went through) $\to$
+Old message are replaced.
+\subsection{Small-world network}
+There are different way at which a process choose its infection target
+\begin{description}
+	\item[Nearest-neighbor network] Target is a neighbors (number of
+	round is O($n^{1/D}$ for a D-dimensional grid)
+	\item[Random network] Target is random (number of rounds is
+	O(log(n))
+	\item[Small world network] In between case (number of rounds
+	is as random network)
+\end{description}
+\paragraph{Note:}Real world social network tends to be small-world networks.
+\subsubsection{Properties}
+Small-world network has both nearest neighbor connection as well as 
+long range connections.(Node reachable with a small number of hops).
+Defined by two properties
+\begin{itemize}
+	\item Small average shortest path length (opposed to large path length
+	in Neighbor graphs)
+	\item A high clustering coefficient (opposed to low CC in Random graphs)
+\end{itemize}
+The clustering coefficient CC measures degree of clustering. Count the 
+number of edges between neighboring nodes and divide by the maximum
+possible for every node. The average of this number is the CC.
+\subsection{Gossip Framework}
+%TODO mettre en deux colonnes
+\begin{lstlisting}[frame=single]
+// active thread 
+do forever 
+    wait(T time units) 
+    q = SelectPeer() 
+    push S to q 
+    pull Sq from q 
+    S = Update(S,Sq) 
+    
+// passive thread 
+do forever 
+    (p,Sp) = pull * from * 
+    push S to p 
+    S = Update(S,Sp) 
+\end{lstlisting}
+To instantiate the framework, define 
+\begin{itemize}
+	\item Local state S,
+	\item Method SelectPeer() and Update()
+	\item Style of interaction : push,pull,push-pull
+\end{itemize}
+\subsubsection{Aggregation}
+\begin{itemize}
+	\item The style of interaction is push-pull
+	\item S  is the current estimate of global aggregate
+	\item SelectPeer(): Single random neighbor
+	\item Update(): Numerical function defined according to desired global
+	aggregate(arihtmetic/geometric mean,max,\ldots)
+\end{itemize}
+%TODO properties and Network-size
 
-
-
-
-\begin{thebibliography}{1}
+\subsubsection{Topology Management}
+\subsubsection{Heartbeat Synchronization}
+\begin{thebibliography}{1} 
 \bibitem{icampus} http://www.icampus.uclouvain.be, {\em Icampus}
 \end{thebibliography}
 
