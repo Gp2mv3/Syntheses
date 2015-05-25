@@ -1,5 +1,5 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{eplinterro}[2015/03/06 EPL interro class]
+\ProvidesClass{epltest}[2015/03/06 EPL test class]
 
 \LoadClassWithOptions{../../../../../../epleval}
 
