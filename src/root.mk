@@ -17,7 +17,7 @@ ALL+=$(MAIN_NAME).pdf
 
 MAIN_NAME_SOL=${MAIN_NAME}-Sol
 
-ifneq (,$(filter $(TYPE),exam test))
+ifneq (,$(filter $(TYPE),exam test exercises mcq))
   ALL+=$(MAIN_NAME_SOL).pdf
   FULL=${MAIN_NAME_SOL}.pdf
 else
@@ -53,7 +53,7 @@ all: $(ALL)
 # missing file reference and interactively asking you for an alternative.
 
 $(MAIN_NAME).pdf: $(MAIN_NAME).tex
-ifneq (,$(filter $(TYPE),exam test))
+ifneq (,$(filter $(TYPE),exam test exercises mcq))
 	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18 \
 	  '\def\Sol{false} \input{%S}'" -use-make $(MAIN_NAME).tex
 else
@@ -80,7 +80,7 @@ ifneq (,$(filter $(TYPE),exam test))
 	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) $(SETSOL) config.yml
 else
 	cd ../../..; smartcp -vv -s \
-	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) config.yml
+	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) $(SETSOL) config.yml
 endif
 
 add:
