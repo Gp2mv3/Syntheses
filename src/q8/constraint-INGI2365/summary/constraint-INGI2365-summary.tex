@@ -121,6 +121,7 @@ improve prining (reduce search space), improve communication
 
 
 
+
 \section{Propagation}
 \begin{itemize}
     \item $n$ variables
@@ -128,6 +129,81 @@ improve prining (reduce search space), improve communication
     \item $e$ constraints
     \item maximum arity $r$
 \end{itemize}
+
+\begin{table}
+    \centering
+\begin{tabular}{|c|c|c|c|c|}
+    \hline
+    & Algo & Complexity & Type & Other \\
+    \hline
+    \hline
+    \multirow{3}{*}{\rotatebox{90}{\scriptsize Constraint}}     
+    & GAC3 & $O(e \times r^3 \times d^{r+1})$ & n-ary & \\
+    & AC3rm & $0(e \times d^3)$ & binary & Residues \& multidirectionality\\
+    & AC2001 & $O(e \times d^2)$ & binary &  firstSupport(x, a)\\
+
+    \hline
+    \hline
+    \multirow{2}{*}{\rotatebox{90}{\scriptsize Value}}
+    & GAC4 & $O(e \times r \times d^r)$ & n-ary & c.support(x,a) \\
+    & AC6 & $O(e \times d^2)$ & binary & firstSupported(x, a) \\
+    \hline
+\end{tabular}
+\caption{Generic propagator algorithm}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{|m{5cm}|m{5cm}|m{5cm}|}
+        \hline
+        CB & Collect and propagate & VB \\
+        \hline
+
+        c in Q & c in Q & (c, x, a) in Q \\
+
+        \begin{itemize}
+            \item called once for each set of change in SP
+            \item re-enforce the whole consistency
+            \item no information on changes
+        \end{itemize}
+        &
+        &
+        \begin{itemize}
+            \item called once for each single change in SP
+            \item reflects only one change at a time ($a \notin D(c)$)
+            \item information on each change, one at a time
+        \end{itemize}
+        \\
+
+        \hline
+
+        \scriptsize
+        \begin{enumerate}
+            \item \textcolor{red}{less} information
+            \item called \textcolor{green}{less}
+        \end{enumerate}
+        &
+        \scriptsize
+        \begin{enumerate}
+            \item \textcolor{green}{more} information
+            \item called \textcolor{green}{less}
+        \end{enumerate}
+        &
+        \scriptsize
+        \begin{enumerate}
+            \item \textcolor{green}{more} information
+            \item called \textcolor{red}{more}
+        \end{enumerate}
+        \\
+
+        \multicolumn{3}{|c|}{\begin{tikzpicture}
+            \draw[<->] (0,0) -- (13, 0);
+        \end{tikzpicture}}\\
+        \hline
+
+    \end{tabular}
+    \caption{Fixed point}
+\end{table}
 
 \subsection{Without propagation (Bruteforce)}:
 
@@ -169,70 +245,7 @@ no partial solution : checking fails or there is inconsistency (empty domain,\ld
 \end{tabular}
 
 
-\subsection{Consistency}
-
-\subsubsection{Filtering consistencies}
-
-if $x$ is a domain filtering consistency, a propagator for $x$ will :
-from CSP(X, D, X) 
-\begin{itemize}
-    \item return (X, D', C) such that
-        \begin{itemize}
-            \item D' $\subseteq$ D
-            \item (X, D, C) and (X, D', C) equivalent
-            \item D' is a nonempty partial solution
-            \item (X, D', C) respect $x$
-        \end{itemize}
-    \item return \textcolor{red}{fail} if no such CSP exists.
-
-        $\to$ not possible to satisfy consistency = unsatisfiable CSP
-\end{itemize}
-
-
-
-\subsubsection{Arc consistency (AC)}
-Strongest filtering when considering constraints in isolation.
-
-\paragraph{CSP} A \underline{binary} CSP (\textsc{X, D, C}) is AC iff all constraints $c \in C$ are AC
-
-\paragraph{Constraint} A \underline{binary} constraint $c$ on $x, y$ is AC iff
-\begin{lstlisting}[mathescape]
-    $\forall a \in D(x), \exists b \in D(y) : (a,b) \in c$ 
-    $\forall a \in D(x), \exists b \in D(y) : (a,b) \in c$
-\end{lstlisting}
-
-$\to$ It means that all the value of variables are \textbf{supported}
-
-
-\subsubsection{Generalize arc consistency (GAC)}
-Strongest filtering when considering constraints in isolation.
-
-\paragraph{CSP} A CSP (\textsc{X, D, C}) is GAC iff all constraints $c \in C$ are GAC
-
-\paragraph{Constraint} A constraint $c$ is GAC iff
-\begin{lstlisting}[mathescape]
-    $\forall x_i \in scope(c)$
-        $\forall a_i \in D(x_i)$
-            $\exists a_1,..., a_{i-1}, a_{i+1},..., a_r $
-                    $\in D(x_1) \times ... \times D(x_{i-1}) \times D(x_{i+1}) \times ... \times D(x_r)$
-                $(a_1,...,a_r) \in c$
-
-\end{lstlisting}
-
-\subsubsection{Propagation}
-
-If a value is not GAC, it can never be part of solution\ldots So, 
-GAC propagation remove all values that are not GAC!
-
-\paragraph{GAC $\neq$ Satisfiability} : A CSP that is GAC may not
-be satisfiable
-
-
-
 \subsection{Constraint based propagation}
-
-Fixed point algorithm is use to restrict the domains such that all the 
-constraints are GAC.
 
 \subsubsection{Fixed point algorithm}
 
@@ -244,7 +257,7 @@ The propagator must implements two methods :
     \item[Note:] removeValue(a, D(x)) fails if D(x) empty
 \end{enumerate}
 
-
+\paragraph{Note:} use GAC consistency
 
 \begin{lstlisting}[mathescape, caption=CB Fixed point]
 initCBDomFilter(Q){
@@ -264,7 +277,7 @@ propagateQueueCBDomFilter(Q){
     while(Q $\neq$ $\emptyset$){
         c = popCtrt(Q)
         $\Delta$ = c.propagate()
-        for((x,a) $leftarrow$ $\Delta$){
+        for((x,a) $\leftarrow$ $\Delta$){
             removeValue(a,D(x))             
             for(c $\leftarrow$ C/{c} if c.scope contains x){
                 if(! Q contains c)
@@ -469,6 +482,7 @@ In this case, the propagator must implement :
         inconsistent because $a \notin D(x)$
 \end{enumerate}
 
+\paragraph{Note:} use GAC consistency
 
 \begin{lstlisting}[mathescape, caption=CB Fixed point]
 
@@ -644,42 +658,239 @@ valRemove(x, a){
 
 \subsubsection{Specific}
 
+\subsection{Collect and propagate}
 
-\subsection{Propagator}
+It's a mixing constraint and value based. When the propagor is called it
+know all the change at one with \texttt{propagate($\Delta_c$)}
 
-\begin{table}
-\begin{tabular}{|c|c|c|c|c|}
-    \hline
-    & & Complexity & Type & Other \\
-    \hline
-    \hline
-    \multirow{3}{*}{\rotatebox{90}{Constraint based}}     
-    & GAC3 & $O(e \times r^3 \times d^{r+1})$ & n-ary & \\
-    & AC3rm & $0(e \times d^3)$ & binary & Residues \& multidirectionality\\
-    & AC2001 & $O(e \times d^2)$ & binary &  firstSupport(x, a)\\
+\begin{itemize}
+    \item A propagation queue of constraints
+    \item a $\Delta_c$ (= all literal removed since last call to c) fore each constraints 
+\end{itemize}
 
-    \hline
-    \hline
-    \multirow{4}{*}{\rotatebox{90}{Value based}} & Fixed point \\
-    & GAC4 & $O(e \times r \times d^r)$ & n-ary & c.support(x,a) \\
-    & AC6 & $O(e \times d^2)$ & binary & firstSupported(x, a) \\
+\subsubsection{Fixed point algorithm}
+In this case, the propagator must implement :
+\begin{enumerate}
+    \item setup() : initialize the constraint and performs first pruning
+    \item propagate($\Delta_c$) : compute the set of values that are inconsistent because
+        $\Delta_c \notin D$
+\end{enumerate}
+
+\paragraph{Note:} use GAC consistency
+
+\begin{lstlisting}[mathescape, caption=CB Fixed point]
+
+initCPDomFilter(X, D, C){
+    Q = $\emptyset$
+    C1 = $\emptyset$
+    for(c $\leftarrow$ C){
+        $\Delta$ = c.setup()
+        for( (x, a) $\leftarrow$ $\Delta$){
+            removeValue(a, D(x))
+            for( c $\leftarrow$ C1 if c.scope contains x){
+                if(! Q contains (c, x, a))
+                    Q += (c, x, a)
+            }
+        }
+        C1 += c
+    }
+}
+
+CPDomFilter(X, D, C){
+    Q = $\emptyset$
+    initCPDomFilter(Q)
+    propagateQueueCPDomFilter(Q)
+}
+
+propagateQueueCPDomFilter(Q){
+    while(Q $\neq$ $\emptyset$){
+        (c) = popCtrt(Q)
+        $\Delta$ = c.propagate($\Delta_c$)
+        $\Delta_c$ = $\emptyset$
+        for((x,a) $leftarrow$ $\Delta$){
+            removeValue(a,D(x))             
+            for(c $\leftarrow$ C/{c} if c.scope contains x){
+                if(! Q contains (c, x, a))
+                    Q += (c, x, a)
+                $\Delta_c$ += (x,a)
+            }
+        }
+    }
+}
+
+\end{lstlisting}
 
 
-\end{tabular}
-\caption{Generic algorithm}
-\end{table}
 
-\begin{table}
+
+
+
+\section{Consistency}
+
+\paragraph{CSP} A CSP (\textsc{X, D, C}) is $X_{Consistent}$ iff all
+constraints $c \in C$ are $X_{Consistent}$, 
+
+where $X_{Consistent}$ is GAC, BC,\ldots
+
+\paragraph{Propagation strength}
+A consistency $S_1$ is stronger than a consistency $S_2$ iff all CSP respecting
+$S_1$ also respect $S_2$.
+
+(Some consistencies can be \textit{incomparable})
+
+\begin{table}[!h]
     \centering
-\begin{tabular}{|c|c|}
-    CB fixed point & VB fixed point \\
-    \hline
-    c in Q : & (c, x, a) in Q: \\
-    c enfore GAC &
-    c has to reflect that $a \notin$ D(c) \\
-\end{tabular}
-\caption{Fixed point}
+    \begin{tabular}{l|c|c|}
+        \cline{2-3}
+        \multirow{3}{*}{\begin{tikzpicture}
+            \draw[->] (0,0) edge node [left]{\rotatebox{90}{Strongest}} (0, 1.5);
+        \end{tikzpicture}} &
+        Singleton GAC & maxRPWC \\
+        \cline{2-3}
+        & \multicolumn{2}{c|}{GAC} \\
+        \cline{2-3}
+        & Bound consistency & Forward checking \\
+        \cline{2-3}
+    \end{tabular}
+    \caption{Relative stringths of the consistencies}
 \end{table}
+
+
+\subsection{Filtering consistencies}
+
+if $x$ is a domain filtering consistency, a propagator for $x$ will :
+from CSP(X, D, X) 
+\begin{itemize}
+    \item return (X, D', C) such that
+        \begin{itemize}
+            \item D' $\subseteq$ D
+            \item (X, D, C) and (X, D', C) equivalent
+            \item D' is a nonempty partial solution
+            \item (X, D', C) respect $x$
+        \end{itemize}
+    \item return \textcolor{red}{fail} if no such CSP exists.
+
+        $\to$ not possible to satisfy consistency = unsatisfiable CSP
+\end{itemize}
+
+
+\subsection{Arc consistency}
+Strongest filtering when considering constraints in isolation.
+
+\paragraph{GAC $\neq$ Satisfiability} : A CSP that is GAC may not
+be satisfiable
+
+\paragraph{AC} A \underline{binary} constraint $c$ on $x, y$ is AC iff
+\begin{lstlisting}[mathescape]
+    $\forall a \in D(x), \exists b \in D(y) : (a,b) \in c$ 
+    $\forall a \in D(x), \exists b \in D(y) : (a,b) \in c$
+\end{lstlisting}
+
+$\to$ It means that all the value of variables are \textbf{supported}
+
+\paragraph{GAC} A constraint $c$ is GAC iff
+\begin{lstlisting}[mathescape]
+    $\forall x_i \in scope(c)$
+        $\forall a_i \in D(x_i)$
+            $\exists a_1,..., a_{i-1}, a_{i+1},..., a_r $
+                    $\in D(x_1) \times ... \times D(x_{i-1}) \times D(x_{i+1}) \times ... \times D(x_r)$
+                $(a_1,...,a_r) \in c$
+
+\end{lstlisting}
+
+\subsubsection{Algorithm}
+\begin{lstlisting}[mathescape, caption=GAC]
+propagateGAC(Q){
+    while(Q $\neq$ $\emptyset$){
+        c = popCtrt(Q)
+        $\Delta$ = c.propagate()
+        for((x,a) $\leftarrow$ $\Delta$){
+            removeValue(a,D(x))             
+            for(c $\leftarrow$ C/{c} if c.scope contains x){
+                if(! Q contains c)
+                    Q += c
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+
+\subsection{Bound consistency}
+GAC can be costly, so a other consistency is to only search support for bound.
+ $\to$ all valuyes between min and max considered in the domain.
+ 
+\paragraph{BC} A \underline{binary} constraint $c$ on $x, y$ is BC iff
+\begin{lstlisting}[mathescape]
+    $\forall a \in { min(D(x)), max(D(x))}, \exists b \in [min(D(y)), max(D(y))]: c(a,b)$
+    $\forall b \in { min(D(y)), max(D(y))}, \exists a \in [min(D(x)), max(D(x))]: c(a,b)$
+\end{lstlisting}
+
+\paragraph{BC} A constraint $c$ is BC iff
+\begin{lstlisting}[mathescape]
+    $\forall x_i \in scope(c)$
+        $\forall a_i \in { min(D(y)), max(D(y))}$
+            $\exists a_1,..., a_{i-1}, a_{i+1},..., a_r $
+                    $\in D*(x_1) \times ... \times D*(x_{i-1}) \times D*(x_{i+1}) \times ... \times D*(x_r):$
+                $c(a_1,..., a_r)$
+
+$D*(x_k) = [min(D(x_k)), max(D(x_k))]$
+\end{lstlisting}
+
+\subsubsection{Algorithm}
+\begin{lstlisting}[mathescape, caption=GAC]
+propagateGAC(Q){
+    while(Q $\neq$ $\emptyset$){
+        c = popCtrt(Q)
+        $\Delta$ = c.propagate()
+        for((x,a) $\leftarrow$ $\Delta$){
+            removeValue(a,D(x))             
+=>          if(a > x.max || a < x.min){
+                for(c $\leftarrow$ C/{c} if c.scope contains x){
+                    if(! Q contains c)
+                        Q += c
+                }
+        }
+    }
+}
+\end{lstlisting}
+
+
+
+
+
+
+
+\subsection{Forward checking}
+
+It's like a GAC at the end.
+ 
+\paragraph{FC} A constraint $c$ is FC iff
+\begin{lstlisting}[mathescape]
+    if $\forall x_i \in scope(c):$ $D(x_i) = {v_i} then c(v_1, ..., v_r)$
+    if all but one variable assigned: $c$ is GAC
+\end{lstlisting}
+
+\subsubsection{Algorithm}
+\begin{lstlisting}[mathescape, caption=GAC]
+propagateGAC(Q){
+    while(Q $\neq$ $\emptyset$){
+        c = popCtrt(Q)
+        $\Delta$ = c.propagate()
+        for((x,a) $\leftarrow$ $\Delta$){
+            removeValue(a,D(x))             
+=>          if($#D(x) == 1$){
+                for(c $\leftarrow$ C/{c} if c.scope contains x){
+                    if(! Q contains c)
+                        Q += c
+                }
+        }
+    }
+}
+\end{lstlisting}
+
+
+
 
 
 

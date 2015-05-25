@@ -1329,6 +1329,121 @@ Les serveurs proxy peuvent utiliser plusieurs protocoles différents pour un mê
 un web mail peut recevoir une requête HTTPS et générer une requête IMAP vers le serveur
 mail.
 
+\section{Web security}
+Dans le temps le web avait une architecture client/serveur tel que 
+\begin{itemize}
+	\item Le serveur livrait du contenu statique au client.
+	\item L'intéraction avec le browser était limité. Le serveur
+	était beaucoup plus complexe que le client.
+\end{itemize}
+La sécurité était donc plus focalisé coté serveur. Maintenant, les 
+serveurs peuvent créer du contenu dynamiquement (php,CGI,...) en 
+fonction des arguments qu'ils reçoivent (URL par exemple).\\
+Les browsers sont devenus plus compliqués. 
+\begin{itemize}
+	\item Ils peuvent exécuté du code (Javascript par exemple)
+	\item Ils peuvent agir comme un support multimédia
+	\item Ils peuvent géocaliser l'utilisateur
+	\item ...
+\end{itemize}
+Le web est devenu une plateforme complexe pour le calcul distribué( ex:Firefox sur windows qui
+intéragit avec un serveur Linux)ce qui veut dire que la surface d'attaque est devenu énorme! 
+Dans une application Web, le contenu provient de plein de site différent.
+La page est découpé en frame 
+$\to$ La question est quelle partie peut accéder à quoi?
+%TODO Image of the structure of a website with the different frame
+
+\subsection{Same-origin policy}
+Pour répondre à cette question, les browsers un modèle de sécurité
+appelé \textbf{Same-origin policy}. L'idée est que deux sites différent
+ne devrait pas pouvoir altérer le contenu entre eux.
+\begin{itemize}
+	\item Le browser assigne une origine à toute les ressources de
+	la page (librarie javascript,images,...).
+	\item Le code JS ne peut accéder que les ressources provenant de la 
+	même origine.
+\end{itemize}
+Une origine a la forme : scheme + nom de l'hôte + port. Scheme peut être http,https,ftp,file,\ldots
+Il y a 4 idées principales:
+\begin{itemize}
+	\item Une origine est associé avec une ressource coté client. (Une 
+	origine est l'équivalent moral d'un UID en Unix)
+	\item Chaque frame de la page prend l'origine de son URL. (Une 
+	frame est l'équivalent moral d'un proccess en Unix)
+	\item Les scripts inclus par les frame s'execute avec l'autorité 
+	de l'origin du fichier HTML. Vrai pour pour les scrips ''maison''
+	et ceux de domain externes. (Analogie :Executer le binaire qui est
+	stocké dans le repertoire home de quelqu'un d'autre.
+	\item Le contenu passif n'a aucune autorité puisqu'il ne peut 
+	pas executer de code.
+\end{itemize}
+\subsubsection{Browsers}
+\paragraph{Frame}
+Un object frame est DOM (Document Object Model: description d'un 
+interface indépendante de tout langage de prog. et de la platetform). 
+Pour récupérer l'origine d'un frame:
+\begin{itemize}
+	\item Récupérer l'origine via l'URL de la frame OU
+	\item Récupérer l'origine via le document (document.domain).
+	document.domain est à la base dérivé de l'URL et ensuite peut être changé.
+	Il peut contenir un suffix du domain complet (z.com au lieu de x.y.z.com) 
+\end{itemize}
+$\to$Browser séparent document.domain écrits et ceux non (même si
+ils ont la même valeur. Deux frames peuvent s'accéder mutuellement
+\begin{itemize}
+	\item écrit leurs document.domain à la même valeur OU
+	\item document.domain n'as pas été changé
+\end{itemize}
+\paragraph{DOM}
+Prenne l'origine de la frame environnante
+\paragraph{Cookies}
+Un cookie est composé d'un domain et d'un chemin (ex: *.mit.edu/6.858/).
+Le code JS peut avoir accès à n'importe quel cookie qui correspond à 
+l'origine du code (attention chemin et port d'origine sont ignoré dans
+compaison). 
+\subsubsection{Execption Modèle}
+Ils existent quelques execeptions au modèle:
+\begin{itemize}
+	\item De base, JS peut seulement envoyer des XMLHttpRequest à son 
+	serveurs d'origines sauf un autre serveurs active le 
+	\textbf{Cross-Origin Resource Sharing} (CORS).
+	\item A frame peut charger une image de n'importe quelle origine,
+	determiner la taille mais ne peut pas regarder les pixels dedans.
+	\item Une frame peut chargé un JS de n'importe quelle origine mais
+	elle ne peut pas directement examiner le code source.
+	\item Une frame peut executer un plugin de n'importe quelle origine 
+\end{itemize}
+%TODO CSRF
+\subsubsection{Réseau}
+Une frame peut envoyer une requête HTTP et HTTPS au hôte+port
+qui correspondent à son origine.
+$\to$ La sécurité de la same-origin policy dépend de l'intégrité 
+l'infrastructure DNS! %Example DNS?
+\subsubsection{Pixels}
+Les pixels n'ont pas d'origine, une frame peut dessiner où elle veut
+ses limites. Cela veut dire qu'une frame parent peut cacher le contenu
+d'une frame enfant. Solution:
+\begin{itemize}
+	\item Inclure JS qui empêche la page d'être inclus comme frame.
+	\item Ajouter l'en-tête X-Frame-Options dans la réponse 
+	pour dire au browser de ne place le contenu dans une frame enfant
+\end{itemize}
+\subsection{HTML5}
+HTML 5 apporte une API de partage d'écran. Si l'utilisateur
+donne l'autorisation, un site peut capturer l'entièreté de l'écran visible et 
+se transmettre la capture.
+$\to$ Si un attacker parvient à convaincre un utilisateur à 
+utiliser cette sur un de ses sites, il peut réussir à récupéter les cookies.
+ \subsection{Conclusion}
+ Modèle de sécurité de browser est un peu le foutoir. Il y a beaucoup
+ de subtilité et d'inconsistence. Le réecrire apporterait pas mal de 
+ problème:
+ \begin{itemize}
+	\item Beaucoup d'infrastrucute web préexistante sur lesquelles
+	les gens comptes.
+	\item Moins de features pour plus de sécurité?
+	\item...
+\end{itemize}
 \section{IDS}
 Systèmes de détection d'intrusion (IDS)
 Les systèmes de détection d'intrusion (IDS) analysent le trafic réseau (réseau IDS, NIDS), généralement
