@@ -219,7 +219,7 @@ Strongest filtering when considering constraints in isolation.
 
 \end{lstlisting}
 
-\subsubsection{Propagation}
+\paragraph{Propagation}
 
 If a value is not GAC, it can never be part of solution\ldots So, 
 GAC propagation remove all values that are not GAC!
@@ -644,42 +644,149 @@ valRemove(x, a){
 
 \subsubsection{Specific}
 
+\subsection{Collect and propagate}
 
-\subsection{Propagator}
+It's a mixing constraint and value based. When the propagor is called it
+know all the change at one with \texttt{propagate($\Delta_c$)}
+
+\begin{itemize}
+    \item A propagation queue of constraints
+    \item a $\Delta_c$ (= all literal removed since last call to c) fore each constraints 
+\end{itemize}
+
+
+
+\subsubsection{Fixed point algorithm}
+In this case, the propagator must implement :
+\begin{enumerate}
+    \item setup() : initialize the constraint and performs first pruning
+    \item propagate($\Delta_c$) : compute the set of values that are inconsistent because
+        $\Delta_c \notin D$
+\end{enumerate}
+
+
+\begin{lstlisting}[mathescape, caption=CB Fixed point]
+
+initCPDomFilter(X, D, C){
+    Q = $\emptyset$
+    C1 = $\emptyset$
+    for(c $\leftarrow$ C){
+        $\Delta$ = c.setup()
+        for( (x, a) $\leftarrow$ $\Delta$){
+            removeValue(a, D(x))
+            for( c $\leftarrow$ C1 if c.scope contains x){
+                if(! Q contains (c, x, a))
+                    Q += (c, x, a)
+            }
+        }
+        C1 += c
+    }
+}
+
+CPDomFilter(X, D, C){
+    Q = $\emptyset$
+    initCPDomFilter(Q)
+    propagateQueueCPDomFilter(Q)
+}
+
+propagateQueueCPDomFilter(Q){
+    while(Q $\neq$ $\emptyset$){
+        (c) = popCtrt(Q)
+        $\Delta$ = c.propagate($\Delta_c$)
+        $\Delta_c$ = $\emptyset$
+        for((x,a) $leftarrow$ $\Delta$){
+            removeValue(a,D(x))             
+            for(c $\leftarrow$ C/{c} if c.scope contains x){
+                if(! Q contains (c, x, a))
+                    Q += (c, x, a)
+                $\Delta_c$ += (x,a)
+            }
+        }
+    }
+}
+
+\end{lstlisting}
+
+
+\subsection{Summary}
+
+\subsubsection{Propagator}
 
 \begin{table}
 \begin{tabular}{|c|c|c|c|c|}
     \hline
-    & & Complexity & Type & Other \\
+    & Algo & Complexity & Type & Other \\
     \hline
     \hline
-    \multirow{3}{*}{\rotatebox{90}{Constraint based}}     
+    \multirow{3}{*}{\rotatebox{90}{\scriptsize Constraint}}     
     & GAC3 & $O(e \times r^3 \times d^{r+1})$ & n-ary & \\
     & AC3rm & $0(e \times d^3)$ & binary & Residues \& multidirectionality\\
     & AC2001 & $O(e \times d^2)$ & binary &  firstSupport(x, a)\\
 
     \hline
     \hline
-    \multirow{4}{*}{\rotatebox{90}{Value based}} & Fixed point \\
+    \multirow{2}{*}{\rotatebox{90}{\scriptsize Value}}
     & GAC4 & $O(e \times r \times d^r)$ & n-ary & c.support(x,a) \\
     & AC6 & $O(e \times d^2)$ & binary & firstSupported(x, a) \\
-
-
+    \hline
 \end{tabular}
 \caption{Generic algorithm}
 \end{table}
 
+\subsubsection{Fixed point}
 \begin{table}
     \centering
-\begin{tabular}{|c|c|}
-    CB fixed point & VB fixed point \\
-    \hline
-    c in Q : & (c, x, a) in Q: \\
-    c enfore GAC &
-    c has to reflect that $a \notin$ D(c) \\
-\end{tabular}
-\caption{Fixed point}
+    \begin{tabular}{|m{5cm}|m{5cm}|m{5cm}|}
+        \hline
+        CB & Collect and propagate & VB \\
+        \hline
+
+        c in Q & c in Q & (c, x, a) in Q \\
+
+        \begin{itemize}
+            \item called once for each set of change in SP
+            \item re-enforce the whole consistency
+            \item no information on changes
+        \end{itemize}
+        &
+        &
+        \begin{itemize}
+            \item called once for each single change in SP
+            \item reflects only one change at a time ($a \notin D(c)$)
+            \item information on each change, one at a time
+        \end{itemize}
+        \\
+
+        \hline
+
+        \scriptsize
+        \begin{enumerate}
+            \item \textcolor{red}{less} information
+            \item called \textcolor{green}{less}
+        \end{enumerate}
+        &
+        \scriptsize
+        \begin{enumerate}
+            \item \textcolor{green}{more} information
+            \item called \textcolor{green}{less}
+        \end{enumerate}
+        &
+        \scriptsize
+        \begin{enumerate}
+            \item \textcolor{green}{more} information
+            \item called \textcolor{red}{more}
+        \end{enumerate}
+        \\
+
+        \multicolumn{3}{|c|}{\begin{tikzpicture}
+            \draw[<->] (0,0) -- (13, 0);
+        \end{tikzpicture}}\\
+        \hline
+
+    \end{tabular}
+    \caption{Fixed point}
 \end{table}
+
 
 
 
