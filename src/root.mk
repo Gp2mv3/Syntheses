@@ -7,7 +7,7 @@
 PDFVIEWER=xdg-open # Default pdf viewer - GNU/Linux
 #PDFVIEWER=open # Default pdf viewer - Mac OS
 MAIN_NAME=${COURSE}-${TYPE}
-ifeq ($(TYPE),exam)
+ifneq (,$(filter $(TYPE),exam test))
   MAIN_NAME=${COURSE}-${TYPE}-${YEAR}-${MONTH}-${MINMAJ}
 else
   MAIN_NAME=${COURSE}-${TYPE}
@@ -17,7 +17,7 @@ ALL+=$(MAIN_NAME).pdf
 
 MAIN_NAME_SOL=${MAIN_NAME}-Sol
 
-ifeq ($(TYPE),exam)
+ifneq (,$(filter $(TYPE),exam test))
   ALL+=$(MAIN_NAME_SOL).pdf
   FULL=${MAIN_NAME_SOL}.pdf
 else
@@ -53,7 +53,7 @@ all: $(ALL)
 # missing file reference and interactively asking you for an alternative.
 
 $(MAIN_NAME).pdf: $(MAIN_NAME).tex
-ifeq ($(TYPE),exam)
+ifneq (,$(filter $(TYPE),exam test))
 	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18 \
 	  '\def\Sol{false} \input{%S}'" -use-make $(MAIN_NAME).tex
 else
@@ -75,7 +75,7 @@ show: $(FULL)
 	$(PDFVIEWER) $(FULL) 2> /dev/null &
 
 release: all
-ifeq ($(TYPE),exam)
+ifneq (,$(filter $(TYPE),exam test))
 	cd ../../../../../..; smartcp -vvvv -s \
 	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) $(SETSOL) config.yml
 else

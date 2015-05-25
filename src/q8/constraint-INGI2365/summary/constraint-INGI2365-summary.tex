@@ -2,10 +2,37 @@
 
 \usepackage{listings}
 
-\hypertitle{constraint-INGI2365}{8}{INGI}{2365}
+
+\lstset{
+  frame=top,frame=bottom,
+  basicstyle=\footnotesize\normalfont\sffamily,    % the size of the fonts that are used for the code
+  stepnumber=1,                           % the step between two line-numbers. If it is 1 each line will be numbered
+  numbersep=10pt,                         % how far the line-numbers are from the code
+  tabsize=2,                              % tab size in blank spaces
+  extendedchars=true,                     %
+  breaklines=true,                        % sets automatic line breaking
+  captionpos=t,                           % sets the caption-position to top
+  mathescape=true,
+  stringstyle=\color{white}\ttfamily, % Farbe der String
+  showspaces=false,           % Leerzeichen anzeigen ?
+  showtabs=false,             % Tabs anzeigen ?
+  xleftmargin=17pt,
+  framexleftmargin=17pt,
+  framexrightmargin=17pt,
+  framexbottommargin=5pt,
+  framextopmargin=5pt,
+  showstringspaces=false      % Leerzeichen in Strings anzeigen ?
+ }
+
+\DeclareCaptionFormat{listing}{\rule{\dimexpr\textwidth+17pt\relax}{0.4pt}\par\vskip1pt#1#2#3}
+\captionsetup[lstlisting]{format=listing,singlelinecheck=false, margin=0pt, font={sf},labelsep=space,labelfont=bf}
+
+\renewcommand\lstlistingname{Algorithm}
+
+
+\hypertitle{Constraint Programming}{8}{INGI}{2365}
 {Houtain Nicolas}
 {Yves Deville}
-$$$$
 
 \section{Constraint Programming (CP)}
 \textsc{CP = Model + Search}
@@ -54,10 +81,16 @@ $$$$
                     \item Consistencies : Require that all the values
                         are able to satisfy their constaints in
                         \textbf{isolation}
+
+                    \item Propagator: used at the beginning of the search
+                        and each time a decision is made.
                 \end{itemize}
             \item \textbf{Backtrackink Tree Search} : Explore search
                 space by taking decisions and backtracking (with
                 remembering decision)
+
+                \paragraph{Current node}: The node is modified at each decision
+                make and he is restore when backtracking occur.
         \end{itemize}
 
         \paragraph{Search space} = $D(x_1) \times D(x_2) \times \cdots \times D(x_n)$
@@ -87,11 +120,12 @@ improve prining (reduce search space), improve communication
 \subsection{Symmetry}
 
 
+
 \section{Propagation}
 \begin{itemize}
     \item $n$ variables
     \item domains of size $d$
-    \item $e constraints$
+    \item $e$ constraints
     \item maximum arity $r$
 \end{itemize}
 
@@ -169,12 +203,6 @@ Strongest filtering when considering constraints in isolation.
 
 $\to$ It means that all the value of variables are \textbf{supported}
 
-\begin{figure}[!h]
-\centering
-\includegraphics[width=10cm]{img/AC.png}
-\caption{AC example}
-\end{figure}
-
 
 \subsubsection{Generalize arc consistency (GAC)}
 Strongest filtering when considering constraints in isolation.
@@ -191,12 +219,6 @@ Strongest filtering when considering constraints in isolation.
 
 \end{lstlisting}
 
-\begin{figure}[!h]
-\centering
-\includegraphics[width=8cm]{img/GAC.png}
-\caption{GAC example}
-\end{figure}
-
 \subsubsection{Propagation}
 
 If a value is not GAC, it can never be part of solution\ldots So, 
@@ -206,17 +228,458 @@ GAC propagation remove all values that are not GAC!
 be satisfiable
 
 
-\subsection{Fixed point algorithm}
+
+\subsection{Constraint based propagation}
 
 Fixed point algorithm is use to restrict the domains such that all the 
 constraints are GAC.
 
+\subsubsection{Fixed point algorithm}
+
+The propagator must implements two methods :
+\begin{enumerate}
+    \item setup() : initialize the constraint
+    \item propagate() : compute the set of values that are inconsistent
+
+    \item[Note:] removeValue(a, D(x)) fails if D(x) empty
+\end{enumerate}
 
 
-\subsection{Constraint based propagation}
+
+\begin{lstlisting}[mathescape, caption=CB Fixed point]
+initCBDomFilter(Q){
+    for(c $\leftarrow$ C){
+        c.setup()
+        Q += c
+    }
+}
+
+CBDomFilter(X, D, C){
+    Q = $\emptyset$
+    initCBDomFilter(Q)
+    propagateQueueCBDomFilter(Q)
+}
+
+propagateQueueCBDomFilter(Q){
+    while(Q $\neq$ $\emptyset$){
+        c = popCtrt(Q)
+        $\Delta$ = c.propagate()
+        for((x,a) $leftarrow$ $\Delta$){
+            removeValue(a,D(x))             
+            for(c $\leftarrow$ C/{c} if c.scope contains x){
+                if(! Q contains c)
+                    Q += c
+            }
+        }
+    }
+}
+
+\end{lstlisting}
+
+\subsubsection{Generic GAC}
+
+The only requirement is a test method for the constraint which say true/false
+if the given value is right.
+
+
+\begin{enumerate}
+    \item \textbf{GAC3} \begin{lstlisting}[mathescape, caption=GAC3]
+setup(){}
+
+propagate(){
+    $\Delta$ = $\emptyset$
+    for(x $\leftarrow$ scope){
+        for(a $\leftarrow$ D(x)){
+            if( $\forall(v \leftarrow D(scope)_{x=a}) (! c(v))$ )
+                // No combination with x=a satisfying the constraint in the current dom
+                $\Delta$ += (x, a)
+        }
+    }
+    return $\Delta$
+}
+    \end{lstlisting}
+
+    \begin{tabular}{m{7cm}cm{6cm}}
+        \begin{itemize}
+            \item $O(r^2 \times d^r)$ for propagate()
+            \item $O(r \times d)$ calls of propagate() in propagateQueueCBDomFilter
+        \end{itemize}
+        & $\to$ &
+        \textbf{Global complexity}: $O(e \times r^3 \times d^{r+1})$
+    \end{tabular}
+
+\item \textbf{AC3rm} : the idea is to add memory by check the last found
+    support first. 
+    \paragraph{AC3 with }
+    \begin{itemize}
+        \item Residues :  \texttt{c.support(x, a)} = last found support for (x, a)
+            
+        \item Multidirectionality : if $b$ is a support for $a$, then $a$ is 
+            a support for $b$
+    \end{itemize}
+
+\paragraph{Note: } Propagator for binary constraints ($scp(c)=(x, y)$)
+
+\begin{lstlisting}[mathescape, caption=AC3rm]
+setup(){
+    for(a $\leftarrow D(x)$) { support(x, a) = $\bot$}
+    for(b $\leftarrow D(y)$) { support(y, b) = $\bot$}
+
+propagate(){
+    $\Delta_1$ = propagate_var(x)
+    $\Delta_2$ = propagate_var(y)
+    return $\Delta_1 \cup \Delta_2$
+}
+
+propagate_var(x){
+    $\Delta$ = $\emptyset$
+                            // Residues
+    for(a $\leftarrow$ D(x) if (! D(y) contains support(x, a))){
+        b = y.min
+        while(b != $\top$ && ! c(x=a, y=b)){
+            b = y.valueAfter(b)
+        }
+        if( b == $\top$ )
+            $\Delta$ += (x, a)
+        else {
+            // Multidirectionality
+            support(x, a) = b
+            support(y, b) = a            
+        }
+    }
+
+    return $\Delta$
+}
+    \end{lstlisting}
+
+    \begin{tabular}{m{7cm}cm{6cm}}
+        \begin{itemize}
+            \item $O(d)$ for setup()
+            \item $O(d^2)$ for propagate()
+            \item $O(d)$ calls of propagate() in propagateQueueCBDomFilter
+        \end{itemize}
+        & $\to$ &
+        \textbf{Global complexity}: $O(e \times d^3)$
+    \end{tabular}
+
+    \paragraph{Backtrack}: when we backtrack, AC3rm only search support for
+    values that have lost theirs. When needed, the backtracking scan \textbf{all
+    the domain} of the other variable!
+
+    $\to$ AC2001 to optimise the backtracking
+
+\item \textbf{AC2001} : to avoid to scan \textit{all the domain}, a node
+keep the firstSupport which may be restore when backtracking.
+
+\paragraph{Note: } Propagator for binary constraints ($scp(c)=(x, y)$)
+
+\begin{lstlisting}[mathescape, caption=AC3rm]
+setup(){
+    for(a $\leftarrow D(x)$) { support(x, a) = $\bot$}
+    for(b $\leftarrow D(y)$) { support(y, b) = $\bot$}
+
+propagate(){
+    $\Delta_1$ = propagate_var(x)
+    $\Delta_2$ = propagate_var(y)
+    return $\Delta_1 \cup \Delta_2$
+}
+
+propagate_var(x){
+    $\Delta$ = $\emptyset$
+                            // Residues
+    for(a $\leftarrow$ D(x) if (! D(y) contains support(x, a))){
+        b = y.valueAfter(firstSupport(x,a))
+        while(b != $\top$ && ! c(x=a, y=b)){
+            b = y.valueAfter(b)
+        }
+        firstSupport(x, a) = b
+
+        if( b == $\top$ )
+            $\Delta$ += (x, a)
+    }
+
+    return $\Delta$
+}
+\end{lstlisting}
+
+\begin{tabular}{m{7cm}cm{6cm}}
+    \begin{itemize}
+        \item $O(d)$ for setup()
+        \item $O(d)$ for one literal, all updates of firstSupport
+        \item $O(d)$ for one literal, validity of firstSupport checked
+        \item $O(d^2)$ for propagate()
+    \end{itemize}
+    & $\to$ &
+    \textbf{Global complexity}: $O(e \times d^2)$
+\end{tabular}
+
+\end{enumerate}
+
+\subsubsection{Specific}
+We can improme the previous complexity if we have a propagator specific
+for a constraint.
+
+\begin{lstlisting}[caption=Specific propagator for x <= y + k, mathescape]
+propagate(){
+    $\Delta$ = $\emptyset$
+    a = x.max
+    while(a != $\bot$ && a > y.max + k){
+        $\Delta$ += (x, a)
+        a = x.valueBefore(a)
+    }
+
+    b = x.min
+    while(b != $\bot$ && b < x.min - k){
+        $\Delta$ += (y, b)
+        b = x.valueAfter(b)
+    }
+
+    return $\Delta$
+}
+\end{lstlisting}
+
 
 \subsection{Value based propagation}
 
+In this case, the queue contains constraints and literals $(c,x,a)$.
+In this case, c has to reflect that $a \notin$ D(x).
+
+\paragraph{ }
+\begin{itemize}
+    \item[+] efficient filtering
+    \item[-] called for each literal removed
+\end{itemize}
+
+
+\paragraph{Treat inconsistent values because $a \notin D(x)$}
+c considers (c, y, b) on Q are sill in the domains!
+
+\begin{itemize}
+    \item $\gamma$ on X is \textbf{valid} iff $\forall$ x $\in$ X : $\gamma(x) \in D(x)$
+    \item $\gamma$ on X is \textbf{Q-valid} iff $\forall$ x $\in$ X : $\gamma(x) \in D(x) 
+        \cup \{a: (c, x, a) \in Q\}$
+\end{itemize}
+
+
+\subsubsection{Fixed point algorithm}
+In this case, the propagator must implement :
+\begin{enumerate}
+    \item setup() : initialize the constraint
+    \item valRemove(x, a) : computes the set of values that are
+        inconsistent because $a \notin D(x)$
+\end{enumerate}
+
+
+\begin{lstlisting}[mathescape, caption=CB Fixed point]
+
+initVBDomFilter(X, D, C){
+    Q = $\emptyset$
+    C1 = $\emptyset$
+    for(c $\leftarrow$ C){
+        $\Delta$ = c.setup()
+        for( (x, a) $\leftarrow$ $\Delta$){
+            removeValue(a, D(x))
+            for( c $\leftarrow$ C1 if c.scope contains x){
+                if(! Q contains (c, x, a))
+                    Q += (c, x, a)
+            }
+        }
+        C1 += c
+    }
+}
+
+VBDomFilter(X, D, C){
+    Q = $\emptyset$
+    initVBDomFilter(Q)
+    propagateQueueVBDomFilter(Q)
+}
+
+propagateQueueVBDomFilter(Q){
+    while(Q $\neq$ $\emptyset$){
+        (c, x, a) = popCtrtLiteral(Q)
+        $\Delta$ = c.valRemove(x, a)
+        for((x,a) $leftarrow$ $\Delta$){
+            removeValue(a,D(x))             
+            for(c $\leftarrow$ C/{c} if c.scope contains x){
+                if(! Q contains (c, x, a))
+                    Q += (c, x, a)
+            }
+        }
+    }
+}
+
+\end{lstlisting}
+
+
+\subsubsection{Generic}
+
+\begin{enumerate}
+    \item \textbf{GAC4} maintains sets of supports for literals (x,a) :
+        \begin{center}
+            c.support(x,a) = \{ $\gamma \in D(c.scope, Q, c)_{x=a} : c(\gamma)$\}
+        \end{center}
+
+        In this way, we removes Q-invalid support and when no more supports, 
+        ce can removed them to D(x).
+
+        \paragraph{Note:} c.support must be backtracked during search
+
+\begin{lstlisting}[mathescape, caption=GAC4]
+setup(){
+    $\Delta$ = $\emptyset$
+
+    // Initialisation of support data structure
+    for(x $\leftarrow$ scope){
+        for( a $\leftarrow$ D(x))
+            support(x, a) = $\emptyset$
+    }
+    for($\gamma \leftarrow$ scope if c($\gamma$)){
+        for( x $\leftarrow$ scope)
+            support(x, $\gamma(x)$) += $\gamma$
+    }
+
+    // First pruning
+    for( x $\leftarrow$ scope){
+        for( a $\leftarrow$ D(x)){
+            if(support(x, a) == $\emptyset$) 
+                $\Delta$ += (x, a)
+        }
+    }
+
+    return $Delta$
+}
+
+valRemove(x, a){
+    $\Delta$ = $\emptyset$
+    for( $\gamma \leftarrow$ support(x, a)) {
+        for(y $\leftarrow$ scope if y $neq$ x if D(y) contains b){
+            
+            // $\gamma$ is a support for (y, $\gamma(y)$) and $\gamma$ is Q-invalid
+            b = $\gamma(y)$
+            support(y, b) -= $\gamma$
+            if( support(y, b) == $\emptyset$)
+            $\Delta$ += (y, b)
+        }
+    }
+
+    return $\Delta$
+}
+\end{lstlisting}
+
+    \begin{tabular}{m{7cm}cm{6cm}}
+        \begin{itemize}
+            \item $O(r \times d^r)$ for setup()
+            \item $O(r \times d^r)$ for all calls to valRemove 
+                because each support is considered once
+        \end{itemize}
+        & $\to$ &
+        \textbf{Global complexity}: $O(e \times r \times d^r)$
+    \end{tabular}
+
+
+\item \textbf{AC6}: similar to AC2001 because use structure \texttt{firstSupported}
+
+    \paragraph{firstSupported(x,a)}
+    \begin{itemize}
+        \item (x,a) is the first support of (y,b) ($b \in firstSupported(x,a)$)
+        \item when (x,a) removed, AC6 know which values in D(y) need a new first support
+    \end{itemize}
+
+\begin{lstlisting}[mathescape, caption=GAC4]
+setup(){
+    $\Delta = \emptyset$
+    $\Delta += $ setup_var(x)
+    $\Delta += $ setup_var(y)
+}
+
+setup_var(){
+    $\Delta$ = $\emptyset$
+    for( y $\leftarrow$ D(y)) 
+        firstSupported(y, b) = $\emptyset$
+
+    for( a $\leftarrow$ D(x)) {
+        b.y.min
+        while( b != $\top$ && !c(x=a, y=b)){
+            b = y.valueAfter(b)
+        }
+
+        if(b == $top$)
+            $\Delta$ += (x, a)
+        else
+            firstSupported(y, b) += a
+    }
+
+    return $\Delta$
+}
+
+valRemove(x, a){
+    $\Delta$ = $\emptyset$
+
+    // All value that need new support
+    for(b $\leftarrow$ firstSupported(x,a) if D(y) contains b){
+        a' = x.valueAfter(a)
+        while(a' != $\top$ && !c(x=a, y=b))
+            a' = x.valueAfter(a')
+        
+        if(a' == $\top$)
+            $\Delta$ += (y, b)
+        else
+            firstSupported(x, a') += b
+    }
+    return $\Delta$
+}
+\end{lstlisting}
+
+    \begin{tabular}{m{7cm}cm{6cm}}
+        \begin{itemize}
+            \item $O(d^2)$ for setup()
+            \item $O(d)$ for one literal, all searches for support
+            \item $O(d^2)$ for all calls to valRemove()
+        \end{itemize}
+        & $\to$ &
+        \textbf{Global complexity}: $O(e \times d^2)$
+    \end{tabular}
+
+\end{enumerate}
+
+\subsubsection{Specific}
+
+
+\subsection{Propagator}
+
+\begin{table}
+\begin{tabular}{|c|c|c|c|c|}
+    \hline
+    & & Complexity & Type & Other \\
+    \hline
+    \hline
+    \multirow{3}{*}{\rotatebox{90}{Constraint based}}     
+    & GAC3 & $O(e \times r^3 \times d^{r+1})$ & n-ary & \\
+    & AC3rm & $0(e \times d^3)$ & binary & Residues \& multidirectionality\\
+    & AC2001 & $O(e \times d^2)$ & binary &  firstSupport(x, a)\\
+
+    \hline
+    \hline
+    \multirow{4}{*}{\rotatebox{90}{Value based}} & Fixed point \\
+    & GAC4 & $O(e \times r \times d^r)$ & n-ary & c.support(x,a) \\
+    & AC6 & $O(e \times d^2)$ & binary & firstSupported(x, a) \\
+
+
+\end{tabular}
+\caption{Generic algorithm}
+\end{table}
+
+\begin{table}
+    \centering
+\begin{tabular}{|c|c|}
+    CB fixed point & VB fixed point \\
+    \hline
+    c in Q : & (c, x, a) in Q: \\
+    c enfore GAC &
+    c has to reflect that $a \notin$ D(c) \\
+\end{tabular}
+\caption{Fixed point}
+\end{table}
 
 
 
