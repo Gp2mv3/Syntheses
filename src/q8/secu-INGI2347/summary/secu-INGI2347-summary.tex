@@ -1558,103 +1558,146 @@ Un IPS est un IDS qui réagit à une attaque.
 \end{itemize}
 
 \section{Certificates}
-9.1 Basics :
-Bases:
+\subsection{Bases}
 L'objectif d'un certificat est de relier une clé publique avec son propriétaire.
-Le couple (clé publique, propriétaire) est signé par un tiers de confiance appelé autorité de
-certification (CA). Pour vérifier la signature, la clé publique de le CA est nécessaire.
-Le couple (clé publique du CA, CA) est auto-signé: certificat racine. L'authenticité du certificat racine
-est fondamentale.
-Certificats X.509:
-Norme de l'Union internationale des télécommunications (UIT), sorti en 1988. Aussi IETF RFC-2459
-(mis à jour).
+\begin{itemize}
+	\item Le couple (clé publique, propriétaire) est signé par un tiers de 
+	confiance appelé autorité de certification (CA). Pour vérifier la signature
+	, la clé publique de le CA est nécessaire.
+	\item Le couple (clé publique du CA, CA) est auto-signé: certificat 
+	racine. L'authenticité du certificat racine est fondamentale.
+\end{itemize}
 Trois champs obligatoires.
 \begin{itemize}
-  \item TBS certificat (TBS = " To Be Signed "): La charge utile du certificat (voir ci dessous).
-  \item CA algorithme de signature: identificateur de l'algorithme cryptographique utilisé par l'AC pour
-signer le certificat.
+  \item TBS certificat (TBS = " To Be Signed "): La charge utile du certificat, elle contient
+  	\begin{itemize}
+		\item Numéro de série: Numéro unique attribué par le CA à la certificat.
+  		\item Domaine de la société: Identifies l'entité qui a signé et délivré le certificat.
+ 		\item Sujet: Identifies l'entité associée à la clé publique 
+ 		(O: organisation, C: pays, OU: Unité d'oranisation, CN: nom commun 
+ 		par exemple DNS, ST:  Etat, L: ville, etc Aucune adresse IP).
+ 		\item Validité: Pas avant, pas après.
+		\item Subject Public Key Info: La clé publique et identification de 
+		l'algorithme avec lequel la clé est utilisée.
+	\end{itemize}
+  \item CA algorithme de signature: identificateur de l'algorithme 
+  cryptographique utilisé par l'AC pour signer le certificat.
   \item Valeur de signature CA: Signature du certificat par le CA.
-X.509: TBS certificat:
-  \item Numéro de série: Numéro unique attribué par le CA à la certificat.
-  \item Domaine de la société: Identifies l'entité qui a signé et délivré le certificat.
-  \item Sujet: Identifies l'entité associée à la clé publique (O: organisation, C: pays, OU: Unité
 \end{itemize}
-
-
-d'organisation, CN: nom commun par exemple DNS, ST:. Etat, L: ville, etc Aucune adresse IP).
-Validité: Pas avant, pas après.
-Subject Public Key Info: La clé publique et identification de l'algorithme avec lequel la clé est
-utilisée.
-9.2 Obtaining and verifying a Certificate :
-Comment obtenir un certificat
-1.
- Le demandeur doit se présenter à la CA.
-2.
- Le CA (physiquement) authentifie le demandeur.
-3.
- Le CA demande au participant de générer des clés publiques / privées.
-4.
- Le CA crée un certificat avec l'identité du demandeur, la clé publique, la date d'expiration, etc,
-et la signature du CA.
-5. Le CA fournit une copie de sa clé publique à la requérante.
-6. Le demandeur peut propager son certificat.
-Autorité d'enregistrement
-\begin{itemize}
-  \item Le CA peut déléguer l'enregistrement d'un candidat à l'autorité d'enregistrement (RA).
-  \item La RA n'a pas la clé privée de CA.
-  \item Le CA approuve le RA pour authentifier les demandeurs.
-  \item Après avoir authentifié le requérant, la RA permet au demandeur de générer une paire de clés
-
-et envoie la clé publique de la CA pour créer le certificat.
-Techniquement, le RA envoie un Certificate Signing Request signé (RSE) à l'AC.
-\end{itemize}
-
-Vérification d'un certificat
+\subsection{Obtenir et vérifier un certificat}
+ Le couple (clé publique du CA, CA) est auto-signécertificat racine. L'authenticité 
+ du certificat racine est fondamentale.
+\begin{enumerate}
+	\item Le postulant s'enregistre avec un CA.
+	\item Le CA (physiquement) authentifie le demandeur.
+	\item Le CA demande au participant de générer des clés publiques / privées.
+	\item Le CA crée un certificat avec l'identité du demandeur, la clé 
+	publique, la date d'expiration, etc,et la signature du CA.
+	\item Le CA fournit une copie de sa clé publique à la postulant.
+	\item Le demandeur peut propager son certificat.
+\end{enumerate}
+Un CA peut décider déléguer l'enregistrement d'un postulant à une 
+autorité d'enregistrement (RA). Le RA remplit juste un requête de 
+signature de certificat (CSR) pour que le CA remplit le certificat.
+\paragraph{Vérification d'un certificat}
 \begin{itemize}
   \item Vérifiez le chemin de certification.
   \item Vérifiez la période de validité.
   \item Vérifiez que le certificat n'est pas révoqué.
 \end{itemize}
+
+\paragraph{Note:} Même si un certificat compromis est revoqué et
+remplacé par un nouveau, un site sécurisé peut toujours être 
+vulnérable.
+\subsection{SSL/TLS}
+SSL inventé à la base pour offrir un protection de la communication en
+se focalisant sur la couche transport. %TODO ajouter image couche 
+Plusieurs version de SSL existent, le version est celle qui a amené à TLS.
+Par défaut, les protocols comme SMTP ou HTTP envoie les mots de passes
+en texte clair. TLS permet de palier à se problème en étendant ces protocoles
+\subsection{TLS protocole}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.5]{img/tls_layer.png}
+\end{figure}
+TLS comprend 4 protocoles et deux couches:
+\begin{description}
+	\item[TLS Record Layer] Couche la plus basse, elle applique aux 
+	données les protocoles cryptographiques négociés. Elle se charge 
+	de la compression/fragmentation des données. Transmet les données
+	à la couche TCP.
+	\item[Couche plus haute] comporte 4 protocoles
+	\begin{itemize}
+		\item \textbf{Handshake Protocol} : Il est utilisé pour authentifier les deux
+		entités et négocier les algorithmes de chiffrement et 
+		d'authentification.
+		\item \textbf{Application Protocol} : transmet les données entre l'
+		application et la couche basse de TLS.
+		\item \textbf{Alert Protocol} : est utilisé pour informer 
+		l'application sur l'état de la connexion. (ex: Certificat invalide)
+		\item \textbf{Change Cipher Protocol}: informe l'application qu'un 
+		ensemble de protocoles cryptogaphiques précédemment négocié 
+		va être utilisé.
+	\end{itemize}
+\end{description}
+\subsection{TLS Record Layer}
+\paragraph{MAC Computation}
+$$MAC = Hash(MAC\_key || Pad2 || Hash ( MAC\_Key || Pad1 || Seq || Length
+	|| Content))$$ Où :
+\begin{itemize}
+	\item MAC\_key : clé secrète partagée par les 2 entitées
+	\item Pad1,Pad2 : constantes prédéfinies
+	\item Seq: n° de séquence de message
+	\item Length: Longueur en byte du record compressé
+	\item Content : record compressé
+\end{itemize}
+\paragraph{Encryption}
+Utilisation d'un chiffrement en bloc (DES,AES,...) ou en Stream (NULL,RC4)
+Attention si le serveur propose un d'utiliser RC4 avec une clé de 40-bits $\to$ REFUSE.
+\subsection{Handshake}
+Les messages lors de l'handshake ne sont pas cryptés, les entitées négocient:
+\begin{itemize}
+	\item La version du protocole (SSL 3.0,TLS 1.0,1.1)
+	\item Algo pour:
+	\begin{itemize}
+		\item Échanger les clés
+		\item Encrypter
+		\item MAC
+	\end{itemize}
+\end{itemize}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.5]{img/handshake.png}
+\end{figure}
+
 \section{Passwords}
-\subsection{Basics \& Vulnerabilities}
-Basics:
-Les mots de passe ne sont jamais enregistrés en « clear », le risque de les récupérer par un hacker est
-trop grand. Ils sont alors stockés sous la forme d'un hash. Le hash d'un mot de passe est irréversible.
-Pour vérifier une authentification, il suffit de comparer le hash du login et le hash stocké sur le serveur.
-h: fonction de hash
-Avec un h(x) = y, il est impossible de retrouver x seulement avec y
-Vulnerabilities1.2.3.4.5.6.7.8.9.:
-Noter son mot de passe :
-Cacher un post-it avec ses mots de passe en dessous du clavier, à côté du bureau, etc. Les gens
-ont plus tendance à noter leur mot de passe lorsqu'ils sont obligés de le renouveler
-régulièrement.
-Les regards indiscrets :
-Un regard par-dessus une épaule, une mini caméra bien placée. Les mots de passe n'ayant pas
-de signification sont plus vulnérables à ce type d'attaque (pourquoi ?)
-Arnaque (social engineering) :
-Envoyer de faux mail demandant à l'utilisateur de renvoyer son mot de passe pour le valider
-dans la base de données (plus de 1/3 des gens réponde).
-Key logger, Rootkit :
-Software ou Hardware qui enregistre toutes les touches du clavier de la victime. Pour contrer
-cette attaque, on peut utiliser un clavier virtuel ou encore brouiller le mot de passe en
-changeant la position du curseur lors de l'écriture du mot de passe.
-Sniffer un réseau :
-Certain protocole (POP, FTP, Telnet) ne chiffre pas les mots de passe qu'ils envoient, ils sont
-donc visible si on analyse les paquets échangés sur le réseau.
-Utiliser plusieurs fois un mot de passe :
-Ne jamais utiliser le même mot de passe entre deux environnements (Windows, Linux). Ne
-jamais utiliser un mot de passe reçu par mail. Utiliser différent niveau de sécurité.
-Les traces :
-Faire attention au gestionnaire de mot de passe (qui les enregistre) sur les ordinateurs public.
-Faire attention au champ qui s'auto-remplit après avoir valider un formulaire où par erreur on
-a entré son mot de passe dans le login.
-Les attaques par essais :
-Cette attaque consiste à faire un grand nombre d'essayes avec des mots de passe différent. On
-distingue deux types d'attaque, les online attack et les offline attack (détaillé plus loin).
+\subsection{Stockage}
+Les mot de passe ne doivent jamais être stocké en clair.
+\begin{itemize}
+	\item Á la place de stocker le password, stocké une valeur de hashage.
+	Il faut pour cela que la valeur de hashage soit irreversible.
+	\item Pour le login, hashé le mot de passe et ensuite comparer avec
+	la valeur stocké.
+\end{itemize}
+\subsection{Vulnerabilités}
+Quelques vulnérabilités :
+\begin{itemize}
+	\item Noter un mot de passe:
+	\item Les regards indiscrets
+	\item Ingénierie sociale (ex: envoyer un mail qui demande la
+	confirmation d'un mot de passe en envoyant le mot de passe)
+	\item Key Loggers
+	\item Écoute du réseau
+	\item Multi-Website Password 
+	\item Les traces (ex: gestionnaire de mot de passe (qui les enregistre)
+	sur les ordinateurs public.
+	\item Attaques par essaie erreurs 
+\end{itemize}
 
 \subsection{Online attack}
 Les online attack consistent à tester des mots de passe successivement à travers l'interface (web par
-exemple) qui sépare le pirate et le serveur. Le serveur va alors indiquer au pirate si le mot de passe est
+exemple) qui sépare le pirate et le serveur.\\
+Le serveur va alors indiquer au pirate si le mot de passe est
 bon ou non et dans ce cas, essayer un autre (le serveur fonctionne comme une black box, une oracle).
 Ce système est lent, mais ne nécessite pas de connaitre la fonction de hash.
 Pour contrer ce genre d'attaque :
@@ -1674,22 +1717,20 @@ connexion.
 des humains. Il suffit donc de demander au client une réflexion simple pour un humain mais
 compliqué pour un ordinateur.
 \end{itemize}
-
 \subsection{Offline attack}
-Principe:
 Les offline attack consiste à voler le fichier qui contient tous les hash, trouver la fonction de hash et
 ensuite faire une attaque par dictionnaire, brute force, etc. En connaissant la fonction de hash, le
 pirate peut comparer des mots de passe hashé au fichier récupérer sur le serveur.
-Les attaques par dictionnaire :
+\subsection{Attaques par dictionnaire}
 Beaucoup de gens utilise des mots de passe issus du dictionnaire (plus simple à retenir) mais celui-ci
 est fini (entre 150000 mots et 200000 mots) et est réduit donc considérément les possibilités. Un
 dictionnaire déjà hashé peut accélérer l'attaque. Un ordinateur peut calculer entre 200 000 hash et 10
 000 000 hash par second en fonction de la fonction de hash.
-Brute-force :
+\subsection{Brute-force}
 Les attaques par brute-force consiste à essayer un grand nombre de possibilité même si celle-ci n'ont
 pas obligatoirement un sens (« aaa » puis « bbb » puis « abb », etc). Cette attaque permet de trouver
 les mots de passe abstrait sans signification qui ne se trouve pas dans un dictionnaire.
-Heuristique attaque :
+\paragraph{Heuristique d'attaque}
 On peut combiner l'attaque par dictionnaire et l'attaque par brute force en appliquant certaines règles
 souvent utilisé par les gens :
 \begin{itemize}
@@ -1702,56 +1743,99 @@ souvent utilisé par les gens :
   \item Remplacer certain caractère par des similaires (Fred).
   \item Ajouter X caractère au début ou à la fin du mot (aaaFred).
 \end{itemize}
-
-\subsection{Unix/Windows case}
+\subsection{Faiblesse}
+Les mots de passes considéré comme faibles sont ceux:
+\begin{itemize}
+	\item basé sur des mots communs du dictionnaire
+	\item basé sur des noms communs
+	\item qui ont moins de sept caractères
+	\item basé sur les pattern du clavier (''qwerty''...)
+	\item composé d'un seul type de symbole 
+\end{itemize}
+\subsection{Authentification Unix}
 La fonction de hash peut être basé sur le DES, MD5, Blowfish, SHA256, SHA512.
-Unix (DES):
-pw : le mot de passe (56 bits).
-salt : un block généré aléatoirement (12bits)
-zero : un block comprenant uniquement des zéros (64 bits).
-DES(plaintext, key) : un block de 64 bits crypté.
- hash(pw) = 25 x DES(zero, pw+salt)
+\subsubsection{Unix (DES)}
+Le méchanisme consiste à générer la hash d'un mot de passe en chiffrant
+25 fois avec une variante de l'algorithme DES une chaîne de caractère null 
+(64bit valant 0).\\
+La clé de chiffrement est le mot de passe à hacher. On
+ne prend que le 8 premiers charactère du mots de passe et on 
+extrait les 7bits de poids faible de chaque caractères $\to$ clé de
+56 bits pour le DES.\\
+L'algo utilise en plus un paramètre de 12 bits appelé \textbf{salt} 
+(générer aléatoirement à la création du mit de passe).
+Il permet que deux utilisateurs ayant le même mots de passe n'est
+pas le même valeur de hash.
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.5]{img/auth_unix_des.png}
+\end{figure}
+
 Le hash est stocké dans le fichier /etc/shadow sous la forme :
-LOGIN:SALT(2 char)HASH(11 char):etc
-Exemple: Smith:3Yr83xxCi/Ki2:12801:0:99999:7:-1::
-Unix (MD5):
-pw : le mot de passe (? bits).
-salt : un block généré aléatoirement (48 bits).
-MD5(plaintext) : un block que de 128 bits crypté.
- hash(pw) = MD5(pw+salt)
-Le hash est stocké dans le fichier /etc/shadow sous la forme :
-LOGIN:$ALGO$SALT(8 char)$HASH(22 char):etc
-Exemple: Smith:$1$3YziHbd2$r83xxCi/Ki2uzGbd40sPzm:12801:0:99999
-Avant, les hash était stocké dans le fichier etc/passwd avec un accès en lecture seul. Maintenant pour
-plus de sécurité, ils sont stockés dans etc/shadow et ne peuvent être lu que par un administrateur (il
-est quand même possible de le récupérer en bootant sur un autre OS avec un CD ou une clé USB).
-Win 9x (LM Hash):
-Windows utilise le Lan Manager Hash pour hasher ses mots de passe. Le mot de passe est d'abord
-converti en majuscule puis divisé en deux blocks de 7 caractères. Les 7 bytes sont utilisé comme clé
-pour crypter une constante avec l'algorithme DES. Le LM Hash n'utilise pas de salt.
-- 30 -
-Les mots de passe LM alpha numérique sont déchiffrable en quelque secondes (99.9%).
-Les mots de passe LM alpha numérique avec 15 caractères spécieux sont déchiffrable en quelque
-minute (96%).
-Win NT/2000/XP/Vista/Seven (NT LM Hash):
-Ces versions de Windows utilisent le NT Lan Manager Hash (NT Hash). Cette fois, le mot de passe n'est
-pas séparé en deux, peut-être plus grand que 14 caractères et n'est pas converti en majuscule. Il
-n'utilise toujours pas de salt.
-Par défaut, LM Hash et NT Hash sont tous les deux conservés sur la machine (jusqu'à Windows XP
-compris). Il est donc possible de récupérer le mot de passe NT Hash en récupérant le mot de passe LM
-Hash. Il est possible de désactivé le LM Hash (désactivé par défaut à partir de Vista), dans le registre ou
-en choisissant un mot de passe de plus de 14 caractères.
-En dessous de W2K, XP et 2003, NT Hash et LN Hash sont stockés dans le Sécurity Account Manager ou
-dans le Active Directory (ntds.dit). Le fichier est crypté mais par défaut la clé est récupérable et le
-fichier de hash également avec les droits administrateur et un exploit ou en bootant sur un autre OS.
-10.5 Conclusion :
-Un mot de passe doit contenir au moins un élément de chaque point :
-- Digit (0..9)
-- Letter (a..Z)
-- Ponctuation (?!)
-- Caractère de contrôle (Ctrl+s, $^s$)
-- Un caractère spécial dans les 7 premiers caractère (pourquoi 7 ?)
-Basé sur une phrase connue (en prenant la première lettre de chaque mot).
+$$username:passwd:last:may:must warn:expire:disable:reserved$$
+Où :
+\begin{itemize}
+	\item passwd est le salt la valeur de hash
+	\item last/may/must/... sont de champs qui contients
+	des infos temporelle sur le mot de passe, tel que 
+	le nombre de jours avant qu'il puisse (may) ou doit (must) être modifié.
+\end{itemize}
+\subsubsection{Unix(MD5)}
+Le DES devenu obsolète, une alternative est MD5. Comparé un DES qui est
+un algorithme de chiffrement, MD5 est un fonction de hachage.\\
+MD5 permet l'utilisation des mot de passes plus longs et les charactères
+ne sont plus limités à 7 bits.\\
+Le salt n'est plus sur 12 bits mais 48 bits (8 caractère encodé en 
+Base64).\\
+La valeur de hash est sur 128 bits.
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale = 0.5]{img/auth_unix_md5.png}
+\end{figure}
+Dans le fichier /etc/shadow, le champs passwd commence avec \$1\$ pour
+indiquer l'utilisation de MD5.Le salt est ensuite concaténé et se termine 
+par \$. Ensuite viens la valeur de hash.
+\subsection{Authentification Windows}
+\subsubsection{Win9x}
+Windows utilise le Lan Manager Hash pour hasher ses mots de passe.
+Le mot de passe est d'abord converti en majuscule puis divisé en deux 
+blocks de 7 caractères après l'avoir complétés avec le char vide pour qu'il 
+atteingne 14 caractères \\
+Chaque bloc de 7 bytes est utilisé comme clé pour crypter une constante
+avec l'algorithme DES (pas d'utilisation de salt). Il y a donc 2 valeur 
+de hash de 64bits qui sont ensuite concaténé.
+%%TODO faire un belle image
+\subsubsection{Win NT/2000/XP/Vista/Seven}
+Ces versions de Windows utilisent le NT Lan Manager Hash (NT Hash) qui 
+utilise MD4.\\
+Cette fois, le mot de passe n'est pas:
+\begin{itemize}
+	\item pas séparé en deux 
+	\item peut-être plus grand que 14 caractères
+	\item et n'est pas converti en majuscule.
+\end{itemize}
+\subsubsection{Stockage des mots de passe }
+Par défaut, LM Hash et NT Hash sont tous les deux conservés sur la 
+machine (jusqu'à Windows XP compris). Il est donc possible de récupérer 
+le mot de passe NT Hash en récupérant le mot de passe LM
+Hash. \\
+Il est possible de désactivé le LM Hash (désactivé par défaut à partir de
+Vista), dans le registre ou en choisissant un mot de passe de plus de 14 
+caractères.
+En dessous de W2K, XP et 2003, NT Hash et LN Hash sont stockés dans le 
+Security Account Manager ou dans le Active Directory (ntds.dit).\\
+Le fichier est crypté mais par défaut la clé est récupérable et le
+fichier de hash également avec les droits administrateur et un exploit 
+ou en bootant sur un autre OS.
+\subsection{Bonnes pratiques}
+Un mot de passe doit contenir au moins un élément de chaque point 
+\begin{itemize}
+	\item Digit (0..9)
+	\item Letter (a..Z)
+	\item Ponctuation (?!)
+	\item Caractère de contrôle (Ctrl+s, $\^s$)
+	\item Un caractère spécial dans les 7 premiers caractère (pourquoi 7 ?)
+\end{itemize}
 Ne pas recyclé de mot de passe ou noter ses mots de passe.
 Utiliser des niveaux de sécurité.
 Modifier son mot de passe immédiatement si on pense avoir été victime d'une attaque.
