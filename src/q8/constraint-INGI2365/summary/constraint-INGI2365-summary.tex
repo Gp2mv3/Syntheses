@@ -1516,6 +1516,129 @@ $[M_0,\cdots, M_k]$)} use the \textbf{value network} :
     \includegraphics[width=8cm]{img/valuenetwork.png}
 \end{tabular}
 
+\subsubsection{Flow}
+
+We can use flow through the value network to ensure some constraint
+(\textbf{flow requirements [low, cap]}).
+
+\begin{tabular}{m{8cm}m{8cm}}
+\begin{itemize}
+    \item[$s \to v_i$]: $[m_i, M_i]$
+    \item[$\Rightarrow$] GCC constraint (cardinalities)
+    \item[$v_i \to x_k$]: $[0, 1]$
+    \item[$x_i \to t$]: $[1, 1]$
+    \item[$\Rightarrow$] Exactly one value per variable
+    \item[$t \to s$]: $[r, r]$
+\end{itemize}
+&
+    \includegraphics[width=8cm]{img/flow.png}
+\end{tabular}
+
+\begin{description}
+    \item[Flow conservation]: for a graph $G = (N, E)$ :
+        $$ \forall n \in N, \sum_{(n', n) \in E)} f(n', n) = \sum_{(n, n') \in E)} f(n, n')$$
+
+    \item[Feasible flow]: gives a flow value to each edge, respects
+requirement and conservation 
+
+\item[Satisfiable] For a GCC constraint c: c is satisfiable iff $\exists$ a
+feasible flow in the value network of c
+
+\end{description}
+
+\subsubsection{Filtering procedure}
+
+\begin{enumerate}
+    \item Start with zero flow: $\forall (x, y),  f(x, y) = 0$
+    \item[Check feasible]
+    \item If no edge with $f(x, y) < low(x, y)$ : \textbf{feasible flow} found
+    \item Else:
+        \begin{enumerate}
+            \item Find a \textbf{augmenting path} from y to x in the
+                \textbf{residual graph} (not using $(y, x)$)
+            \item Augment the flow
+            \item If no augmenting path: no feasible flow exist
+        \end{enumerate}
+    \item[Filtering]
+    \item Remove (var, val) if 
+        \begin{itemize}
+            \item f(val, var) = 0
+            \item val and var not in the same strongly connected component 
+                in the residual graph
+        \end{itemize}
+\end{enumerate}
+
+\paragraph{Incrementality of the filtering}
+The value network and feasible flow is keep between two calls.
+
+\begin{tabular}{cm{12cm}}
+When called 
+&
+\begin{enumerate}
+    \item Remove edge not present anymore
+    \item recompute feasible flow if necessary
+    \item recompute non-GAC edges
+\end{enumerate}
+\end{tabular}
+
+
+\paragraph{In a value network}: no augmenting path from var to val iff
+var and val not in the same strongly connected component in
+residual graph
+
+\paragraph{In a feasible flow $f$ in the value network}:
+
+\begin{tabular}{m{7cm}cm{3cm}cm{3cm}}
+    if f(val, var) = 0 and no augmenting path from var to val
+    & $\leftrightarrow$ &
+    f(val, var) is maximum 0
+    & $\leftrightarrow$ &
+    (var, val) is not GAC
+\end{tabular}
+
+\subsubsection{Residual graph}: For a graph $G=(N, E)$ and a flow $f$,
+the residual graph $R=(N, E')$ such that :
+\begin{itemize}
+    \item $E' = A^+ \cup A^-$ :
+        \begin{description}
+            \item if $f(x, y) < cap(x, y)$ : $(x, y) \in A^+$ with requirement
+                [0, cap(x, y) - f(x, y)]
+
+            \item if $f(x, y) > low(x, y)$ : $\color{red}(y, x)$ $ \in A^-$ with requirement
+                [0, f(x, y) - low(x, y)]
+        \end{description}
+\end{itemize}
+
+\begin{figure}[!h]
+    \begin{tabular}{cc}
+        \includegraphics[width=0.5\linewidth]{img/residual1.png}
+        &
+        \includegraphics[width=0.5\linewidth]{img/residual2.png}
+        \\
+        The flow $f$ is represent in this picture & 
+        The corresponding residual graph \\
+    \end{tabular}
+    \caption{Residual graph}
+\end{figure}
+
+\subsubsection{Augmenting path}: from augmenting path $p$
+\begin{itemize}
+    \item $val = min_{(x,y) \in p} cap(x, y)$
+    \item For all edge in $A^+$ : augment flow by val
+    \item For all edge in $A^-$ : decrement flow by val
+\end{itemize}
+
+\begin{figure}[!h]
+    \begin{tabular}{cc}
+        \includegraphics[width=0.5\linewidth]{img/augmenting1.png}
+        &
+        \includegraphics[width=0.5\linewidth]{img/augmenting2.png}
+        \\
+        Residual graph with augmenting path&
+        The flow $f$ at the end\\
+    \end{tabular}
+    \caption{Augmenting path}
+\end{figure}
 
 
 
