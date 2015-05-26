@@ -100,7 +100,7 @@
    {It has been written by the aforementioned authors with the help of all other students,
    yours is therefore welcome as well.
    It is always possible to improve it,
-   It is even more true of the course has change because the summary must be updated accordingly.
+   it is even more true if the course has changed because the summary must be updated accordingly.
    The source code can be found at the following address}
    {Il est écrit par les auteurs susnommés avec l'aide de tous
    les autres étudiants, la vôtre est donc la bienvenue.
