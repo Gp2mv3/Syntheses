@@ -69,7 +69,7 @@ $(MAIN_NAME_SOL).pdf: $(MAIN_NAME).tex
 
 clean:
 	latexmk -CA
-	$(RM) *.aux *.fdb_latexmk *.log *.out *.pdf
+	$(RM) *.aux *.fdb_latexmk *.log *.out *.pdf *.bbl
 
 show: $(FULL)
 	$(PDFVIEWER) $(FULL) 2> /dev/null &

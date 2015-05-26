@@ -1346,10 +1346,180 @@ Otherwise, GAC pruning stronger in global constraint
 
 \subsection{AllDifferent constraint}
 
+GAC pruning for \texttt{allDifferent($[x_1,\cdots, x_r]$)} use a value graph :
+\begin{itemize}
+    \item one node for each variable $x_1,\cdots, x_r$
+    \item one node for each value in $\cap D(x_i)$
+    \item one edge between $x_i$ and $a$ if $a \in D(x_i)$
+    \item[Note:] bipartite graph
+\end{itemize}
+
+\subsubsection{Matching}
+A matching is a \textbf{set of edgges} such that no edge share
+a same node.
+
+\begin{itemize}
+    \item Size matching = \# edges
+    \item Maximum matching = largest size
+    \item Maximum size = \# variables
+\end{itemize}
+
+\begin{description}
+    \item \texttt{AllDifferent($[x_1,\cdots, x_r]$)} satisifiable iff
+        $\exists$ matching of the value graph covering $x_1,\cdots, x_r$ (=
+        matching of maximum size)
+    \item M is a maximum matching iff no augmenting
+        path exists
+\end{description}
+
+\subsubsection{Finding a maximum matching}
+
+\begin{enumerate}
+    \item Start with any matching (e.g. empty matching)
+    \item Iteratively improve the matching with \textbf{augmenting path}
+
+        \paragraph{Augmenting path} 
+        \begin{itemize}
+            \item Edge in M : variables $\to$ values
+            \item Other : values $\to$ variables
+
+            \item[$\Rightarrow$] An augmenting path is a \textbf{directed path}
+                from a uncovered value to an uncovered variable.
+
+                Use DSF or BFS
+        \end{itemize}
+
+        \begin{figure}[!h]
+            \centering
+            \includegraphics[width=8cm]{img/augmenting-paths.png}
+            \caption{Augmenting paths}
+        \end{figure}
+
+    \item Stop when no more augmenting paths
+\end{enumerate}
+
+\subsubsection{GAC}
+
+\begin{description}
+    \item \texttt{AllDifferent} is \textbf{GAC} iff all edge belong to
+        a maximun matching covering all the variables
+\end{description}
+
+\begin{itemize}
+    \item \textbf{Alternating path}
+
+    \item \textbf{Alternating cycle}
+
+\end{itemize}
+
+\paragraph{Filtering}
+
+\begin{enumerate}
+    \item Find a maximun matching M
+    \item if M.size != \#variables : \textcolor{red}{Fail}
+
+    \item Find all edges belonging to an even \textbf{length alternating
+        path} startint at a uncovered node (DFS or BDS)
+
+        \paragraph{Alternating path}: start at an uncovered node and
+        switch the edges in/out the matching. Change values 
+        of variables to stays maximum with different edges.
+
+        \begin{figure}[!h]
+            \centering
+            \includegraphics[width=8cm]{img/alternating.png}
+            \caption{Alternating paths}
+        \end{figure}
+
+    \item Find all edges belonging to \textbf{alternating cycle} which
+        correpons to the strongly connected components in the directed value
+        graph
+
+        \paragraph{Alternating path}: switch the edges in/out the matching. 
+        Exchange values of variables to stays maximum with different edges.
+
+    \item Remove all edges/literals not in M and not found
+\end{enumerate}
+
+\paragraph{Incrementality of the filtering}
+The value graph and maximum matching is keep in memory between calls to propagator.
+
+\begin{tabular}{cm{12cm}}
+When called 
+&
+\begin{enumerate}
+    \item Remove esdge not present anymore
+    \item recompute maximum matching if necessary 
+    \item recompute GAC edges
+\end{enumerate}
+\end{tabular}
 
 \subsection{Sum constraint}
-    
 
+\subsubsection{NP-Hard}
+Gac for a sum constraint is NP-Hard :
+
+\paragraph{Proof} reduction of subset-sum to GAC for Sum
+\begin{itemize}
+    \item subset-sum: a NP-Hard problem for integer set ($S=\{a_1,\cdots, a_r\}$),
+        does any non-empty subset of S sums to 0?
+
+    \item reduction to GAC for Sum:
+        \begin{lstlisting}[mathescape]
+variables  $x_i$ with domains $\{0, a_i\}$
+GAC on sum($[x_1,..., x_r], 0$)
+
+if $D(x_i) = \{0\} \forall x_i$ : answer no
+else: answer yes
+\end{lstlisting}
+\end{itemize}
+
+\paragraph{Consequences} GAC propagator for sum is exponential (unless P=NP), so
+the propagator is usually done with \textbf{Bound Consistency}
+
+\subsubsection{Bound consistency}
+\begin{lstlisting}
+propagate(){
+    $\Delta = \emptyset$
+    for( x $\leftarrow$ scope) {
+        new_min = k - ($\sum_{(y \in scope, y \neq x)} y.max$)
+        for( a $\leftarrow$ D(x) if a < new_min)
+            $\Delta$ += (x, a)
+
+        new_max = k - ($\sum_{(y \in scope, y \neq x)} y.min$)
+        for( a $\leftarrow$ D(x) if a > new_max)
+            $\Delta$ += (x, a)
+    }
+    return $\Delta$
+}
+\end{lstlisting}
+
+\subsection{Global Cardinality constraint}
+
+GAC filtering for \texttt{GCC($[x_1,\cdots, x_r]$, $[v_0,\cdots, v_k]$, $[m_0,\cdots, m_k]$,
+$[M_0,\cdots, M_k]$)} use the \textbf{value network} :
+
+\begin{tabular}{m{8cm}m{8cm}}
+\begin{itemize}
+    \item \begin{tabular}{l}
+            one node per value\\
+            one node per variable \\
+            edge from values to variables \\
+        \end{tabular}
+    \item \begin{tabular}{l}
+            one special node $s$ (source)\\
+    one special node $p$ (target) \\
+\end{tabular}
+    \item Edges : $s \to values \to variables \to p \to s$
+\end{itemize}
+&
+    \includegraphics[width=8cm]{img/valuenetwork.png}
+\end{tabular}
+
+
+
+
+\subsection{Table constraint}
 
 
 \section{Examen questions}
@@ -1398,8 +1568,14 @@ Otherwise, GAC pruning stronger in global constraint
             \item Exploration strategies
             \item How to solve constraint optimization problems
         \end{itemize}
-
+    % 6
+    \item \begin{itemize}
+            \item Example of global constraints
+            \item Advantages of global constraints
+            \item Decomposition and puning equivalence condition
+            \item AllDifferent
+            \item Sum constraint
+        \end{itemize}
 \end{enumerate}
-
 
 \end{document}
