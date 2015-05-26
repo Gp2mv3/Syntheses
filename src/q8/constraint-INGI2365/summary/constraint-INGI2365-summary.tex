@@ -1472,6 +1472,7 @@ GAC on sum($[x_1,..., x_r], 0$)
 if $D(x_i) = \{0\} \forall x_i$ : answer no
 else: answer yes
 \end{lstlisting}
+\end{itemize}
 
 \paragraph{Consequences} GAC propagator for sum is exponential (unless P=NP), so
 the propagator is usually done with \textbf{Bound Consistency}
@@ -1492,6 +1493,251 @@ propagate(){
     return $\Delta$
 }
 \end{lstlisting}
+
+\subsection{Global Cardinality constraint}
+
+GAC filtering for \texttt{GCC($[x_1,\cdots, x_r]$, $[v_0,\cdots, v_k]$, $[m_0,\cdots, m_k]$,
+$[M_0,\cdots, M_k]$)} use the \textbf{value network} :
+
+\begin{tabular}{m{8cm}m{8cm}}
+\begin{itemize}
+    \item \begin{tabular}{l}
+            one node per value\\
+            one node per variable \\
+            edge from values to variables \\
+        \end{tabular}
+    \item \begin{tabular}{l}
+            one special node $s$ (source)\\
+    one special node $p$ (target) \\
+\end{tabular}
+    \item Edges : $s \to values \to variables \to p \to s$
+\end{itemize}
+&
+    \includegraphics[width=8cm]{img/valuenetwork.png}
+\end{tabular}
+
+\subsubsection{Flow}
+
+We can use flow through the value network to ensure some constraint
+(\textbf{flow requirements [low, cap]}).
+
+\begin{tabular}{m{8cm}m{8cm}}
+\begin{itemize}
+    \item[$s \to v_i$]: $[m_i, M_i]$
+    \item[$\Rightarrow$] GCC constraint (cardinalities)
+    \item[$v_i \to x_k$]: $[0, 1]$
+    \item[$x_i \to t$]: $[1, 1]$
+    \item[$\Rightarrow$] Exactly one value per variable
+    \item[$t \to s$]: $[r, r]$
+\end{itemize}
+&
+    \includegraphics[width=8cm]{img/flow.png}
+\end{tabular}
+
+\begin{description}
+    \item[Flow conservation]: for a graph $G = (N, E)$ :
+        $$ \forall n \in N, \sum_{(n', n) \in E)} f(n', n) = \sum_{(n, n') \in E)} f(n, n')$$
+
+    \item[Feasible flow]: gives a flow value to each edge, respects
+requirement and conservation 
+
+\item[Satisfiable] For a GCC constraint c: c is satisfiable iff $\exists$ a
+feasible flow in the value network of c
+
+\end{description}
+
+\subsubsection{Filtering procedure}
+
+\begin{enumerate}
+    \item Start with zero flow: $\forall (x, y),  f(x, y) = 0$
+    \item[Check feasible]
+    \item If no edge with $f(x, y) < low(x, y)$ : \textbf{feasible flow} found
+    \item Else:
+        \begin{enumerate}
+            \item Find a \textbf{augmenting path} from y to x in the
+                \textbf{residual graph} (not using $(y, x)$)
+            \item Augment the flow
+            \item If no augmenting path: no feasible flow exist
+        \end{enumerate}
+    \item[Filtering]
+    \item Remove (var, val) if 
+        \begin{itemize}
+            \item f(val, var) = 0
+            \item val and var not in the same strongly connected component 
+                in the residual graph
+        \end{itemize}
+\end{enumerate}
+
+\paragraph{Incrementality of the filtering}
+The value network and feasible flow is keep between two calls.
+
+\begin{tabular}{cm{12cm}}
+When called 
+&
+\begin{enumerate}
+    \item Remove edge not present anymore
+    \item recompute feasible flow if necessary
+    \item recompute non-GAC edges
+\end{enumerate}
+\end{tabular}
+
+
+\paragraph{In a value network}: no augmenting path from var to val iff
+var and val not in the same strongly connected component in
+residual graph
+
+\paragraph{In a feasible flow $f$ in the value network}:
+
+\begin{tabular}{m{7cm}cm{3cm}cm{3cm}}
+    if f(val, var) = 0 and no augmenting path from var to val
+    & $\leftrightarrow$ &
+    f(val, var) is maximum 0
+    & $\leftrightarrow$ &
+    (var, val) is not GAC
+\end{tabular}
+
+\subsubsection{Residual graph}: For a graph $G=(N, E)$ and a flow $f$,
+the residual graph $R=(N, E')$ such that :
+\begin{itemize}
+    \item $E' = A^+ \cup A^-$ :
+        \begin{description}
+            \item if $f(x, y) < cap(x, y)$ : $(x, y) \in A^+$ with requirement
+                [0, cap(x, y) - f(x, y)]
+
+            \item if $f(x, y) > low(x, y)$ : $\color{red}(y, x)$ $ \in A^-$ with requirement
+                [0, f(x, y) - low(x, y)]
+        \end{description}
+\end{itemize}
+
+\begin{figure}[!h]
+    \begin{tabular}{cc}
+        \includegraphics[width=0.5\linewidth]{img/residual1.png}
+        &
+        \includegraphics[width=0.5\linewidth]{img/residual2.png}
+        \\
+        The flow $f$ is represent in this picture & 
+        The corresponding residual graph \\
+    \end{tabular}
+    \caption{Residual graph}
+\end{figure}
+
+\subsubsection{Augmenting path}: from augmenting path $p$
+\begin{itemize}
+    \item $val = min_{(x,y) \in p} cap(x, y)$
+    \item For all edge in $A^+$ : augment flow by val
+    \item For all edge in $A^-$ : decrement flow by val
+\end{itemize}
+
+\begin{figure}[!h]
+    \begin{tabular}{cc}
+        \includegraphics[width=0.5\linewidth]{img/augmenting1.png}
+        &
+        \includegraphics[width=0.5\linewidth]{img/augmenting2.png}
+        \\
+        Residual graph with augmenting path&
+        The flow $f$ at the end\\
+    \end{tabular}
+    \caption{Augmenting path}
+\end{figure}
+
+
+
+\subsection{Table constraint}
+
+The table correspond to a table of tuple of value accepted.
+
+$\to$ Literal (x,a) supported if $\exists$ tuple \textbf{valid} (all its
+value are in the domain) in the table where x=a
+
+
+\begin{itemize}
+    \item \textbf{Simple tabular reduction}: When a tuyple is found valid,
+        all its value are supported. If tuple is invalid, he is removed from the 
+        table.
+
+        \begin{center}
+            In a table on x,y,z if tuple (a,b,c) valid $\to$
+            (x,a), (y,b) and (z,c) supported
+        \end{center}
+
+
+        \begin{lstlisting}[mathescape]
+STR(X,table){   
+     supported = $\emptyset$
+     for(t $\leftarrow$ table){   
+        // if tuple is valid
+         if($\forall x_i : x_i .hasValue(t(i))$){   
+            // literal collected
+             for($x_i \leftarrow X$){ 
+                 supported += ($x_i ,t(i)$)   
+             }  
+         } 
+        // removed tuple
+        else
+             table.remove(t)    
+     }  
+    // unsupported literal returned
+     return D(x)/supported
+}
+\end{lstlisting}
+
+    \item \textbf{Incrementality of STR}: The removed tuple are
+        removed by a way incrementaly. It's means that when a tuple is 
+        removed, he is not inspected in future executions!
+
+        $\to$ Table has to be backtracked.
+
+    \item \textbf{Efficiently backtrackable table}: The backtracking need
+        to be efficient, so we can't backtracking the whole table because
+        it's costly.
+
+        The solution is to use a \textit{Sparse set} to represent the table
+        which only need to backtracked \textbf{one integer}.
+
+\end{itemize}
+
+\subsubsection{Sparse set data structure}
+
+\begin{tabular}{m{10cm}m{1.5cm}m{1.5cm}m{1.5cm}}
+\begin{itemize}
+    \item Table is partitionned into two set (present tuple
+        and removed tuple).
+
+    \item When a tuple is removed, it is exchanged with the tuple
+        in position size and size decremented.
+
+    \item On backtracking, we restore size $\to$ restore removed tuples
+        at different positions in the table.
+\end{itemize}
+&
+\includegraphics[width=1.5cm]{img/sparse.png}
+&
+\includegraphics[width=1.5cm]{img/sparse2.png}
+&
+\includegraphics[width=1.5cm]{img/sparse3.png}
+\end{tabular}
+
+
+\paragraph{Dynamic table}
+The dynamic table is \textbf{not represented}!
+
+\begin{itemize}
+    \item \texttt{Map()} such that $Map(i)$ =
+        position of tuple $i$ in the dynamic table
+
+    \item \texttt{Dyn()} such that $Dyn(i)$ = tuple indice
+        in position i
+\end{itemize}
+
+\subsubsection{Propagator}
+Many propagator for TC :
+\begin{itemize}
+       \item Multi-valued decision diagram (MDD)
+       \item Trie-based algorithm
+       \item Optimal value-based AC5TCOpt-Sparse
+       \item Optimal value-based STR3
+       \item \ldots
+   \end{itemize}
 
 \section{Examen questions}
 
@@ -1547,6 +1793,19 @@ propagate(){
             \item AllDifferent
             \item Sum constraint
         \end{itemize}
+    % 7
+    \item \begin{itemize}
+            \item GAC propagator for GCC
+                \begin{itemize}
+                    \item value network
+                    \item flow conservation
+                    \item redsidual graph
+                    \item How to find feasible flow
+                    \item How to compute GAC for GCC
+                \end{itemize}
+            \item TC : STR algorithm, sparse sets for tables
+        \end{itemize}
+
 \end{enumerate}
 
 \end{document}
