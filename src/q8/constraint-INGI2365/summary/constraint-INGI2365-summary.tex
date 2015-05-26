@@ -29,6 +29,9 @@
 
 \renewcommand\lstlistingname{Algorithm}
 
+\tikzset{
+r/.style = {treenode, circle, text width=1.5em, very thick}
+}
 
 \hypertitle{Constraint Programming}{8}{INGI}{2365}
 {Houtain Nicolas}
@@ -104,10 +107,8 @@ A solution to a CSP is
     \item Such that all the constraints are respected
 \end{enumerate}
 
-
-% TODO ---v
-\subsection{Constraints}
-\subsubsection{Auxiliary variables}
+% TODO ---v %
+\subsection{Auxiliary variables}
 Variables used to help/improve modeling
 
 Vs
@@ -116,8 +117,11 @@ variable which reprendt the decision CP has to make
 
 reducundant constraint : constraint that does not exclude any previous solution,
 improve prining (reduce search space), improve communication
-\subsubsection{Global constraint}
+
+\subsection{Global constraint}
+
 \subsection{Symmetry}
+
 
 
 
@@ -949,9 +953,409 @@ constraints $c$ such that x $\in$ scope(c)
     \item[$\to$] (x,0) will never be part of a solution
 \end{itemize}
                                                          
+\section{Consistencies/Propagations algorithm and constraints}
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=\linewidth]{img/consistency-propagation.png}
+    \caption{Link}
+\end{figure}
+
+\subsection{Mixing constraint}
+
+The idea is to mix for different constraints : different consistencies and different fixed points
+
+\begin{tabular}{m{1cm}cm{6cm}cm{6cm}}
+    \textbf{Global fixed point}
+    & = &
+    \begin{itemize}
+        \item ensuring each queue ($C_{CB}, C_{CV}, C_{CB-BC}, CP_{CB-FC}$) is empied
+        \item ensuring impacted constraints put on the right queue
+    \end{itemize}
+    & \begin{tikzpicture}
+        \draw[->] (0,0) edge node[above] {At the end} (1,0); 
+    \end{tikzpicture}
+    &
+    \begin{itemize}
+        \item each constraint respects its consistency
+        \item all at the same time
+    \end{itemize}
+\end{tabular}
+
+
+\subsection{Mixing in practice}
+\begin{enumerate}
+    \item Constraints register to particular events on the domains/variables :
+        \begin{itemize}
+            \item a \textbf{value} has been removed (\textit{VB or collect \& propagate})
+            \item the \textbf{domains} have been changed (\textit{CB})
+            \item the \textbf{bounds} of the domains have changed (\textit{CB for BC})
+            \item a variables is \textbf{assigned} (\textit{CB for FC})
+        \end{itemize}
+
+    \item When event occurs in a domain/variable :
+        \begin{itemize}
+            \item constraints put on the right queue and fixed point resumed
+            \item makes the bridge beteween different queues
+        \end{itemize}
+\end{enumerate}
+
+
+
+\section{Search}
+
+\paragraph{Search tree} is defined by 
+\begin{itemize}
+    \item One CSP
+    \item Branching
+    \item Variable/value selection heuristic
+    \item Exploration strategy
+\end{itemize}
+
+\paragraph{Tree} The tree is constructed during exploration and only the current
+node in memory (DFS). The alternative decisions is memorized.
+
+\paragraph{Node expansion}
+Subdivision of a CSP into smaller CSP such that the union of the small CSP
+is equivalent to the original.
+
+
+\subsection{Depth first backtraking search}
+
+\begin{itemize}
+    \item Based on 
+        \begin{enumerate}
+            \item \textbf{stack of sets of decision}
+            \item \textbf{stack of restoration states}
+        \end{enumerate}
+    \item Backtracking restores: 
+        \begin{enumerate}
+            \item Variables/domains
+            \item Constraints
+            \item Backtracked structures (ex: fistSupport)
+        \end{enumerate}
+\end{itemize}
+
+\begin{lstlisting}[caption=Depth First backtracking search]
+while (! decisionStack.isEmpty) {
+    val decisionsOfNode = decisionStack.pop()
+
+    val decision = decisionsOfNode.pop()
+    if( decision.hasNext() )
+        pushState()
+
+    applyDecision(decision)
+
+    if (!isFailed() ){
+        val isExpandable = expand(branching)
+        if (! isExpandable) {
+            solFound()
+            popState()
+        }
+    } else {
+        popState()
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Trailing}
+In opposition to copying the node in order to perform backtracking, 
+trailing only store the \textbf{modification}.
+
+\paragraph{Trail level}
+Trailed operations are marked with an integer which is increase!
+
+\paragraph{Restoring} undo all operations with trail level greater than
+desired set the trail level to desired one.
+
+
+\subsection{Branching strategy}
+
+\paragraph{Completeness}: a branching strategy is \textbf{completeness}
+if the union of the child CSPs is the parent CSP
+
+\subsubsection{Strategies}
+\begin{tabular}{m{6cm}m{6cm}}
+    \begin{itemize}
+        \item binary labelling
+    \end{itemize}
+    &
+    \begin{tikzpicture}[scale=0.7]
+        \node[] {\scriptsize$P_1$} child{ node[] {\scriptsize$P_2$} 
+        edge from parent node[above, left] {$x_1 = a$}}
+        child { node[] {\scriptsize$P_3$} 
+        edge from parent node[above, right] {$x_1 \neq a$}};
+
+    \end{tikzpicture}
+    \\
+    \begin{itemize}
+        \item n-ary labelling
+    \end{itemize}
+    &
+    \begin{tikzpicture}[scale=0.7]
+        \node[] {\scriptsize$P_1$} child{ node[] {\scriptsize$P_2$} 
+        edge from parent node[above, left] {$a$}}
+        child { node[] {\scriptsize$P_3$} 
+        edge from parent node[above, right] {$b$}}
+        child { node[] {\scriptsize$P_4$} 
+        edge from parent node[above, right] {$c$}}
+        child { node[] {\scriptsize$P_4$} 
+        edge from parent node[above, right] {$d$}};
+
+        \node at (-3,-1) {\scriptsize $x_1 =$};
+    \end{tikzpicture}
+    \\
+    \begin{itemize}
+        \item domain splitting
+    \end{itemize}
+    &
+    \begin{tikzpicture}[scale=0.7]
+        \node[] {\scriptsize$P_1$} child{ node[] {\scriptsize$P_2$} 
+        edge from parent node[above, left] {$x_1 \geq t$}}
+        child { node[] {\scriptsize$P_3$} 
+        edge from parent node[above, right] {$x_1 < t$}};
+
+    \end{tikzpicture}
+    \\
+\end{tabular}
+
+\subsubsection{Heuristics}
+ 
+\begin{enumerate}
+    \item Select a variable
+    \item Ordering the values
+\end{enumerate}
+
+Take care than the first decisions have a high impact!
+
+\subsubsection{Variable ordering heuristics}
+
+Variables heuristic impact the \textbf{number of node} but not the numbers
+of leaves.
+
+\paragraph{First fail principle}: choose first a variable that is more likely to fail
+(Consider the most difficult parts of the CSP first)
+
+\begin{itemize}
+    \item[No first-fail]
+    \item \textbf{Random} : select variable randomly (\textit{Usefull in cases of restarts})
+
+    \item \textbf{Lex} : lexicographic order (\textit{static})
+
+    \item[Can first-fail]
+    \item \textbf{Predefined order}: predefined once before search
+        (\textit{static})
+        
+    \item[First-fail]
+
+    \item \textbf{Deg heuristic}: select the variable with the \textit{highest}
+        number of constraint involving.
+        (\textit{static heuristic})
+
+    \item \textbf{DDeg heuristic}: select the variable with the \textit{highest}
+        number of constraint involving, only counting constraint with more than
+        two uninstantiated variables
+        (\textit{dynamique heuristic})
+
+    \item \textbf{wDeg heuristic}: select the variable with the \textit{highest}
+        $\sum$ weights of constraints involving.
+        (\textit{dynamique heuristic})
+
+        $\to$ Give a adapative weight to each constraint which depend on the
+        search node and the previously visited nodes.
+
+    \item \textbf{Activity based variable ordering}: record the activity A(x) of
+        each variable x.
+
+        Select the most active variable which is the most harder.
+
+        \paragraph{At each node}
+        \begin{itemize}
+            \item reduce activity of all variable : $A(x) =  A(x) . \gamma, \quad (0 < \gamma < 1$)
+            \item increase activity of active variable : $A(x) = A(x) + 1, \quad$ 
+                if D(x) has been reduced
+        \end{itemize}
+\end{itemize}
+
+%TODO slide 48 - search
+
+\subsubsection{Value ordering heuristics}
+
+\paragraph{Best first principle}: Choose first a value that is more likely to succeed
+
+\begin{itemize}
+    \item[No best-first]
+    \item \textbf{Random} : select value randomly
+    \item \textbf{Lex} : lexicographic order (\textit{static})
+
+    \item[Best-first]
+    \item \textbf{Pruning based heuristic}: select the value which induced
+        the minimum pruning or largest minimun pruning.
+
+        $\to$ Give a adapative quantities to each constraint which depend on the
+        search node and the previously visited nodes.
+
+    \item \textbf{Number of solutions based heuristic}: select the value
+        which has the maximun number of solutions.
+
+        $\to$ Give a adapative quantities to each constraint which depend on the
+        search node and the previously visited nodes.
+
+    \item \textbf{Activity based value ordering}: record the activity A(x) of
+        each value (x, a).
+
+        Select the less active variable which is the less pruning.
+
+        \paragraph{At each node where x=a tried}
+        \begin{itemize}
+            \item $A(x=a) = A(x=a) . (a - \alpha) + \alpha . k , \quad (0 < \alpha \leq 1)$
+
+                k = number of active variable when enforcing x=a
+        \end{itemize}
+\end{itemize}
+
+\subsection{Exploration strategies}
+
+\begin{itemize}
+    \item \textbf{DFS}: fully trust the variable/value heuristic. 
+        $\to$ \textit{limited information}
+
+        \paragraph{Note:} errors at the top of the tree is \textbf{expensive}
+
+
+    \item \textbf{Discrepancy Search}: do not trust too much the heuristics.
+        Take the right branch correspond to not trusting the value heuristic!
+        (n-ary or binary branching)
+
+        \paragraph{Discrepancy}: number of times right branch chosen in
+        a path from root to the node.
+
+        $\to$ The nodes are visites in increasing discrepancy order
+
+        \begin{figure}[!h]
+            \centering
+            \includegraphics[width=8cm]{img/discrpancy.png}
+            \caption{Discrepancy search}
+        \end{figure}
+
+        \begin{itemize}
+            \item[+] better diversification and alleviate the cost
+                of early mistakes
+            \item[-] Space complexity exponential in worst case
+        \end{itemize}
+
+    \item \textbf{Restart}: Search can be restarted after a certain limit 
+        (\textit{time, number of fails, number node visited,\ldots}) with a different
+        variable/value heuristic.
+
+        \begin{description}
+            \item[Adaptive heuristics] can us information from multiple runs.
+            \item[Completness] if limite large enough and limit increased between restarts
+        \end{description}
+        \begin{itemize}
+            \item[+] diversification and alleviate the cost of early mistakes
+            \item[$\to$] useful for heavy tailed problems (ex: sport scheduling)
+        \end{itemize}
+
+\end{itemize}
+
+\subsection{Constraint optimization problem}
+
+The goal is to optimize a objective function, so CP cannot stop at the
+first solution. Two solution :
+
+\begin{enumerate}
+    \item \textbf{Branch and bound}: for an objective function $O$ (arithmetic expression).
+
+        At each solution $s$, add a constraint :
+        \begin{itemize}
+            \item[min]: $O < O(s)$
+            \item[max]: $O > O(s)$
+        \end{itemize}
+
+        \paragraph{Optimality} proof at the last solution found
+
+    \item \textbf{Iterative optimization}: need to compute a 
+        \begin{tabular}{r}
+            lower bound \\
+            upper bound
+        \end{tabular}.
+
+        \begin{enumerate}
+            \item add \begin{tabular}{r}
+                    $0 \leq lb$ \\
+                    $0 \geq ub$ \\
+                \end{tabular}
+            \item if a solution : it's optimal
+            \item if not : \begin{tabular}{r}
+                    increase \\
+                    decrease \\
+                \end{tabular}
+        \end{enumerate}
+\end{enumerate}
+
+\section{Global constraints}
+
+\subsection{Example}
+
+\begin{itemize}
+    \item \texttt{allDifferent($[x_1,\cdots, x_r]$)}
+
+    \item \texttt{Element($Array, index, value$): $Array(index) == value$}
+
+    \item \texttt{GCC($[x_1,\cdots, x_r]$, $[v_0,\cdots, v_k]$, $[m_0,\cdots, m_k]$,
+        $[M_0,\cdots, M_k]$)} : $v_i$ must appear between $m_i$ and $M_i$
+
+    \item \texttt{table($[x_1,\cdots, x_r]$, $tab_{combinations}$)} 
+
+    \item \texttt{sum($[x_1,\cdots, x_]$, $sum$)}
+
+    \item \texttt{sumLe($[x_1,\cdots, x_]$, $upperBound$)}
+
+    \item \texttt{knapsack($[x_1,\cdots, x_r]$, $Profit[r]$, $Weight[r]$, $p$, $w$)}
+\end{itemize}
+
+
+\subsection{Advantage}
+\begin{itemize}
+    \item Increasing expressivity of CP
+    \item Pruning strength because the propagation considered constraint in isolation
+        but global constraint is like \textbf{a set of constraint}
+    \item Pruning efficiency because no fixed point between small constraints
+        but a more flobal reasoning
+\end{itemize}
+
+\subsection{Decomposition}
+A set of constraints $S$ is called the decomposition of $g$ iff :
+$$ \forall D(X): sols(X, D(X), \{g\}) = sols(X, D(X), S)$$
+
+\paragraph{GAC} GAC pruning equivalent in $S$ and $g$ iff the constraint
+graph of the D is \textbf{acyclic}.
+
+Otherwise, GAC pruning stronger in global constraint
+
+\begin{itemize}
+    \item GAC on decomposition : supports(s) for each literal on each constraints 
+        \textbf{separately}
+    \item GAC on global constraint: global support(s) for each literal on global constraint
+\end{itemize}
+
+
+\paragraph{FC} FC pruning stronger in the decomposition
+
+
+\subsection{AllDifferent constraint}
+
+
+\subsection{Sum constraint}
+    
+
+
+
 \section{Examen questions}
 
 \begin{enumerate}
+    % 1
     \item \begin{itemize}
             \item Formal definition of CSP
             \item Formal definition of COP
@@ -961,7 +1365,9 @@ constraints $c$ such that x $\in$ scope(c)
             \item Communication in CP
             \item Computational model
         \end{itemize}
+    % 2
     \item 
+    % 3
     \item \begin{itemize}
             \item Consistency
             \item Definition of GAC
@@ -970,7 +1376,30 @@ constraints $c$ such that x $\in$ scope(c)
             \item Complexities
             \item Invariant on their data structure
         \end{itemize}
+    % 4
+    \item \begin{itemize}
+            \item Fixed point: algorithms, commonalities, differences
+            \item Definitions of consistencies : BC, FC, Singleton consitencies, 
+                Singleton GAC, maxRPWC
+            \item Relative strengths of consistencies
+            \item Global view on propagation in CP
+            \item An algorithm for a consistency inside a fixed point
+                for a constraint
+            \item How to mix consistencies
+        \end{itemize}
+    % 5
+    \item \begin{itemize}
+            \item Depth first backtracking search
+            \item How to backtrack information
+            \item Branching strategies
+            \item First-fail and best-first
+            \item Variable ordering heuristics
+            \item Values ordering heuristics
+            \item Exploration strategies
+            \item How to solve constraint optimization problems
+        \end{itemize}
 
 \end{enumerate}
+
 
 \end{document}
