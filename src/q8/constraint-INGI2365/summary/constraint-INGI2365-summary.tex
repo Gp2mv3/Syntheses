@@ -2297,6 +2297,19 @@ taking value in the set \{s\}
 
 \section{Scheduling Satisfacion problem}
 
+\subsection{Variables}
+\begin{itemize} 
+    \item duration : $d_i [l,u]$
+    \item start : $s_i [0, horizon - mind(d_i)]$ \begin{tabular}{l} 
+            $est_i$ = min($s_i$)\\
+            $lst_i$ = max($s_i$)
+        \end{tabular}
+    \item end : $e_i [min(d_i), horizon]$ \begin{tabular}{l} 
+            $ect_i$ = min($e_i$)\\
+            $lct_i$ = max($e_i$)
+        \end{tabular}
+\end{itemize}
+
 \subsection{Principles}
 A CSP is described by $(A, R, C)$.
 
@@ -2310,14 +2323,103 @@ A CSP is described by $(A, R, C)$.
             \item Release date : r($a_i$)
             \item Deadline : d($a_i$)
             \item Option : o($a_i$)
-                \end{itemize}
+        \end{itemize}
 
     \item A set of \textbf{resources} $(R = \{r_1,\cdots, r_m\})$
 
         \begin{itemize}
-            \item Unary resources : can be used by only one activity
-            \item Cumulative resources : can be used by activities up to a capacity
-            \item Reservoir resources : can be consumed or produced by activities
+            \item \underline{Unary resources} : can be used by only one activity
+
+                \paragraph{Unary propagation}
+                \begin{enumerate}
+                    \item Efficient computation of \texttt{ect} with $\theta$-tree :
+
+                        \begin{tabular}{l}
+                            $\sum D_v = \sum D_{left(v)} + \sum D_{right(v)}$ \\
+                            $ect_v = max \{ ect_{right(v)}, ect_{left(v)} + \sum D_{right(v)} \}$
+                        \end{tabular}
+                        \begin{center}
+                            \includegraphics[width=6cm]{img/ecttree.png}
+                        \end{center}
+
+
+                    \item Overload checking : checks that it is possible
+                        to schedule all activiites ($O(n^2)$ or $O(n log n)$).
+                        $$\textrm{Fail if} ect_{\omega} > lct_{\omega}$$
+                        \begin{center}
+                            \includegraphics[width=6cm]{img/overload.png}
+                        \end{center}
+
+
+                    \item Detectable precedences : compote the \texttt{ect} of the group
+                        to update the \texttt{est} of the activity ($O(n^2)$ or $O(n log n)$).
+                        $$\forall a_i \in \omega : a_i \prec B (B \notin \omega) 
+                        \Rightarrow est_i = max( est_i, ect_{\omega})$$ 
+                        \begin{center}
+                            \includegraphics[width=6cm]{img/pred.png}
+                        \end{center}
+
+                    \item Not-first/not-last : ($O(n^2)$ or $O(n log n)$).
+                        $$ect_{\omega} > lst_i \Rightarrow lct_i = min( lct_i, max_{j \in \omega}(lst_j))$$
+                        \begin{center}
+                            \includegraphics[width=6cm]{img/nfnl.png}
+                        \end{center}
+
+                    \item Edge finding : ($O(n^2)$ or $O(n log n)$)
+                        $$ect_{\omega \cup \{i\}} > lct_{\omega} \Rightarrow \omega \prec i
+                        \Rightarrow est_i = max(est_i, ect_{\omega})$$
+                        \begin{center}
+                            \includegraphics[width=6cm]{img/edge.png}
+                        \end{center}
+
+                \end{enumerate}
+
+                \begin{figure}[!h]
+                    \centering
+                    \begin{tikzpicture}
+                        \node[draw, rectangle] (A) {Overload checking};
+                        \node[draw, rectangle, below= of A] (B) {Detectable precedences};
+                        \node[draw, rectangle, below= of B] (C) {Not-first / Not-last};
+                        \node[draw, rectangle, below= of C] (D) {Edge finding};
+                        \node[draw, rectangle, below= of D] (E) {Fixpoint};
+
+                        \node[draw, rectangle, right= 2cm of A] (F) {Fail};
+
+                        \path[->] (A) edge node[right] {Consistent} (B)
+                        (B) edge node[right] {No change} (C)
+                        (C) edge node[right] {No change} (D)
+                        (D) edge node[right] {No change} (E)
+                        (A) edge node[above] {Fail} (F);
+
+                        \coordinate[below left= of A] (J) ;
+
+                        \draw[->] (B.180) -| (J) |- (A.180);
+                        \draw[->] (C.180) -| (J) |- (A.180);
+                        \draw[->] (D.180) -| (J) |- (A.180);
+
+                        \node[left=1cm of C] {Change};
+                    \end{tikzpicture}
+                    \caption{Unary fixpoint}
+                \end{figure}
+
+
+            \item \underline{Cumulative resources} : can be used by activities up to a capacity
+
+                \begin{enumerate}
+                    \item Mandatory part
+                        \begin{center}
+                            \includegraphics[width=6cm]{img/mandatory.png}
+                        \end{center}
+
+                    \item Sweeping algorithm : build resource profile from mandatory parts
+                        ($O(n^2)$ or $O(n log n)$).
+
+                    \item Energetic reasoning : represent activity comsumption as water
+                        and check if all water fits in a bucket ($O(n^4)$ or $O(n^3 log n)$)
+
+                \end{enumerate}
+
+            \item \underline{Reservoir resources} : can be consumed or produced by activities
                 and usage must remain between lower and upper capacity
         \end{itemize}
 
@@ -2329,11 +2431,11 @@ A CSP is described by $(A, R, C)$.
         \begin{itemize}
             \item Resources constraint :
                 \begin{tabular}{l}
-                disjunctive resources: not two activities simultaneously\\ 
-                cumulative resources: cannot exceed capacity\\
-                reservoir resource: quantity between lower/upper capacity\\
-                state resource: resource must be in correct state\\
-            \end{tabular}
+                    disjunctive resources: not two activities simultaneously\\ 
+                    cumulative resources: cannot exceed capacity\\
+                    reservoir resource: quantity between lower/upper capacity\\
+                    state resource: resource must be in correct state\\
+                \end{tabular}
 
             \item Time constraints : \begin{tabular}{l}
                     Precedences\\ Max distance between a group of activities \\
@@ -2352,19 +2454,25 @@ A CSP is described by $(A, R, C)$.
 
 \end{itemize}
 
-\subsection{Variables}
-\begin{itemize} 
-    \item duration : $d_i [l,u]$
-    \item start : $s_i [0, horizon - mind(d_i)]$ \begin{tabular}{l} 
-            $est_i$ = min($s_i$)\\
-            $lst_i$ = max($s_i$)
-        \end{tabular}
-    \item end : $e_i [min(d_i), horizon]$ \begin{tabular}{l} 
-            $ect_i$ = min($e_i$)\\
-            $lct_i$ = max($e_i$)
-        \end{tabular}
-\end{itemize}
+\subsection{Search}
 
+%TODO
+
+\section{Solver aspect}
+
+\subsection{Restoring state}
+\begin{tabular}{m{7cm}m{7cm}}
+    \includegraphics[width=7cm]{img/copying.png}
+    &
+    \includegraphics[width=7cm]{img/trailing.png}
+    \\
+    Easy to make but memory consumption &
+    Efficient and increment but difficult to make
+\end{tabular}
+
+%TODO
+
+\section{Parallelization}
 
 
 \section{Examen questions}
