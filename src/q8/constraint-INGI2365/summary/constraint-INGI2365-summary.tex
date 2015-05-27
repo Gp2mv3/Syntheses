@@ -5,7 +5,7 @@
 
 \lstset{
   frame=top,frame=bottom,
-  basicstyle=\footnotesize\normalfont\sffamily,    % the size of the fonts that are used for the code
+  basicstyle=\small\normalfont\sffamily,    % the size of the fonts that are used for the code
   stepnumber=1,                           % the step between two line-numbers. If it is 1 each line will be numbered
   numbersep=10pt,                         % how far the line-numbers are from the code
   tabsize=2,                              % tab size in blank spaces
@@ -1994,6 +1994,305 @@ Parameters of LNS :
 \end{itemize}
 
 %TODO: example
+
+
+\section{Vehicle Routing problem}
+
+NP-hard problem which is a optimization problem.
+
+\subsection{Definition}
+\begin{itemize}
+    \item For each customer (quantity required, position, cost and time to travel
+to eahc customer)
+    \item For vehicles (number, capacity for each)
+    \item For each route, there is a maximum time
+    \item[$\to$] We must find the route visiting all customer
+            respecting constrains and minimizing the cost
+\end{itemize}
+
+\subsubsection{Objective function}
+Objective function can include :
+\begin{itemize}
+    \item A number of vehicles \begin{tabular}{l}
+            fixed \\ separate problem \\ part of objective function 
+        \end{tabular}
+
+    \item A costs \begin{tabular}{l}
+            same for each vehicle \\ depend on truck/staff
+        \end{tabular}
+
+    \item Total distance and maximum distance for truck
+
+    \item Total time and maximum time for a route
+\end{itemize}
+
+\subsubsection{Constraints}
+
+\begin{itemize}
+    \item Time window constraints
+    \item Delivery mode (truck start/end route at a depot)
+    \item (in)compatibility constraints \begin{tabular}{l}
+            between a sets of goods (food - toxic product)\\
+            between goods and vehicle (food in refrigerated truck)
+        \end{tabular}
+    \item Fatigue rules and driver breaks
+    \item Modular vehicle
+    \item 2D/3D loading constraints (goods must be placed in the inverse visit order)
+\end{itemize}
+
+\subsubsection{Variant} profitable VRPs where 
+\begin{itemize}
+    \item some visits are optional
+    \item visiting clients brings profit and has cost
+    \item[$\to$] maximize profit and route vehicles
+\end{itemize}
+
+\subsection{Solving Rich VRP}
+
+\begin{itemize}
+    \item By \textbf{Complete techniques}
+
+        $\to$ optimal solution but costly
+    \item by \textbf{Heuristic techniques} (like Local search, generic algorithm,\ldots)
+
+        $\to$ non-optimal solution but quickly
+    \item[Problem]: 
+\end{itemize}
+
+\subsubsection{Model for a Rich VRP (with hard side constraints)}
+
+\paragraph{Variable}:
+
+\begin{tabular}{rrr}
+    \begin{minipage}[b]{0.3\linewidth}
+
+    \begin{tabular}{m{\linewidth}}
+        \textbf{Customers}\\
+        \hline
+        $n$ customers (1..n)\\
+        Demand: $Dem_{i, k}$ for good k \\
+        Value: $V_i$\\
+        Time win: $[E_i, L_i]$\\
+        Service time: $S_i$\\
+        Distance (i $\to$ j): $D_{i, j}$\\
+        Time (i $\to$ j): $T_{i, j}$\\
+        \\
+        \textbf{Truck}\\
+        \hline
+        q(i,k): quantity of good k after customer i
+    \end{tabular}
+\end{minipage}
+&
+\begin{minipage}[b]{0.3\linewidth}
+    \begin{tabular}{m{\linewidth}}
+        \textbf{Vehicle}\\
+        \hline
+        $m$ vehicles\\
+        Capacity: $Q_{i, k}$ for good k\\
+        One route per vehicle\\
+        One depot\\
+        Vechicle start/end to depot\\
+        \\
+        \textbf{Time Window}\\
+        \hline
+        a(i): arrival time customer $i$\\
+        serv(i): service start customer $i$\\
+        dep(i): departure time customer $i$\\
+    \end{tabular}
+\end{minipage}
+&
+\begin{minipage}[b]{0.3\linewidth}
+    \begin{tabular}{m{\linewidth}}
+        \textbf{Route}\\
+        \hline
+        One truck = one route (1\ldots m)\\
+        Route 0 for unvisited\\
+        A route = \{set of visits\}\\
+        \\
+        \textbf{Visites}\\
+        \hline
+        Start/end visit route $k$ : $n+k$ and $n+m+k$\\
+        Start/end visit route $0$ : $n+2m+1$ and $n+2m+2$\\
+    \end{tabular}
+\end{minipage}
+\end{tabular}
+
+
+\paragraph{Decision variable}:
+
+\begin{tabular}{m{11cm}m{5cm}}
+\begin{itemize}
+    \item $succ(i) \in \{1,\cdots,n\} \cup \{n+m+1,\cdots,n+2m\} \cup \{n+2m+2\} $ 
+        
+        IF $i \in \{1,\cdots,n\}$
+    \item $succ(i) \in \{1,\cdots,n\}$ 
+        
+        IF $i \in \{1,\cdots,n\} \cup \{n+1,\cdots,n+m\} \cup \{n+2m+1\}$
+    \item $succ(i)=0$ for route's ends
+
+    \item $pred(i) \in \{1,\cdots,n+m\} \cup \{n+2m+1\} $ 
+        
+        IF $i \in \{1,\cdots,n\}$
+    \item $pred(i) \in \{1,\cdots,n\}$ 
+        
+        IF $i \in \{n+m+1,\cdots,n+2m\} \cup \{n+2m+2\}$
+    \item $pred(i)=0$ for route's starts
+
+    \item $route(i) = \{0,\cdots, m\}$
+
+\end{itemize}
+&
+\includegraphics[width=6cm]{img/VRP.png}
+\end{tabular}
+
+\paragraph{Objective function}
+$$minimize \quad \sum_{i \in \{1,\ldots,n\} \cup \{n+1,\ldots,n+m\}} C_{i, succ(i)}
++ \sum_{i \in \{1,\ldots,n\} or r(i)=0} V_i$$
+
+= Cost of serving client + cost of no serving client
+
+\paragraph{Constraints}:
+
+\begin{lstlisting}[mathescape]
+noCycles(succ) $\bigwedge$ noCycles(pred)
+
+// Time
+a(succ(i)) = dep(i) + $T_{i,succ(i)} \forall i \in \{1,...,n\} \cup \{n+1,...,n+m\} U \{n+2m+1\}$
+
+serv(i) $\geq$ a(i) $\forall i \in \{1,...,n\}$
+serv(i) $\geq$ $E_i \forall i \in \{1,...,n\}$
+serv(i) $\leq$ $L_i \forall i \in \{1,...,n\}$
+serv(i) + $S_i = dep(i) \forall i \in \{1,...,n\} $
+dep(i) = 0i $\forall i \in \{n+1,...,n+m\} \cup \{n+2m+1\}$
+
+// Load
+q(succ(i),k) = q(i,k) + $Dem_{succ(i),k} \forall i \in \{1,...,n\} U \{n+1,...,n+m\} U \{n+2m+1\}$
+                                         $\forall k \in \{1,...,p\}$
+q(i,k) $\leq$ Q route(i),k $\forall i \in \{1,...,n\}, \forall k \in \{1,...,p\}$
+q(i,k) = 0 $\forall i \in \{n+1,...,n+m\} U \{n+2m+1\}$
+            $\forall k \in \{1,...,p\}$
+
+// Consistency
+succ(pred(i)) = i $\forall i \in \{1,...,n\} \cup \{n+m+1,...,n+2m\} \cup \{n+2m+2\}$
+pred(succ(i)) = i $\forall i \in \{1,...,n\} \cup \{n+1,...,n+m\} \cup \{n+2m+1\}$
+route(succ(i)) = route(i) $\forall i \in \{1,...,n\} \cup \{n+1,...,n+m\} \cup \{n+2m+1\}$
+route(n+k) = k $\forall k \in \{1,...,m\}$
+route(n+m+k) = k $\forall k \in \{1,...,m\}$
+route(n+2m+1) = 0
+route(n+2m+2) = 0
+\end{lstlisting}
+
+\subsubsection{Search}
+
+%TODO
+
+\section{Nurse Rostering problem}
+\subsection{Definition}
+\begin{itemize}
+        \item For each nurse a qualification and some unavailable time
+        \item Shift (morning/aftermoon/night), nurse work one shift a day and
+            rest periods must be allocated to nurses
+        \item Deman for a qualification during a shift
+\end{itemize}
+
+\subsubsection{Objective function}
+Objective function can include :
+\begin{itemize}
+    \item feasible solution
+    \item Load balancing costs
+    \item Preferences of the nurses
+\end{itemize}
+
+\subsubsection{Constraints}
+
+\begin{itemize}
+    \item Meet the demand
+    \item The work assignement must follow a set of rules : rules on the sequence
+        of shift and repartition of rest shifts
+\end{itemize}
+
+
+\subsubsection{Model for NRP}
+
+\paragraph{Variable}:
+
+\begin{tabular}{rrr}
+    \begin{minipage}[b]{0.5\linewidth}
+
+    \begin{tabular}{m{\linewidth}}
+        \textbf{Nurse}\\
+        \hline
+        $n$ nurses \\
+        Qualification: $Q_{i, k}$ = 1 (0) if $i$ qualified (or not) for $k$\\
+    \end{tabular}
+\end{minipage}
+&
+\begin{minipage}[b]{0.5\linewidth}
+    \begin{tabular}{m{\linewidth}}
+        \textbf{Demand}\\
+        \hline
+        $D_{d, k, s}$ on day $d$, for qualification $k$ during 
+        shift $s$\\
+        Day to plan: $nd$\\
+        Diff qualif: $nk$
+    \end{tabular}
+\end{minipage}
+\end{tabular}
+
+
+\paragraph{Decision variable}:
+
+\begin{itemize}
+    \item $Shift(i,d)$ = shift for nurse $i$ on day $d$
+
+        \paragraph{Domains}: \{0: rest, 1: morning, 2: afternoon, 3: night\}
+\end{itemize}
+
+
+\paragraph{Naive constraints}:
+
+\begin{lstlisting}[mathescape]
+// Demand
+$\sum_{i \in\{1,\ldots,n\}} (Shift(i,d) == s) * Q_{i,k} \geq D_{d, k, s}$ 
+$\forall d \in \{1,\cdots,nd\}, \forall k \in \{1,\cdots, nk\}, \forall s \in \{1,2,3\}$
+
+// Shift pattern
+(Shift(i,d) == 3) + (Shift(i,d+1) == 3) $\leq$ 1 $\forall i \in \{1,...,n\}, \forall d \in \{1,...,nd-1\}$
+\end{lstlisting}
+
+The problem with this solution is a \textbf{very poor propagation}
+
+
+\paragraph{Better constrains}:
+
+Auxiliary quantities :
+\begin{itemize}
+    \item $N_k$: set of nurse having qualification $k$
+    \item[$\to$] $ShiftQualif(d, k) = Shift(N_k, d)$
+
+    \item $ShiftOf(i) = Shift(i, -)$ : array of all shifts for nurse i
+\end{itemize}
+
+\begin{lstlisting}[mathescape]
+// Demand
+Among(ShiftQualif(d,k),$D_{d,k,s}$ ,n,{s}) $\forall d \in \{1,...,nd\}, 
+\forall k \in \{1,...,nk\}, \forall s \in \{1,2,3\}$
+
+// Shift pattern
+Sequence(ShiftsOf(i),{3},2,0,1) $\forall i \in \{1,\cdots,n\}$
+\end{lstlisting}
+
+\begin{itemize} 
+    \item \texttt{Among(ShiftQualif(d,k),$D_{d,k,s}$ ,n,\{s\})}: In the array ShiftQualif(d,k), between D d,k,s and n variables
+taking value in the set \{s\}
+\item \texttt{Sequence(ShiftsOf(i),\{3\},2,0,1)}: in the array ShiftsOf(i), in any sequence of length 2,
+    between 0 and 1 variables take their values in the set \{3\}
+    \end{itemize}
+
+
+\subsubsection{Search}
+
+%TODO
 
 
 \section{Examen questions}
