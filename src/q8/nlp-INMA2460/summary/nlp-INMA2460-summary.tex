@@ -1607,7 +1607,11 @@ The problem of this result is the following:
 How do we ensure that $i(k) > 0$ ? What prevents $i(k)$ from being zero ?
 Actually, $i(k) = 0$ means we that we do not have cut in $Q$ yet so
 $\vol_n E_k < \vol_n Q$ implies that $i(k) > 0$.
-Therefore if we ensure that $\vol_n E_k \to 0$ we know that we will have an $y_k \in Q$.
+Therefore if we ensure that $\vol_n E_k \to 0$ and that $\vol_n Q > 0$ we know that we will have an $y_k \in Q$.
+To ensure that $\vol_n Q > 0$, we need to assume that there exists some $\rho > 0$ and $\bar{x} \in Q$ such that
+\[ B_2(\bar{x},\rho) \subseteq Q. \]
+With functionnal constraints, it is enough to respect the Slater condition.
+
 
 Historically, the first nonsmooth minimization method implementing the idea of cutting planes was the \emph{center of gravity} method.
 The idea is to take $y_k$ as the center of gravity of $E_k$.
@@ -1633,7 +1637,7 @@ The idea of the Ellipsoid method is to use Ellipsoidal $E_k$ because it is easy 
 
   \begin{tikzpicture}[x=1.5cm,y=1.5cm]
     \draw[thick]         ( 0.5963, 0.1491) ellipse (2 and 1);
-    \draw[blue,thick,->] ( 0.5963, 0.1491) to (1.5963,1.1491);
+    \draw[blue,thick,->] ( 0.5963, 0.1491) to (1.0963,0.6491);
     \draw[red,thick]     (-0.9037, 1.6491) to (2.0963,-1.3509);
     \draw[dashed,thick,rotate=-23.4238]
                          ( 0,      0) ellipse (1.6724 and 0.9206);
@@ -1647,19 +1651,26 @@ The idea of the Ellipsoid method is to use Ellipsoidal $E_k$ because it is easy 
 \end{multicols}
 
 If $f_{B_2(x^*,R)} \in \mathcal{F}_M^{0,0}$ then for any $k$ such that $i(k) > 0$, % FIXME why R not D ?
-\[ f_{i(k)}^* - f^* \leq MD\Big(1 - \frac{1}{(n+1)^2}\Big)^{\frac{k}{2}} \Big[\frac{\vol_n B_0(x_0,R)}{\vol_n Q}\Big]^{\frac{1}{n}}. \]
+\[ f_{i(k)}^* - f^* \leq MR\Big(1 - \frac{1}{(n+1)^2}\Big)^{\frac{k}{2}} \Big[\frac{\vol_n B_2(x_0,R)}{\vol_n Q}\Big]^{\frac{1}{n}}. \]
 
-Here to guarantee that $i(k) > 0$ for some $k$, we need an additional assumption.
-We need to assume that there exists some $\rho > 0$ and $\bar{x} \in Q$ such that
-\[ B_2(\bar{x},\rho) \subseteq Q. \]
-With functionnal constraints, it is enough to respect the Slater condition.
-
-With that further assumption, we have
+As we have seen, to ensure that $i(k) > 0$ for some $k$, we need to ensure that $\vol_n Q > 0$.
+If there exists some $\rho > 0$ and $\bar{x} \in Q$ such that
+\( B_2(\bar{x},\rho) \subseteq Q, \)
+we have $\vol_n Q \geq \rho^n$.
+Since $\vol_n B_2(x_0,R) = R^n$, we have
+\[ f_{i(k)}^* - f^* \leq \frac{1}{\rho} M R^2 \Big(1 - \frac{1}{(n+1)^2}\Big)^{\frac{k}{2}}. \]
+As usual, using the fact that $1-x \leq \exp(-x)$, we have
 \[ f_{i(k)}^* - f^* \leq \frac{1}{\rho} M R^2 \exp\Big(-\frac{k}{2(n+1)^2}\Big). \]
+Note that for unconstrained optimization,
+since we need for the reasoning to work that $Q \subseteq E_0$,
+and $E_0 = B_2(x_0,R)$ it is as if $Q = B_2(x_0,R)$ so we take $\rho = R$.
 
 Each iteration only take $\bigoh(n^2)$ arithmetic operations and the method needs
 \[ 2(n+1)^2 \ln \frac{MR^2}{\rho \epsilon} \]
-calls of the oracle to generate an $\epsilon$ solution.
+calls of the oracle to generate an $\epsilon$ solution for $r_0 = R$ and $Q \supseteq B_2(\bar{x},\rho)$ for some $\bar{x} \in Q$ or
+\[ 2(n+1)^2 \ln \frac{MR}{\epsilon} \]
+for $Q = \Rn$.
+
 It is not optimal but it has polynomial dependence on $\ln 1/\epsilon$ and the class parameters $M,R,\rho$.
 For problem classes for which the oracle has polynomial complexity,
 such algorithms are called weakly polynomial.
@@ -1685,6 +1696,31 @@ However, at each iteration we need to run an Interior Point Method to find the $
 %In Structural programming, we do not consider constraints as black blox.
 %We use the specificity in their structure to remplace them by barriers in the objective.
 %The remaining objective is solved using the Newton['s]? scheme.
+We are interested in the problem
+\begin{align*}
+  \min & f(x)\\
+  f_j(x) & \leq 0, \quad j = 1, \ldots, m.
+\end{align*}
+where $f$ and $f_j$ are convex for $j = 1, \ldots, m$.
+
+The convex programming schemes for solving this problem are based on the Black Box concept.
+These black box provide information of the functions $f$ and $f_j$ at a point $x$.
+These black boxes are local and they are the only information available for the numerical method.
+
+However, we know that those functions are convex.
+Since checking convexity is harder than minimizing if we do not use the structure of the functions.
+Indeed what we usually do is check that the functions are convex using their structure,
+e.g. they are the sum of convex functions
+and then give to the method only a black box.
+Why don't we allow the method to see the structure too ?
+
+The idea to enable the method to have a better view of the problem is through a mediator.
+We select a set of problems for which the method is very efficient and the standard theory poorly describe this efficiency.
+In the case of the Newton's method, those are the self-concordant functions.
+We then try to see how to solve problem using it.
+In this case, we can construct self-concordant barriers from some functional constraints.
+
+
 
 \biblio
 \end{document}
