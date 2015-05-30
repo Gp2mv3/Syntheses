@@ -1469,7 +1469,16 @@ where $Q$ is a simple closed convex set (simple means that we can compute the pr
 \end{algorithm}
 
 If $r_0 \leq R$ and $f_{B_2(x^*,R)} \in \mathcal{F}_M^{0,0}$, then
-\[ f_k^* - f^* \leq M\frac{R^2 + \sum_{i=0}^k h_i^2}{2 \sum_{i=0}^k h_i}. \]
+we have at each iteration
+\begin{equation}
+  \label{eq:subgraddec}
+  r_{i+1}^2 \leq r_i^2 - 2h_iv_i + h_i^2
+\end{equation}
+which gives
+\begin{equation}
+  \label{eq:subgradconv}
+  f_k^* - f^* \leq M\frac{R^2 + \sum_{i=0}^k h_i^2}{2 \sum_{i=0}^k h_i}.
+\end{equation}
 
 If we know a priori that we want to do a fixed number of steps $N$,
 we know that we need to take a constant step-size
@@ -1480,6 +1489,7 @@ This gives
 Comparing this with the lower bound~\eqref{eq:unconstrainednonsmoothbound},
 we see that the subgradient is optimal uniformly in the dimension $n$.
 
+\subsubsection{Realistic step-size}
 If we know the desired accuracy $\epsilon$, we can fix $N$.
 However, we often converge a lot faster than be bound so it is inefficient in practice to do all the $N$ steps.
 In practice we rather check for the accuracy $f_k - f^*$ using $f_k - f_{k+1} \approx f_k - f^*$ and stop
@@ -1487,10 +1497,52 @@ when it is smaller than $\epsilon$.
 Also in practice, since we do not know $R$, we cannot use it in the expression for $h_k$.
 If we use
 \[ h_i = \frac{r}{\sqrt{i+1}}, \quad i = 0, \ldots \]
-we have
-\[ f_k^* - f^* \leq M\frac{R^2+r\ln(k+1)}{2r\sqrt{k+1}}. \]
+we can bound (modulo a constant) the sum $\sum_{i=0}^{k} \frac{1}{i+1}$ by $\int_0^k \frac{1}{x+1} \dif x = \ln(k+1)$ and
+the sum $\sum_{i=0}^{k} \frac{1}{\sqrt{i+1}}$ by $\int_0^k \frac{1}{\sqrt{x+1}} \dif x = 2(\sqrt(k+1)-1)$.
+Therefore we have
+\[ f_k^* - f^* \leq M\frac{R^2+r^2\ln(k+1)}{4r\sqrt{k+1}}. \]
 This rate of convergence can be classified as \emph{sub-optimal} rate.
 
+\subsubsection{Square summable but not summable step-size}
+When we analyse \eqref{eq:subgradconv} and the step-size $h_i = \frac{r}{\sqrt{i+1}}$ we can
+see that as $k \to \infty$, both the numerator and the denominator tends to infinity because
+$\sum_{i=0}^k h_i^2$ and $\sum_{i=0}^k h_i$ both diverge.
+We say that the sequence $\{h_i\}$ is neither square summable nor summable.
+
+However, if we take $h_i = \frac{r}{i+1}$, we can see that $\sum_{i=0}^k h_i$ converges.
+As $k \to \infty$, it is therefore obvious that the fraction tends to 0.
+We say that the sequence $\{h_i\}$ is square summable but not summable.
+
+Again, we can bound (modulo a constant) the sum $\sum_{i=0}^{k} \frac{1}{i+1}$ by $\ln(k+1)$ and
+the sum $\sum_{i=0}^{k} \frac{1}{(i+1)^2}$ by $\int_0^k \frac{1}{(x+1)^2} \dif x = 1 - \frac{1}{k+1}$.
+Therefore we have
+\[ f_k^* - f^* \leq M\frac{R^2+r^2-\frac{r^2}{k+1}}{2r\ln(k+1)}. \]
+
+
+\subsubsection{Polyak step-size}
+When $f^*$ is known, we can do better
+First notice by definition of the subgradient, if $y$ is the projection of $x^*$ on the hyperplane, we have
+\[ f(x^*) - f(y) \geq \la g(x_k), x^* - y \ra \]
+so
+\[ v_k = v_f(x^*,x_k) = v_f(x^*,y) = \frac{1}{\|g(x_k)\|}\la g(x_k), y - x^* \ra \geq \frac{f(y) - f(x^*)}{\|g(x_k)\|} = \frac{f(x_k) - f(x^*)}{\|g\|}. \]
+
+From \eqref{eq:subgraddec}, we deduce that
+\[ r_{k+1}^2 \leq r_k^2 - 2 \frac{h_k}{\|g(x_k)\|}(f(x_k) - f(x^*)) + h_k^2. \]
+If we minimize this expression in $h_k$ we find
+\[ h_k = \frac{f(y) - f(x^*)}{\|g(x_k)\|}. \]
+Note that we have already normalized $g(x_k)$ but we divide again by its norm.
+
+With this value of $h_k$ we have
+\[ r_{k+1}^2 \leq r_k^2 - \frac{(f(x_k) - f(x^*))^2}{\|g(x_k)\|^2}. \]
+If we sum, we get
+\[ \sum_{i=0}^k \frac{(f(x_k) - f^*)^2}{\|g(x_k)\|^2} \leq R^2. \]
+Since we know that $\|g(x_k)\| \leq M$, we have
+\[ \sum_{i=0}^k (f(x_k) - f^*)^2 \leq M^2R^2. \]
+Since the sum is bounded, of course, we should have $f(x_k) \to f^*$.
+However we see that we also have
+\[ f_k^* - f^* \leq \frac{MR}{\sqrt{N+1}}. \]
+
+\subsubsection{Not simple constraints}
 If the constrained are more complicated,
 we split them in a simple bounded closed convex set $Q$ and $m$ more complicated constraints $f_j$
 \[ \min_{x \in Q} \{\, f(x) \mid f_j(x) \leq 0, j = 1, \ldots, m  \,\}. \]
@@ -1875,7 +1927,7 @@ and
   \omega_*(\tau) & = \max_{0 \leq \xi < 1}[\xi \tau - \omega  (\xi)],\\
   \omega  (t   ) & = t    \omega  '(t   ) - \omega_*(\omega  '(t   )), &
   \omega_*(\tau) & = \tau \omega_*'(\tau) - \omega  (\omega_*'(\tau)),\\
-\end{align*}
+\end{align*} % TODO conjugate
 
 We have the following definition of standard self-concordant functions.
 \begin{mydef}
