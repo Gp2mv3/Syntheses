@@ -1,2 +1,2 @@
 TYPE=summary
-include ../edo.mk
+include ../edo-MAT1223.mk
