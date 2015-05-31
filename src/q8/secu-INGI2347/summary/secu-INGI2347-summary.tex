@@ -3,11 +3,81 @@
 \newcommand{\syn}{\mathsf{SYN}}
 \newcommand{\ack}{\mathsf{ACK}}
 
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata,calc}
+\tikzset{
+    %Define standard arrow
+    >=stealth',
+    % Define arrow style
+    pil/.style={
+           ->,
+           thick,
+           shorten <=2pt,
+           shorten >=2pt,}
+}
+% \usepackage{qtree}    % dessiner des arbres %% => texlive-humanities
+
+\definecolor{codeBlue}{rgb}{0,0,1}
+\definecolor{webred}{rgb}{0.5,0,0}
+\definecolor{codeGreen}{rgb}{0,0.5,0}
+\definecolor{codeGrey}{rgb}{0.6,0.6,0.6}
+\definecolor{webdarkblue}{rgb}{0,0,0.4}
+\definecolor{webgreen}{rgb}{0,0.3,0}
+\definecolor{webblue}{rgb}{0,0,0.8}
+\definecolor{orange}{rgb}{0.7,0.1,0.1}
+
+\usepackage{caption}
+\renewcommand{\familydefault}{\sfdefault}
+
+\usepackage{listings}		% Pour l'insersion de fichiers de codes sources.
+\lstdefinelanguage{diff}{
+  morecomment=[f][\color{blue}]{@@},     % group identifier
+  morecomment=[f][\color{red}]-,         % deleted lines 
+  morecomment=[f][\color{green}]+,       % added lines
+  morecomment=[f][\color{magenta}]{---}, % Diff header lines (must appear after +,-)
+  morecomment=[f][\color{magenta}]{+++},
+}
+\lstdefinelanguage{scala}{
+  morekeywords={abstract,case,catch,class,def,%
+    do,else,extends,false,final,finally,%
+    for,if,implicit,import,match,mixin,%
+    new,null,object,override,package,%
+    private,protected,requires,return,sealed,%
+    super,this,throw,trait,true,try,%
+    type,val,var,while,with,yield},
+  otherkeywords={=>,<-,<\%,<:,>:,\#,@},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[n]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[b]"""
+}
+\lstset{
+	  language=scala,
+	  frame=single,
+	  flexiblecolumns=true,
+	  numbers=none, % left
+	  stepnumber=1,
+	  numberstyle=\ttfamily\tiny,
+	  keywordstyle=\ttfamily\textcolor{blue},
+	  stringstyle=\ttfamily\textcolor{red},
+	  commentstyle=\ttfamily\textcolor{green},
+	  breaklines=true,
+	  extendedchars=true,
+	  basicstyle=\ttfamily\footnotesize,
+	  showstringspaces=false
+	}
+
+
 \hypertitle{Computer System Security}{6}{INGI}{2347}
 {Julien Bouilliez\and Julien Bergiers\and Quentin Cappart\and Thomas Haine\and Julien Henricot}
 {Gildas Avoine}
 
+\tableofcontents
+
 \section{Introduction}
+
 \paragraph{Hacker célèbre :}
 \begin{itemize}
   \item Kevin Mitnick (telephone hack et IP Spoofing)
@@ -25,7 +95,729 @@
 
 $$\mathsf{Risk} = \sum P(M_i) V_i$$
 
-\section{Spam :}
+\section{Software security}
+\subsection{Buffer Overflows}
+
+Un buffer overflow arrive lorsqu'un programme écrit des données dans un buffer
+au dela de sa limite et overwrite la mémoire adjacente.
+
+Il y a deux types de buffer overflow : ceux de la stack, et ceux du heap.
+
+Par ailleurs, d'autres types d'erreurs peuvent devenir une vulnérabilité:
+\begin{enumerate}
+    \item Utiliser de la mémoire libéré (user-after-free)
+    \item Décrémenter un ptr de la stack au dela de la fin de la stack, 
+        dans une autre mémoire
+    \item \ldots
+\end{enumerate}
+
+\begin{figure}[!h]
+    \centering
+    \begin{tikzpicture}
+        \node[text width=4cm] (B) {
+            \begin{lstlisting}
+int read_req(void) {
+    char buf[128];
+    int i;
+    gets(buf);
+    i = atoi(buf);
+    return i;
+}
+\end{lstlisting}};
+
+        \node (A) [right= of B] {
+    \begin{tabular}{r|c|}
+        & \\
+        \cline{2-2}
+        entry \%ebp $\to$ & frame précédente \\
+        & \ldots  \\
+        \cline{2-2}
+        entry \%esp $\to$ & return address  \\
+        \cline{2-2}
+        new \%ebp  $\to$& saved entry \%ebp \\
+        \cline{2-2}
+        & i \\
+        \cline{2-2}
+        & buf[127] \\
+        & \ldots \\
+        & buf[0] \\
+        \cline{2-2}
+        new \%esp  $\to$& \ldots \\
+        \cline{2-2}
+        & \\
+    \end{tabular}};
+    \node(C) [right= of A] {
+    $\downarrow$ Stack grows down};
+\path[->] (B) edge (A);
+\end{tikzpicture}
+
+    \caption{Stack d'une fonction}
+\end{figure}
+
+\subsubsection{Exploit}
+
+Nous pouvons exploiter le buffer overflow lorsque le programme ne vérifie
+pas la taille de ce qu'il met dans une structure de donnée.
+
+\paragraph{Return adresse}
+L'overflow devient interressant lorsque l'on peut overwrite la return adresse
+pour qu'elle pointe vers un endroit intérressant dans la mémoire! 
+De cette manière, à l'appel de \texttt{ret} le programme éxecutera ce que l'on
+veut.
+
+Typiquement, on va faire pointer la return adresse vers le buffer lui même,
+qui va contenir code machine.
+
+\paragraph{Adresse virtuelles}
+Les adresses virtuelles rendent les choses plus déterministe pour
+déterminer l'adresse du buffer.
+
+\paragraph{But}
+
+De manière général l'attaquant peut utiliser les privilèges du process
+pour faire ce qu'il veut!
+
+\subsubsection{Difficulté}
+
+Les Buffer Overflow ne sont plus un problème de sécurité majeur.
+Les programmes sont maintenant mieux protégés contre le Buffer
+Overflow et concevoir un Buffer overflows intelligents est complexes.
+
+En effet, il est difficile de deviner la croissance de la pile et
+choisir adr et le programme injecté ne peut pas avoir un \verb|\0|
+octet, parce que cela marque la fin d'une chaîne de caractères peut
+empêcher la copie des octets restants.
+
+\subsubsection{Prévention buffer overflow}
+
+\begin{enumerate}
+    \item Eviter les bug dans le code C en utilisant des
+        fonctions standard safe. (Certains compilateur lance un Warning
+        quand des fonctions unsafe sont utilisés.)
+
+        \begin{itemize}
+            \item[\underline{Pour}:] Evite la première source de problème
+            \item[\underline{Contre}:] Toujours difficile d'être sur que le
+                programme est \textit{bug-free}\ldots 
+                
+                En plus on peut faire de la manipulation de buffer
+                sans utiliser les primitives unsafe.
+        \end{itemize}
+
+    \item Utiliser des outils pour trouver des bugs.
+        D'une part on peut faire une analyse static (détecter les variables
+        non-initialisés), d'autre part il existe des programme (comme \textbf{symbolic
+        execution}) qui analyse tout les chemins possibles dans un programme donnés.
+        \begin{center}
+            \textit{SE parcourt tout les chemins en considérant les ``input'' des
+                functions comme des inconnues et en ajoutant des contraintes selon
+                les chemins empruntés. (Si il passe if x > 5, alors dans ce chemin
+            x > 5)}
+        \end{center}
+
+        \begin{itemize}
+            \item[\underline{Pour}:] Toute analyse du programme est utile pour
+                diminuer les bugs du programmes
+            \item[\underline{Contre}:] Difficile de prouver l'absence total de bug
+        \end{itemize}
+
+    \item Utiliser des languages \textit{memory-safe} comme JS, C\#, Python,\ldots
+
+        \begin{itemize}
+            \item[\underline{Pour}:] Prévient toute corruption de la mémoire en n'exposant pas
+                les adresses mémoires au programmeurs et par l'utilisation d'un
+                garbage collector.
+            \item[\underline{Contre}:] 
+                \begin{tabular}{p{14cm}}
+                \begin{itemize}
+                    \item Il y a toujours un grand nombre de language \textit{unsafe}.
+                    \item Certain programme nécessite un language de bas niveau
+                        (ex: device driver)
+                    \item Les performances sont meilleurs dans un language de bas
+                        niveau
+                \end{itemize}
+            \end{tabular}
+        \end{itemize}
+\end{enumerate}
+
+\subsubsection{Fix buffer overflow avec des codes buggés}
+
+\begin{enumerate}
+    \item \textbf{Canaries} :
+        L'idée est d'autoriser l'overflow \textsc{mais} de le capturer 
+        avant d'invoquer un pointeur overwrite.
+
+        \paragraph{StackGuard (gcc Stack Smashing Protector)} : 
+
+        \begin{tabular}{m{9cm}m{1cm}}
+            \begin{itemize}
+                \item Place un \textsc{canary} sur la stack à l'arrivée
+                    et check la valeur avant de \texttt{return}
+                \item Nécessite le source code pour inséré les checks
+                    de \textsc{canary} à la compilation
+            \end{itemize}
+            &
+            \begin{tikzpicture}
+                \node (A) {
+                    \scriptsize
+                    \begin{tabular}{r|c|}
+                        & \\
+                        \cline{2-2}
+                        entry \%esp $\to$ & return address  \\
+                        \cline{2-2}
+                        new \%ebp  $\to$& saved \%ebp \\
+                        \cline{2-2}
+                        & \textcolor{red}{CANARY} \\
+                        \cline{2-2}
+                        & buf[127] \\
+                        & \ldots \\
+                        & buf[0] \\
+                        \cline{2-2}
+                        new \%esp  $\to$& \ldots \\
+                        \cline{2-2}
+                        & \\
+                    \end{tabular}
+                };
+            \end{tikzpicture}
+        \end{tabular}
+
+        \paragraph{Canary value}: 
+        \begin{itemize}
+            \item[\textsc{Terminator}]: Avec une valeur tel que (0, CR, LF, -1), 
+                si l'attaquant veut faire un overflow il doit ajouter un caractère 
+                qui est considéré par la plus part des functions comme un caractère
+                de fin de String!
+            \item[\textsc{Random}]: Soit il doit être très dur à trouver sans
+                quoi l'attaquant n'a qu'a inséré cette valeur dans son overflow.
+        \end{itemize}
+
+        \paragraph{Limitations}:
+        \begin{itemize}
+            \item Le canary ne prévient pas des attaques qui overwrite
+                un pointer avant le canary
+            \item Overflow sur le heap
+            \item Malloc/free overflow 
+                %TODO
+
+        \end{itemize}
+
+
+    \item \textbf{Bounds checking}: Prevenir l'utilisation de pointeur invalide.
+
+        \paragraph{Difficulté}: En c, un pointeur n'encode pas d'information
+        sur la sémantique de l'usage de ce pointeur. De plus les unions peuvent
+        rendre les choses difficiles puisqu'une variables peut être différente chose..
+
+        La solution (qui est weakness puisque l'utilisation d'invalide poiteur est 
+        toujours possible) consiste à checker les bornes de la mémoire. Cela
+        évite la réécriture arbitraire de la mémoire.
+
+        \begin{itemize} 
+            \item[\underline{Contre}]: Nécessite un nouveaux compilateur et donc les l'accès
+        aux fichiers sources.
+\end{itemize}
+
+        \begin{enumerate}
+            \item Electric fences : Ajout à chaque objet dans le heap d'un \textbf{guard page}
+                qui cause une page exception quand il est overwrite.
+                \begin{figure}[!h]
+                    \centering
+                \begin{tabular}{|c|}
+                    \hline
+                    Guard page \\
+                    \hline
+                    Heap object \\
+                    \hline
+                \end{tabular}
+                \caption{Guard page}
+            \end{figure}
+                \begin{itemize}
+                    \item[\underline{Pour}]: Il ne faut pas changer de compilateur, juste relinker
+                        avec une nouvelle version de malloc
+                    \item[\underline{Contre}]: Gros overhead pour les objets du heap.
+                \end{itemize}
+            \item Fat pointer : Modifier la représentation du pointeur pour ajouter
+                les informations sur les bornes des objets de cette zone mémoire.
+
+                L'assignation d'une nouvelle valeur à un pointeur peut donc créer une 
+                erreur lorsqu'il n'est pas dans les bornes.
+                \begin{figure}[!h]
+                    \centering
+                    \begin{tabular}{|c|m{2cm}|c|c|c|}
+                        \cline{1-1}
+                        \cline{3-5}
+                    4 byte addr & & 4 byte obj\_base & 4-byte obj\_end & 4-byte curr\_adr \\
+                        \cline{3-5}
+                        \cline{1-1}
+                \end{tabular}
+                \caption{Représentation fat pointeur}
+            \end{figure}
+                \begin{itemize}
+                    \item[\underline{Contre}]: Couteux de vérifié tout les pointeurs
+                        déférencé\ldots surtout que le c veut des performances
+                    \item[\underline{Contre}]: Fat pointeur est incompatible avec bcp de
+                        programme existant
+                \end{itemize}
+        \end{enumerate}
+
+    \item \textbf{Non executable memory}: Généralement, on empeche qu'en zone mémoire
+        soit exécutable et écrivable! Typiquement, la stack ne sera pas exécutable et
+        on ne pourra pas y faire exécuter un code malicieux.
+        (\textsc{DEP}, \textsc{NX},\ldots)
+        \begin{itemize}
+            \item[\underline{Pour}]: Facile à mettre en oeuvre.
+            \item[\underline{Contre}]: Dur de générer du code dynamiquement
+        \end{itemize}
+
+    \item \textbf{Randomize memory addresses} (Stack ou espace mémoire complet): Les shell-code use souvent des 
+        adresses hardcodés, donc en randomisant les adresses c'est plus dur d'avoir
+        un pointeur valide.
+        (\textsc{ASLR},\ldots)
+
+        \paragraph{Note}: Adversaire peut prendre extraire la randomisation, 
+        surtout dans le cas des machines 32bits.
+        
+\end{enumerate}
+
+En pratique on utilise surtout gcc, la randomization et la mémoire non exécutable.
+
+\subsection{Injection vulnerabilities}
+%TODO
+
+
+\section{Malwares}
+
+Code malicieux qui tourne sur le système d'une victime.
+
+\paragraph{Actions}
+
+Ils peuvent faire à peut près n'importe quoi\ldots cela dépend
+surtout des permissions sous lequel ils s'exécutent.
+(pop up, endommagé l'hardware, spam, DoS, keylogging, encrypt files)
+
+\paragraph{Time bomb} Les malwares peuvent aussi être retardé en attendant 
+qu'une condition arrive.
+
+\subsection{Type de malware}
+\begin{description}
+  \item[Virus] fragment de code qui se propage à travers des systèmes en s'arrangeant
+      pour être \textit{éventuellement} executé. $\to$ infecte en altérant du
+      code \textbf{enregistré}
+  \item[Worm] programme indépendant qui se prograge/réplique à travers un système
+      en s'arrangeant pour être \textit{immédiatement} executé. $\to$ infecte
+      en altérant du code qui \textbf{s'exécute}. (pas d'intervention de l'utilisateur)
+
+  \item[$\to$] Les virus et worms sont des malwares qui se propage automatiquement.
+  \item[]
+  \item[Cheval de Troie (Trojan)] programme utile qui contient un programme malveillant (ou lui-
+même par extension).
+  \item[Backdoor] accès caché à un ordinateur.
+Le Programme permet d'accéder à distance à un système, sans que l'utilisateur le sache.
+Ils sont installé par les chevaux de Troie et donc souvent classés comme tels.
+  \item[Spyware] programme qui envoie les informations vous concernant à des tiers.
+  \item[Adware] programme qui provoque l'apparition d'annonces sur votre écran ou des
+    changements des résultats de votre recherche (manipule le navigateur)
+  \item[Rootkit] programme qui masque la présence de programmes malveillants sur votre ordinateur.
+    Il modifie votre système d'exploitation afin de cacher l'exécution des programmes,
+    des fichiers ou des configurations.
+\end{description}
+
+\subsection{Virus}
+
+\paragraph{But virus/worm}: Dur à détecter/détruire/désactiver, infection rapide, 
+peut réinfecteur d'autre host, facile à créer et indépendant de l'OS. 
+
+\paragraph{Virus problem}
+Le virus (comparé au worm) est opportuniste puisque le code n'est pas forcément
+exécuté\ldots il le sera si le user effectue une action (ex: démarrer une app,\ldots)
+
+\begin{itemize}
+\item \textbf{Les virus Stealth}
+    \begin{enumerate}
+      \item Simple: le virus comprime le fichier original, et crée un
+fichier infecté de la même taille.
+      \item Complexe: le virus modifie le système de manière à être
+      invisible. Il modifie le fichier routines de lecture afin qu'ils
+      ne révèlent pas le virus.
+    \end{enumerate}
+\item \textbf{Les virus polymorphes}
+    Le virus se modifie après chaque infection de manière à rester indétectable.
+\end{itemize}
+
+\subsubsection{Période}
+
+\paragraph{La période classique}
+
+Propagation passive à travers l'échange de disquettes. La propagation
+est lente et donc le virus à besoin d'être efficace.
+
+\paragraph{La période moderne}
+
+Les virus modernes utilisent Internet pour propager activement et
+peuvent infecter la planète en quelques heures. Ils sont souvent,
+simple et facile à détecter. Cependant, ils sont efficace, car ils se
+propagent beaucoup plus rapidement que le logiciel antivirus ne peut
+être mis à jour.
+
+\subsubsection{Propagation}
+Quand le virus s'exécute, il cherche des opportunités d'infectés des systèmes
+additionnels.
+
+\begin{enumerate}
+    \item Une première approche, le virus cherche à altérer les exécutables
+        qui se trouve sur \textbf{d'autres système hardware}
+    \item Ou bien il altère les pièces jointent au mail pour ajouter une
+        copie de lui même.
+
+    \item[Note:] Il peut aussi directement envoyer certain mail
+\end{enumerate}
+
+\paragraph{Infection programme}
+
+\begin{figure}[!h]
+    \centering
+    \scriptsize
+    \begin{tikzpicture}[scale=0.7]
+        \node (A) {
+            \begin{tabular}{|m{3.5cm}|}
+                \hline
+                Original program instruction\\
+                \hline
+    \end{tabular}};
+    \node (B) [below= of A] {
+            \begin{tabular}{|c|m{3.5cm}|}
+                \hline
+                Virus & Original program instruction\\
+                \hline
+    \end{tabular}};
+    \node (C) [below= of B] {
+            \begin{tabular}{|c|m{3.5cm}|c|}
+                \hline
+                 & Original program instruction & Virus \\
+                \hline
+    \end{tabular}};
+
+    \node (D) [left= of B] { Point d'entrée };
+
+    \path[->] (D) edge (A.180)
+          (D) edge (B.180)
+          (D) edge (C.180)
+          (C.187) edge [bend right] node [above] {jmp} (C.353)
+          (C.7) edge [bend right] node [below] {jmp} (C.173);
+      \end{tikzpicture}
+    \caption{Programme infecté selon deux variantes possibles}
+\end{figure}
+
+
+\subsubsection{Detection virus}
+
+La détection est basé sur la signature du virus (byte correspondant
+au code malicieux injecté)\ldots c'est très utile puisque par nature
+le virus se duplique (et conserve donc sa signature).
+
+\paragraph{Création}
+Le problème (pour un créateur de virus) est donc de changer son virus
+lorsque sa signature est détecté ou du moins changer son apparence. 
+
+La solution est l'utilisation de code \textbf{polymorphic}.
+
+\subsubsection{Polymorphic code}
+
+Le virus se propage en insérant une nouvelle copie \textbf{encrypté} de lui 
+même, en variant évidement l'encryption (clé différente ou random padding).
+
+\paragraph{Encryption} Elle ne doit pas être \textsc{strong}, juste rapide
+simple et \textit{cacher} le virus.
+
+
+
+\section{Introduction of Cryptography}
+\subsection{Vocabulary}
+Cryptographie :
+Définition (cryptographie):
+\begin{itemize}
+  \item Origine: Science qui permet condentiality de communication à travers des canaux non
+sécurisés.
+  \item Aujourd'hui: Condentiality, l'authentification, l'intégrité des données (non-répudiation,
+Disponibilité, Signature).
+Définition (Condentiality, Secrecy)
+  \item Assurance que l'information donnée ne peut pas être consulté par des tiers non autorisés.
+Encryption Algorithm:
+Définition (algorithme de chiffrement):
+  \item Algorithme qui transforme un texte intelligible dans un texte qui est inintelligible pour les
+parties non autorisées. Il est généralement paramétré avec une clé cryptographique.
+Cryptographie asymétrique à clé:
+  \item Pour encrypter, décrypter, l'algorithme de décryptage.
+  \item Un cryptosystème = enc / dec algorithmes (+ génération de clé).
+Cryptographie à clé symétrique:
+  \item Pour chiffrer, déchiffrer.
+  \item Un ciffer: algorithme de chiffrement à clé symétrique.
+Plaintext \& Ciphertext:
+Définition (Plaintext)
+  \item Entrée d'un algorithme de chiffrement.
+Définition (Cyphertext)
+  \item Sortie d'un algorithme de chiffrement.
+Définition (Cleartext)
+  \item Les informations codées en utilisant un code public.
+Cryptanalysis:
+Définition (cryptanalyse)
+  \item Science qui confirme ou infirme la sécurité d'un système de cryptographie.
+Définition (Casser un système de chiffrement)
+  \item Prouver l'insécurité d'un système de cryptographie.
+- Décryptage (totalement ou partiellement) un texte chiffré donné.
+- Récupérer la clé de la cryptographie.
+- Prouver qu'un système de chiffrement est moins sûr que ce qui est revendiqué.
+Définition (cryptologie)
+  \item Sciences de la cryptographie et la cryptanalyse.
+- 23 -
+8.2 Symmetric-key vs Asymmetric-key Cryptography :
+La cryptographie à clé symétrique:
+  \item Même clé secrète est utilisée pour le chiffrement et le déchiffrement.
+  \item Taille typique de la clé: 128 bits.
+  \item Basé sur des opérations sur les bits ou octets (substitutions, permutations).
+  \item Rapide dans les implémentations logicielles ou matérielles.
+La cryptographie à clé asymétrique:
+  \item Il s'agit d'une clé publique pour crypter et une clé privée pour décrypter.
+  \item Taille typique de la clé: 1024 bits.
+  \item Basé sur des problèmes mathématiques (FACT par exemple, DL)
+  \item Cryptages et décryptages sont lents.
+Comparaison Sym / Asym Cryptographie:
+  \item Speed.
+  \item Key-size.
+  \item La distribution des clés.
+8.3 Authentication :
+Authentification d'entité:
+  \item Asymétrique ou symétrique.
+  \item Exemples: Challenge / Response, Zero-Knowledge.
+Authentification des données:
+  \item Asymétrique (signature) ou symétrique (contrôle d'intégrité).
+  \item Exemples: RSA, MAC.
+      \end{itemize}
+8.4 Cryptographic Hash Functions :
+Idée intuitive:
+$h: \{0,1\} * \to \{0,1\}^n.$
+exemple: MD5, SHA-1.
+Propriétés:
+Définition (First preimage resistance)
+\begin{itemize}
+  \item Compte tenu d'une valeur de hachage y, il est impossible de trouver m tel que h (m) = y.
+      \end{itemize}
+Définition (Second preimage resistance)
+\begin{itemize}
+  \item Étant donné un message m1, il est impossible de trouver un message différent, m2 tel que
+h (m1) = h (m2).
+      \end{itemize}
+Définition (Collision Resistance)
+\begin{itemize}
+  \item Il est impossible à deux messages différents m1 et m2 tels que h (m1) = h (m2).
+      \end{itemize}
+Définition (Random Oracle Property)
+\begin{itemize}
+  \item h (m) est in-distinguable d'une valeur de n bits aléatoires.
+      \end{itemize}
+- 24 -
+Théorème du paradox de l'anniversaire:
+Si nous choisissons $\omega$ N nombres aléatoires, indépendant et uniforme, dans {1,2,3, ..., N}, nous
+obtenons au moins un chiffre deux fois avec une probabilité:
+8.5 Algorithm and Key :
+ES keys = 128 bits, 192 bits ou 256 bits.
+DES keys = 64 bits (56 key bits + 12 salt bits).
+AES block = 128 bits.
+DES block = 64 bits.
+SHA1 (output) = 160 bits.
+MD5 (output) = 128 bits.
+RSA keys = 1024 bits, 2048 bits ou 4096 bits.
+
+
+
+\section{Network Attacks}
+\subsection{Exploits on the web}
+\paragraph{Exploits}
+La plupart des logiciels contiennent des défauts.
+Ces bugs peuvent être exploitées par des pirates.
+Un `exploit' est une méthode ou un script qui permet d'exploiter les bugs.
+Le plus intéressant sont exploits sur les serveurs.
+Ils peuvent se faire à distance et les serveurs ont
+souvent des privilèges plus élevés.
+
+\subsubsection{Directory Traversal}
+Les documents du serveur Web sont accessibles à partir d'une racine. Si le serveur ne vérifie pas l'URL,
+nous pouvons accéder à d'autres fichiers.
+Exemple classique: traversée de répertoire.
+\begin{itemize}
+  \item \verb|../../../../|
+  \item Scripts faibles.
+\end{itemize}
+Pour éviter le Directory Traversal, certaines application web vérifie la chaîne : \verb|..| et \verb|../..| et \verb|/| dans l'URL.
+Cependant, ces applications sont encore vulnérables au encodage ``pour cent'' de l'URL (\verb|?%2e%2e/|
+qui est à \verb|../,?..%2F| qui est de \verb|../..|.),
+mais aussi l'encodage UTF8, etc. La Sécurité de l'application
+dépend du codage autorisé par le serveur web.
+
+\subsubsection{Cross-Site Scripting}
+Le «Cross-site» consiste à insérer un script dans une page Web.
+Souvent, la script lui-même est situé
+sur un autre serveur, c'est du "Cross-site scripting".
+(Exemple : <script src=http://www.evilsite.com/hack.js> )
+Dangers:
+\begin{itemize}
+  \item Réorientation de la session (par exemple, sur une copie du site original).
+  \item Afficher de fausses informations.
+  \item Afficher des formulaires de collecte de données (phishing).
+  \item Vole des cookies.
+\end{itemize}
+
+\subsubsection{Phishing}
+Le but est d'obtenir des informations et identification se faisant passer pour une entité digne de
+confiance.
+Le plus souvent par email, l'adresse ressemble à l'adresse valable.
+Par exemple
+\url{www.mybanck.com} ou
+\url{http://www.mybank.com.example.com}.
+On peut aussi avoir une image avec un lien hypertexte.
+
+\subsubsection{SQL Injection}
+Exploitation d'une faille de sécurité d'une application interagissant avec une base de données, en
+injectant une requête SQL non prévue par le système et pouvant compromettre sa sécurité.
+
+
+\subsection{Denial of Service}
+\subsubsection{Ping of death}
+La taille normale d'un Ping est de 64 octets (84 avec en-tête).
+On envoie des paquets IP qui dépassent la taille légale maximale (65535 octets).
+C'est l'une des premières attaque par déni de service.
+Unix, Linux, Mac, Windows, imprimantes, routeurs et étaient vulnérables ($<1997$).
+Rappel: TCP Handshake :
+L'établissement d'une connexion TCP se fait par un handshaking en trois temps:
+\begin{enumerate}
+  \item Le client envoie un segment $\syn(x)$ au serveur, avec $x$ son sequence number.
+  \item Le serveur lui répond par un segment $\syn+\ack(y,x+1)$, avec $y$ son sequence number.
+  \item Le client confirme par un segment $\ack(x+1,y+1)$.
+\end{enumerate}
+
+\subsubsection{Syn-Flooding}
+On envoit un grand nombre de demandes ouverture de connexion TCP ($\syn$).
+À la réception du paquet $\syn$,
+le serveur alloue de la mémoire nécessaire pour la connexion et l'inscrit dans une file d'attente de
+connexions à moitié ouvertes. Cette situation n'ayant pas été prévu, le serveur ne peut plus accepter
+de nouvelles connexions une fois que les débordements de file d'attente.
+L'attaquant peut forger l'adresse source de ses paquets $\syn$ rester anonyme.
+Les versions récentes des systèmes d'exploitation (Windows, Unix)
+sont protégés contre de telles attaques.
+Protections contre les $\syn$ Flooding :
+\begin{itemize}
+  \item Augmenter la taille de la file d'attente.
+  \item Réduire délai pendant lequel le serveur attend un $\ack$.
+  \item Dropper le plus ancien $\syn$ dans la file d'attente.
+  \item Filtrage, par exemple sur les adresses IP.
+  \item $\syn$-Cache: cache le $\syn$ et envoyer un $\syn$ / $\ack$. Si les $\ack$ arrive, une connexion complète
+    est créée.
+  \item $\syn$-Cookies: Une fois que la file d'attente de connexion est presque rempli, le serveur utilise
+    les cookies $\syn$.
+\end{itemize}
+
+
+\subsubsection{Smurf Attack}
+Le but est de noyer la cible à l'aide d'amplificateurs de circulation.
+Cas typique: ICMP echo-request (ping).
+\begin{itemize}
+  \item Le pirate envoie un paquet de ping avec l'adresse cible
+comme adresse source.
+  \item La machine ``pings'' envoie sa réponse à la cible.
+  \item Si le pirate envoie le paquet à une adresse de diffusion
+    (broadcast) , toutes les machines du réseau répondront à
+    la cible.
+\end{itemize}
+Protection:
+\begin{itemize}
+  \item Configurer les hôtes et les routeurs individuels afin de ne pas répondre aux requêtes ping à
+    une adresse de broadcast.
+  \item Configurer les routeurs afin de ne pas transmettre les paquets dirigés vers des adresses de
+    broadcast.
+\end{itemize}
+
+\subsubsection{DDoS (Distributed Denial of Service)}
+Pour augmenter l'efficacité du déni de service, les pirates vont pirater plusieurs machines et installer
+des agents. Plusieurs machines maîtres contrôlent les agents. Le pirate envoie ensuite des commandes
+aux maîtres qui, vont exécuter l'attaque ordonnée par les agents.
+La puissance (bande passante) de l'attaque est multipliée par les agents.
+Il est plus difficile de retracer les pirates (2 couches intermédiaires).
+Puisque l'attaque provient de plusieurs sources, elle est beaucoup plus difficile à filtrer.
+
+\subsection{Spoofing}
+\subsubsection{IP Spoofing}
+Dans certains cas, l'adresse IP source est utilisé pour autoriser une connexion.
+Les routeurs et les pare-feu peuvent filtrer les paquets en fonction de leur source.
+Certains programmes (rlogin, rsh) peuvent
+autoriser certaines sources à se connecter sans authentification.
+Il est facile d'usurper l'adresse source d'un paquet et d'abuser de la confiance de cette source.
+La réponse à un message forgé est envoyé à l'adresse falsifiée.
+Facile à utiliser avec les protocoles basés sur UDP.
+
+\subsubsection{TCP/IP Spoofing}
+
+\subsubsection{TCP/IP Spoofing Dans un LAN}
+
+\subsubsection{TCP/IP Spoofing De l'extérieur}
+Prédiction de l'ISN (Incremental Sequence Number):
+La norme originale (RFC 793) exige que l'ISN est incrémenté une fois tous les quatre microsecondes.
+Dans certaines implémentations TCP simples le prochain ISN peut être prédit.
+La procédure du Hacker pour prédire l'ISN:
+\begin{itemize}
+  \item Il ouvre quelques liens authentiques (par exemple SMTP) pour obtenir les échantillons
+    d'incrémentation d'ISN actuels.
+  \item Il lance sa connexion forgée en utilisant le dernier ISN plus un incrément obtenu à partir de ces
+    échantillons.
+  \item Il peut lancer plusieurs connexions forgés avec des incréments différents en espérant qu'au
+    moins un d'entre eux est correct.
+\end{itemize}
+
+\subsubsection{ARP Spoofing}
+ARP = Address Resolution Protocol.
+L'ARP est un protocole qui permet de trouver une adresse de la couche 2 (Ethernet) à partir d'une
+adresse de couche 3 (IP). Il Très simple et non sécurisé:
+\begin{itemize}
+  \item Un client demande qui connaît l'adresse Ethernet 10.1.2.3?
+  \item Une personne répond 10.1.2.3 a l'Adresse Ethernet 010203040506.
+\end{itemize}
+Il est facile de forger des réponses (même les non-sollicité) pour rediriger le trafic!
+
+\subsection{Sniffing}
+De nombreux protocoles utilisent l'authentification par texte claire (pas d'encodage).
+Par l'écoute du traffic sur une partie du réseau, nous pouvons obtenir les noms d'utilisateur et mots de
+passe. Un mot de passe permet d'accéder à un ordinateur distant à partir de laquelle nous pouvons
+renifler à nouveau et obtenir des nouveaux mots de passe.
+
+\subsection{Session Hijacking}
+\subsubsection{Modem Session}
+Le modem permet d'accéder à une ligne série (par ex. Accès à distance).
+Un utilisateur peut supprimer la ligne sans quitter la session en ligne, la session du terminal reste alors
+actif pendant un certain temps. L'utilisateur suivant (ou le hacker) qui se connecte au modem peut
+trouver la session de l'utilisateur précédent et l'utiliser.
+
+\subsubsection{TCP Session}
+Si un pirate peut espionner sur une connexion TCP, il peut insérer un paquet TCP avec des numéros de
+séquence corrects.
+L'insertion d'un paquet supplémentaire dans une connexion TCP crée une avalanche de paquets:
+\begin{itemize}
+  \item La source, qui n'a jamais envoyé le paquet, n'est pas d'accord avec le numéro de séquence
+    reconnue et émet un accusé de réception.
+  \item La destination, qui a vu le paquet,
+    insiste sur le numéro de séquence et envoie un accusé de réception.
+\end{itemize}
+
+\subsubsection{HTTP Session}
+Le protocole HTTP n'a pas le concept d'une session.
+Il est fait de requêtes/réponses indépendants.
+Les sites d'e-commerce utilisent des moyens artificiels pour reconnaître les demandes appartenant à
+une session:
+\begin{itemize}
+  \item Cookies.
+  \item URL personnalisé.
+\end{itemize}
+Si le pirate peut espionner ces données, il peut créer des demandes qui feraient partie de la même session.
+
+\section{Spam}
 \subsection{Généralités:}
 \begin{mydef}[Brad Templetons]
   Je définis l'abus e-mail comme un e-mail qui répond aux les trois de critères suivants:
@@ -209,241 +1001,6 @@ Inconvénient:
     L'ordinateur doit effectuer un calcul pour envoyer un e-mail.
 \end{description}
 
-\section{Malwares \& Exploits}
-\subsection{Malwares}
-\paragraph{Définition :}
-\begin{description}
-  \item[Virus] fragment de code qui se propage à l'aide d'autres programmes.
-  \item[Worm] programme indépendant.
-  \item[Cheval de Troie (Trojan)] programme utile qui contient un programme malveillant (ou lui-
-même par extension).
-  \item[Backdoor] accès caché à un ordinateur.
-Le Programme permet d'accéder à distance à un système, sans que l'utilisateur le sache.
-Ils sont installé par les chevaux de Troie et donc souvent classés comme tels.
-  \item[Spyware] programme qui envoie les informations vous concernant à des tiers.
-  \item[Adware] programme qui provoque l'apparition d'annonces sur votre écran ou des
-    changements des résultats de votre recherche (manipule le navigateur)
-  \item[Rootkit] programme qui masque la présence de programmes malveillants sur votre ordinateur.
-    Il modifie votre système d'exploitation afin de cacher l'exécution des programmes,
-    des fichiers ou des configurations.
-\end{description}
-
-\paragraph{La période classique}
-Propagation passive à travers l'échange de disquettes. La propagation est lente et donc le virus à
-besoin d'être efficace.
-\begin{description}
-  \item[Les virus Stealth]$ $
-    \begin{description}
-      \item[Simple] le virus comprime le fichier original, et crée un fichier infecté de la même taille.
-      \item[Complexe] le virus modifie le système de manière à être invisible. Il modifie le fichier routines
-        de lecture afin qu'ils ne révèlent pas le virus.
-    \end{description}
-  \item[Les virus polymorphes]
-    Le virus se modifie après chaque infection de manière à rester indétectable.
-\end{description}
-
-\paragraph{La période moderne}
-Les virus modernes utilisent Internet pour propager activement et peuvent infecter la planète en
-quelques heures. Ils sont souvent, simple et facile à détecter. Cependant, ils sont efficace, car ils se
-propagent beaucoup plus rapidement que le logiciel antivirus ne peut être mis à jour.
-
-\subsection{Exploits on the web}
-\paragraph{Exploits}
-La plupart des logiciels contiennent des défauts.
-Ces bugs peuvent être exploitées par des pirates.
-Un `exploit' est une méthode ou un script qui permet d'exploiter les bugs.
-Le plus intéressant sont exploits sur les serveurs.
-Ils peuvent se faire à distance et les serveurs ont
-souvent des privilèges plus élevés.
-
-\subsubsection{Directory Traversal}
-Les documents du serveur Web sont accessibles à partir d'une racine. Si le serveur ne vérifie pas l'URL,
-nous pouvons accéder à d'autres fichiers.
-Exemple classique: traversée de répertoire.
-\begin{itemize}
-  \item \verb|../../../../|
-  \item Scripts faibles.
-\end{itemize}
-Pour éviter le Directory Traversal, certaines application web vérifie la chaîne : \verb|..| et \verb|../..| et \verb|/| dans l'URL.
-Cependant, ces applications sont encore vulnérables au encodage ``pour cent'' de l'URL (\verb|?%2e%2e/|
-qui est à \verb|../,?..%2F| qui est de \verb|../..|.),
-mais aussi l'encodage UTF8, etc. La Sécurité de l'application
-dépend du codage autorisé par le serveur web.
-
-\subsubsection{Cross-Site Scripting}
-Le «Cross-site» consiste à insérer un script dans une page Web.
-Souvent, la script lui-même est situé
-sur un autre serveur, c'est du "Cross-site scripting".
-(Exemple : <script src=http://www.evilsite.com/hack.js> )
-Dangers:
-\begin{itemize}
-  \item Réorientation de la session (par exemple, sur une copie du site original).
-  \item Afficher de fausses informations.
-  \item Afficher des formulaires de collecte de données (phishing).
-  \item Vole des cookies.
-\end{itemize}
-
-\subsubsection{Phishing}
-Le but est d'obtenir des informations et identification se faisant passer pour une entité digne de
-confiance.
-Le plus souvent par email, l'adresse ressemble à l'adresse valable.
-Par exemple
-\url{www.mybanck.com} ou
-\url{http://www.mybank.com.example.com}.
-On peut aussi avoir une image avec un lien hypertexte.
-
-\subsubsection{SQL Injection}
-Exploitation d'une faille de sécurité d'une application interagissant avec une base de données, en
-injectant une requête SQL non prévue par le système et pouvant compromettre sa sécurité.
-
-\subsection{Buffer Overflows}
-\subsubsection{Exploit: Buffer Overflow}
-Si un programme ne vérifie pas la quantité de données qu'il reçoit, il court le risque d'écraser la zone
-mémoire contenant des variables, des codes ou des adresses de saut.
-Connaissant bien l'architecture de la machine, nous pouvons fournir le code machine qui va être exécuter.
-\subsubsection{Difficultés}
-Les Buffer Overflow ne sont plus un problème de sécurité majeur.
-Les programmes sont maintenant mieux protégés contre le Buffer Overflow et concevoir un Buffer overflows intelligents est complexes.
-En effet, il est difficile de deviner la croissance de la pile et choisir adr et le programme injecté ne peut
-pas avoir un \verb|\0| octet,
-parce que cela marque la fin d'une chaîne de caractères peut empêcher la copie des octets restants.
-
-\section{Network Attacks}
-\subsection{Denial of Service}
-\subsubsection{Ping of death}
-La taille normale d'un Ping est de 64 octets (84 avec en-tête).
-On envoie des paquets IP qui dépassent la taille légale maximale (65535 octets).
-C'est l'une des premières attaque par déni de service.
-Unix, Linux, Mac, Windows, imprimantes, routeurs et étaient vulnérables ($<1997$).
-Rappel: TCP Handshake :
-L'établissement d'une connexion TCP se fait par un handshaking en trois temps:
-\begin{enumerate}
-  \item Le client envoie un segment $\syn(x)$ au serveur, avec $x$ son sequence number.
-  \item Le serveur lui répond par un segment $\syn+\ack(y,x+1)$, avec $y$ son sequence number.
-  \item Le client confirme par un segment $\ack(x+1,y+1)$.
-\end{enumerate}
-
-\subsubsection{Syn-Flooding}
-On envoit un grand nombre de demandes ouverture de connexion TCP ($\syn$).
-À la réception du paquet $\syn$,
-le serveur alloue de la mémoire nécessaire pour la connexion et l'inscrit dans une file d'attente de
-connexions à moitié ouvertes. Cette situation n'ayant pas été prévu, le serveur ne peut plus accepter
-de nouvelles connexions une fois que les débordements de file d'attente.
-L'attaquant peut forger l'adresse source de ses paquets $\syn$ rester anonyme.
-Les versions récentes des systèmes d'exploitation (Windows, Unix)
-sont protégés contre de telles attaques.
-Protections contre les $\syn$ Flooding :
-\begin{itemize}
-  \item Augmenter la taille de la file d'attente.
-  \item Réduire délai pendant lequel le serveur attend un $\ack$.
-  \item Dropper le plus ancien $\syn$ dans la file d'attente.
-  \item Filtrage, par exemple sur les adresses IP.
-  \item $\syn$-Cache: cache le $\syn$ et envoyer un $\syn$ / $\ack$. Si les $\ack$ arrive, une connexion complète
-    est créée.
-  \item $\syn$-Cookies: Une fois que la file d'attente de connexion est presque rempli, le serveur utilise
-    les cookies $\syn$.
-\end{itemize}
-\end{document}
-
-\subsubsection{Smurf Attack}
-Le but est de noyer la cible à l'aide d'amplificateurs de circulation.
-Cas typique: ICMP echo-request (ping).
-\begin{itemize}
-  \item Le pirate envoie un paquet de ping avec l'adresse cible
-comme adresse source.
-  \item La machine ``pings'' envoie sa réponse à la cible.
-  \item Si le pirate envoie le paquet à une adresse de diffusion
-    (broadcast) , toutes les machines du réseau répondront à
-    la cible.
-\end{itemize}
-Protection:
-\begin{itemize}
-  \item Configurer les hôtes et les routeurs individuels afin de ne pas répondre aux requêtes ping à
-    une adresse de broadcast.
-  \item Configurer les routeurs afin de ne pas transmettre les paquets dirigés vers des adresses de
-    broadcast.
-\end{itemize}
-
-\subsubsection{DDoS (Distributed Denial of Service)}
-Pour augmenter l'efficacité du déni de service, les pirates vont pirater plusieurs machines et installer
-des agents. Plusieurs machines maîtres contrôlent les agents. Le pirate envoie ensuite des commandes
-aux maîtres qui, vont exécuter l'attaque ordonnée par les agents.
-La puissance (bande passante) de l'attaque est multipliée par les agents.
-Il est plus difficile de retracer les pirates (2 couches intermédiaires).
-Puisque l'attaque provient de plusieurs sources, elle est beaucoup plus difficile à filtrer.
-
-\subsection{Spoofing}
-\subsubsection{IP Spoofing}
-Dans certains cas, l'adresse IP source est utilisé pour autoriser une connexion.
-Les routeurs et les pare-feu peuvent filtrer les paquets en fonction de leur source.
-Certains programmes (rlogin, rsh) peuvent
-autoriser certaines sources à se connecter sans authentification.
-Il est facile d'usurper l'adresse source d'un paquet et d'abuser de la confiance de cette source.
-La réponse à un message forgé est envoyé à l'adresse falsifiée.
-Facile à utiliser avec les protocoles basés sur UDP.
-
-\subsubsection{TCP/IP Spoofing}
-
-\subsubsection{TCP/IP Spoofing Dans un LAN}
-
-\subsubsection{TCP/IP Spoofing De l'extérieur}
-Prédiction de l'ISN (Incremental Sequence Number):
-La norme originale (RFC 793) exige que l'ISN est incrémenté une fois tous les quatre microsecondes.
-Dans certaines implémentations TCP simples le prochain ISN peut être prédit.
-La procédure du Hacker pour prédire l'ISN:
-\begin{itemize}
-  \item Il ouvre quelques liens authentiques (par exemple SMTP) pour obtenir les échantillons
-    d'incrémentation d'ISN actuels.
-  \item Il lance sa connexion forgée en utilisant le dernier ISN plus un incrément obtenu à partir de ces
-    échantillons.
-  \item Il peut lancer plusieurs connexions forgés avec des incréments différents en espérant qu'au
-    moins un d'entre eux est correct.
-\end{itemize}
-
-\subsubsection{ARP Spoofing}
-ARP = Address Resolution Protocol.
-L'ARP est un protocole qui permet de trouver une adresse de la couche 2 (Ethernet) à partir d'une
-adresse de couche 3 (IP). Il Très simple et non sécurisé:
-\begin{itemize}
-  \item Un client demande qui connaît l'adresse Ethernet 10.1.2.3?
-  \item Une personne répond 10.1.2.3 a l'Adresse Ethernet 010203040506.
-\end{itemize}
-Il est facile de forger des réponses (même les non-sollicité) pour rediriger le trafic!
-
-\subsection{Sniffing}
-De nombreux protocoles utilisent l'authentification par texte claire (pas d'encodage).
-Par l'écoute du traffic sur une partie du réseau, nous pouvons obtenir les noms d'utilisateur et mots de
-passe. Un mot de passe permet d'accéder à un ordinateur distant à partir de laquelle nous pouvons
-renifler à nouveau et obtenir des nouveaux mots de passe.
-
-\subsection{Session Hijacking}
-\subsubsection{Modem Session}
-Le modem permet d'accéder à une ligne série (par ex. Accès à distance).
-Un utilisateur peut supprimer la ligne sans quitter la session en ligne, la session du terminal reste alors
-actif pendant un certain temps. L'utilisateur suivant (ou le hacker) qui se connecte au modem peut
-trouver la session de l'utilisateur précédent et l'utiliser.
-
-\subsubsection{TCP Session}
-Si un pirate peut espionner sur une connexion TCP, il peut insérer un paquet TCP avec des numéros de
-séquence corrects.
-L'insertion d'un paquet supplémentaire dans une connexion TCP crée une avalanche de paquets:
-\begin{itemize}
-  \item La source, qui n'a jamais envoyé le paquet, n'est pas d'accord avec le numéro de séquence
-    reconnue et émet un accusé de réception.
-  \item La destination, qui a vu le paquet,
-    insiste sur le numéro de séquence et envoie un accusé de réception.
-\end{itemize}
-
-\subsubsection{HTTP Session}
-Le protocole HTTP n'a pas le concept d'une session.
-Il est fait de requêtes/réponses indépendants.
-Les sites d'e-commerce utilisent des moyens artificiels pour reconnaître les demandes appartenant à
-une session:
-\begin{itemize}
-  \item Cookies.
-  \item URL personnalisé.
-\end{itemize}
-Si le pirate peut espionner ces données, il peut créer des demandes qui feraient partie de la même session.
 
 \section{Firewall}
 \subsection{Introduction}
@@ -469,7 +1026,7 @@ Logiciel vs Hardware
 \end{itemize}
 
 \subsection{Basic Principles - The sevens Principle}
-\begin{enumerate}
+\begin{itemize}
   \item Least privileges:
     Chaque élément d'un système (utilisateur, logiciel) doit seulement avoir les droits minimaux
     nécessaires pour mener à bien sa tâche.
@@ -605,6 +1162,7 @@ conséquence.
   \item Les logs garder une trace de tentatives d'attaques.
   \item Ils permettent aussi de vérifier que les ports ou les destinations que nous autorisons sont
 vraiment nécessaires (moindre privilège).
+\end{itemize}
 
 \subsection{5.4 Architectures}
 Personal Firewall:
@@ -640,6 +1198,7 @@ Application.
 
 Sandwiched demilitarized zone (DMZ):
 Configuration.
+\begin{itemize}
   \item Machines internes peuvent seulement se connecter aux poxies (un protocole par proxy).
   \item Seules les proxies peuvent se connecter à l'Internet.
   \item Pas de routage dans proxies.
@@ -647,6 +1206,7 @@ Configuration.
   \item Filtrage sortant et le filtrage entrant.
 Applications.
   \item Haute sécurité.
+      \end{itemize}
 5.5 Filtering rules :
 Règles de filtrage:
 Les règles de filtrage sont spécifiées dans une liste.
@@ -657,6 +1217,7 @@ Organisation des règles de filtrage:
 L'ordre dans lequel les règles sont spécifiées est important.
 Quand il ya beaucoup de règles, il est important de les organiser de manière systématique.
 Méthode :
+\begin{itemize}
   \item Nous définissons un niveau de sécurité pour chaque zone.
   \item Nous règles du groupe par zones dans l'ordre de niveau de sécurité décroissant.
   \item Chaque groupe se compose de quatre parties:
@@ -672,12 +1233,14 @@ réfère à des niveaux inférieurs.
   \item Le bloc liée à la dernière zone est vide.
   \item La dernière règle (any-any) ne doit pas être nécessaire. En activant les journaux sur cette règle,
 nous pouvons détecter les erreurs éventuelles.
+\end{itemize}
 - 18 -
 6. Proxies :
 6.1 Proxies' features and benefits :
 Le proxy est un intermédiaire entre le client et le serveur. Il fait office de serveur pour le client et de
 client pour le serveur. Il empêche le réseau interne d'avoir une connexion directe avec Internet.
 Un serveur proxy permet de réaliser :
+\begin{itemize}
   \item Un goulot d'étranglement (chokepoint).
   \item Un accès sur authentification : pour limiter l'accès à Internet à un certain nombre d'utilisateur.
   \item Un système de cache : pour avoir un taux de transfert plus rapide et économiser sa bande
@@ -690,6 +1253,7 @@ et des Smartphones par exemple.
 l'extérieur).
   \item Permet de surfer anonymement au vu du serveur final mais le proxy peut conserver des traces
 du trafic et donc retrouver la source des requêtes.
+\end{itemize}
 6.2 Types of Proxies :
 Transparent Proxy :
 Le serveur proxy transparent ne requière pas de configuration au niveau du navigateur web du client.
@@ -697,11 +1261,14 @@ Il est aussi appelé « intercepting proxy ». Tout le trafic avec le port 80 es
 vers le serveur proxy par le firewall. Il est possible de détecter un proxy transparent par l'adresse IP
 (non NATé) ou encore le header http.
 Avantage :
+\begin{itemize}
   \item Permet de forcer le client à utiliser le serveur proxy.
   \item Pas de configuration chez le client.
   \item Possibilité de faire du load balancing.
 Limitation :
   \item Cela ne fonctionne pas pour tous les serveurs web (ceux n'utilisant pas les ports standards)
+\end{itemize}
+
 FTP Proxy:
 Le protocole FTP établi deux connexions : une pour transmettre les actions à réaliser, une autre pour
 transmettre les documents. Le choix du port source pour le transfert des documents peut se faire du
@@ -720,11 +1287,13 @@ final. La connexion peut être active ou passive.
 SMTP Proxy:
 Il est tout à fait possible de configurer un serveur proxy pour le protocole SMTP car celui-ci est de type
 hop by hop.
+\begin{itemize}
   \item Mail sortant : Le serveur proxy est désigné comme étant le serveur SMTP pour les mails
 sortant.
   \item Mail entrant : Le serveur proxy doit être enregistré dans le serveur DNS comme étant le SMTP
 pour ce domaine. Il doit être également configuré pour transmettre les mails au vrai serveur
 SMTP.
+\end{itemize}
 DNS Proxy:
 Tout comme le proxy SMTP, le proxy DNS transfert les requêtes vers le vrai serveur. Il est possible
 d'implémenter un cache au sein du serveur proxy.
@@ -746,17 +1315,201 @@ ses requêtes mais lorsque le serveur proxy se trouve du côté serveur, le clie
 protocoles qui ne supportent pas le relaye (HTTP, FTP), le proxy ne peut relayer le paquet qu'à un seul
 serveur.
 Un proxy HTTP :
+\begin{itemize}
   \item Permet de filtrer les requêtes vers le server.
   \item Une authentification du client (impossible d'attaquer le serveur avant de s'être authentifié).
   \item Accélérer le serveur : utiliser un cache, déléguer au proxy les fonctions statice (accessibilité de
 documents statices), Workload dispatcher (??).
 Un proxy HTTPS :
   \item Un proxy HTTPS permet de décharger le serveur des calculs souvent gourment d'encryptage et
-de décryptage. C'est donc le proxy qui s'en charge et le liaison proxy serveur se fait en HTTP.
-
+e décryptage. C'est donc le proxy qui s'en charge et le liaison proxy serveur se fait en HTTP.
+\end{itemize}
+
 Les serveurs proxy peuvent utiliser plusieurs protocoles différents pour un même paquet. Ainsi
 un web mail peut recevoir une requête HTTPS et générer une requête IMAP vers le serveur
 mail.
+
+\section{Web security}
+Dans le temps le web avait une architecture client/serveur tel que 
+\begin{itemize}
+	\item Le serveur livrait du contenu statique au client.
+	\item L'intéraction avec le browser était limité. Le serveur
+	était beaucoup plus complexe que le client.
+\end{itemize}
+La sécurité était donc plus focalisé coté serveur. Maintenant, les 
+serveurs peuvent créer du contenu dynamiquement (php,CGI,...) en 
+fonction des arguments qu'ils reçoivent (URL par exemple).\\
+Les browsers sont devenus plus compliqués. 
+\begin{itemize}
+	\item Ils peuvent exécuté du code (Javascript par exemple)
+	\item Ils peuvent agir comme un support multimédia
+	\item Ils peuvent géocaliser l'utilisateur
+	\item ...
+\end{itemize}
+Le web est devenu une plateforme complexe pour le calcul distribué( ex:Firefox sur windows qui
+intéragit avec un serveur Linux)ce qui veut dire que la surface d'attaque est devenu énorme! 
+Dans une application Web, le contenu provient de plein de site différent.
+La page est découpé en frame 
+$\to$ La question est quelle partie peut accéder à quoi?
+%TODO Image of the structure of a website with the different frame
+
+\subsection{Same-origin policy}
+Pour répondre à cette question, les browsers un modèle de sécurité
+appelé \textbf{Same-origin policy}. L'idée est que deux sites différent
+ne devrait pas pouvoir altérer le contenu entre eux.
+\begin{itemize}
+	\item Le browser assigne une origine à toute les ressources de
+	la page (librarie javascript,images,...).
+	\item Le code JS ne peut accéder que les ressources provenant de la 
+	même origine.
+\end{itemize}
+Une origine a la forme : scheme + nom de l'hôte + port. Scheme peut être http,https,ftp,file,\ldots
+Il y a 4 idées principales:
+\begin{itemize}
+	\item Une origine est associé avec une ressource coté client. (Une 
+	origine est l'équivalent moral d'un UID en Unix)
+	\item Chaque frame de la page prend l'origine de son URL. (Une 
+	frame est l'équivalent moral d'un proccess en Unix)
+	\item Les scripts inclus par les frame s'execute avec l'autorité 
+	de l'origin du fichier HTML. Vrai pour pour les scrips ''maison''
+	et ceux de domain externes. (Analogie :Executer le binaire qui est
+	stocké dans le repertoire home de quelqu'un d'autre.
+	\item Le contenu passif n'a aucune autorité puisqu'il ne peut 
+	pas executer de code.
+\end{itemize}
+\subsubsection{Browsers}
+\paragraph{Frame}
+Un object frame est DOM (Document Object Model: description d'un 
+interface indépendante de tout langage de prog. et de la platetform). 
+Pour récupérer l'origine d'un frame:
+\begin{itemize}
+	\item Récupérer l'origine via l'URL de la frame OU
+	\item Récupérer l'origine via le document (document.domain).
+	document.domain est à la base dérivé de l'URL et ensuite peut être changé.
+	Il peut contenir un suffix du domain complet (z.com au lieu de x.y.z.com) 
+\end{itemize}
+$\to$Browser séparent document.domain écrits et ceux non (même si
+ils ont la même valeur. Deux frames peuvent s'accéder mutuellement
+\begin{itemize}
+	\item écrit leurs document.domain à la même valeur OU
+	\item document.domain n'as pas été changé
+\end{itemize}
+\paragraph{DOM}
+Prenne l'origine de la frame environnante
+\paragraph{Cookies}
+Un cookie est composé d'un domain et d'un chemin (ex: *.mit.edu/6.858/).
+Le code JS peut avoir accès à n'importe quel cookie qui correspond à 
+l'origine du code (attention chemin et port d'origine sont ignoré dans
+compaison). 
+\subsubsection{Execption Modèle}
+Ils existent quelques execeptions au modèle:
+\begin{itemize}
+	\item De base, JS peut seulement envoyer des XMLHttpRequest à son 
+	serveurs d'origines sauf un autre serveurs active le 
+	\textbf{Cross-Origin Resource Sharing} (CORS).
+	\item A frame peut charger une image de n'importe quelle origine,
+	determiner la taille mais ne peut pas regarder les pixels dedans.
+	\item Une frame peut chargé un JS de n'importe quelle origine mais
+	elle ne peut pas directement examiner le code source.
+	\item Une frame peut executer un plugin de n'importe quelle origine 
+\end{itemize}
+%TODO CSRF
+\subsubsection{Réseau}
+Une frame peut envoyer une requête HTTP et HTTPS au hôte+port
+qui correspondent à son origine.
+$\to$ La sécurité de la same-origin policy dépend de l'intégrité 
+l'infrastructure DNS! %Example DNS?
+\subsubsection{Pixels}
+Les pixels n'ont pas d'origine, une frame peut dessiner où elle veut
+ses limites. Cela veut dire qu'une frame parent peut cacher le contenu
+d'une frame enfant. Solution:
+\begin{itemize}
+	\item Inclure JS qui empêche la page d'être inclus comme frame.
+	\item Ajouter l'en-tête X-Frame-Options dans la réponse 
+	pour dire au browser de ne place le contenu dans une frame enfant
+\end{itemize}
+\subsection{HTML5}
+HTML 5 apporte une API de partage d'écran. Si l'utilisateur
+donne l'autorisation, un site peut capturer l'entièreté de l'écran visible et 
+se transmettre la capture.
+$\to$ Si un attacker parvient à convaincre un utilisateur à 
+utiliser cette sur un de ses sites, il peut réussir à récupéter les cookies.
+ \subsection{Conclusion}
+ Modèle de sécurité de browser est un peu le foutoir. Il y a beaucoup
+ de subtilité et d'inconsistence. Le réecrire apporterait pas mal de 
+ problème:
+ \begin{itemize}
+	\item Beaucoup d'infrastrucute web préexistante sur lesquelles
+	les gens comptes.
+	\item Moins de features pour plus de sécurité?
+	\item...
+\end{itemize}
+\section{Web Attack and Defense}
+\subsection{Shell Shock code}
+Un serveur Unx map les composants d'une requête HTTP(extra headers ) des variables 
+d'envirionments. \\
+Le probleme est que bash a un bug dans son parsing. Si un string commence
+avec un ensemble de bytes mal formé, bash continue le parsing et execute 
+les commande qu'ils trouvent.
+\subsection{XSS defenses}
+\paragraph{Heuristiques}
+Les browsers modernes utilisent une heuristique pour detecter les
+attaques XSS. 
+\begin{itemize}
+	\item Est-ce que le script qui veut s'executer est inclus dans la 
+	requête qui a amener l' 'enclosing page'' ? Si oui,
+	alors c'est une attaque%an enclosing page?
+	\item Efficace contre les attaques reflechies %Je suis même pas sur que la trad est correct
+\end{itemize}
+\paragraph{Set-Cookie: Httponly}
+Une façon de se défendre est d'utiliser les Httponly cookie. Le serveur
+dit au browser que le JS coté client ne peut avoir accés au cookie.\\
+$\to$ Pas assez puissant car l'attacker peut toujours faire des requêtes
+avec le cookie de l'utilisateur.
+\paragraph{Séparation de Privilièges}
+Utiliser un domain séparé pour le contenu dans lequel on a pas confiance
+(C'est ce Google fait).Si jamais l'attaque est possible, le code tourne dans 
+un autre domaine.\\
+$\to$ Devient un problème si le contenu du domaine séparé pointe vers 
+le domaine principale.
+\paragraph{Désinfection du contenu}
+L'idée est de prendre le contenu dans lequels on a pas confiance et de
+l'encoder de façon à limiter la façon dont il peut être interpréter.\\
+$\to$ Il difficile de parser l'HTML de façon non-ambigüe.\\
+Une autre façon de faire serait d'interdire l'HTML venant de l'extérieur
+et forcer ce contenu extérieur à être écrit dans un plus petit langage.
+(Ce langage sera alors traduit en HTML).
+\paragraph{Content Security Policy}
+Les serveurs web informent les browsers quels types de ressources
+peuvent être chargées et les origines autorisées pour ces ressources.
+\subsection{Stateless Cookies}
+Si la notion de session disparait, il faut un moyen pour authentifier 
+les requêtes. L'idée est d'authentifier les cookie en utililsant la 
+crypto (MAC).\\
+Le client et le serveur se partage un clé qui va être utiliser pour 
+envoyer (coté client) et vérifier les messages (coté serveur).  
+\subsection{Altertnative}
+Ils existent des alternatives aux cookies pour la gestion de session
+\begin{itemize}
+	\item Utiliser le stokage local de HTML5 and implémenter 
+	l'authentification en JS. Cela a l'avantage 
+	de ne pas devoir envoyer le cookie via le network et ce 
+	n'est pas sujet au modèle complexe de same-origin policy.
+	\item Certificat coté client %TODO
+\end{itemize}
+\subsection{Ambiguité des protocols}
+\begin{itemize}
+	\item JS peut demander au browsed d'envoyer une XMLHttpRequest et
+	d'ajouter des en-tête à la requêtes. Le problème c'est que les valeurs 
+	de ces en-tête peut être en conflict avec celle calculé par le browser.
+	(Content-length,Host,...)	
+	\item Le parsing d'une URL peut amené de l'ambiguité: http://example.com:80@foo.com/
+	\begin{itemize}
+		\item Pour Flash l'origine est example.com
+		\item Pour le browser c'est foo.com
+\end{itemize}
+	
+\end{itemize}
 
 \section{IDS}
 Systèmes de détection d'intrusion (IDS)
@@ -768,23 +1521,28 @@ L'analyse peut se faire en temps réel ou en analysant les logs.
 IDS avec caractérisation du trafic (IDS with Traffic Characterization):
 IDS qui réalise des statistiques sur le trafic.
 Si la valeur va au-delà de ses limites habituelles, alors l'IDS suppose qu'il y a une attaque.
+\begin{itemize}
   \item Ce système peut reconnaître de nouvelles attaques.
   \item Il peut aussi ne pas les reconnaître ... (faux négatifs).
   \item Il peut voire attaques où il n'y a pas (faux positifs).
+\end{itemize}
 Le taux élevé auquel il génère des faux positifs rend ce type d'IDS impopulaire.
 IDS basés sur les signatures (Signature-based IDS):
 L'IDS dispose d'une base de données avec les attaques connues.
 Il ne reconnaît pas de nouvelles attaques (doit être constamment mis à jour).
 Les faux négatifs.
+\begin{itemize}
   \item Attaques manuelles peuvent avoir des variations qui ne sont pas détectés.
   \item Les signatures sont pas toujours précis.
 Les faux positifs.
   \item L'IDS, dans la plus part des cas, ne sait pas si une tentative d'attaque a réussi.
   \item L'IDS ne sait pas si la cible de l'attaque est vulnérable (par exemple attaque Linux sur serveur
 Windows).
+\end{itemize}
 Exemple d'IDS basés sur les signatures : Snort
 IDS basé sur l'intégrité de l'host (Integrity-based Host IDS):
 Tripwire est un exemple typique d'un HIDS avec une analyse différée.
+\begin{itemize}
   \item Il crée une signature numérique de tous les fichiers et répertoires qui ne doivent pas être
 modifiés.
   \item Les signatures ne peuvent pas être modifiées par un pirate.
@@ -797,195 +1555,149 @@ Un IPS est un IDS qui réagit à une attaque.
   \item Niveau IP: Filtres l'adresse IP source dans le pare-feu (pour un temps).
   \item Niveau TCP: Envoie un spoofed paquet TCP 'reset' à la destination pour tuer la connexion.
   \item Niveau application: «corrige» une requête Web pour enlever les caractères spéciaux.
-
-\section{Introduction of Cryptography}
-\subsection{Vocabulary}
-Cryptographie :
-Définition (cryptographie):
-  \item Origine: Science qui permet condentiality de communication à travers des canaux non
-sécurisés.
-  \item Aujourd'hui: Condentiality, l'authentification, l'intégrité des données (non-répudiation,
-Disponibilité, Signature).
-Définition (Condentiality, Secrecy)
-  \item Assurance que l'information donnée ne peut pas être consulté par des tiers non autorisés.
-Encryption Algorithm:
-Définition (algorithme de chiffrement):
-  \item Algorithme qui transforme un texte intelligible dans un texte qui est inintelligible pour les
-parties non autorisées. Il est généralement paramétré avec une clé cryptographique.
-Cryptographie asymétrique à clé:
-  \item Pour encrypter, décrypter, l'algorithme de décryptage.
-  \item Un cryptosystème = enc / dec algorithmes (+ génération de clé).
-Cryptographie à clé symétrique:
-  \item Pour chiffrer, déchiffrer.
-  \item Un ciffer: algorithme de chiffrement à clé symétrique.
-Plaintext & Ciphertext:
-Définition (Plaintext)
-  \item Entrée d'un algorithme de chiffrement.
-Définition (Cyphertext)
-  \item Sortie d'un algorithme de chiffrement.
-Définition (Cleartext)
-  \item Les informations codées en utilisant un code public.
-Cryptanalysis:
-Définition (cryptanalyse)
-  \item Science qui confirme ou infirme la sécurité d'un système de cryptographie.
-Définition (Casser un système de chiffrement)
-  \item Prouver l'insécurité d'un système de cryptographie.
-- Décryptage (totalement ou partiellement) un texte chiffré donné.
-- Récupérer la clé de la cryptographie.
-- Prouver qu'un système de chiffrement est moins sûr que ce qui est revendiqué.
-Définition (cryptologie)
-  \item Sciences de la cryptographie et la cryptanalyse.
-- 23 -
-8.2 Symmetric-key vs Asymmetric-key Cryptography :
-La cryptographie à clé symétrique:
-  \item Même clé secrète est utilisée pour le chiffrement et le déchiffrement.
-  \item Taille typique de la clé: 128 bits.
-  \item Basé sur des opérations sur les bits ou octets (substitutions, permutations).
-  \item Rapide dans les implémentations logicielles ou matérielles.
-La cryptographie à clé asymétrique:
-  \item Il s'agit d'une clé publique pour crypter et une clé privée pour décrypter.
-  \item Taille typique de la clé: 1024 bits.
-  \item Basé sur des problèmes mathématiques (FACT par exemple, DL)
-  \item Cryptages et décryptages sont lents.
-Comparaison Sym / Asym Cryptographie:
-  \item Speed.
-  \item Key-size.
-  \item La distribution des clés.
-8.3 Authentication :
-Authentification d'entité:
-  \item Asymétrique ou symétrique.
-  \item Exemples: Challenge / Response, Zero-Knowledge.
-Authentification des données:
-  \item Asymétrique (signature) ou symétrique (contrôle d'intégrité).
-  \item Exemples: RSA, MAC.
-8.4 Cryptographic Hash Functions :
-Idée intuitive:
-h: {0,1} * -> {0,1} ^ n.
-exemple: MD5, SHA-1.
-Propriétés:
-Définition (First preimage resistance)
-  \item Compte tenu d'une valeur de hachage y, il est impossible de trouver m tel que h (m) = y.
-Définition (Second preimage resistance)
-  \item Étant donné un message m1, il est impossible de trouver un message différent, m2 tel que
-h (m1) = h (m2).
-Définition (Collision Resistance)
-  \item Il est impossible à deux messages différents m1 et m2 tels que h (m1) = h (m2).
-Définition (Random Oracle Property)
-  \item h (m) est in-distinguable d'une valeur de n bits aléatoires.
-- 24 -
-Théorème du paradox de l'anniversaire:
-Si nous choisissons θ N nombres aléatoires, indépendant et uniforme, dans {1,2,3, ..., N}, nous
-obtenons au moins un chiffre deux fois avec une probabilité:
-8.5 Algorithm and Key :
-
-
-
-
-
-
-
-AES keys = 128 bits, 192 bits ou 256 bits.
-DES keys = 64 bits (56 key bits + 12 salt bits).
-AES block = 128 bits.
-DES block = 64 bits.
-SHA1 (output) = 160 bits.
-MD5 (output) = 128 bits.
-RSA keys = 1024 bits, 2048 bits ou 4096 bits.
+\end{itemize}
 
 \section{Certificates}
-9.1 Basics :
-Bases:
+\subsection{Bases}
 L'objectif d'un certificat est de relier une clé publique avec son propriétaire.
-Le couple (clé publique, propriétaire) est signé par un tiers de confiance appelé autorité de
-certification (CA). Pour vérifier la signature, la clé publique de le CA est nécessaire.
-Le couple (clé publique du CA, CA) est auto-signé: certificat racine. L'authenticité du certificat racine
-est fondamentale.
-Certificats X.509:
-Norme de l'Union internationale des télécommunications (UIT), sorti en 1988. Aussi IETF RFC-2459
-(mis à jour).
+\begin{itemize}
+	\item Le couple (clé publique, propriétaire) est signé par un tiers de 
+	confiance appelé autorité de certification (CA). Pour vérifier la signature
+	, la clé publique de le CA est nécessaire.
+	\item Le couple (clé publique du CA, CA) est auto-signé: certificat 
+	racine. L'authenticité du certificat racine est fondamentale.
+\end{itemize}
 Trois champs obligatoires.
-  \item TBS certificat (TBS = " To Be Signed "): La charge utile du certificat (voir ci dessous).
-  \item CA algorithme de signature: identificateur de l'algorithme cryptographique utilisé par l'AC pour
-signer le certificat.
+\begin{itemize}
+  \item TBS certificat (TBS = " To Be Signed "): La charge utile du certificat, elle contient
+  	\begin{itemize}
+		\item Numéro de série: Numéro unique attribué par le CA à la certificat.
+  		\item Domaine de la société: Identifies l'entité qui a signé et délivré le certificat.
+ 		\item Sujet: Identifies l'entité associée à la clé publique 
+ 		(O: organisation, C: pays, OU: Unité d'oranisation, CN: nom commun 
+ 		par exemple DNS, ST:  Etat, L: ville, etc Aucune adresse IP).
+ 		\item Validité: Pas avant, pas après.
+		\item Subject Public Key Info: La clé publique et identification de 
+		l'algorithme avec lequel la clé est utilisée.
+	\end{itemize}
+  \item CA algorithme de signature: identificateur de l'algorithme 
+  cryptographique utilisé par l'AC pour signer le certificat.
   \item Valeur de signature CA: Signature du certificat par le CA.
-X.509: TBS certificat:
-  \item Numéro de série: Numéro unique attribué par le CA à la certificat.
-  \item Domaine de la société: Identifies l'entité qui a signé et délivré le certificat.
-  \item Sujet: Identifies l'entité associée à la clé publique (O: organisation, C: pays, OU: Unité
-
-
-d'organisation, CN: nom commun par exemple DNS, ST:. Etat, L: ville, etc Aucune adresse IP).
-Validité: Pas avant, pas après.
-Subject Public Key Info: La clé publique et identification de l'algorithme avec lequel la clé est
-utilisée.
-9.2 Obtaining and verifying a Certificate :
-Comment obtenir un certificat
-1.
- Le demandeur doit se présenter à la CA.
-2.
- Le CA (physiquement) authentifie le demandeur.
-3.
- Le CA demande au participant de générer des clés publiques / privées.
-4.
- Le CA crée un certificat avec l'identité du demandeur, la clé publique, la date d'expiration, etc,
-et la signature du CA.
-5. Le CA fournit une copie de sa clé publique à la requérante.
-6. Le demandeur peut propager son certificat.
-Autorité d'enregistrement
-  \item Le CA peut déléguer l'enregistrement d'un candidat à l'autorité d'enregistrement (RA).
-  \item La RA n'a pas la clé privée de CA.
-  \item Le CA approuve le RA pour authentifier les demandeurs.
-  \item Après avoir authentifié le requérant, la RA permet au demandeur de générer une paire de clés
-
-et envoie la clé publique de la CA pour créer le certificat.
-Techniquement, le RA envoie un Certificate Signing Request signé (RSE) à l'AC.
-
-Vérification d'un certificat
+\end{itemize}
+\subsection{Obtenir et vérifier un certificat}
+ Le couple (clé publique du CA, CA) est auto-signécertificat racine. L'authenticité 
+ du certificat racine est fondamentale.
+\begin{enumerate}
+	\item Le postulant s'enregistre avec un CA.
+	\item Le CA (physiquement) authentifie le demandeur.
+	\item Le CA demande au participant de générer des clés publiques / privées.
+	\item Le CA crée un certificat avec l'identité du demandeur, la clé 
+	publique, la date d'expiration, etc,et la signature du CA.
+	\item Le CA fournit une copie de sa clé publique à la postulant.
+	\item Le demandeur peut propager son certificat.
+\end{enumerate}
+Un CA peut décider déléguer l'enregistrement d'un postulant à une 
+autorité d'enregistrement (RA). Le RA remplit juste un requête de 
+signature de certificat (CSR) pour que le CA remplit le certificat.
+\paragraph{Vérification d'un certificat}
 \begin{itemize}
   \item Vérifiez le chemin de certification.
   \item Vérifiez la période de validité.
   \item Vérifiez que le certificat n'est pas révoqué.
 \end{itemize}
+
+\paragraph{Note:} Même si un certificat compromis est revoqué et
+remplacé par un nouveau, un site sécurisé peut toujours être 
+vulnérable.
+\subsection{SSL/TLS}
+SSL inventé à la base pour offrir un protection de la communication en
+se focalisant sur la couche transport. %TODO ajouter image couche 
+Plusieurs version de SSL existent, le version est celle qui a amené à TLS.
+Par défaut, les protocols comme SMTP ou HTTP envoie les mots de passes
+en texte clair. TLS permet de palier à se problème en étendant ces protocoles
+\subsection{TLS protocole}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.5]{img/tls_layer.png}
+\end{figure}
+TLS comprend 4 protocoles et deux couches:
+\begin{description}
+	\item[TLS Record Layer] Couche la plus basse, elle applique aux 
+	données les protocoles cryptographiques négociés. Elle se charge 
+	de la compression/fragmentation des données. Transmet les données
+	à la couche TCP.
+	\item[Couche plus haute] comporte 4 protocoles
+	\begin{itemize}
+		\item \textbf{Handshake Protocol} : Il est utilisé pour authentifier les deux
+		entités et négocier les algorithmes de chiffrement et 
+		d'authentification.
+		\item \textbf{Application Protocol} : transmet les données entre l'
+		application et la couche basse de TLS.
+		\item \textbf{Alert Protocol} : est utilisé pour informer 
+		l'application sur l'état de la connexion. (ex: Certificat invalide)
+		\item \textbf{Change Cipher Protocol}: informe l'application qu'un 
+		ensemble de protocoles cryptogaphiques précédemment négocié 
+		va être utilisé.
+	\end{itemize}
+\end{description}
+\subsection{TLS Record Layer}
+\paragraph{MAC Computation}
+$$MAC = Hash(MAC\_key || Pad2 || Hash ( MAC\_Key || Pad1 || Seq || Length
+	|| Content))$$ Où :
+\begin{itemize}
+	\item MAC\_key : clé secrète partagée par les 2 entitées
+	\item Pad1,Pad2 : constantes prédéfinies
+	\item Seq: n° de séquence de message
+	\item Length: Longueur en byte du record compressé
+	\item Content : record compressé
+\end{itemize}
+\paragraph{Encryption}
+Utilisation d'un chiffrement en bloc (DES,AES,...) ou en Stream (NULL,RC4)
+Attention si le serveur propose un d'utiliser RC4 avec une clé de 40-bits $\to$ REFUSE.
+\subsection{Handshake}
+Les messages lors de l'handshake ne sont pas cryptés, les entitées négocient:
+\begin{itemize}
+	\item La version du protocole (SSL 3.0,TLS 1.0,1.1)
+	\item Algo pour:
+	\begin{itemize}
+		\item Échanger les clés
+		\item Encrypter
+		\item MAC
+	\end{itemize}
+\end{itemize}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.5]{img/handshake.png}
+\end{figure}
+
 \section{Passwords}
-\subsection{Basics \& Vulnerabilities}
-Basics:
-Les mots de passe ne sont jamais enregistrés en « clear », le risque de les récupérer par un hacker est
-trop grand. Ils sont alors stockés sous la forme d'un hash. Le hash d'un mot de passe est irréversible.
-Pour vérifier une authentification, il suffit de comparer le hash du login et le hash stocké sur le serveur.
-h: fonction de hash
-Avec un h(x) = y, il est impossible de retrouver x seulement avec y
-Vulnerabilities1.2.3.4.5.6.7.8.9.:
-Noter son mot de passe :
-Cacher un post-it avec ses mots de passe en dessous du clavier, à côté du bureau, etc. Les gens
-ont plus tendance à noter leur mot de passe lorsqu'ils sont obligés de le renouveler
-régulièrement.
-Les regards indiscrets :
-Un regard par-dessus une épaule, une mini caméra bien placée. Les mots de passe n'ayant pas
-de signification sont plus vulnérables à ce type d'attaque (pourquoi ?)
-Arnaque (social engineering) :
-Envoyer de faux mail demandant à l'utilisateur de renvoyer son mot de passe pour le valider
-dans la base de données (plus de 1/3 des gens réponde).
-Key logger, Rootkit :
-Software ou Hardware qui enregistre toutes les touches du clavier de la victime. Pour contrer
-cette attaque, on peut utiliser un clavier virtuel ou encore brouiller le mot de passe en
-changeant la position du curseur lors de l'écriture du mot de passe.
-Sniffer un réseau :
-Certain protocole (POP, FTP, Telnet) ne chiffre pas les mots de passe qu'ils envoient, ils sont
-donc visible si on analyse les paquets échangés sur le réseau.
-Utiliser plusieurs fois un mot de passe :
-Ne jamais utiliser le même mot de passe entre deux environnements (Windows, Linux). Ne
-jamais utiliser un mot de passe reçu par mail. Utiliser différent niveau de sécurité.
-Les traces :
-Faire attention au gestionnaire de mot de passe (qui les enregistre) sur les ordinateurs public.
-Faire attention au champ qui s'auto-remplit après avoir valider un formulaire où par erreur on
-a entré son mot de passe dans le login.
-Les attaques par essais :
-Cette attaque consiste à faire un grand nombre d'essayes avec des mots de passe différent. On
-distingue deux types d'attaque, les online attack et les offline attack (détaillé plus loin).
+\subsection{Stockage}
+Les mot de passe ne doivent jamais être stocké en clair.
+\begin{itemize}
+	\item Á la place de stocker le password, stocké une valeur de hashage.
+	Il faut pour cela que la valeur de hashage soit irreversible.
+	\item Pour le login, hashé le mot de passe et ensuite comparer avec
+	la valeur stocké.
+\end{itemize}
+\subsection{Vulnerabilités}
+Quelques vulnérabilités :
+\begin{itemize}
+	\item Noter un mot de passe:
+	\item Les regards indiscrets
+	\item Ingénierie sociale (ex: envoyer un mail qui demande la
+	confirmation d'un mot de passe en envoyant le mot de passe)
+	\item Key Loggers
+	\item Écoute du réseau
+	\item Multi-Website Password 
+	\item Les traces (ex: gestionnaire de mot de passe (qui les enregistre)
+	sur les ordinateurs public.
+	\item Attaques par essaie erreurs 
+\end{itemize}
 
 \subsection{Online attack}
 Les online attack consistent à tester des mots de passe successivement à travers l'interface (web par
-exemple) qui sépare le pirate et le serveur. Le serveur va alors indiquer au pirate si le mot de passe est
+exemple) qui sépare le pirate et le serveur.\\
+Le serveur va alors indiquer au pirate si le mot de passe est
 bon ou non et dans ce cas, essayer un autre (le serveur fonctionne comme une black box, une oracle).
 Ce système est lent, mais ne nécessite pas de connaitre la fonction de hash.
 Pour contrer ce genre d'attaque :
@@ -1005,22 +1717,20 @@ connexion.
 des humains. Il suffit donc de demander au client une réflexion simple pour un humain mais
 compliqué pour un ordinateur.
 \end{itemize}
-
 \subsection{Offline attack}
-Principe:
 Les offline attack consiste à voler le fichier qui contient tous les hash, trouver la fonction de hash et
 ensuite faire une attaque par dictionnaire, brute force, etc. En connaissant la fonction de hash, le
 pirate peut comparer des mots de passe hashé au fichier récupérer sur le serveur.
-Les attaques par dictionnaire :
+\subsection{Attaques par dictionnaire}
 Beaucoup de gens utilise des mots de passe issus du dictionnaire (plus simple à retenir) mais celui-ci
 est fini (entre 150000 mots et 200000 mots) et est réduit donc considérément les possibilités. Un
 dictionnaire déjà hashé peut accélérer l'attaque. Un ordinateur peut calculer entre 200 000 hash et 10
 000 000 hash par second en fonction de la fonction de hash.
-Brute-force :
+\subsection{Brute-force}
 Les attaques par brute-force consiste à essayer un grand nombre de possibilité même si celle-ci n'ont
 pas obligatoirement un sens (« aaa » puis « bbb » puis « abb », etc). Cette attaque permet de trouver
 les mots de passe abstrait sans signification qui ne se trouve pas dans un dictionnaire.
-Heuristique attaque :
+\paragraph{Heuristique d'attaque}
 On peut combiner l'attaque par dictionnaire et l'attaque par brute force en appliquant certaines règles
 souvent utilisé par les gens :
 \begin{itemize}
@@ -1030,59 +1740,102 @@ souvent utilisé par les gens :
   \item Dupliquer un mot (FredFred).
   \item Réfléchir un mot (Fredderf).
   \item Décaler les lettres vers la gauche ou la droite (Redf/Dfre).
-  \item Remplacer certain caractère par des similaires (Fr€d).
+  \item Remplacer certain caractère par des similaires (Fred).
   \item Ajouter X caractère au début ou à la fin du mot (aaaFred).
 \end{itemize}
-
-\subsection{Unix/Windows case}
+\subsection{Faiblesse}
+Les mots de passes considéré comme faibles sont ceux:
+\begin{itemize}
+	\item basé sur des mots communs du dictionnaire
+	\item basé sur des noms communs
+	\item qui ont moins de sept caractères
+	\item basé sur les pattern du clavier (''qwerty''...)
+	\item composé d'un seul type de symbole 
+\end{itemize}
+\subsection{Authentification Unix}
 La fonction de hash peut être basé sur le DES, MD5, Blowfish, SHA256, SHA512.
-Unix (DES):
-pw : le mot de passe (56 bits).
-salt : un block généré aléatoirement (12bits)
-zero : un block comprenant uniquement des zéros (64 bits).
-DES(plaintext, key) : un block de 64 bits crypté.
- hash(pw) = 25 x DES(zero, pw+salt)
+\subsubsection{Unix (DES)}
+Le méchanisme consiste à générer la hash d'un mot de passe en chiffrant
+25 fois avec une variante de l'algorithme DES une chaîne de caractère null 
+(64bit valant 0).\\
+La clé de chiffrement est le mot de passe à hacher. On
+ne prend que le 8 premiers charactère du mots de passe et on 
+extrait les 7bits de poids faible de chaque caractères $\to$ clé de
+56 bits pour le DES.\\
+L'algo utilise en plus un paramètre de 12 bits appelé \textbf{salt} 
+(générer aléatoirement à la création du mit de passe).
+Il permet que deux utilisateurs ayant le même mots de passe n'est
+pas le même valeur de hash.
+\begin{figure}
+	\centering
+	\includegraphics[scale = 0.5]{img/auth_unix_des.png}
+\end{figure}
+
 Le hash est stocké dans le fichier /etc/shadow sous la forme :
-LOGIN:SALT(2 char)HASH(11 char):etc
-Exemple: Smith:3Yr83xxCi/Ki2:12801:0:99999:7:-1::
-Unix (MD5):
-pw : le mot de passe (? bits).
-salt : un block généré aléatoirement (48 bits).
-MD5(plaintext) : un block que de 128 bits crypté.
- hash(pw) = MD5(pw+salt)
-Le hash est stocké dans le fichier /etc/shadow sous la forme :
-LOGIN:$ALGO$SALT(8 char)$HASH(22 char):etc
-Exemple: Smith:$1$3YziHbd2$r83xxCi/Ki2uzGbd40sPzm:12801:0:99999
-Avant, les hash était stocké dans le fichier etc/passwd avec un accès en lecture seul. Maintenant pour
-plus de sécurité, ils sont stockés dans etc/shadow et ne peuvent être lu que par un administrateur (il
-est quand même possible de le récupérer en bootant sur un autre OS avec un CD ou une clé USB).
-Win 9x (LM Hash):
-Windows utilise le Lan Manager Hash pour hasher ses mots de passe. Le mot de passe est d'abord
-converti en majuscule puis divisé en deux blocks de 7 caractères. Les 7 bytes sont utilisé comme clé
-pour crypter une constante avec l'algorithme DES. Le LM Hash n'utilise pas de salt.
-- 30 -
-Les mots de passe LM alpha numérique sont déchiffrable en quelque secondes (99.9%).
-Les mots de passe LM alpha numérique avec 15 caractères spécieux sont déchiffrable en quelque
-minute (96%).
-Win NT/2000/XP/Vista/Seven (NT LM Hash):
-Ces versions de Windows utilisent le NT Lan Manager Hash (NT Hash). Cette fois, le mot de passe n'est
-pas séparé en deux, peut-être plus grand que 14 caractères et n'est pas converti en majuscule. Il
-n'utilise toujours pas de salt.
-Par défaut, LM Hash et NT Hash sont tous les deux conservés sur la machine (jusqu'à Windows XP
-compris). Il est donc possible de récupérer le mot de passe NT Hash en récupérant le mot de passe LM
-Hash. Il est possible de désactivé le LM Hash (désactivé par défaut à partir de Vista), dans le registre ou
-en choisissant un mot de passe de plus de 14 caractères.
-En dessous de W2K, XP et 2003, NT Hash et LN Hash sont stockés dans le Sécurity Account Manager ou
-dans le Active Directory (ntds.dit). Le fichier est crypté mais par défaut la clé est récupérable et le
-fichier de hash également avec les droits administrateur et un exploit ou en bootant sur un autre OS.
-10.5 Conclusion :
-Un mot de passe doit contenir au moins un élément de chaque point :
-- Digit (0..9)
-- Letter (a..Z)
-- Ponctuation (?!)
-- Caractère de contrôle (Ctrl+s, ^s)
-- Un caractère spécial dans les 7 premiers caractère (pourquoi 7 ?)
-Basé sur une phrase connue (en prenant la première lettre de chaque mot).
+$$username:passwd:last:may:must warn:expire:disable:reserved$$
+Où :
+\begin{itemize}
+	\item passwd est le salt la valeur de hash
+	\item last/may/must/... sont de champs qui contients
+	des infos temporelle sur le mot de passe, tel que 
+	le nombre de jours avant qu'il puisse (may) ou doit (must) être modifié.
+\end{itemize}
+\subsubsection{Unix(MD5)}
+Le DES devenu obsolète, une alternative est MD5. Comparé un DES qui est
+un algorithme de chiffrement, MD5 est un fonction de hachage.\\
+MD5 permet l'utilisation des mot de passes plus longs et les charactères
+ne sont plus limités à 7 bits.\\
+Le salt n'est plus sur 12 bits mais 48 bits (8 caractère encodé en 
+Base64).\\
+La valeur de hash est sur 128 bits.
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale = 0.5]{img/auth_unix_md5.png}
+\end{figure}
+Dans le fichier /etc/shadow, le champs passwd commence avec \$1\$ pour
+indiquer l'utilisation de MD5.Le salt est ensuite concaténé et se termine 
+par \$. Ensuite viens la valeur de hash.
+\subsection{Authentification Windows}
+\subsubsection{Win9x}
+Windows utilise le Lan Manager Hash pour hasher ses mots de passe.
+Le mot de passe est d'abord converti en majuscule puis divisé en deux 
+blocks de 7 caractères après l'avoir complétés avec le char vide pour qu'il 
+atteingne 14 caractères \\
+Chaque bloc de 7 bytes est utilisé comme clé pour crypter une constante
+avec l'algorithme DES (pas d'utilisation de salt). Il y a donc 2 valeur 
+de hash de 64bits qui sont ensuite concaténé.
+%%TODO faire un belle image
+\subsubsection{Win NT/2000/XP/Vista/Seven}
+Ces versions de Windows utilisent le NT Lan Manager Hash (NT Hash) qui 
+utilise MD4.\\
+Cette fois, le mot de passe n'est pas:
+\begin{itemize}
+	\item pas séparé en deux 
+	\item peut-être plus grand que 14 caractères
+	\item et n'est pas converti en majuscule.
+\end{itemize}
+\subsubsection{Stockage des mots de passe }
+Par défaut, LM Hash et NT Hash sont tous les deux conservés sur la 
+machine (jusqu'à Windows XP compris). Il est donc possible de récupérer 
+le mot de passe NT Hash en récupérant le mot de passe LM
+Hash. \\
+Il est possible de désactivé le LM Hash (désactivé par défaut à partir de
+Vista), dans le registre ou en choisissant un mot de passe de plus de 14 
+caractères.
+En dessous de W2K, XP et 2003, NT Hash et LN Hash sont stockés dans le 
+Security Account Manager ou dans le Active Directory (ntds.dit).\\
+Le fichier est crypté mais par défaut la clé est récupérable et le
+fichier de hash également avec les droits administrateur et un exploit 
+ou en bootant sur un autre OS.
+\subsection{Bonnes pratiques}
+Un mot de passe doit contenir au moins un élément de chaque point 
+\begin{itemize}
+	\item Digit (0..9)
+	\item Letter (a..Z)
+	\item Ponctuation (?!)
+	\item Caractère de controle (Ctrl+s, $^s$)
+	\item Un caractère spécial dans les 7 premiers caractère (pourquoi 7 ?)
+\end{itemize}
 Ne pas recyclé de mot de passe ou noter ses mots de passe.
 Utiliser des niveaux de sécurité.
 Modifier son mot de passe immédiatement si on pense avoir été victime d'une attaque.
@@ -1102,16 +1855,16 @@ Exaustive search :
 \subsection{Hellman Tables}
 Les table de Hellman est un principe de pré-calcul qui améliore considérablement la vitesse d'une
 attaque en temps réelle. (la page wikipédia des rainbow table est assez bien faites pour comprendre le
-principe donc n'hésitez pas : http://fr.wikipedia.org/wiki/Table_arc-en-ciel)
+principe donc n'hésitez pas : http://fr.wikipedia.org/wiki/Table\_arc-en-ciel)
 Soit,
-h: A B La fonction de hashage de notre mot de passe.
-r: B  A Une fonction (arbitraire, rapide, surjective, déterministe) de réduction qui permet de
+h: A $\to$B La fonction de hashage de notre mot de passe.
+r: B $\to$ A Une fonction (arbitraire, rapide, surjective, déterministe) de réduction qui permet de
 revenir à l'ensemble (A) de départ de notre fonction de hashage.
 Un nombre M de chaine est généré avec comme une valeur arbitraire de départ dans A :
-Start1 = A1,1─h B1,1 ─r A1,2 ─ h  B1,2─ r... ─rA1,t-1─ h B1,t-1─r A1,t = End1
-Start2 = A2,1─h B2,1─r  A2,2─ h B2,2─r... ─rA2,t-1─ h B2,t-1─r A2,t = End2
+%Start1 = A1,1─h B1,1 ─r A1,2 ─ h  B1,2─ r... ─rA1,t-1─ h B1,t-1─r A1,t = End1
+%Start2 = A2,1─h B2,1─r  A2,2─ h B2,2─r... ─rA2,t-1─ h B2,t-1─r A2,t = End2
 ...
-Startm = Am,1─h Bm,1─ r Am,2─ h Bm,2─ r ... ─ r Am,t-1─ h Bm,t-1─ rAm,t = Endm
+%Startm = Am,1─h Bm,1─ r Am,2─ h Bm,2─ r ... ─ r Am,t-1─ h Bm,t-1─ rAm,t = Endm
 Toutes les chaines doivent couvrir au final l'ensemble A. À la fin du pré-calcule d'une chaine,
 on ne garde que la première valeur et la dernière valeur de la chaine. Les valeurs intermédiaire son
 retrouvable avec la fonction de hashage et de réduction.
@@ -1135,11 +1888,6 @@ passe inconnu P. S'il y a égalité, alors le mot de passe courant correspond à
 a réussi ; plus précisément, on a trouvé un mot de passe dont l'empreinte est la même que celle de P,
 ce qui est suffisant.
 Exemple :
-
-
-
-
-
 À partir d'une empreinte ("re3xes"), on calcule la dernière réduction utilisée dans la table et on
 regarde si le mot de passe apparaît dans la dernière colonne de la table (étape 1)
 Si le test échoue ("rambo" n'apparaît pas dans la table), on passe au point 2 où l'on calcule une
@@ -1155,7 +1903,7 @@ recherchée. Le test est concluant, on trouve ici l'empreinte "re3xes" dans la c
 passe courant ("culture") est celui qui a engendré la chaîne : l'attaque a réussi.
 Pour les tables de Hellman, c'est le même principe que les table de Hellman à l'exception qu'il n'y a
 pas une seul fonction de réduction mais plusieurs selon la position dans les colonnes.
-Source : http://fr.wikipedia.org/wiki/Rainbow_table
+Source : http://fr.wikipedia.org/wiki/Rainbow\_table
 Les faux positifs (false alarm) :
 Étant donné un hash C compris dans l'ensemble B, tell que Y1 = r(C), alors il est possible que la chaine
 que nous reconstruisons lors de la recherche, converge sur la même valeur final Ej / Ys d'une chaine de
@@ -1244,7 +1992,7 @@ la sienne pour pouvoir se connecter au réseau. 3 lignes de commande en Unix :
 ifconfig INTERFACE down
 - 36 -
 -
-ifconfig INTERFACE hw ether NEW_MAC_ADR
+ifconfig INTERFACE hw ether NEW\_MAC\_ADR
 ifconfig INTERFACE up
 Authentification cryptée
 WEP ou WPA. C'est ce qui nous intéresse vraiment.
@@ -1284,7 +2032,7 @@ On entre un message m. Celui-ci est coupé en byte mi et encodé via un xor avec
 Le keystream est généré par RC4.
 RC4 est un stream cipher orienté byte. Il est donc très efficient en software (10x plus rapide que DES)
 et a l'avantage d'être simple. Il se passe en deux phases : l'initialisation et la génération de clé.
-Initialisation & scrambling
+Initialisation \& scrambling
 RC4 comporte un registre principal: le registre d'état (N=256 bytes). Il est noté S dans la suite
 La clé et le vecteur d'initialisation servent à initialiser un second registre le registre K.
 Dans un premier temps, le tableau S est rempli des 0->N-1.
@@ -1297,7 +2045,7 @@ l'authentification cryptée.
 Je crois que l'image en dit suffisamment long. C'est comme d'habitude un challenge/réponse.
 12.2 Attaque contre le WEP :
 1ere attaque : Exhaustive search
-WEP: 40bits de clé + 24 bits de IV = 64 bits  264 bits c'est encore faisable avec un gros gros pc.
+WEP: 40bits de clé + 24 bits de IV = 64 bits  264 bits c'est encore faisable avec un gros gros pc.
 Il existe des versions de WEP avec 104 bits de clé +24 bit d'IV. Là c'est plus possible.
 2eme attaque : CRC property
 CRC a une sale propriété : CRC est linéaire par rapport au XOR c.-à-d. que
@@ -1316,7 +2064,7 @@ paradox).
 Si on connait un message qui a été encrypté avec un certain IV, on peut retrouver un autre message
 encrypté avec un même IV.
 C= K xor M
-C'=K xor M'  M' = C' xor C xor M
+C'=K xor M'  M' = C' xor C xor M
 A nouveau pas besoin de la clé.
 on peut facilement connaitre un message M( entête de paquets connus, etc)
 4eme attaque : Cryptanalyse
@@ -1378,7 +2126,7 @@ Extensible Authentication Protocol voir plus loin)
 o Entreprise : on utilise l « IEEE802.1x Authentification Server »
 chaque utilisateur doit s'identifier. On a besoin d'un serveur qui gère tous les comptes
 des utilisateurs (genre Radius)
-http://en.wikipedia.org/wiki/IEEE_802.1X
+http://en.wikipedia.org/wiki/IEEE\_802.1X
 13.2 Architecture et protocoles :
 On considère 3 acteurs :
 - Le client (supplicant)
@@ -1430,7 +2178,7 @@ au vérifieur
 - 43 -
 Phase 3 : key dérivation
 4 way hands shake:
-http://en.wikipedia.org/wiki/IEEE_802.11i-2004 -> c'est bien expliqué dans le cours y a que dale.
+http://en.wikipedia.org/wiki/IEEE\_802.11i-2004 -> c'est bien expliqué dans le cours y a que dale.
 The Master Key key is designed to last the entire session and should be exposed as little as possible.
 Therefore the four-way handshake is used to establish another key called the PTK (Pairwise Transient
 Key). The PTK is generated by concatenating the following attributes: PMK, AP nonce (ANonce), STA
@@ -1512,20 +2260,25 @@ Les VPNs permettent d'étendre un réseau privé à travers un réseau public.
 Applications: Interconnexion de sites distants à travers Internet, accès au réseau de l'entreprise à
 partir d'un ordinateur connecté à Internet comme si on était à l'entreprise.
 Mécanisme :
+\begin{itemize}
   \item 2 sets d'adresses : IP public pour échanger des données sur Internet et des adresses privées
 qui routent les paquets entre les hôtes sur le réseau privé.
   \item Encapsulation : le paquet est encapsulé dans un paquet IP pour son voyage sur Internet.
   \item Encryption : pour éviter le eavesdropping et les modifications de données sur le réseau
 public.
+\end{itemize}
 Protocoles :
+\begin{itemize}
   \item PPTP (Point to Point Tunneling Protocol) : développé par Microsoft.
   \item L2TP (Layer 2 Tunneling Protocol) : développé par IETF, rassemble L2F de Cisco et PPTP de
 Microsoft.
   \item IPSec (IP Security) : développé par IETF.
+\end{itemize}
 14.2 IPSec :
 Le standard est ouvert et extensible. Des algorithmes publics sont utilisés pour la confidentialité,
 l'authentification et l'intégrité.
 14.2.1 Modes d'opération :
+\begin{itemize}
   \item Transport : les données sont encryptées et/ou authentifiées. La sécurité est faite de
 manière end-to-end.
   \item Tunnel : tout le paquet est encapsulé dans un nouveau paquet. La sécurité peut être faite
@@ -1533,31 +2286,39 @@ par les routeurs intermédiaires.
 Chaque routeur contient une Security Policy Database qui défini quel paquet doit être sécurisé
 en fonction de sa destination et de sa source par exemple (e.g. : sécuriser le trafic telnet,
 UDP,...)
+\end{itemize}
 14.2.2 Protocole d'échange de clés :
 Internet Key Exchange (IKE) :
 Protocole permettant l'installation d'un tunnel sécurisé entre partenaires.
 Objectifs :
+\begin{itemize}
   \item Authentification du partenaire
   \item Echange de clé entre partenaires
   \item Négociation du paramètre
+\end{itemize}
 - 51 -
 Phases :
 1. Négocier un IKE SA (Internet Key Exchange Security Association) pour protéger les négociations
+\begin{itemize}
   \item Authentification : pre-shared secret (PSS), clés asymétriques, utiliser la clé publique
 d'une certification authority (X.509)
   \item Echange de clés : clés générées avec Diffie-Hellman
   \item Négocier le paramètre
+\end{itemize}
 o Main mode : clé de session générée avec Diffie-Hellman (plein de paramètres) and
 utilisée pour protéger le reste de la transaction (négociation du paramètre et
 authentification).
- un eavesdropper ne sait pas dire l'identité des paires.
+
+ un eavesdropper ne sait pas dire l'identité des paires.
 o Agressive mode : piggyback sur l'étape d'authentification pour l'échange de Diffie-
 Hellman, les identités et le pwd hash sont envoyés en clair. MAIS ne doit échanger
 que 3 paquets !
- attaquable (CKY cookie dans les headers des paquets IKE)
+
+ attaquable (CKY cookie dans les headers des paquets IKE)
 2.Définir les besoins du SA (Security Association) pour les flux ESP (Encapsulated Security
 Payload) ou AH (Authetification Header)
 Quick mode :
+\begin{itemize}
   \item Sans Perfect Forward Secrecy (PFS) :
 o Les session keys sont rafraichies périodiquement (1h)
 o Les session keys sont issues du même secret
@@ -1565,6 +2326,7 @@ o Voler ce secret compromet toutes les clés
   \item Avec PFS
 o A chaque nouvelle session key, on fait un Diffie-Hellman (plus lent)
 o Voler 1 clé ne compromet pas les clés précédentes
+\end{itemize}
 Security Association :
 Avant de pouvoir échanger des paquets en toute sécurité, les ordinateurs doivent établir une
 Security Association (SA) en utilisant IKE.
@@ -1573,21 +2335,26 @@ validité des clés, le numéro de séquence et l'identité du partenaire.
 Il faut 1 SA pour chaque flux unidirectionnel : une connexion TCP demande un SA pour chaque
 direction. (1 SA par destination par protocole, par port).
 Les SAs sont identifiés par un Security Parameter Index (SPI) :
+\begin{itemize}
   \item La source indique le SPI sur tous les paquets qui sont envoyés (elle décide quels paquets
 doivent être exécuté avec quel SA)
   \item La destination utilise le SPI pour trouver le SA qui décrit comment traiter ce paquet.
+\end{itemize}
 14.2.3 Protocole sécurisé :
 Authentication Header (AH)
 Pour vérifier l'authenticité et l'intégrité du paquet.
 - 52 -
 L'authentification est calculée sur base de :
+\begin{itemize}
   \item Données qui suivent le AH
   \item Le header (mis à 0 quand il faut calculer l'information d'authentification)
   \item Les champs importants dans l'IP header : source, destination, protocol, length, version,...
   \item Les champs exclus de l'IP header : type of service, flags, fragment offset, TTL, header
 checksum.
+\end{itemize}
 L'algorithme utilisé pour générer les données d'authentification est négocié à la création du SA.
- utilise le HMAC : sécurité démontrable, peut être utilisé avec n'importe quelle hash function,
+
+ utilise le HMAC : sécurité démontrable, peut être utilisé avec n'importe quelle hash function,
 maintient les performances de la hash function originale :
 HMAC(K,m) = H( (K xor opad) || H((K xor ipad) || m) )
 HMAC-SHA1-96 signifie HMAC calculé avec H=SHA1 et la sortie tronquée à 96 bits.
@@ -1598,30 +2365,38 @@ d'encryption sur les champs du header, ni sur les données d'authentification.
 L'authentification (optionnelle) est faite sur l'ESP header et tout ce qui suit MAIS PAS sur l'IP
 header (différence avec AH).
 Exemple d'algorithme :
+\begin{itemize}
   \item Encryption : DES-CBC, NULL
   \item Authentification : HMAC-SHA-96, HMAC-MD5-96, NULL
+\end{itemize}
 NULL ne peut pas être utilisé dans le même SA pour l'encryption et l'authentification.
 14.2.4 IPSec avec NAT
 AH : que ça soit en mode transport ou tunnel, AH authentifie l'IP header et donc ne
 permet pas au NAT de modifier l'IP source sans provoquer une perte d'intégrité.
 ESP :
+\begin{itemize}
   \item Mode transport : en TCP ou UDP, les headers sont encryptés et donc le checksum ne peut
 pas être mis à jour
   \item Mode tunnel : le checksum TCP ou UDP fait référence à l'IP header interne, qui n'est pas
 modifié par le NAT.
- ESP en mode tunnel est le seul moyen de traverser un NAT !
+\end{itemize}
+
+ ESP en mode tunnel est le seul moyen de traverser un NAT !
 - 53 -
 Sécurité au transport layer.
 15. SSL :
 15.1 SSL
 SSL = Secure Socket Layer à été développé par NetScape
 15.1.1 Applications
+\begin{itemize}
   \item Créer un nouveau protocole à partir d'un protocole existant : HTTP -> HTTPS
 o Désavantage : seuls les clients supportant TLS peuvent se connecter
 o Avantage : sur que la communication est sécurisée
   \item Etendre un protocole pour négocier SSL/TLS : demander TLS avec STARTTLS
 o Avantage : le client ne doit pas forcément supporter TLS pour utiliser le service
+\end{itemize}
 Exemples :
+\begin{itemize}
   \item HTTPS :
 o L'utilisation de TLS n'est pas négociable
 o Garanti la confidentialité et l'authenticité des données transmises
@@ -1630,25 +2405,28 @@ o Le client peut en avoir un (e.g. : eBanking)
   \item Mail
 o ESMTP, POP3, IMAP transmettent par défaut le mot de passe en clair
 o TLS protège le mot de passe et le contenu du mail
+\end{itemize}
 15.2 TLS
 TLS = Transport Layer Security (version actuelle de SSL). Se situe entre l'application et le network layer.
 - 54 -
 15.2.1 Record Layer
 Traitement des données
+\begin{itemize}
   \item Fragmentation
   \item Compression (optionnel)
   \item Authentification (MAC)
   \item Encryption
+\end{itemize}
 Transmets les fragments traités au transport layer
 Une fois, transmis, les opérations inverses sont effectuées.
 MAC :
-MAC= hash ( MAC_key || Pad2 ||
+MAC= hash ( MAC\_key || Pad2 ||
 
-hash(MAC_key || Pad1 || Seq_Nb || Length || Content))
-- MAC_key: secret shared by client and server.
+hash(MAC\_key || Pad1 || Seq\_Nb || Length || Content))
+- MAC\_key: secret shared by client and server.
 - Pad1: constant character 0x36 repeated 48 times (if MD5) or 40 times (if SHA1).
 - Pad2: constant character 0x5c repeated the same number of times.
-- Seq_Nb: sequence number of this message.
+- Seq\_Nb: sequence number of this message.
 - Hash: Either HMAC-MD5 or HMAC-SHA1
 - Length: Length in bytes of the compressed record.
 - Content: Compressed record.
@@ -1659,7 +2437,8 @@ o DES (40 bits ou 56 bits), 3DES, IDEA, RC2 (40 bits)
 o AES (128 bits ou 256 bits) dans TLS v1.1 (256 bits pour les mails UCL)
 Soit avec du chiffrement en flux:
 o NULL, RC4 (40 bits ou 128 bits)
- le client doit refuser des clés de 40 bits si cette longueur est suggérée par le serveur.
+
+ le client doit refuser des clés de 40 bits si cette longueur est suggérée par le serveur.
 15.2.2 Handshake protocol
 Négociation de:
 - protocole version (SSL 3.0, TLS 1.0, TLS 1.1).
@@ -1672,8 +2451,8 @@ o MAC (HMAC-MD5, HMAC-SHA).
 - Les messages ne sont pas cryptés.
 - Le dernier message authentifie l'échange.
 - 55 -
-
-Client_Hello : utilisé par le client pour initialiser une connexion SSL (envoyé en clair sans
+
+Client\_Hello : utilisé par le client pour initialiser une connexion SSL (envoyé en clair sans
 signature)
 o Crypto : liste des algorithmes cryptographiques supportés (Authentication + key
 exchange + cipher + hash).
@@ -1695,7 +2474,9 @@ session.
 List of supported Ciphers.
 
 List of supported Compression Methods.
-  \item Server_Hello : réponse du serveur (envoyé en clair sans signature)
+\begin{itemize}
+  \item Server\_Hello : réponse du serveur (envoyé en clair sans signature)
+\end{itemize}
 Content:
 -
 -
@@ -1709,36 +2490,36 @@ Optional Session Identifier, if it allows sessions to be resumed.
 Cipher Suite: One of the cipher suites proposed by client.
 Compression Method.
 - 56 -
-
-Server_Certificate : le serveur s'authentifie (un serveur peut avoir plusieurs certificats à partir
+
+Server\_Certificate : le serveur s'authentifie (un serveur peut avoir plusieurs certificats à partir
 de différentes certification authorities). Le certificat peut aussi être envoyé par le client quand
-l'identification du client est demandée par le serveur avec Certificate_Request.
+l'identification du client est demandée par le serveur avec Certificate\_Request.
 Content:
 -
 A list of X.509 certificates:
 o Server certificate.
 o Certificates of certification authorities if any.
-
-
-Server Hello_Done : indique que le serveur a fini la 1ere phase du handshake (envoyé non
+
+
+Server Hello\_Done : indique que le serveur a fini la 1ere phase du handshake (envoyé non
 crypté).
-Client_Key_Exchange : utilisé par le client pour envoyé le PreMasterSecret (encrypté avec la
+Client\_Key\_Exchange : utilisé par le client pour envoyé le PreMasterSecret (encrypté avec la
 clé publique du serveur).
 o Utilise des nonce de 32B et un masterSecret de 48B
 Content:
 -
 Encrypted PreMasterSecret with the public key of the server.
-
-
-Change_Cipher_Spec :
+
+
+Change\_Cipher\_Spec :
 o Utilisé par le client et le serveur pour signaler qu'il vont utiliser une nouvelle clé.
 o Durant le handshake, indique que le prochain message sera encrypté avec la clé
 appropriée.
-Handshake_Finished :
+Handshake\_Finished :
 o Envoyé par le client et le serveur pour confirmer l'établissement d'une session SSL
 sécurisée. (Sécurisée ssi le client et le serveur ont reçu ce message).
-o Permet de détecter les man in the middle attack sur des messages Client_Hello et
-Server_Hello (e.g.: proposer un chiffrement plus faible).
+o Permet de détecter les man in the middle attack sur des messages Client\_Hello et
+Server\_Hello (e.g.: proposer un chiffrement plus faible).
 o Premier message encrypté dans chaque direction.
 Content:
 -
@@ -1751,9 +2532,11 @@ MasterSecret.
 Parfois plusieurs utilisateurs veulent avoir l'accès à plusieurs serveurs sur un même réseau. Une
 solution pour gérer la sécurité de l'authentification est que chaque serveur retienne les mots de passe
 de chaque utilisateur. Cette approche n'est cependant pas idéale :
+\begin{itemize}
   \item Elle n'est pas sure. Un seul serveur compromis peut compromettre tous les utilisateurs.
   \item Elle est inefficace. Les mots de passes doivent chaque fois être changés sur tous les serveurs.
   \item Elle n'est pas pratique. Les mots de passes doivent être entrés pour chaque requête.
+\end{itemize}
 Dès lors, il est plus raisonnable de centraliser les informations. Kerberos permet cela.
 1.2 Kerberos :
 Kerberos est un protocole d'authentification réseau qui repose sur un mécanisme de clés secrètes
@@ -1762,6 +2545,7 @@ l'authentification est faire, on peut accéder au réseau sans devoir redonner s
 d'utilisateur.
 1.3 Elements principaux :
 Kerberos utilise tous les éléments suivants :
+\begin{itemize}
   \item Un client C. C'est la personne qui veut se connecter au réseau.
   \item Un serveur d'authentification AS 1. Ce serveur va fournir au client un premier ticket (TGT 2 ), au
 client qui en fait la demande.
@@ -1775,6 +2559,7 @@ Le ticket contient les informations suivantes
   \item v, la période de validité du ticket.
   \item Kc,s, la clef symétrique de session à utiliser entre le client et le serveur.
   \item D'autres trucs comme des flags, l'adresse IP, etc.
+\end{itemize}
 Ce ticket est encryptée avec la clef Ks du serveur. L'authentifiant est juste l'identité du client (Ic) suivi
 d'un timestamp t. Regardons à présent tous les messages échangés pour obtenir ce fameux ticket. Le
 schéma ci dessous reprend l'ensemble des échanges.
@@ -1869,5 +2654,6 @@ On doit donc procéder autrement. On peut créer un certification de révocation
 génère cette dernière. On l'envoie alors sur le serveur PGP quand on veut révoquer la clef. Pour bien
 faire, il faut aussi l'envoyer aux correspondants réguliers. Par ailleurs, lors de la génération d'une clef,
 on met une limite de validité qui fait que la clef expire après cette date.
+
 
 \end{document}
