@@ -128,6 +128,71 @@ improve pruning (reduce search space), improve communication
 
 \subsection{Symmetry}
 
+\subsection{Computation Model}
+A point of the search space $D(x_1) \times D(x_2) \times \cdots \times D(x_n)$,
+is an assignation of the $n$ variable.
+
+We have seen that there is two types of problems.
+\begin{itemize}
+  \item
+    Satisfaction Problems where we only want to find a point that is satifies all the constraints,
+    it is sometimes called a feasible point and the set of all feasible points is called the feasible set.
+  \item
+    Optimization Problems where we want to determine which point of the feasible set minimize the objective function $O$.
+\end{itemize}
+
+There are two approach for solving those problems.
+\begin{description}
+  \item[Constructive] we do not treat with points of the search space.
+    Or we could say that we treat with quantum points.
+    The different components of the point (the value of the variables) are unkown (like the position and velocity of a quantum particle)
+    and we try to determine each components progressively (like measuring a quantum particle).
+    To build our points we use heuristic reasoning to assure that at the end of the process the point will be feasible/optimal.
+
+    This process is called greedy.
+    For some problem, we can prove that a greedy algorithms always find a feasible/optimal solution but in general we cannot guarantee it so we say that it is \emph{incomplete}.
+
+    However, suppose that we are building the point and we notice that we have done a bad choice.
+    If we allow ourself to roll back/backtrack, we can guarantee completeness.
+    This is how CP works.
+  \item[Perturbative] this time we treat with points of the search space.
+    In case of SP, we have non-feasible points and we try to make it feasible and
+    in case of OP we have feasible points and we try it to be optimal.
+    Sometimes we are in the case of OP and because the feasible set is too complicated we also have to deal with non-feasible points.
+
+    We then use local analysis of the constraints/$Q$ and the objective $O$ around the point and we try to do local improvements.
+    This is called \emph{local search}.
+    However there is little hope that this will work with general objective and general $Q$.
+
+    For local search to be complete we need that local analysis bring global information.
+    In fact, we need $O$ to be a convex function and $Q$ to be a convex domain.
+    In that case we can use fast methods with global convergence such as
+    \begin{itemize}
+      \item the accelerated gradient of Yurii Nesterov
+        which works with couple of points $(x,y)$ where $x$ is in $Q$ and $y$ can be non-feasible.
+        At each iteration, it improves moves $x$ and $y$ and project $x$ in $Q$ if it gets out.
+        Under the hood, this method is actually using local information gathered at the points $y$ to estimate a quadratic function
+        that approximate $O$ and $x$ converges to the optimum.
+
+        This method is very fast but it treats $Q$ as a black box and we need the projection of $x$ to $Q$ to be easy.
+      \item Another method that on the contrary really looks at the structure of $Q$ is the Interior Point Method of Yurii Nesterov and Arkadi Nemirovski.
+        It guarantees global convergence in polynomial time.
+
+      \item When the constraints and objective are also linear, there is the specialized algorithm Simplex of George Dantzig.
+        It is faster in practice than Interior Point Method even if it has exponential complexity in theory.
+    \end{itemize}
+\end{description}
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{c|cc}
+    & Constructive & Perturbative\\
+    \hline
+    Complete & CP & Simplex\\
+    Incomplete & Greedy & Local Search
+  \end{tabular}
+  \caption{Computation Model}
+\end{table}
 
 
 
@@ -192,21 +257,21 @@ improve pruning (reduce search space), improve communication
             \item \textcolor{red}{less} information
             \item called \textcolor{green}{less}
         \end{enumerate}
-        
+
         &
         \small
         \begin{enumerate}
             \item \textcolor{green}{more} information
             \item called \textcolor{green}{less}
         \end{enumerate}
-        
+
         &
         \small
         \begin{enumerate}
             \item \textcolor{green}{more} information
             \item called \textcolor{red}{more}
         \end{enumerate}
-        
+
         \\
 
         \multicolumn{3}{c}{\begin{tikzpicture}
@@ -527,7 +592,7 @@ propagateQueueVBDomFilter(Q){
         (c, x, a) = popCtrtLiteral(Q)
         $\Delta$ = c.valRemove(x, a)
         for((x,a) $\leftarrow$ $\Delta$){
-            removeValue(a,D(x))             
+            removeValue(a,D(x))
             for(c $\leftarrow$ C/{c} if c.scope contains x){
                 if(! Q contains (c, x, a))
                     Q += (c, x, a)
@@ -1620,7 +1685,7 @@ the residual graph $R=(N, E')$ such that :
 
 The table correspond to a table of tuple of value accepted.
 
-$\to$ Literal (x,a) supported if 
+$\to$ Literal (x,a) supported if
 \begin{center}
 $\exists$ tuple \textbf{valid} (= all its
 value are in the domain) in the table where x=a
