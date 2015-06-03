@@ -590,7 +590,14 @@ Les regex peuvent prendre les formes suivantes:
         utilisées pour grouper les regex.
 
 \end{itemize}
-
+\paragraph{Exemple Exo: }
+\begin{itemize}
+	\item Pour l'alphabet=\{0,1\},donnez une expression régulière
+	définissant le langage M = $\{w\in \{0,1\}*$ | w a au moins
+	une paire de zéro consécutif\}
+	\item Trouvez l'expression régulière représentant l'ensemble
+	des string avec un nombre pair de a suivis d'un nombre impair de b
+\end{itemize}
 \subsubsection{Finite State Automate (FSA)}
 
 Pour tout langage décrit par une regex, il existe un diagramme à
@@ -609,13 +616,12 @@ transition d'état.
         autre ; $M(r, a) = S$ où $r, s \in S$ et $a \in \Sigma$
     \item $F \in S$ est l'ensemble des états finaux
 \end{itemize}
-
 \paragraph{Une phrase appartient au language} si en partant du start, on
 arrive sur un état final après avoir suivit les changement d'états
 correspondant à la phrase.
 
 Il existe un moyen automatique de générer un FSA à partir de regex.
-
+\paragraph{Exo:} Spécifiez un automate à état fini pour (ab)*ab
 \subsubsection{Non-Deterministic Finite State Automate (NFA) vs. Deterministic FSA (DFA)}
 
 \paragraph{\textbf{DFA}} automate à états finis où il n'y a pas de
@@ -1046,7 +1052,50 @@ définit qui permet de voir plus loin qu'un symbole.
 Pour récupérer des erreurs, les \texttt{mustBe}, lorsqu'il rencontre
 un token inatendu, scanne jusqu'à trouver celui qu'il veut jusqu'à se
 remettre dans un état à nouveau correct.
+\paragraph{Left recursion removal}
+Parfois pour faire un parsing de descente récursive, il faut
+modifier la grammaire même si elle n'est pas ambigüe. Par 
+exemple pour la grammaire:
+\begin{itemize}
+	\item Y ::= Y \textcolor{red}{a}
+	\item Y :: = Y \textcolor{green}{b}
+\end{itemize}
 
+on ne peut pas  faire le parseur à cause de la left-recursion.
+On a de la left-recursion quand le symbole non-terminal le plus 
+à gauche de la règle de production et le méme que le 
+déclencheur. Il faut retirer cette recursion
+en faisant:
+\begin{itemize}
+	\item Y ::= \textcolor{green}{b} Y'
+	\item Y' ::= \textcolor{red}{a}Y'
+	\item Y' ::=$\epsilon$
+\end{itemize}
+L'algo qui permet de le faire est le suivant:
+\begin{lstlisting}[mathescape]
+Enumerate the non-terminal of G: X1,X2,..,Xn
+for i := 1 to n do
+	for j:= 1 to i-1 do
+		Replace each rule in P having the form
+		$X_i$::= $X_j\alpha$ by the rules
+			$X_i$::= $\beta_1\alpha|\beta_2\alpha|...|\beta_k\alpha$ where $X_j$ ::= $\beta_1|\beta_2|..|\beta_k$
+			Eliminate any immediate left recursion
+
+\end{lstlisting}
+\paragraph{Left Factoring}
+Left Factoring consiste à retirer les facteurs gauche communs dans
+des règles de productions du même symbole terminal. Par exemple
+\begin{itemize}
+	\item Y ::= $\alpha \beta$
+	\item Y ::= $\alpha \gamma$
+\end{itemize}
+deviens 
+\begin{itemize}
+	\item Y ::= $ \alpha$ Y'
+	\item Y' ::= $\beta \gamma$
+\end{itemize}
+Cette technique est utile parce qu'elle permet d'éviter le 
+backtracking (donc utile pour les lookahead scanner) 
 \subsubsection{$LL(1)$ parsing}
 
 Contrairement au recursive descent, ici, la stack est explicite.
