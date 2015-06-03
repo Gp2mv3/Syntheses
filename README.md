@@ -124,22 +124,19 @@ Comme exemple, voici le mien
             - AnalyseQuantitatives
             - autolin
             - ca
-            - Calcu2
             - chimie
             - chimieorga
             - eco
-            - edo
             - elec
             - GRH
             - info
             - math
-            - mcp
             - meca
             - methodnum
             - mmc
             - coo
             - opti
-            - os
+            - os-SINF1225
             - oz
             - philo
             - physique
@@ -147,29 +144,44 @@ Comme exemple, voici le mien
             - sigsys
             - stat
             - telecom
+            - strat-ECGE1315
+            - mana-ECGE1321
             - ELEC1370
             - ELEC2870
+            - mcp-INGI1122
+            - calcu-INGI1123
+            - oz-INGI1131
             - INGI1341
-            - concu-LINGI2143
-            - ia-LINGI2261
-            - INMA2380
-            - INMA2471
-            - MAT2440
-            - translator-INGI2132
+            - translators-INGI2132
             - network2-INGI2142
+            - concu-LINGI2143
             - database-INGI2172
+            - ia-LINGI2261
             - secu-INGI2347
+            - constraint-INGI2365
+            - INMA2380
+            - nlp-INMA2460
+            - modstoch-INMA2470
+            - INMA2471
+            - edo-MAT1223
+            - MAT2440
+            - crypto-MAT2450
+            - dam-MECA1210
             - distributed-SINF2345
           type:
             - exercises
+            - errata
+            - mcq
             - notes
             - summary
+          sol: ['', '-Sol']
         input: &input_path
-          path_format: q{0}/{1}/{2}/{1}-{2}.pdf
+          path_format: q{0}/{1}/{2}/{1}-{2}{3}.pdf
           parameters:
             - arg: quadri
             - arg: cours
             - arg: type
+            - arg: sol
         output:
           path_format: Synthèses_EPL/q{0}/{1}/{2}
           parameters:
@@ -179,7 +191,7 @@ Comme exemple, voici le mien
               parameters:
               - arg: type
               - &output_file
-                path_format: "{0}_q{1}_{2}.pdf"
+                path_format: "{0}_q{1}_{2}{3}.pdf"
                 parameters:
                 - mapping:
                     exercises: APE
@@ -189,6 +201,7 @@ Comme exemple, voici le mien
                     arg: type
                 - arg: quadri
                 - arg: cours
+                - arg: sol
       - name: EPL Backup
         arguments: *all_args
         input: *input_path
@@ -205,7 +218,6 @@ Comme exemple, voici le mien
                   chimieorga: CHIMIEORGA
                   coo: COO
                   eco: ECO
-                  edo: EDO
                   ca: Complément d'Analyse
                   elec: PHYSIQUE
                   info: INFO
@@ -214,7 +226,6 @@ Comme exemple, voici le mien
                   methodnum: METHODNUM
                   mmc: MMC
                   opti: OPTIMISATION
-                  os: OS
                   oz: OZ
                   philo: PHILO
                   physique: PHYSIQUE
@@ -229,6 +240,7 @@ Comme exemple, voici le mien
                 parameters:
                 - mapping:
                     exercises: APE
+                    mcq: MCQ
                     notes: CM
                     summary: Synthèses
                   key:
@@ -239,8 +251,9 @@ Comme exemple, voici le mien
           quadri: &quadri_map
             [5, 6, 7, 8]
           cours: &cours_map
-            [prostoch, ca, INMA2380, INMA2471]
-          type: [exercises, notes, summary]
+            [prostoch, ca, INMA2380, nlp-INMA2460, modstoch-INMA2470, INMA2471]
+          type: [exercises, mcq, notes, summary, errata]
+          sol: ['', '-Sol']
         input: *input_path
         output:
           path_format: MAP/{0}
@@ -248,11 +261,15 @@ Comme exemple, voici le mien
             - *EPL_style_output
       - name: Official Exam
         arguments: &all_args_exam
-          quadri: [3]
-          cours: [math]
-          type: [exam]
-          year: [2011, 2012, 2013]
-          month: [Janvier, Juin, Août]
+          quadri: [3,6]
+          cours:
+            - math
+            - info
+            - mana-ECGE1321
+            - oz-INGI1131
+          type: [exam,test]
+          year: [2009, 2010, 2011, 2012, 2013, 2014,2015]
+          month: [Janvier, Mars, Juin, Août, Novembre]
           minmaj: [All, Mineure, Majeure]
           sol: ['', '-Sol']
         input: &input_path_exam
@@ -287,6 +304,9 @@ Comme exemple, voici le mien
                   - arg: sol
                   - mapping:
                       math: FSAB1103
+                      info: FSAB1402
+                      mana-ECGE1321: ECGE1321
+                      oz-INGI1131: INGI1131
                     key:
                       arg: cours
       - name: EPL Backup Exam
@@ -301,12 +321,14 @@ Comme exemple, voici le mien
                 - arg: quadri
                 - mapping:
                     math: MATH
+                    info: INFO
                   key:
                     arg: cours
                 - path_format: "{0}/{1}"
                   parameters:
                   - mapping:
                       exam: Examens
+                      test: Interros
                     key:
                       arg: type
                   - *output_end_exam
@@ -314,7 +336,7 @@ Comme exemple, voici le mien
         arguments:
           quadri: *quadri_map
           cours: *cours_map
-          type: [exam]
+          type: [exam,test]
         input: *input_path_exam
         output:
           path_format: MAP/{0}
