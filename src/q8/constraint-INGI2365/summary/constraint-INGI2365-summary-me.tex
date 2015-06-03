@@ -103,8 +103,6 @@ r/.style = {treenode, circle, text width=1.5em, very thick}
         \paragraph{Search space} = $D(x_1) \times D(x_2) \times \cdots \times D(x_n)$
 \end{enumerate}
 
-The communication between the Constraints and the Search is done through the domain of the variables in CP.
-When a constraint modify the domain, it is called \emph{propagation} and when it is the search it is called \emph{branching}.
 
 \paragraph{Solution}
 A solution to a CSP is
@@ -124,22 +122,11 @@ A solution to a CSP is
 \end{center}
 
 \paragraph{redundant constraint} constraint that does not exclude any previous solution,
-improve pruning (reduce search space), it improves the communication of the constraints with the search
-by giving the search a more global view of the structure of the feasible set.
-They are either consequences of a combination of contraints or known properties of the solution.
+improve pruning (reduce search space), improve communication
 
-%TODO reification
-%TODO dual modelling
 \subsection{Global constraint}
 
 \subsection{Symmetry}
-We have an equivalence relation between different (non-)solution using a mapping of either the variables (variables symmetry)
-or the values (value symmetry).
-
-To reduce the search space we break the symmetry,
-i.e. we add constraint to explore only one element of each equivalence class.
-There is static and dynamic symmetry breaking.
-Even if we reduce the number of nodes to explore we could explore more node if we remove a node that we would have seen early.
 
 \subsection{Computation Model}
 A point of the search space $D(x_1) \times D(x_2) \times \cdots \times D(x_n)$,
@@ -206,7 +193,6 @@ There are two approach for solving those problems.
   \end{tabular}
   \caption{Computation Model}
 \end{table}
-
 
 
 
@@ -395,7 +381,7 @@ propagate(){
     $\Delta$ = $\emptyset$
     for(x $\leftarrow$ scope){
         for(a $\leftarrow$ D(x)){
-            if( $\forall$(v $\leftarrow D(scope)_{x=a})$ (! c(v)) )
+            if( $\forall(v \leftarrow D(scope)_{x=a})$ (! c(v)) )
                 // No combination with x=a satisfying the constraint
                 $\Delta$ += (x, a)
         }
@@ -562,7 +548,7 @@ c considers (c, y, b) on Q are sill in the domains!
 \begin{itemize}
     \item $\gamma$ on X is \textbf{valid} iff $\forall$ x $\in$ X : $\gamma(x) \in D(x)$
     \item $\gamma$ on X is \textbf{Q-valid} iff $\forall$ x $\in$ X : $\gamma(x) \in D(x)
-        \cup \{a | (c, x, a) \in Q\}$
+        \cup \{a: (c, x, a) \in Q\}$
 \end{itemize}
 
 
@@ -658,7 +644,7 @@ setup(){
 valRemove(x, a){
     $\Delta$ = $\emptyset$
     for( $\gamma \leftarrow$ support(x, a)) {
-        for(y $\leftarrow$ scope if y $\neq$ x if D(y) contains b){
+        for(y $\leftarrow$ scope if y $neq$ x if D(y) contains b){
 
             // $\gamma$ is a support for (y, $\gamma(y)$) and $\gamma$ is Q-invalid
             b = $\gamma(y)$
@@ -674,9 +660,9 @@ valRemove(x, a){
 
     \begin{tabular}{m{7cm}cm{6cm}}
         \begin{itemize}
-            \item $\bigoh(r \times d^r)$ for \texttt{setup()}
-            \item $\bigoh(r \times d^r)$ for all calls to \texttt{valRemove()}
-                because \textbf{each support} is considered \textbf{once}
+            \item $\bigoh(r \times d^r)$ for setup()
+            \item $\bigoh(r \times d^r)$ for all calls to valRemove
+                because each support is considered once
         \end{itemize}
         & $\to$ &
         \textbf{Global complexity}: $\bigoh(e \times r \times d^r)$
@@ -687,29 +673,29 @@ valRemove(x, a){
 
     \paragraph{firstSupported(x,a)}
     \begin{itemize}
-        \item (x,a) is the first support of (y,b) ($b \in $firstSupported(x,a))
-        \item[$\to$] when (x,a) removed, AC6 know which values in D(y) need a new first support
+        \item (x,a) is the first support of (y,b) ($b \in firstSupported(x,a)$)
+        \item when (x,a) removed, AC6 know which values in D(y) need a new first support
     \end{itemize}
 
-\begin{lstlisting}[mathescape, caption=AC6]
+\begin{lstlisting}[mathescape, caption=GAC4]
 setup(){
     $\Delta = \emptyset$
     $\Delta += $ setup_var(x)
     $\Delta += $ setup_var(y)
 }
 
-setup_var(x){
+setup_var(){
     $\Delta$ = $\emptyset$
-    for( b $\leftarrow$ D(y))
+    for( y $\leftarrow$ D(y))
         firstSupported(y, b) = $\emptyset$
 
     for( a $\leftarrow$ D(x)) {
-        b = y.min
+        b.y.min
         while( b != $\top$ && !c(x=a, y=b)){
             b = y.valueAfter(b)
         }
 
-        if(b == $\top$)
+        if(b == $top$)
             $\Delta$ += (x, a)
         else
             firstSupported(y, b) += a
@@ -738,9 +724,9 @@ valRemove(x, a){
 
     \begin{tabular}{m{7cm}cm{6cm}}
         \begin{itemize}
-            \item $\bigoh(d^2)$ for \texttt{setup()}
+            \item $\bigoh(d^2)$ for setup()
             \item $\bigoh(d)$ for one literal, all searches for support
-            \item $\bigoh(d^2)$ for all calls to \texttt{valRemove()}
+            \item $\bigoh(d^2)$ for all calls to valRemove()
         \end{itemize}
         & $\to$ &
         \textbf{Global complexity}: $\bigoh(e \times d^2)$
@@ -763,8 +749,8 @@ know all the change at one with \texttt{propagate($\Delta_c$)}
 \subsubsection{Fixed point algorithm}
 In this case, the propagator must implement :
 \begin{enumerate}
-    \item \texttt{setup()} : initialize the constraint and performs first pruning
-    \item \texttt{propagate($\Delta_c$)} : compute the set of values that are inconsistent because
+    \item setup() : initialize the constraint and performs first pruning
+    \item propagate($\Delta_c$) : compute the set of values that are inconsistent because
         $\Delta_c \notin D$
 \end{enumerate}
 
@@ -780,9 +766,8 @@ initCPDomFilter(X, D, C){
         for( (x, a) $\leftarrow$ $\Delta$){
             removeValue(a, D(x))
             for( c $\leftarrow$ C1 if c.scope contains x){
-                if(! Q contains c)
-                    Q += c
-                $\Delta_c$ += (x, a)
+                if(! Q contains (c, x, a))
+                    Q += (c, x, a)
             }
         }
         C1 += c
@@ -803,8 +788,8 @@ propagateQueueCPDomFilter(Q){
         for((x,a) $leftarrow$ $\Delta$){
             removeValue(a,D(x))
             for(c $\leftarrow$ C/{c} if c.scope contains x){
-                if(! Q contains c)
-                    Q += c
+                if(! Q contains (c, x, a))
+                    Q += (c, x, a)
                 $\Delta_c$ += (x,a)
             }
         }
@@ -847,7 +832,7 @@ $S_1$ also respect $S_2$.
         & Bound consistency & Forward checking \\
         \cline{2-3}
     \end{tabular}
-    \caption{Relative strengths of the consistencies}
+    \caption{Relative stringths of the consistencies}
 \end{table}
 
 
@@ -877,8 +862,8 @@ be satisfiable
 
 \paragraph{AC} A \underline{binary} constraint $c$ on $x, y$ is AC iff
 \begin{lstlisting}[mathescape]
-    $\forall a \in D(x), \quad \exists b \in D(y) : (a,b) \in c$
-    $\forall a \in D(x), \quad \exists b \in D(y) : (a,b) \in c$
+    $\forall a \in D(x), \exists b \in D(y) : (a,b) \in c$
+    $\forall a \in D(x), \exists b \in D(y) : (a,b) \in c$
 \end{lstlisting}
 
 $\to$ It means that all the value of variables are \textbf{supported}
@@ -887,14 +872,15 @@ $\to$ It means that all the value of variables are \textbf{supported}
 \begin{lstlisting}[mathescape]
     $\forall x_i \in scope(c)$
         $\forall a_i \in D(x_i)$
-            $\exists a_1,..., a_{i-1}, a_{i+1},..., a_r \in D(x_1) \times ... \times D(x_{i-1}) \times D(x_{i+1}) \times ... \times D(x_r)$
-                such that $(a_1,...,a_r) \in c$
+            $\exists a_1,..., a_{i-1}, a_{i+1},..., a_r $
+                    $\in D(x_1) \times ... \times D(x_{i-1}) \times D(x_{i+1}) \times ... \times D(x_r)$
+                $(a_1,...,a_r) \in c$
 
 \end{lstlisting}
 
 \subsubsection{Algorithm}
 \begin{lstlisting}[mathescape, caption=GAC]
-propagateQueueGAC(Q){
+propagateGAC(Q){
     while(Q $\neq$ $\emptyset$){
         c = popCtrt(Q)
         $\Delta$ = c.propagate()
@@ -924,15 +910,16 @@ GAC can be costly, so a other consistency is to only search support for bound.
 \begin{lstlisting}[mathescape]
     $\forall x_i \in scope(c)$
         $\forall a_i \in { min(D(y)), max(D(y))}$
-            $\exists a_1,..., a_{i-1}, a_{i+1},..., a_r  \in D*(x_1) \times ... \times D*(x_{i-1}) \times D*(x_{i+1}) \times ... \times D*(x_r):$
-                such that $c(a_1,..., a_r)$
+            $\exists a_1,..., a_{i-1}, a_{i+1},..., a_r $
+                    $\in D*(x_1) \times ... \times D*(x_{i-1}) \times D*(x_{i+1}) \times ... \times D*(x_r):$
+                $c(a_1,..., a_r)$
 
 $D*(x_k) = [min(D(x_k)), max(D(x_k))]$
 \end{lstlisting}
 
 \subsubsection{Algorithm}
 \begin{lstlisting}[mathescape, caption=BC]
-propagateQueueBC(Q){
+propagateGAC(Q){
     while(Q $\neq$ $\emptyset$){
         c = popCtrt(Q)
         $\Delta$ = c.propagate()
@@ -954,19 +941,19 @@ It's like a GAC at the end.
 
 \paragraph{FC} A constraint $c$ is FC iff
 \begin{lstlisting}[mathescape]
-    if $\forall x_i \in scope(c):$ $D(x_i) = \{v_i\}$ then $c(v_1, ..., v_r)$
+    if $\forall x_i \in scope(c):$ $D(x_i) = {v_i} then c(v_1, ..., v_r)$
     if all but one variable assigned: $c$ is GAC
 \end{lstlisting}
 
 \subsubsection{Algorithm}
 \begin{lstlisting}[mathescape, caption=FC]
-propagateQueueFC(Q){
+propagateGAC(Q){
     while(Q $\neq$ $\emptyset$){
         c = popCtrt(Q)
         $\Delta$ = c.propagate()
         for((x,a) $\leftarrow$ $\Delta$){
             removeValue(a,D(x))
-=>          if($\#D(x) == 1$){
+>          if($\#D(x) == 1$){
                 for(c $\leftarrow$ C/{c} if c.scope contains x){
                     if(! Q contains c)
                         Q += c
@@ -1083,7 +1070,7 @@ The idea is to mix for different constraints : different consistencies and diffe
     \item When event occurs in a domain/variable :
         \begin{itemize}
             \item constraints put on the right queue and fixed point resumed
-            \item makes the bridge between different queues
+            \item makes the bridge beteween different queues
         \end{itemize}
 \end{enumerate}
 
@@ -1110,8 +1097,8 @@ is equivalent to the original.
 \subsection{Depth first backtraking search}
 
 \begin{itemize}
-    \item Based on:
-    \begin{enumerate}
+    \item Based on
+        \begin{enumerate}
             \item \textbf{stack of sets of decision}
             \item \textbf{stack of restoration states}
         \end{enumerate}
@@ -1487,7 +1474,7 @@ a same node.
         correpons to the strongly connected components in the directed value
         graph
 
-        \paragraph{Alternating cycle}: switch the edges in/out the matching.
+        \paragraph{Alternating path}: switch the edges in/out the matching.
         Exchange values of variables to stays maximum with different edges.
 
     \item Remove all edges/literals not in M and not found
@@ -1648,7 +1635,7 @@ residual graph
     (var, val) is not GAC
 \end{tabular}
 
-\subsubsection{Residual graph} For a graph $G=(N, E)$ and a flow $f$,
+\subsubsection{Residual graph}: For a graph $G=(N, E)$ and a flow $f$,
 the residual graph $R=(N, E')$ such that :
 \begin{itemize}
     \item $E' = A^+ \cup A^-$ :
@@ -1673,7 +1660,7 @@ the residual graph $R=(N, E')$ such that :
     \caption{Residual graph}
 \end{figure}
 
-\subsubsection{Augmenting path} From augmenting path $p$
+\subsubsection{Augmenting path}: from augmenting path $p$
 \begin{itemize}
     \item $val = min_{(x,y) \in p} cap(x, y)$
     \item For all edge in $A^+$ : augment flow by val
@@ -1698,11 +1685,8 @@ the residual graph $R=(N, E')$ such that :
 
 The table correspond to a table of tuple of value accepted.
 
-$\to$ Literal (x,a) supported if
-\begin{center}
-$\exists$ tuple \textbf{valid} (= all its
+$\to$ Literal (x,a) supported if $\exists$ tuple \textbf{valid} (all its
 value are in the domain) in the table where x=a
-\end{center}
 
 
 \begin{itemize}
@@ -1711,7 +1695,7 @@ value are in the domain) in the table where x=a
         table.
 
         \begin{center}
-            In a table on (x,y,z) if tuple (a,b,c) valid $\to$
+            In a table on x,y,z if tuple (a,b,c) valid $\to$
             (x,a), (y,b) and (z,c) supported
         \end{center}
 
@@ -1721,7 +1705,7 @@ STR(X,table){
      supported = $\emptyset$
      for(t $\leftarrow$ table){
         // if tuple is valid
-         if($\forall x_i : x_i$.hasValue(t(i))){
+         if($\forall x_i : x_i .hasValue(t(i))$){
             // literal collected
              for($x_i \leftarrow X$){
                  supported += ($x_i ,t(i)$)
@@ -2444,7 +2428,7 @@ A CSP is described by $(A, R, C)$.
                     \item Detectable precedences : compote the \texttt{ect} of the group
                         to update the \texttt{est} of the activity ($\bigoh(n^2)$ or $\bigoh(n log n)$).
                         $$\forall a_i \in \omega : a_i \prec B (B \notin \omega)
-                        \Rightarrow est_i = max( est_B, ect_{\omega})$$
+                        \Rightarrow est_i = max( est_i, ect_{\omega})$$
                         \begin{center}
                             \includegraphics[width=6cm]{img/pred.png}
                         \end{center}
