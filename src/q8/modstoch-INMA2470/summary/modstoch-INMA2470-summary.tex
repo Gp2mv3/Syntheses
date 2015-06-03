@@ -1,0 +1,384 @@
+\documentclass[en]{../../../eplsummary}
+
+\newcommand{\E}{\mathbb{E}}
+\DeclareMathOperator{\var}{\mathbb{V}ar}
+
+\DeclareMathOperator{\expo}{Expo}
+\DeclareMathOperator{\erlang}{Erlang}
+\DeclareMathOperator{\po}{Po}
+
+\hypertitle{Discrete stochastic models}{8}{3}{4}
+{Benoît Legat}
+{Philippe Chevalier}
+
+\begin{center}
+  \begin{tikzpicture}
+    \node[left] at (-2,-1) {Poisson Processes};
+    \node[left] at (-2, 1) {Renewal Processes};
+    \draw[thick,->] (-2, 1) to (-1,.1);
+    \draw[thick,->] (-2, -1) to (-1,-.1);
+    \node[right] at (-1,0) {Markov Processes};
+    \draw[thick,->] (.8, .8) to (.8,.2);
+    \node[above] at (.8, .8) {Markov Chains};
+    \draw[thick,->] (2.8, 0) to (3.4,0);
+    \node[right] at (3.4, 0) {Queueing Systems};
+    \draw[thick,->] (2.5, 1) to (3.4,1);
+    \node[right] at (3.4, 1) {Markov Decision Processes (MDP)};
+  \end{tikzpicture}
+\end{center}
+
+\section{Probability}
+For more information for this chapter, read \cite[\S1.7]{gallager1995discrete} or \cite[\S1.5]{gallager2010discrete}.
+%\[ \bar{F}_X(x) = 1 - F_X(x) \]
+
+\begin{myineg}[Markov's inequality]
+  Let $Y$ be a positive random variable.
+  We have
+  \[ \Pr[Y \geq y] \leq \frac{1}{y}\E[Y] \]
+  \begin{proof}
+    We can see that
+    \begin{align*}
+      E[Y]
+      & = \int_0^\infty x f(x) \dif x\\
+      & \geq \int_y^\infty x f(x) \dif x\\
+      & \geq y \int_0^y f(x) \dif x\\
+      & = y \Pr[Y \geq y].
+    \end{align*}
+  \end{proof}
+\end{myineg}
+
+If the variance is known, there is a useful corollary
+\begin{myineg}[Chebyshev's inequality]
+  Let $Y$ be a random variable.
+  For an $\epsilon > 0$, we have
+  \[ \Pr[|Y-\E[Y]| \geq \epsilon] \leq \frac{\sigma_Y^2}{\epsilon^2}. \]
+  \begin{proof}
+    Let $Z = (Y - \E[Y])^2$, we see that $Z$ is a positive random variable so we can use Markov's inequality with $z = \epsilon^2$:
+    \begin{align*}
+      \var[Y]
+      & = E[Z]\\
+      & \geq \epsilon^2 \Pr[Z \geq \epsilon^2]\\
+      & = \epsilon^2 \Pr[(Y - \E[Y])^2 \geq \epsilon^2].
+    \end{align*}
+  \end{proof}
+\end{myineg}
+
+It is easy to prove the weak law of large numbers using Chebyshev's inequality.
+\begin{mytheo}[Weak Law of Large Numbers]
+  Let $X_1, \ldots, X_n$ we idependent and identically distributed random variables
+  with finite mean $\bar{X}$ and finite variance $\sigma_X^2$.
+  Denote their sum
+  \[ S_n = X_1 + \cdots + X_n. \]
+  For any $\epsilon > 0$,
+  \[ \lim_{n \to \infty} \Pr\Big[ \Big|\frac{S_n}{n} - \bar{X}\Big| \geq \epsilon \Big] = 0. \]
+
+  \begin{proof}
+    Let's fix $n$ and consider the random variable $Y = S_n/n$.
+    It is easy to see that $\E\{Y\} = \bar{X}$ and $\var\{Y\} = \sigma_X^2/n$~\cite[(1.41)]{gallager2010discrete}.
+    Applying the Chebyshev's inequality we get
+    \[ \Pr[|Y - \E[Y]| \geq \epsilon] \leq \frac{\sigma_X^2}{n\epsilon^2}. \]
+    Since $\sigma_X^2 = 0$, we see directly that
+    \[ \lim_{n \to \infty} \Pr[|Y - \E[Y]| \geq \epsilon] = 0. \]
+  \end{proof}
+\end{mytheo}
+
+\begin{mytheo}[Central limit theorem (CLT)]
+  Let $X_1, X_2, \ldots$ be iid random variables with
+  finite mean $\bar{X}$ and finite variance $\sigma^2$.
+  Then for every real number $z$,
+  \[ \lim_{n \to \infty} \Pr\left\{ \frac{S_n-n\bar{X}}{\sigma\sqrt{n}} \sim \Phi(z) \right\} \]
+  where $\Phi$ is the normal distribution function
+  \[ \Phi(z) = \int_{-\infty}^z \frac{1}{\sqrt{2\pi}} \exp\Big(-\frac{y^2}{2}\Big) \dif y. \]
+\end{mytheo}
+
+\begin{center}
+``The strong law requires considerable patience to understand, but it is a basic and essential result in understanding stochastic processes''\hfill\cite[p.~35]{gallager2010discrete}.
+\end{center}
+
+\begin{mytheo}[Strong Law of Large Numbers (SLLN)]
+  For each integer $n \geq 1$.
+  Let $X_1, X_2, \ldots$ be iid random variables with $\E[|X|] < \infty$.
+  Then
+  \[ \Pr\Big\{ \lim_{n \to \infty} \frac{S_n}{n} = \bar{X} \Big\} = 1. \]
+\end{mytheo}
+
+In short, the Weak Law of Large Numbers guarantees a convergence in probability and the Strong Law a convergence in distribution.
+
+\section{Poisson Processes}
+\cite[\S2]{gallager1995discrete,gallager2010discrete}
+
+A Poisson Process is represented by an arrival rate $\lambda$.
+
+The time between two consecutive arrivals are represented by the iid random variable $X_i$ (see \figuref{poisson}).
+For a fixed $i$, $X_i \sim \expo(\lambda)$ is a continuous random variable for which
+\begin{align*}
+  f_X(t) & = \lambda \exp(-\lambda t), & x \geq 0,\\
+  F_X(t) & = 1 - \exp(-\lambda t), & x \geq 0,\\
+  \E[X]  & = \frac{1}{\lambda},\\
+  \var[X]  & = \frac{1}{\lambda^2}.
+\end{align*}
+The key property of the exponential distribution is the lack of memory:
+$\forall t,x > 0$,
+\[ \Pr[X > t+x \mid X > t] = \Pr[X > x]. \]
+It somewhat defies the intuition.
+If there have been no arrival for a lot of time, it does not mean that it is more likely that there will be an arrival soon.
+
+The exponential law shouldn't be misinterpreted, it really means that the chance of arrival is uniform in time.
+However the uniform distribution doesn't fit here
+since $X_1$ represents the time for one arrival so we kind of stop counting when someone has arrived.
+Therefore of course $f_{X_1}(t_1) > f_{X_1}(t_2)$ if $t_1 < t_2$.
+That doesn't mean that it is less likely that someone arrive at $t_2$ than $t_1$.
+It just means that it is less likely that the \emph{first} arrival will be at $t_2$ than $t_1$.
+
+Their sum, $S_n$ is the time from the start the the $n$th arrival.
+For a fixed $n$, $S_n \expo \erlang_n(\lambda,n)$ is a continuous random variable for which
+\begin{align*}
+  f_{S_n}(t) & = \frac{\lambda^nt^{n-1}\exp(-\lambda t)}{(n-1)!}, & t \geq 0,\\
+  F_{S_n}(t) & = \frac{\gamma(n,\lambda t)}{(n-1)!} = 1 - \sum_{k=0}^{n-1} \frac{1}{k!}\exp(-\lambda t) (\lambda t)^n, & t \geq 0\\
+  \E[S_n] & = \frac{n}{\lambda},\\
+  \var[S_n] & = \frac{n}{\lambda^2}.
+\end{align*}
+
+$N(t)$ is the number of arrival from the start to the time $t$.
+For a fixed $t$, $N(t) \sim \po(\lambda t)$ is a discrete random variable for which
+\begin{align*}
+  \Pr[N(t) = n] & = \frac{(\lambda t)^n\exp(-\lambda t)}{n!}, & n \geq 0,\\
+  F_{N(t)}(n)   & = \frac{\Gamma(n+1,\lambda t)}{n!} = \exp(-\lambda t) \sum_{i=0}^n \frac{(\lambda t)^i}{i!}, & n \geq 0\\
+  \E[N(t)]      & = \lambda t,\\
+  \var[N(t)]    & = \lambda t.
+\end{align*}
+The key property of $N$ is
+\begin{description}
+  \item[Property of stationary increment] The number of arrivals between $t$ and $t'$ is
+    \[ N(t') - N(t) = N(t'-t) - N(t-t) = N(t'-t). \]
+  \item[Property of independent increment] For any sequence $0 < t_1 < t_2 < t_2 < \cdots < t_k$,
+    the random variables $N(t_1), N(t_2-t_1), \ldots, N(t_k-t_{k-2})$ are independent.
+\end{description}
+For small $t = \delta$, we can use the following equations to build approximations
+\begin{align}
+  \label{eq:inc1}
+  \Pr[N(\delta) = 0]    & = 1 - \lambda \delta + o(\delta)\\
+  \label{eq:inc2}
+  \Pr[N(\delta) = 1]    & = \lambda \delta + o(\delta)\\
+  \label{eq:inc3}
+  \Pr[N(\delta) \geq 2] & = o(\delta)
+\end{align}
+where $o$ is such that $\lim_{x \downarrow 0} \frac{o(x)}{x} = 0$ and $o(0) = 0$.
+
+One can check his understanding of $S_n$ and $N(t)$ by verifying that $\forall n,t$,
+\( S_n \leq t \Leftrightarrow N(t) \geq n. \)
+
+It is important to stress the fact that on the contrary to what the intuition would say,
+if there have been many arrival or few arrival preceding a time $t$, it won't affect the time before the next arrival after $t$.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{tikzpicture}
+    \draw[thick,->] (0,0) to (11.5,0);
+    \draw (0,.1) to (0,-.1);
+    \draw[<->] (0,-1) to (1,-1);
+    \node[below] at (.5,-1) {$X_1$};
+    \draw (1,.1) to (1,-.1);
+    \node[below] at (1,-.1) {$t_1$};
+    \draw[<->] (1,-1) to (3.5,-1);
+    \node[below] at (2.25,-1) {$X_2$};
+    \draw (3.5,.1) to (3.5,-.1);
+    \node[below] at (3.5,-.1) {$t_2$};
+    \draw[<->] (3.5,-1) to (7,-1);
+    \node[below] at (5.25,-1) {$X_3$};
+    \draw (7,.1) to (7,-.1);
+    \node[below] at (7,-.1) {$t_3$};
+    \draw[<->] (7,-1) to (8,-1);
+    \node[below] at (7.5,-1) {$X_4$};
+    \draw (8,.1) to (8,-.1);
+    \node[below] at (8,-.1) {$t_4$};
+    \draw[<->] (8,-1) to (11,-1);
+    \node[below] at (9.5,-1) {$X_5$};
+    \draw (11,.1) to (11,-.1);
+    \node[below] at (11,-.1) {$t_5$};
+
+    \draw[<->] (0,-2) to (3.5,-2);
+    \node[below] at (1.75,-2) {$S_2$};
+    \draw[<->] (0,-2.5) to (8,-2.5);
+    \node[below] at (4,-2.5) {$S_4$};
+
+    \draw[dashed] (5,.3) to (5,0);
+    \node[above] at (5,.3) {$N(t) = 2$};
+
+    \draw[dashed] (10,.3) to (10,0);
+    \node[above] at (10,.3) {$N(t) = 4$};
+  \end{tikzpicture}
+  \caption{Example of Poisson Process}
+  \label{fig:poisson}
+\end{figure}
+
+A crucial question that the reader is totally right to ask now is:
+how do we prove that ``something'' is a Poisson Process ?
+Excellent question ! Let me answer this using the following theorem.
+\begin{mytheo} % TODO define renewable process
+  Consider a process counting arrivals.
+  \begin{itemize}
+    \item The process is a Poisson Process with arrival rate $\lambda$.
+    \item The process is a renewable process (i.e. iid arrivals) for which the interarrival intervals have an exponential distribution function with parameter $\lambda$.
+    \item The counting process has independent and stationary increment properties and for all $y \geq 0$, \( N(t) \sim \po(\lambda t) \).
+    \item The counting process has independent and stationary increment properties and for all \eqref{eq:inc1}, \eqref{eq:inc2} and \eqref{eq:inc3} hold for all $t,\delta \geq 0$
+  \end{itemize}
+\end{mytheo}
+
+\paragraph{Combining Poisson Processes}
+If we combine two \emph{independent} poisson processes with arrival rate $\lambda_1$ and $\lambda_2$,
+the combination has arrival rate $\lambda_1 + \lambda_2$.
+
+\paragraph{Subdividing a Poisson Process}
+If an arrival for a Poisson Process is either redirected to
+the process 1 with probability $p$ or to
+the process 2 with probability $1-p$, then
+the process 1 and 2 are \emph{independent} poisson processes with respective arrival rate
+$\lambda_1 = p\lambda$ and $\lambda_2 = (1-p)\lambda$.
+
+\subsection{Symmetry and order}
+If it is known that $N(T) = n$,
+$S_1, \ldots, S_n$ behave like uniform random variables of support $[0,T]$.
+Precisely, we can see the sampling process for $S_1, \ldots, S_n$
+as picking $n$ uniform random variables $U_1, \ldots, U_n$ in $[0,T]$ then sorting them
+and giving to $S_i$ the value of the $i$th one.
+
+Since we sort them, the $n$ values $s_1, \ldots, s_n$ have probability 0 to happen if they are not in nondecreasing order (of course),
+but if they are in increasing order, there are $n!$ different choice of $u_1, \ldots, u_n$ that give those values of $s_1, \ldots, s_n$.
+Therefore, we have
+\[ f_{S_1, \ldots, S_n}(s_1, \ldots, s_n \mid N(T) = n) = \frac{n!}{T^n}. \]
+The $X_i$ are still independent an for $1 \leq i \leq n$,
+\begin{align*}
+  f_{X_i}(t \mid N(T) = n) & = n \Big(\frac{T-t}{T}\Big)^{n-1}, & t & \geq 0,\\
+  F_{X_i}(t \mid N(T) = n) & = 1 - \Big(\frac{T-t}{T}\Big)^n,   & t & \geq 0,\\
+  \E[X_i \mid N(T) = n]    & = \frac{t}{n+1}.
+\end{align*}
+For $S_i$ we have
+\begin{align*}
+  f_{S_i}(t \mid N(T) = n) & = \frac{t^{i-1}(T-t)^{n-i}n!}{T^n(n-i)!(i-1)!} & t & \geq 0.
+\end{align*}
+
+\subsection{Non-homogeneous Poisson Processes}
+For now we have assumed that $\lambda(t)$ was constant in time, i.e. $\lambda(t) = \lambda$ $\forall t \geq 0$.
+
+If it is not constant, we lose the property of stationary increment.
+We could keep it if we consider a non-linear time scale.
+Let's consider small increments $\dif t$.
+The property of stationary increment said that $N(t + \dif t) - N(t) = N(\dif t)$.
+For Non-homogeneous Poisson Processes, we have instead
+\[ N\Big(t + \frac{\dif t}{\lambda(t)}\Big) - N(t) = N\Big(\frac{\dif t}{\lambda_0}\Big). \]
+That is, we partition the time axis in increments $\dif t/\lambda(t)$.
+We have
+\begin{align*}
+  \Pr\Big[N\Big(t+\frac{\delta}{\lambda(t)}\Big) - N(t) =    0\Big] & = 1 - \delta + o(\delta)\\
+  \Pr\Big[N\Big(t+\frac{\delta}{\lambda(t)}\Big) - N(t) =    1\Big] & = \delta + o(\delta)\\
+  \Pr\Big[N\Big(t+\frac{\delta}{\lambda(t)}\Big) - N(t) \geq 2\Big] & = o(\delta)
+\end{align*}
+
+From this idea, one can show that~\cite[Theorem~2.5]{gallager2010discrete}
+\begin{align*}
+  \Pr[N(t_2)-N(t_1) = n] & = \frac{[m(t_1,t_2)]^n \exp[-m(t_1,t_2)]}{n!}, & t_1,t_2 & \geq 0,\\
+  m(t_1, t_2)            & = \int_{t_1}^{t_2} \lambda(\tau) \dif \tau.
+\end{align*}
+Note that $\Pr[N(t) = n]$ is easily obtained by taking $t_1 = 0$ and $t_2 = t$.
+
+\begin{myexem}
+  Let's consider an M/G/$\infty$ Queueing System.
+  We want to analyse the number of people in the being serviced at a given time $\tau$.
+  Let $N_\tau(t)$ be the number of people arrived between $0$ and $t$ and still being serviced at $\tau$.
+  We have the independent increment property.
+  Let's see the stationarity of the increment:
+  \[ N_\tau(t+\dif t) - N_\tau(t) = (1 - F_G(\tau - t)) N(\dif t). \]
+  That means that $\lambda_\tau(t) = (1-F_G(\tau-t)) \lambda$.
+  We have
+  \begin{align}
+    \notag
+    m(0,\tau) & = \lambda \int_0^\tau 1 - F_G(\tau - t) \dif t\\
+    \notag
+              & = \lambda \tau - \lambda \int_0^\tau \int_0^{\tau-t} f_G(t') \dif t' \dif t\\
+    \notag
+              & = \lambda \tau - \lambda \int_0^\tau f_G(t') \int_0^{\tau-t'} \dif t \dif t'\\
+    \notag
+              & = \lambda \tau - \lambda \int_0^\tau f_G(t') (\tau-t') \dif t'\\
+    \label{eq:mginf}
+              & = \lambda \int_0^\tau f_G(t') t' \dif t'
+               %& = \lambda \int_0^\infty f_G(t') \int_{t_1}^{\min(t_2,t')}  \dif t \dif t'\\
+  \end{align}
+  so
+  \begin{align*}
+    \lim_{\tau \to \infty} m(0,\tau) & = \lambda\E[G].
+  \end{align*}
+  Therefore
+  \[ \lim_{\tau\to\infty} \Pr[N_{\tau}(\tau) = n] = \frac{[\lambda\E[G]]^n \exp[-\lambda\E[g]]}{n!} \]
+  hence the number of people being serviced tends to (or is in steady state) a Poisson distribution $\po(\lambda\E[G])$.
+  In other word, $N_\tau$ tends to be an homogeneous Poisson Process with arrival rate $\lambda$ that has started at time $\tau - \E[G]$.
+
+  It is interesting to compare \figuref{mginf} with \eqref{eq:mginf}.
+  For $\tau < \inf$, we $m(0,\tau) < \lambda \E[G]$ because the
+  part of the integral form $\tau$ to $\infty$ is missing.
+
+  \begin{figure}[!ht]
+    \begin{subfigure}{0.5\textwidth}
+      \begin{tikzpicture}[scale=1.3]
+        \draw[thick, domain=0:4] plot
+        (\x, {1/2});
+        \draw[thick, domain=0:4] plot
+        (\x, {exp((\x)-4)});
+        \draw[dashed,->] (0,0) to (4.5,0);
+        \draw[dashed,->] (0,0) to (0,1.5);
+        \draw (-0.1,1/2) to (0.1,1/2);
+        \node[left] at (-0.1,1/2) {$\lambda$};
+        \draw (-0.1,1) to (0.1,1);
+        \node[left] at (-0.1,1) {$1$};
+        \draw (4,.1) to (4,-.1);
+        \node[below] at (4,-.1) {$\tau$};
+        \node[above] at (4,1) {$1 - F_G(\tau-t)$};
+      \end{tikzpicture}
+      \caption{Plot of $\lambda$ and the probability to be still serviced at $\tau$.
+      $\lambda(t)$ is the product of the two curves.}
+      \label{fig:mginf}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+      \begin{tikzpicture}[scale=1.3]
+        \draw[thick, domain=0:4] plot
+        (\x, {1/2});
+        \draw[thick, domain=0:3] plot
+        (\x, {0});
+        \draw[thick] (3,0) to (3,1);
+        \draw[thick, domain=3:4] plot
+        (\x, {1});
+        \draw[dashed,->] (0,0) to (4.5,0);
+        \draw[dashed,->] (0,0) to (0,1.5);
+        \draw (-0.1,1/2) to (0.1,1/2);
+        \node[left] at (-0.1,1/2) {$\lambda$};
+        \draw (-0.1,1) to (0.1,1);
+        \node[left] at (-0.1,1) {$1$};
+        \draw (4,.1) to (4,-.1);
+        \node[below] at (4,-.1) {$\tau$};
+        \draw (3,.1) to (3,-.1);
+        \node[below] at (3,-.1) {$\tau-\E[G]$};
+      \end{tikzpicture}
+      \caption{$N_\tau(\tau)$ tends to a homogeneous Poisson Process
+      of arrival rate $\lambda$ having started at $\tau-\E[G]$.}
+    \end{subfigure}
+  \end{figure}
+\end{myexem}
+
+\section{Renewal Processes}
+\cite[\S3]{gallager1995discrete,gallager2010discrete}
+
+\section{Markov Chains}
+\cite[\S4--5]{gallager1995discrete,gallager2010discrete}
+
+\section{Markov Decision Processes (MDP)}
+\cite{puterman2014markov}
+
+\section{Markov Processes}
+\cite[\S6]{gallager1995discrete,gallager2010discrete}
+
+\section{Queueing Systems}
+
+\nocite{*}
+\biblio[alpha]
+
+\end{document}
