@@ -550,6 +550,8 @@ propagate(){
 In this case, the queue contains constraints and literals $(c,x,a)$.
 c has to reflect that $a \notin$ D(x).
 
+We have more information because we know exactly the value removed.
+
 \begin{itemize}
     \item[+] efficient filtering
     \item[-] called for each literal removed
@@ -569,14 +571,14 @@ c considers (c, y, b) on Q are sill in the domains!
 \subsubsection{Fixed point algorithm}
 In this case, the propagator must implement :
 \begin{enumerate}
-    \item \texttt{setup()} : initialize the constraint
+    \item \texttt{setup()} : initialize the constraint and first pruning
     \item \texttt{valRemove(x, a)} : computes the set of values that are
         inconsistent because $a \notin D(x)$
 \end{enumerate}
 
 \paragraph{Note:} use GAC consistency
 
-\begin{lstlisting}[mathescape, caption=CB Fixed point]
+\begin{lstlisting}[mathescape, caption=VB Fixed point]
 
 initVBDomFilter(X, D, C){
     Q = $\emptyset$
@@ -981,14 +983,14 @@ propagateQueueFC(Q){
 
 \paragraph{Singleton} A CSP (\textsc{X, D, C}) is singleton $X_{Consistent}$ iff
 \begin{lstlisting}[mathescape]
-    $\forall x \in X, \forall a \in D(x):$ the CSP(\textsc{X, $D_{x=a}$, C) can be made S consistent
+    $\forall x \in X, \forall a \in D(x):$ the CSP(X, $D_{x=a}$, C) can be made S consistent
 \end{lstlisting}
 
 $D_{x=a} = D$ where $D(x)={a}$
 
 \paragraph{Singleton GAC} A constraint $c$ is singleton GAC iff
 \begin{lstlisting}[mathescape]
-    $\forall x \in X, \forall a \in D(x):$ the CSP(\textsc{X, $D_{x=a}$, C) can be made GAC
+    $\forall x \in X, \forall a \in D(x):$ the CSP(X, $D_{x=a}$, C) can be made GAC
 \end{lstlisting}
 
 In world, the singleton check the consistency after \textit{assign} a value to
@@ -1706,7 +1708,7 @@ value are in the domain) in the table where x=a
 
 
 \begin{itemize}
-    \item \textbf{Simple tabular reduction}: When a tuyple is found valid,
+    \item \textbf{Simple tabular reduction}: When a tuple is found valid,
         all its value are supported. If tuple is invalid, he is removed from the
         table.
 
@@ -2247,27 +2249,41 @@ $$minimize \quad \sum_{i \in \{1,\ldots,n\} \cup \{n+1,\ldots,n+m\}} C_{i, succ(
 noCycles(succ) $\bigwedge$ noCycles(pred)
 
 // Time
-a(succ(i)) = dep(i) + $T_{i,succ(i)} \forall i \in \{1,...,n\} \cup \{n+1,...,n+m\} U \{n+2m+1\}$
+$\forall i \in \{1,...,n\} \cup \{n+1,...,n+m\} U \{n+2m+1\}$
+    a(succ(i)) = dep(i) + $T_{i,succ(i)}$ 
 
-serv(i) $\geq$ a(i) $\forall i \in \{1,...,n\}$
-serv(i) $\geq$ $E_i \forall i \in \{1,...,n\}$
-serv(i) $\leq$ $L_i \forall i \in \{1,...,n\}$
-serv(i) + $S_i = dep(i) \forall i \in \{1,...,n\} $
-dep(i) = 0i $\forall i \in \{n+1,...,n+m\} \cup \{n+2m+1\}$
+$\forall i \in \{1,...,n\}$
+    serv(i) $\geq$ a(i) 
+    serv(i) $\geq$ $E_i$ 
+    serv(i) $\leq$ $L_i$ 
+    serv(i) + $S_i = dep(i)$ 
+
+$\forall i \in \{n+1,...,n+m\} \cup \{n+2m+1\}$
+    dep(i) = 0 
 
 // Load
-q(succ(i),k) = q(i,k) + $Dem_{succ(i),k} \forall i \in \{1,...,n\} U \{n+1,...,n+m\} U \{n+2m+1\}$
-                                         $\forall k \in \{1,...,p\}$
-q(i,k) $\leq$ Q route(i),k $\forall i \in \{1,...,n\}, \forall k \in \{1,...,p\}$
-q(i,k) = 0 $\forall i \in \{n+1,...,n+m\} U \{n+2m+1\}$
-            $\forall k \in \{1,...,p\}$
+
+$\forall k \in \{1,...,p\}$
+    $\forall i \in \{1,...,n\} \cup \{n+1,...,n+m\} U \{n+2m+1\}$
+        q(succ(i),k) = q(i,k) + $Dem_{succ(i),k}$ 
+        q(i,k) = 0 
+
+    $\forall i \in \{1,...,n\}$
+        q(i,k) $\leq Q_{route(i), k}$
 
 // Consistency
-succ(pred(i)) = i $\forall i \in \{1,...,n\} \cup \{n+m+1,...,n+2m\} \cup \{n+2m+2\}$
-pred(succ(i)) = i $\forall i \in \{1,...,n\} \cup \{n+1,...,n+m\} \cup \{n+2m+1\}$
-route(succ(i)) = route(i) $\forall i \in \{1,...,n\} \cup \{n+1,...,n+m\} \cup \{n+2m+1\}$
-route(n+k) = k $\forall k \in \{1,...,m\}$
-route(n+m+k) = k $\forall k \in \{1,...,m\}$
+
+$\forall i \in \{1,...,n\} \cup \{n+m+1,...,n+2m\} \cup \{n+2m+2\}$
+    succ(pred(i)) = i 
+
+$\forall i \in \{1,...,n\} \cup \{n+1,...,n+m\} \cup \{n+2m+1\}$
+    pred(succ(i)) = i 
+    route(succ(i)) = route(i) 
+
+$\forall k \in \{1,...,m\}$
+    route(n+k) = k 
+    route(n+m+k) = k 
+
 route(n+2m+1) = 0
 route(n+2m+2) = 0
 \end{lstlisting}
@@ -2343,11 +2359,15 @@ Objective function can include :
 
 \begin{lstlisting}[mathescape]
 // Demand
-$\sum_{i \in\{1,\ldots,n\}} (Shift(i,d) == s) * Q_{i,k} \geq D_{d, k, s}$
-$\forall d \in \{1,\cdots,nd\}, \forall k \in \{1,\cdots, nk\}, \forall s \in \{1,2,3\}$
+$\forall d \in \{1,\cdots,nd\}$
+    $\forall k \in \{1,\cdots, nk\}$
+        $\forall s \in \{1,2,3\}$
+            $\sum_{i \in\{1,\ldots,n\}}$ ( Shift(i,d) == s ) * $Q_{i,k} \geq D_{d, k, s}$
 
 // Shift pattern
-(Shift(i,d) == 3) + (Shift(i,d+1) == 3) $\leq$ 1 $\forall i \in \{1,...,n\}, \forall d \in \{1,...,nd-1\}$
+$\forall i \in \{1,...,n\}$
+    $\forall d \in \{1,...,nd-1\}$
+        (Shift(i,d) == 3) + (Shift(i,d+1) == 3) $\leq$ 1 
 \end{lstlisting}
 
 The problem with this solution is a \textbf{very poor propagation}
@@ -2358,18 +2378,22 @@ The problem with this solution is a \textbf{very poor propagation}
 Auxiliary quantities :
 \begin{itemize}
     \item $N_k$: set of nurse having qualification $k$
-    \item[$\to$] $ShiftQualif(d, k) = Shift(N_k, d)$
 
-    \item $ShiftOf(i) = Shift(i, -)$ : array of all shifts for nurse i
+    \item ShiftQualif(d, k) = Shift($N_k$, d)
+
+    \item ShiftOf(i) = Shift(i, -) : array of all shifts for nurse i
 \end{itemize}
 
 \begin{lstlisting}[mathescape]
 // Demand
-Among(ShiftQualif(d,k),$D_{d,k,s}$ ,n,{s}) $\forall d \in \{1,...,nd\},
-\forall k \in \{1,...,nk\}, \forall s \in \{1,2,3\}$
+$\forall d \in \{1,...,nd\}$
+    $\forall k \in \{1,...,nk\}$
+        $ \forall s \in \{1,2,3\}$
+            Among(ShiftQualif(d,k),$D_{d,k,s}$ ,n,{s}) 
 
 // Shift pattern
-Sequence(ShiftsOf(i),{3},2,0,1) $\forall i \in \{1,\cdots,n\}$
+$\forall i \in \{1,\cdots,n\}$
+    Sequence(ShiftsOf(i),{3},2,0,1) 
 \end{lstlisting}
 
 \begin{itemize}
