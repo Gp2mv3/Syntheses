@@ -187,35 +187,37 @@ improve pruning (reduce search space), improve communication
 
         \hline
 
-        \scriptsize
+        \small
         \begin{enumerate}
             \item \textcolor{red}{less} information
             \item called \textcolor{green}{less}
         \end{enumerate}
+        
         &
-        \scriptsize
+        \small
         \begin{enumerate}
             \item \textcolor{green}{more} information
             \item called \textcolor{green}{less}
         \end{enumerate}
+        
         &
-        \scriptsize
+        \small
         \begin{enumerate}
             \item \textcolor{green}{more} information
             \item called \textcolor{red}{more}
         \end{enumerate}
+        
         \\
 
-        \multicolumn{3}{|c|}{\begin{tikzpicture}
+        \multicolumn{3}{c}{\begin{tikzpicture}
             \draw[<->] (0,0) -- (13, 0);
         \end{tikzpicture}}\\
-        \hline
 
     \end{tabular}
     \caption{Fixed point}
 \end{table}
 
-\subsection{Without propagation (Bruteforce)}:
+\subsection{Without propagation (Bruteforce)}
 
 \begin{tabular}{m{6cm}cm{6cm}}
     \begin{itemize}
@@ -248,11 +250,13 @@ The propagation perfom checking and \textcolor{red}{fail} when there is
 no partial solution : checking fails or there is inconsistency (empty domain,\ldots)
 
 \subsubsection{Level of propagation}
+\begin{center}
 \begin{tabular}{ccc}
-    \textbf{Weaker} & $\Rightarrow$ & \textbf{Stronger} \\
+    \textbf{Weaker} & $\Leftrightarrow$ & \textbf{Stronger} \\
     Less pruning & & More pruning \\
     Cheaper to compute & & More expensive to compute \\
 \end{tabular}
+\end{center}
 
 
 \subsection{Constraint based propagation}
@@ -261,10 +265,10 @@ no partial solution : checking fails or there is inconsistency (empty domain,\ld
 
 The propagator must implements two methods :
 \begin{enumerate}
-    \item setup() : initialize the constraint
-    \item propagate() : compute the set of values that are inconsistent
+    \item \texttt{setup()} : initialize the constraint
+    \item \texttt{propagate()} : compute the set of values that are inconsistent
 
-    \item[Note:] removeValue(a, D(x)) fails if D(x) empty
+    \item[$\to$] \texttt{removeValue(a, D(x))} fails if D(x) empty
 \end{enumerate}
 
 \paragraph{Note:} use GAC consistency
@@ -301,7 +305,7 @@ propagateQueueCBDomFilter(Q){
 
 \subsubsection{Generic GAC}
 
-The only requirement is a test method for the constraint which say true/false
+The only requirement is a test method for the constraint which say \textit{true/false}
 if the given value is right.
 
 
@@ -313,8 +317,8 @@ propagate(){
     $\Delta$ = $\emptyset$
     for(x $\leftarrow$ scope){
         for(a $\leftarrow$ D(x)){
-            if( $\forall(v \leftarrow D(scope)_{x=a}) (! c(v))$ )
-                // No combination with x=a satisfying the constraint in the current dom
+            if( $\forall(v \leftarrow D(scope)_{x=a})$ (! c(v)) )
+                // No combination with x=a satisfying the constraint
                 $\Delta$ += (x, a)
         }
     }
@@ -324,8 +328,8 @@ propagate(){
 
     \begin{tabular}{m{7cm}cm{6cm}}
         \begin{itemize}
-            \item $\bigoh(r^2 \times d^r)$ for propagate()
-            \item $\bigoh(r \times d)$ calls of propagate() in propagateQueueCBDomFilter
+            \item $\bigoh(r^2 \times d^r)$ for \texttt{propagate()}
+            \item $\bigoh(r \times d)$ calls of \texttt{propagate()} in \texttt{propagateQueueCBDomFilter()}
         \end{itemize}
         & $\to$ &
         \textbf{Global complexity}: $\bigoh(e \times r^3 \times d^{r+1})$
@@ -347,6 +351,7 @@ propagate(){
 setup(){
     for(a $\leftarrow D(x)$) { support(x, a) = $\bot$}
     for(b $\leftarrow D(y)$) { support(y, b) = $\bot$}
+}
 
 propagate(){
     $\Delta_1$ = propagate_var(x)
@@ -377,9 +382,9 @@ propagate_var(x){
 
     \begin{tabular}{m{7cm}cm{6cm}}
         \begin{itemize}
-            \item $\bigoh(d)$ for setup()
-            \item $\bigoh(d^2)$ for propagate()
-            \item $\bigoh(d)$ calls of propagate() in propagateQueueCBDomFilter
+            \item $\bigoh(d)$ for \texttt{setup()}
+            \item $\bigoh(d^2)$ for \texttt{propagate()}
+            \item $\bigoh(d)$ calls of \texttt{propagate()} in \texttt{propagateQueueCBDomFilter()}
         \end{itemize}
         & $\to$ &
         \textbf{Global complexity}: $\bigoh(e \times d^3)$
@@ -396,7 +401,7 @@ keep the firstSupport which may be restore when backtracking.
 
 \paragraph{Note: } Propagator for binary constraints ($\scp(c)=(x, y)$)
 
-\begin{lstlisting}[mathescape, caption=AC3rm]
+\begin{lstlisting}[mathescape, caption=AC2001]
 setup(){
     for(a $\leftarrow D(x)$) { support(x, a) = $\bot$}
     for(b $\leftarrow D(y)$) { support(y, b) = $\bot$}
@@ -465,9 +470,8 @@ propagate(){
 \subsection{Value based propagation}
 
 In this case, the queue contains constraints and literals $(c,x,a)$.
-In this case, c has to reflect that $a \notin$ D(x).
+c has to reflect that $a \notin$ D(x).
 
-\paragraph{ }
 \begin{itemize}
     \item[+] efficient filtering
     \item[-] called for each literal removed
@@ -487,8 +491,8 @@ c considers (c, y, b) on Q are sill in the domains!
 \subsubsection{Fixed point algorithm}
 In this case, the propagator must implement :
 \begin{enumerate}
-    \item setup() : initialize the constraint
-    \item valRemove(x, a) : computes the set of values that are
+    \item \texttt{setup()} : initialize the constraint
+    \item \texttt{valRemove(x, a)} : computes the set of values that are
         inconsistent because $a \notin D(x)$
 \end{enumerate}
 
@@ -522,8 +526,8 @@ propagateQueueVBDomFilter(Q){
     while(Q $\neq$ $\emptyset$){
         (c, x, a) = popCtrtLiteral(Q)
         $\Delta$ = c.valRemove(x, a)
-        for((x,a) $leftarrow$ $\Delta$){
-            removeValue(a,D(x))
+        for((x,a) $\leftarrow$ $\Delta$){
+            removeValue(a,D(x))             
             for(c $\leftarrow$ C/{c} if c.scope contains x){
                 if(! Q contains (c, x, a))
                     Q += (c, x, a)
@@ -570,7 +574,7 @@ setup(){
         }
     }
 
-    return $Delta$
+    return $\Delta$
 }
 
 valRemove(x, a){
