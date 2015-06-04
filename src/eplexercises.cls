@@ -34,4 +34,10 @@
 
 \RequirePackage{../../../eplqa}
 
+% \comment and \endcomment of the environment solution
+% does not work with newcommand
+\ifthenelse{\equal{\Sol}{false}}
+{\newcommand{\copypaste}{}}
+{\newcommand{\copypaste}[2]{\begin{solution}\IfLanguageName{english}{See}{Voir} \QAlabel~#2 \IfLanguageName{english}{of }{de l'}APE#1.\end{solution}}}
+
 \endinput
