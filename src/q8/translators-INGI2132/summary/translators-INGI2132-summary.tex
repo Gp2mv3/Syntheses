@@ -2008,6 +2008,53 @@ appropriés, toutes les instructions sont complète.
         \end{enumerate}
 \end{itemize}
 
+\paragraph{Allocation}
+\begin{itemize}
+    \item On maintient plusieurs \textbf{freelist} tel que \texttt{freelist[i]} 
+        contient les records de taille $i$
+
+    \item Lorsqu'un objet demande un chunk, on peut donner n'importe
+quel block de taille >= celle demandée.
+\end{itemize}
+
+
+\begin{table}[!h]
+    \centering
+    \begin{tabular}{|p{4cm}|p{9cm}|}
+    \hline
+        Nom & Avantage/inconvénient \\
+    \hline
+    \hline
+
+        Reference counting & \begin{itemize}
+            \item[+] Rapide, sûre
+            \item[-] Ne fonctionne pas avec des ref circulaires
+        \end{itemize}
+        \\
+    \hline
+    Mark \& sweep classique & \begin{itemize}
+        \item[-] Complexité spatiale $\bigoh(H)$, fragmentation et coût d'allocation
+    \end{itemize}
+    \\
+    \hline
+
+    Mark \& sweep reversibel & \begin{itemize}
+        \item[+] La stack est ``contenue'' dans le graph pointer
+        \item[-] Fragmentation et coût d'allocation
+    \end{itemize}
+    \\
+    \hline
+
+    Copying collection & \begin{itemize}
+        \item[+] facile d'allouer de la mémoire (à la fin), pas de
+            fragmentation (compactage automatique), le temps est proportionnel au
+            nombre d'objets vivants
+        \item[-] Il faut le double d'espace mémoire.
+    \end{itemize}
+
+    \end{tabular}
+    \caption{Garbage solution}
+\end{table}
 \subsection{Reference Counting}
 
 \begin{itemize}
@@ -2069,7 +2116,7 @@ function DFS(x)
 \end{lstlisting}
 \end{minipage}
 \end{tabular}
-\caption{Implementation mark phase}
+\caption{Implementation mark phase sans re}
 \end{figure}
                 
 \begin{itemize}
@@ -2080,7 +2127,7 @@ complexité pour un heap de size $H$ peut être de $\bigoh(H)$. $\to$
 Pas acceptable
 \end{itemize}
 
-\paragraph{\textbf{Pointer reversal}} : 
+\item{\textbf{Mark avec Pointer reversal}} : 
 
 \begin{tabular}{m{7cm}m{3cm}m{0.5cm}m{3cm}}
 l'idée est de faire un DFS et d'encoder
@@ -2126,87 +2173,167 @@ function DFS(x)
 \end{lstlisting}
 
 
-
     \item \textbf{Sweep} : on itère sur tout les objets du heap, on
 supprime les objets non marqué et on clear les marks.
 
 \begin{figure}[!h]
-\begin{tabular}{cc}
-\begin{minipage}{0.4\linewidth}
+    \centering
 \begin{lstlisting}[mathescape]
 function DFS(x)
-    if $x$ == pointer into the heap AND record $x$ is not marked
-        mark $x$
+    $p$ = first address in heap
+    while $p$ < last adress in heap
+        if record $p$ marked
+            unmark $p$
+        else  %% (let f_1 the first field in p
+            $f_1$ = freelist
+            freelist = $p$
         
-        foreach field $f_i$ of record $x$
-            DFS($x.f_i$)
+        $p$ = $p$ + sizeof($p$)
 \end{lstlisting}
-\end{minipage}
-&
-\begin{minipage}{0.4\linewidth}
-\begin{lstlisting}[mathescape]
-function DFS(x)
-    if $x$ == pointer into the heap AND record $x$ is not marked
-        mark $x$
-        
-        t=1
-        stack[t] = x
-        
-        while t > 0
-            x = stack[t--]
-            
-            foreach field $f_i$ of record $x$ 
-                if $x.f_i$ == pointer AND record $x.f_i$ not marked
-                    mark $x.f_i$
-                    stack[++t] = $x.f_i$
-\end{lstlisting}
-\end{minipage}
-\end{tabular}
 \caption{Implementation mark phase}
 \end{figure}
  
 
 \end{enumerate}
 
-On peut le faire en Depht-first Search (avec ou sans récursion) ou alors en pointer reverse.
 
-Le cout peut être très élevé si il y a peu à jetter. Si plus de 50\% de la heap est concervée, on augmente la taille de la heap.
-
-L'allocation de donnée dans le heap se fait par :
-Lorsqu'un objet demande un chunk, on peut donner n'importe quel block de taille >= celle demandée. C'est plus efficace de maintenir des listes des blocks disponible par taille.
+\subsubsection{Conclusion}
+On peut le faire en DFS mais contraignant pour la complexité
+spatiale donc une meilleur solution est d'utiliser l'idée du pointer reverse.
 
 
-Le mark and Sweep permet de gerer les cycles. Par contre, il peut y avoir des problème de fragmentation et un cout d'allocation grand.
+\paragraph{Garbage}
+
+Le cout peut être très élevé si il y a peu à supprimer.
+
+Une meilleur solution est de mesuré $H$ (heap size) and $R$ (reachable data in heap)
+tel que si $\frac{R}{H} > 0.5$ on augmente la taille du heap.
+
+
+$$\textrm{Cost: } \frac{c_1 R + c_2 H}{H-R}, \quad \textrm{avec c constant number of instructions}$$
+
+
+\paragraph{$\to$}
+Le mark and Sweep permet de gerer les cycles. Par contre, il peut y
+avoir des problème de fragmentation et un cout d'allocation grand.
 
 
 \subsection{Copying collection : Cheney algorithm}
 
 On splitte la heap en 2 : from-space et to-space
 
+\begin{figure}[!h]
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=7cm]{img/cheney.png}
+    &
+    \includegraphics[width=7cm]{img/cheney1.png}
+\end{tabular}
+
+    \caption{Cheney principle}
+\end{figure}
+
 \begin{itemize}
 	\item Pour les references venant de la stack:
-		\begin{itemize}
+		\begin{enumerate}
 			\item Si l'objet référencé est dans l'espace from, il faut l'amener
 			dans l'espace to et laisser un pointer qui pointer vers le nouvel
 			emplacement (forwarder pointer).
 			\item Si l'objet référencé est déjà dans l'espace to, il faut mettre
 			à jour la référence à partir du forwarder pointer.
-		\end{itemize}
+		\end{enumerate}
 	\item Pour les références venant de l'espace to, on effectue les même
 	opération que au dessus.	
 \end{itemize}
 
-Initialement tout les chunck utilisé sont dans le from-space. Au lieu
- de marquer les chuncks utilisés, on les place dans le to-space. 
-Tout en maintenant à l'ancien emplacement une référence vers le nouvel emplacement.
-On déplace ainsi petit-à-petit en suivant les liens. Lorsque l'algo 
-est fini, on inverse les utilisations des deux espaces (from devient to et to deviens from).
+\paragraph{Etapes}
+\begin{enumerate}
+    \item Initialement tout les chunck utilisé sont dans le from-space. 
+    \item Au lieu
+        de marquer les chuncks utilisés, on les place dans le to-space tout
+        en maintenant à l'ancien emplacement une référence vers le nouvel
+        emplacement. 
+    \item[$\to$]On déplace ainsi petit-à-petit en suivant les liens.
 
-Les aventages sont : facile d'allouer de la mémoire (à la fin), pas de fragmentation (compactage automatique), le temps est proportionnel au nombre d'objets vivants. Par contre, il faut le double d'espace mémoire.
+    \item Lorsque l'algo est fini, on inverse les utilisations des deux espaces
+        (from devient to et to deviens from).
+\end{enumerate}
+
+\begin{figure}[!h]
+\begin{tabular}{cc}
+\begin{minipage}{0.4\textwidth}
+\begin{lstlisting}[mathescape]
+function Forward(p)
+    if $p$ points to from-space
+        if $p.f_1$ points to to-space
+            return $p.f_1$
+        else
+            foreach field $f_i$ of $p$
+                $next.f_i = p.fi$
+            $p.f_i = next$
+            $next = next$ + size of recod $p$
+            return $p.f_i$
+
+    else
+        return $p$
+\end{lstlisting}
+\end{minipage}
+&
+\begin{minipage}{0.4\textwidth}
+\begin{lstlisting}[mathescape]
+scan = next = beginning of to-space
+
+foreach root $r$
+    $r$ = Forward(r)
+
+while $scan < next$
+    foreach field $f_i$ of record at $scan$
+        $scan.f_i$ = Forward($scan.f_i$)
+
+    $scan = scan$ + size of record at $scan$
+\end{lstlisting}
+\end{minipage}
+\end{tabular}
+\caption{Cheney algorithm}
+\end{figure}
+
+
+\subsubsection{Avantages/inconvenient}
+
+\begin{itemize}
+    \item Simple: pas besoin de stack
+    \item Facile d'allouer de la mémoire: \texttt{malloc(n)} implémenté avec \texttt{next = next + n}
+    \item Pas de fragmentation (compactage automatique)
+    \item Le temps est proportionnel au nombre d'objets vivants.
+\end{itemize}
+
+Par contre, il faut le \textbf{double} d'espace mémoire.
 
 \subsection{Generational collection}
 
-On ne fait du tris que dans les objets concidéré comme "jeune", c'est à dire lorsqu'ils ont survécu à plusieurs passage du garbage collector. On a alors une siscion dans la mémoire entre jeune et vieux. Lorsqu'un objet devient vieux, il est déplacé dans la partie vieux.
+\begin{itemize}
+    \item On ne fait du tris que dans les objets concidéré comme "jeune",
+        c'est à dire lorsqu'ils ont survécu à plusieurs passage du garbage
+        collector. 
+    \item En effet, la majorité des objects meurent ``\textbf{jeune} et ceux 
+        qui reste atteignable pour longtemps sont souvent : global, referencé depuis la main
+    \item[$\Rightarrow$] On a alors une siscion dans la mémoire entre jeune et vieux.
+        Lorsqu'un objet devient vieux, il est déplacé dans la partie vieux.
+\end{itemize}
+
+
+\begin{figure}[!h]
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=7cm]{img/generation.png}
+    &
+    \includegraphics[width=7cm]{img/generation1.png}
+\end{tabular}
+
+    \caption{Generation principle}
+\end{figure}
+
+
 
 
 \section{DSL \& Scala} % Alex
