@@ -2348,7 +2348,7 @@ Par contre, il faut le \textbf{double} d'espace mémoire.
 \section{DSL \& Scala}
 
 \subsection{Basic}
-\subsubsection{Les variables}
+\subsubsection{Variables}
 
 \paragraph{Mot-clef}
 
@@ -2356,6 +2356,7 @@ Par contre, il faut le \textbf{double} d'espace mémoire.
 \begin{itemize}
     \item \texttt{val} 
     \item \texttt{var}
+    \item \texttt{lazy val}: evalué uniquement au premier accès
 \end{itemize}
 &
 \begin{lstlisting}
@@ -2389,7 +2390,72 @@ val nums: List[Int] = List(1, 2, 3)
 \end{tabular}
 
 
+
+\subsubsection{Mutability Vs non-mutability}
+
+On encourage val plutôt que var, ainsi que des collections immutable.
+
+\subsubsection{Pattern matching}
+\begin{tabular}{cccc}
+    \begin{minipage}{0.4\linewidth}
+        \begin{lstlisting}
+val times = 1
+times match {
+    // On value
+    case 1 => ...
+
+    // With guards
+    case i if i == 2 => ...
+
+    // On types
+    case j: Int  => ...
+    case d: Double if d > 0.0 => ...
+
+    // Default
+    case _ => ...
+}
+        \end{lstlisting}
+    \end{minipage}
+&
+    \begin{minipage}{0.5\linewidth}
+        \begin{lstlisting}
+object Test extends App {
+    def bookType(b: Book) = b mathc {
+        case Book(5) => ``Revue''
+        case Book(3) => ``Journal''
+        case Book(i) => ``default: %s''.format(i)
+    }
+}
+        \end{lstlisting}
+    \end{minipage}
+    \\
+\end{tabular}
+
+
+\subsubsection{Imports}
+Les imports peuvent apparaitre n'importe où dans le code.
+
+\subsubsection{Exception}
+\texttt{Nothing} est un subtype of tout les autres types.
+
+\begin{lstlisting}
+def error(message: String): Nothing = 
+    throw new RuntimeException(message)
+
+def divide(x: Int, y: Int): Int = 
+    if (y != 0) x / y
+    else error(``cannot divide by zero'')  
+
+// Return Int est respecte comme Nothing est un subtype de Int
+\end{lstlisting}
+
 \subsection{Orienté object}
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=\linewidth]{img/hierarchy.png}
+    \caption{Hierarchie}
+\end{figure}
 
 \subsubsection{Pure O.O.}
 
@@ -2524,29 +2590,55 @@ nums.map(x => x+1)      // List(2,3,4)
 \end{lstlisting}
 \end{tabular}
 
-\subsection{Mutability}
 
-\todo{What is this fuk ? En quoi c'est cool/pas cool ? \#poulpe}
-
-\subsection{Null and options}
-
-Null, c'est nul ! Difficle à gérer. Si une variable peut être nulle, il faut checker, sinon risque de \texttt{NullPointerException}.
-
-A la place, il faut utiliser le type \texttt{Option[T]}. Selon le cas, cela va nous renvoyer \texttt{Some(x)} si x existe, \texttt{None} dans l'autre cas.
-
-\subsection{Currying (et safraning, paprikaning, etc.)}
+\subsubsection{Currying}
 
 On peut définir plus qu'une séquence d'arguments.
 
+\begin{tabular}{cm{7cm}}
 \begin{lstlisting}
-def add(a)(b) = a+b
-add(1)(2)
+def add(a: Int)(b: Int) = a + b
+
+// Partially applied function
+val f = add(1)(_)
 \end{lstlisting}
+&
+\begin{lstlisting}
+def add(a: Int) = (b: Int) => a + b
+\end{lstlisting}
+\end{tabular}
+
+
+\subsection{Null and options}
+
+La valeur \texttt{null} est difficile à gérer pour empecher le risque
+de \texttt{NullPointerException}.
+
+\begin{tabular}{m{6cm}m{7cm}}
+\texttt{Option[T]}
+\begin{itemize}
+    \item Some(x) if x existe
+    \item None sinon
+\end{itemize}
+&
+\begin{lstlisting}
+trait Option[T] {
+    def isDefined: Boolean
+    def get: T
+    def getOrElse(t: T): T
+}
+\end{lstlisting}
+\end{tabular}
+
 
 \subsection{Call by name}
 
-En général, par exemple en \#Java8\footnote{pour les intimes...}, on fait du call by value. C'est à dire que les arguments d'une fonction seront toujours évalué avant l'exécution de la fonction. De ce fait, on connait la valeur de ces arguments. Par exemple, si un des argument est "2+2", on l'évaluera à "4"
-avant de lancer l'exécution de la fonction.
+En général, par exemple en \#Java8, on
+fait du call by value. C'est à dire que les arguments d'une fonction
+seront toujours évalué avant l'exécution de la fonction. De ce fait,
+on connait la valeur de ces arguments. Par exemple, si un des argument
+est "2+2", on l'évaluera à "4" avant de lancer l'exécution de la
+fonction.
 
 Dans le call by name, on peut utiliser des fonctions comme argument, et celles-ci ne seront évaluées que lorsque l'on en aura besoin (un peu comme le "lazy" qu'on a vu en OZ).
 
