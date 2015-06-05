@@ -13,12 +13,18 @@
 \DeclareOption{skiptoc}{\newcommand{\skiptableofcontents}{}}
 \DeclareOption{skiptitle}{\newcommand{\skiptitlepage}{}}
 
+\DeclareOption{usereportclass}{\newcommand{\usereport}{}}
+
 \DeclareOption*{\ClassError{eplbase}{I have not the faintest idea of what you wanted to do when you gave the the option ``\CurrentOption''. I could have just thrown a warning, ignore it and continue compiling but I think I will just stop here. Press ``H'' for help}{If you really don't understand why I say that, please ask on Github with an issue.}}
 
 % relax is needed since \ProcessOptions* exists too
 \ProcessOptions\relax
 
+\ifcsname usereport\endcsname%
+\LoadClass[11pt,a4paper]{report}
+\else%
 \LoadClass[11pt,a4paper]{article}
+\fi%
 
 \RequirePackage[utf8x]{inputenc}
 \RequirePackage[T1]{fontenc}
