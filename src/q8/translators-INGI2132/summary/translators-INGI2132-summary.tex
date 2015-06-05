@@ -2026,9 +2026,147 @@ appropriés, toutes les instructions sont complète.
 
 \subsection{Mark \& Sweep}
 
-Phase 1 : Mark : on démare de root, on trace l'object graph en marquant tout les objets atteints.
+\begin{figure}[!h]
+\centering
+\includegraphics[width=5cm]{img/marksweet.png}
+\caption{Mark \& sweet principe}
+\end{figure}
 
-Phase 2 : Sweep : on itère sur tout les objets du heap, on supprime les objets non marqué et on clear les marks.
+\begin{enumerate}
+
+    \item \textbf{Mark} : On démare de root, on trace l'object graph en
+marquant tout les objets atteints.
+
+\begin{figure}[!h]
+\begin{tabular}{cc}
+\begin{minipage}{0.4\linewidth}
+\begin{lstlisting}[mathescape]
+function DFS(x)
+    if $x$ == pointer into the heap AND record $x$ is not marked
+        mark $x$
+        
+        foreach field $f_i$ of record $x$
+            DFS($x.f_i$)
+\end{lstlisting}
+\end{minipage}
+&
+\begin{minipage}{0.4\linewidth}
+\begin{lstlisting}[mathescape]
+function DFS(x)
+    if $x$ == pointer into the heap AND record $x$ is not marked
+        mark $x$
+        
+        t=1
+        stack[t] = x
+        
+        while t > 0
+            x = stack[t--]
+            
+            foreach field $f_i$ of record $x$ 
+                if $x.f_i$ == pointer AND record $x.f_i$ not marked
+                    mark $x.f_i$
+                    stack[++t] = $x.f_i$
+\end{lstlisting}
+\end{minipage}
+\end{tabular}
+\caption{Implementation mark phase}
+\end{figure}
+                
+\begin{itemize}
+    \item Complexité temporel : proportionnel au number de node mark. 
+
+    \item Complexité spatial : Puisque DFS est recursive, la
+complexité pour un heap de size $H$ peut être de $\bigoh(H)$. $\to$
+Pas acceptable
+\end{itemize}
+
+\paragraph{\textbf{Pointer reversal}} : 
+
+\begin{tabular}{m{7cm}m{3cm}m{0.5cm}m{3cm}}
+l'idée est de faire un DFS et d'encoder
+la stack dans le graph pointer lui-même en inversant les pointeurs.
+&
+\includegraphics[width=3cm]{img/reverse1.png}
+& $\to$ &
+\includegraphics[width=3cm]{img/reverse2.png}
+\end{tabular}
+
+\begin{lstlisting}[mathescape]
+function DFS(x)
+    if $x$ == pointer AND record $x$ not marked
+        $t$ = nil
+        mark $x$
+        done[$x$] = 0
+
+
+        while true
+            $i$ = done[$x$]
+            
+            if $i$ < $\#$ of fields in record $x$
+                $y$ = $x.f_i$
+                
+                if $y$ == pointer AND record $y$ not marked
+                    $x.f_i$ = $t$
+                    $t$ = $x$
+                    $x$ = $y$
+
+                    mark $x$
+                    done[$x$] = 0
+                else
+                    done[$x$] = ++$i$
+            else
+                $y$ = $x$
+                $x$ = $t$
+
+                if $x$ = nil then return
+                $i$ = done[$x$]
+                $t$ = $x.f_i$
+                $x.f_i$ = $y$
+                done[$x$] = ++$i$
+\end{lstlisting}
+
+
+
+    \item \textbf{Sweep} : on itère sur tout les objets du heap, on
+supprime les objets non marqué et on clear les marks.
+
+\begin{figure}[!h]
+\begin{tabular}{cc}
+\begin{minipage}{0.4\linewidth}
+\begin{lstlisting}[mathescape]
+function DFS(x)
+    if $x$ == pointer into the heap AND record $x$ is not marked
+        mark $x$
+        
+        foreach field $f_i$ of record $x$
+            DFS($x.f_i$)
+\end{lstlisting}
+\end{minipage}
+&
+\begin{minipage}{0.4\linewidth}
+\begin{lstlisting}[mathescape]
+function DFS(x)
+    if $x$ == pointer into the heap AND record $x$ is not marked
+        mark $x$
+        
+        t=1
+        stack[t] = x
+        
+        while t > 0
+            x = stack[t--]
+            
+            foreach field $f_i$ of record $x$ 
+                if $x.f_i$ == pointer AND record $x.f_i$ not marked
+                    mark $x.f_i$
+                    stack[++t] = $x.f_i$
+\end{lstlisting}
+\end{minipage}
+\end{tabular}
+\caption{Implementation mark phase}
+\end{figure}
+ 
+
+\end{enumerate}
 
 On peut le faire en Depht-first Search (avec ou sans récursion) ou alors en pointer reverse.
 
