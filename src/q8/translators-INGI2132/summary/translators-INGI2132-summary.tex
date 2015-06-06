@@ -2853,20 +2853,19 @@ c.incr()
 \subsection{Implicit}
 \subsubsection{implicit conversion}
 
-Permet de convertir automatiquement un type en un autre pour pouvoir appliquer certaines opérations. Exemple :
+Permet de convertir automatiquement un type en un autre pour pouvoir appliquer certaines opérations.
 
 \begin{lstlisting}
 import ComplexImplicits._	
 	
 object ComplexImplicits {	
 	implicit def Double2Complex(value : Double) = new Complex(value,0.0) 	
-	}	
+}	
 
 object MyComplex extends App {	
-	
 	val d = Complex(1)(2)	
-	val e = 1+d	//Ici, le Int 1 va automatiquement etre converti en Complex
-    			//via la methode Double2Complex
+	val e = 1 + d	//Ici, le Int 1 va automatiquement etre converti en Complex
+                    //via la methode Double2Complex
 }
 \end{lstlisting}
 
@@ -2884,45 +2883,123 @@ En gros, c'est une loucherie qui permet de remplacer automatiquement un argument
 
 Les traits sont à la frontière entre les interfaces et les classes abstraites.
 
-En effet, le trait est plus riche que l'interface en ce sens qu'elle peut contenir une implémentation. En outre, le trait diffère de la classe abstraite par le fait que son constructeur ne peut contenir aucun paramètre et, il est lié dynamiquement, permettant un héritage multiple.
+\begin{itemize}
+    \item[+ interface]
+    \item Contient des implementation $\Rightarrow$ plus riche que les interfaces
+    \item[- abstract]
+    \item Pas de paramètre dans le constructeur
+    \item Permet un héritage multiple car il est lié dynamiquement
 
-Ce n'est pas un objet (on ne peut pas l'instancier).
-C'est un truc entre les interfaces et les classe abstraite. Comme une interface, c'est implémenté par une classe et cela contient un certain nombre de signatures de méthodes que la classe devra implémenter. Mais comme une classe abstraite, il y a un certain nombre de méthodes déjà implémentées. Par contre un trait ne peut pas être instancié.
+    \item[]
+    \item[$\Rightarrow$] Ce n'est pas un object et on ne peut donc pas l'instancier
+\end{itemize}
 
-Exemple :
 
 \begin{lstlisting}
 trait Comp {
 
 def < (that : A): Boolean
-
 def > (that : A): Boolean = {...}
 def >= (that : A): Boolean = {...}
 ...
-
 }
 \end{lstlisting}
 
-\subsection {Monads}
-Il s'agit d'une structure e donnée qui défini à la fois \texttt{map} (prend un iterable et applique la fonction passée en argument) et \texttt{flatMap} (idem que map mais avec un flatten en plus: \texttt{[1, [2]]} $\Rightarrow$ \texttt{[1, 2]}: on aura plus qu'une seule liste à la fin) et \texttt{Unit}.\\
+\subsubsection{Stackable trait}
 
-Tous les types \texttt{M[T]} donc en gros des listes de \texttt{T} (structure de données génériques) et qui ont deux opérations spéciales: \texttt{flatMap} et \texttt{unit}
+\begin{tabular}{m{9cm}m{6cm}}
+    \begin{itemize}
+        \item Le trait (ou classe abstraite) de \textbf{base} défini
+            une interface abstraite que tout les cores ou stackables extend
+        \item Le trait (ou classes) de \textbf{core} implémente les méthodes abstraite
+        \item Chaque \textbf{stackable} override un ou plusieurs méthodes définie dans le 
+            \textbf{base} trait.
+    \end{itemize}
+    &
+    \includegraphics[width=6cm]{img/stackable.png}
+\end{tabular}
+
+
+\begin{figure}[!h]
+    \centering
+    \begin{tabular}{m{6cm}m{5cm}}
+        \begin{lstlisting}
+class Animal
+trait Furry extends Animal
+trait HasLegs extends Animal
+trait FourLegged extends HasLegs
+class Cat extends Animal with Furry with FourLegged
+\end{lstlisting}
+&
+    \includegraphics[width=5cm]{img/linearization.png}
+\end{tabular}
+    \caption{Linearisation des héritages}
+\end{figure}
+
+
+\subsection{Monads}
+
+Tous les types \texttt{M[T]} donc en gros des listes de \texttt{T}
+(structure de données génériques) et qui ont deux opérations
+spéciales: \texttt{flatMap} et \texttt{unit}
+
+Il s'agit d'une structure de donnée $M$ qui a un types paramétrique
+$M[T]$ qui défini:
 \begin{itemize}
-	\item[\texttt{flatMap}]: prend une fonction en argument et l'applique à tous les éléments de la structure et va faire un flatten (\texttt{[1, [2]]} $\Rightarrow$ \texttt{[1, 2]}: on aura plus qu'une seule liste à la fin)
-    \item[\texttt{unit}]: va prendre une valeur en argument (du type générique de la structure) et va créer une structure avec cette élément dedans. Ex: \texttt{List(x)}: on aura une liste avec \texttt{x} comme premier élément de la structure.
+    \item \texttt{map} : prend un iterable et applique la fonction passée en argument
+    \item \texttt{flatMap}:  idem que map mais avec un flatten en plus. 
+        
+        (\texttt{[1, [2]]} $\Rightarrow$ \texttt{[1, 2]})
+
+    \item \texttt{unit}: Prend une valeur en argument (du type
+    générique de la structure) et va créer une structure avec cette
+    élément dedans.
+
+        Ex: \texttt{List(x)}: on aura une liste avec \texttt{x} comme
+        premier élément de la structure.
+
 \end{itemize}
 
+
+\begin{lstlisting}
+trait M[T] {
+    def flatMap[U](f: T => M[U]): M[U]
+}
+
+def unit[T](x: T): M[T]
+\end{lstlisting}
 
 \subsection{Yield}
 Va faire une espère de link dans le type du premier du for:
 \begin{lstlisting}
 val A = Array(1,2)	
 val B = List(1,2)
-for (i <- A; j <- B) yield (i,j) 	
+
 // Array((1,1),	(1,2), (2,1), (2,2))	
-for (i <- B; j <- A) yield (i,j) 	
+for (i <- A; j <- B) yield (i,j) 	
+
 // List((1,1), (1,2), (2,1), (2,2))
+for (i <- B; j <- A) yield (i,j) 	
 \end{lstlisting}
+
+\subsubsection{Translation}
+\begin{tabular}{m{7.5cm}m{0.2cm}m{8.85cm}}
+\begin{lstlisting}
+for (x <- expr1) yield expr2
+
+for (x <- expr1 if expr2) yield expr3
+
+for (x <- expr1; y <- expr2; seq) yield expr3
+\end{lstlisting}
+& $\to$ &
+\begin{lstlisting}
+expr1.map(x => expr2)
+
+for (x <- expr1 withFilter (x => expr2)) yield expr3
+
+expr1.flatMap(x => for (y <- expr2; seq) yield expr3)
+\end{lstlisting}
+\end{tabular}
 
 
 \end{document}
