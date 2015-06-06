@@ -2568,7 +2568,7 @@ dans le scope.
 \begin{lstlisting}
 //	plusFoo	can reference any values/variables in scope	
 var foo = 1
-val plusFoo = (x:Int) => x+foo
+val plusFoo = (x:Int) => x + foo
 
 plusFoo(5)    //return 6
 foo = 5
@@ -2633,18 +2633,53 @@ trait Option[T] {
 
 \subsection{Call by name}
 
-En général, par exemple en \#Java8, on
-fait du call by value. C'est à dire que les arguments d'une fonction
-seront toujours évalué avant l'exécution de la fonction. De ce fait,
-on connait la valeur de ces arguments. Par exemple, si un des argument
-est "2+2", on l'évaluera à "4" avant de lancer l'exécution de la
-fonction.
+Il existe deux types de passage d'argument :
+\begin{itemize}
+    \item \textbf{By value}: Les arguments sont toujours évalué \textsc{AVANT}
+        l'exécution de la fonction de la même manière que les opérateurs.
 
-Dans le call by name, on peut utiliser des fonctions comme argument, et celles-ci ne seront évaluées que lorsque l'on en aura besoin (un peu comme le "lazy" qu'on a vu en OZ).
+        L'idée est de réduire une expression à une valeur.
 
-L'avantage du by value est que la fonction utilisée en argument n'est évaluée qu'une seule foi. L'avantage du by name est que si on a pas besoin d'évaluer la fonction on ne le fera pas.
+         \begin{itemize}
+    \item[$\to$] Si on utilise une fonction en argument elle ne sera évalué qu'une
+        seule fois
+\end{itemize}
 
-Les deux méthodes sont équivalentes dans le cas de fonctions pures et si les exécutions terminent. Par exemple :
+    \item \textbf{By name}: Les arguments sont évalués lorsque l'on en a besoin.
+        ($\approx$ \textit{lazy})
+
+\begin{itemize}
+    \item[$\to$] Si on utilise une fonction en argument elle sera évalué à
+        chaque appel (jamais évalué si on ne l'utilise pas).
+        
+        \begin{tabular}{m{6cm}m{2cm}m{6cm}}
+            \begin{lstlisting}
+def foo(y: => Int): Int = y
+            \end{lstlisting}
+            & Compilé en $\to$ &
+            \begin{lstlisting}
+def foo(y: () => Int): Int = y
+            \end{lstlisting}
+            \\
+            \multicolumn{3}{c}{By name est un sucre synthaxique pour la définition de closure}
+        \end{tabular}
+
+\end{itemize}
+    \item[]
+    \item Si CBV se termine $\Rightarrow$ CBN se termine aussi.
+\end{itemize}
+
+\paragraph{Default}
+
+En scala, le \textbf{call by value} est le comportement par défaut,
+et pour faire du \textbf{call by name} il faut ajouter $\Rightarrow$
+devant le type de l'argument.
+
+
+\subsubsection{Fonctionnement}
+
+Les deux méthodes sont équivalentes dans le cas de fonctions pures et
+si les exécutions terminent. Par exemple :
 
 \begin{lstlisting}
 object Test {
@@ -2665,9 +2700,155 @@ object Test {
 }
 \end{lstlisting}
 
-Ici, si on fait du by value, les deux print imprimeront la même chose. Par contre, dans le cas du by name, la fonction sera recalculée et on aura deux valeur différente à imprimer. \todo{correct ?}\\
+Ici, si on fait du by value, les deux print imprimeront la même chose.
+Par contre, dans le cas du by name, la fonction sera recalculée et on
+aura deux valeur différente à imprimer. \todo{correct ?}\\
 
-Notons qu'en Scala, l'utilisation du by value est celle pas défaut. Si on veut du by name, on doit ajouter "=>" devant le type de l'argument.
+
+\subsubsection{Stream}
+
+Un stream est une liste dans laquelle le \textbf{tail} n'est executé
+que lorsque l'on en a besoin.
+
+\begin{tabular}{m{6cm}m{9cm}}
+\begin{lstlisting}
+abstract class MyStream {
+    import MyStream._
+
+    def isEmpty: Boolean
+    def head: Int
+    def tail: MyStream
+
+    def apply(i: Int): Int = {
+        // exercise, i_th element of the stream
+    }
+    def filter(p: Int => Boolean): MyStream = {
+        // exercise
+    }
+}
+\end{lstlisting}
+&
+\begin{lstlisting}
+object MyStream {
+    def cons(hd: Int, tl: => MyStream) = new MyStream {
+        def isEmpty = false
+        def head: Int = hd
+        def tail: MyStream = tl
+    }
+
+    val empty = new MyStream {
+        def isEmpty = true
+        def head = throw new NoSuchElementException("empty.head")
+        def tail = throw new NoSuchElementException("empty.tail")
+    }
+}
+\end{lstlisting}
+\end{tabular}
+
+
+\subsubsection{Flow-control}
+
+\begin{tabular}{m{8cm}m{2cm}m{1cm}m{1cm}m{1cm}}
+\begin{lstlisting}
+def myLoop(n: Int)(body: Unit): Unit = {
+def myLoop(n: Int)(body: () => Unit): Unit = {
+def myLoop(n: Int)(body: => Unit): Unit = {
+
+    if (n > 0) {
+        println(n)
+
+        body
+        body()
+        body
+
+        myLoop(n-1) (body)
+    }
+}
+
+myLoop(5) {
+myLoop(5) { () =>
+myLoop(5) {
+
+    println("hello")
+}
+\end{lstlisting}
+&
+Résultat
+&
+\begin{lstlisting}
+hello
+5
+4
+3
+2
+1
+\end{lstlisting}
+&
+\begin{lstlisting}
+5
+hello
+4
+hello
+3
+hello
+2
+hello
+1
+hello
+\end{lstlisting}
+&
+\begin{lstlisting}
+5
+hello
+4
+hello
+3
+hello
+2
+hello
+1
+hello
+\end{lstlisting}
+
+
+\\
+\end{tabular}
+
+\subsubsection{Storing by-name parameters}
+
+\begin{lstlisting}
+class Observable {
+    private var listeners: List[() => Unit] = List()
+    def changed(): Unit = listeners.foreach(l =>l())
+    def onChange(b: => Unit): Unit = {
+        listeners = (() => b) :: listeners
+    }
+}
+\end{lstlisting}
+
+\paragraph{Example}
+
+\begin{tabular}{m{6cm}m{4cm}}
+\begin{lstlisting}
+class Counter() extends Observable {
+    private var c: Int = 0
+    def value = c
+    def incr(): Unit = {
+        c += 1
+        changed()
+    }
+}
+\end{lstlisting}
+&
+\begin{lstlisting}
+val c = new Counter()
+c.onChange {
+    println(c.value)
+}
+c.incr()
+c.incr()
+\end{lstlisting}
+\end{tabular}
 
 \subsection{Implicit}
 \subsubsection{implicit conversion}
