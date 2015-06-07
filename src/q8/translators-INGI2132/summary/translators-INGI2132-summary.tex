@@ -193,20 +193,30 @@ Les étapes de l'analyse du compilateur pour produire le programme de sortie son
 
 Dans le cas d'un interpréteur, le code high-level est exécuté directement.
 
- \paragraph{Avantages compilateur}:
+\begin{center}
+\begin{tabular}{|p{0.5\linewidth}|p{0.5\linewidth}|}
+    \hline
+    \multicolumn{1}{|c|}{Avantages compilateur} & \multicolumn{1}{c|}{Avantage interpréteur} \\
+    \hline
+
 \begin{itemize}
     \item \textbf{Performances}: le code machine est plus rapidement
 exécuter, l'interpréteur doit lui redécoder à chaque fois les lignes
 de codes pour les transformer en instructions.
     \item \textbf{Secret}: le code source est très difficile à déduire depuis un code machine.
 \end{itemize}
-\paragraph{Avantages interpréteur}:
+&
+
 \begin{itemize}
     \item L'overhead de l'interpreteur ne nécessite pas toujours la mise
         en place d'un compilateur (ex: les scripts)
     \item \textbf{Contrôle}: le code source est disponible, facilement modifiable.
     \item \textbf{Portabilité}: le langage machine dépend de la machine alors qu'un interpréteur est portable.
 \end{itemize}
+\\
+    \hline
+\end{tabular}
+\end{center}
 
 \subsection{Why should we study compilers?}
 \begin{itemize}
@@ -223,8 +233,6 @@ de codes pour les transformer en instructions.
 \end{itemize}
 
 \subsection{How does a compiler work? Phases of compilation}
-On peut diviser en plusieurs étapes.
-
 \begin{figure}[!h]
 \begin{tikzpicture}
 	\node[text width=2.5cm,align=center] (A) {Programme source};
@@ -244,7 +252,6 @@ On peut diviser en plusieurs étapes.
 \begin{itemize}
 	\item Analyse du programme pour en deviner le sens
     \item dépend uniquement du langage de départ
-    \item peut être décomposé:
 \end{itemize}
 \begin{figure}[!h]
 \begin{tikzpicture}
@@ -269,7 +276,6 @@ On peut diviser en plusieurs étapes.
 \begin{itemize}
 	\item Prend le IR et produit le code machine
     \item Dépend de la machine d'arrivée uniquement
-    \item peut-être décomposé en phases
 \end{itemize}
 \begin{figure}[!h]
 \begin{tikzpicture}
@@ -575,45 +581,53 @@ caractère scanné n'est sur aucune flèche, on choisi celle non
 
 \subsection{Lexical analysis generator}
 
-% TODO schema
-%\begin{tikzpicture}
-%\end{tikzpicture}
+\begin{figure}[!h]
+\begin{tikzpicture}
+    \node[draw, shape=rectangle] (A)  {RegEx};
+    \node[draw, shape=rectangle] (C) [right=2cm of A] {NFA};
+    \node[draw, shape=rectangle] (E) [right=2cm of C] {DFA};
+    \node[draw, shape=rectangle] (G) [right=2cm of E] {DFA minimizing};
+    \node[draw, shape=rectangle] (I) [right=2cm of G] {Table driven};
+    
+    \path[->] (A) edge node[above] {\textcolor{red}{Thompson}} (C)
+              (C) edge node[above] {\textcolor{red}{$\epsilon$-closure}} (E)
+              (E) edge node[above] {\textcolor{red}{Partition}} (G)
+              (G) edge node [above] {\textcolor{red}{Algo}} (I);
+\end{tikzpicture}
+\caption{Generator lexical analysis}
+\end{figure}
+
+
 
 \subsubsection{Regular Expressions (regex)}
 
 On dit que les regex définissent un langage de strings sur un alphabet.
 
-Les regex peuvent prendre les formes suivantes:
-\begin{itemize}
-    \item Si $a$ est dans l'alphabet, alors le regex a décrit le langage
-        consistant en les strings $a$. On appelle ce langage $L(a)$
+\begin{table}[!h]
+\begin{tabular}{lccl}
+    Input & Language & regex & contient \\
+    \hline
+    $a \in$ alphabet & $L(a)$ & $a$ & Le string $a$ \\
 
-    \item Si $r$ et $s$ sont des regex, alors leur concaténation $rs$
-        est aussi une regex décrivant le langage de tous les strings possibles
-        obtenus par concaténation d'un string du langage $r$ et d'un string de
-        langage $s$. On appelle ce langage $L(rs)$
+    $r$ et $s$ des regex & $L(rs)$ &  $rs$ & Toute les combinaisons de concaténation $rs$ \\
 
-    \item Si $r$ et $s$ sont des regex, $L(r|s)$ décrit le langage
-        composé des strings de l'un ou l'autre langage
+    $r$ et $s$ des regex & $L(r|s)$ & $r|s$ & $L(r) \cup L(s)$ \\
 
-    \item Si $r$ est un regex, $L(r*)$ décrit le langage formé par
-        concaténation de zéro ou plusieurs instances de $r$ ($\epsilon$
-        représente la string vide)
+    $r$ une regex & $L(r*)$ & $r*$ & Concaténation de zéro ou plusieurs instance de $r$ \\
 
+    \hline
+    \multicolumn{4}{p{11cm}}{ 
+    \begin{itemize}
     \item $\epsilon$ est le langage contenant uniquement la string vide
-
     \item $r$ et $(r)$ sont les mémes regex. Les parenthèses sont
-        utilisées pour grouper les regex.
+     utilisées pour grouper les regex.
+     \end{itemize}
+ }
 
-\end{itemize}
-\paragraph{Exemple Exo: }
-\begin{itemize}
-	\item Pour l'alphabet=\{0,1\},donnez une expression régulière
-	définissant le langage M = $\{w\in \{0,1\}*$ | w a au moins
-	une paire de zéro consécutif\}
-	\item Trouvez l'expression régulière représentant l'ensemble
-	des string avec un nombre pair de a suivis d'un nombre impair de b
-\end{itemize}
+\end{tabular}
+\caption{Formes possibles des RegEx}
+\end{table}
+
 \subsubsection{Finite State Automate (FSA)}
 
 Pour tout langage décrit par une regex, il existe un diagramme à
@@ -660,63 +674,78 @@ On ne peut donc aps avoir $M(r, a) = s$ et $M(r, a) = t$ tel que $s \neq t$.
 
 \subsubsection{Regular expressions to NFA}
 
-On utilise les constructions de \textbf{Thompson}:
-\begin{itemize}
-	\item $a$:\\
+On utilise les constructions de \textbf{Thompson}.
+
+
+\begin{table}[!h]
+\begin{scriptsize}
+    \centering
+    \begin{tabular}{m{2cm}m{10cm}}
+
+	\large $a$ & 
     \begin{tikzpicture}
-		\node[state] (A) [initial, initial text={}] {start};
-    	\node[state] (B) [right=of A, accepting] {end};
+		\node[state] (A) [initial, initial text={}] {S};
+    	\node[state] (B) [right=of A, accepting] {E};
 		\path[->] (A) edge node[above] {$a$} (B); % [bend left]
 	\end{tikzpicture}
-	\item $rs$:\\
+	\\
+
+	\large$rs$ & 
     \begin{tikzpicture}
-		\node[state] (A) [initial, initial text={}] {start$_r$};
+		\node[state] (A) [initial, initial text={}] {S$_r$};
     	\node        (B) [right=of A] {$N_r$};
-    	\node[state] (C) [right=of B] {end$_r$};
-		\node[state] (D) [right=of C] {start$_s$};
+    	\node[state] (C) [right=of B] {E$_r$};
+		\node[state] (D) [right=of C] {S$_s$};
     	\node        (E) [right=of D] {$N_s$};
-    	\node[state] (F) [right=of E, accepting] {end$_s$};
+    	\node[state] (F) [right=of E, accepting] {E$_s$};
 		\path[->] (C) edge (D);
-        \draw[thick] ($(A.north west)+(-0.5,0.5)$) rectangle ($(C.south east)+(0.5,-0.5)$);
-        \draw[thick] ($(D.north west)+(-0.5,0.5)$) rectangle ($(F.south east)+(0.5,-0.5)$);
+        \draw[thick] ($(A.north west)+(-0.25,0.25)$) rectangle ($(C.south east)+(0.25,-0.25)$);
+        \draw[thick] ($(D.north west)+(-0.25,0.25)$) rectangle ($(F.south east)+(0.25,-0.25)$);
 	\end{tikzpicture}
-	\item $r|s$:\\
+	\\
+	\large$r|s$ & 
     \begin{tikzpicture}
-    	\node[state] (0) [initial, initial text={}] {start};
-		\node[state] (A) [above right=of 0]{start$_r$};
+    	\node[state] (0) [initial, initial text={}] {S};
+		\node[state] (A) [above right=0.5cm and 1cm of 0]{S$_r$};
     	\node        (B) [right=of A] {$N_r$};
-    	\node[state] (C) [right=of B] {end$_r$};
-		\node[state] (D) [below right=of 0] {start$_s$};
+    	\node[state] (C) [right=of B] {E$_r$};
+		\node[state] (D) [below right=0.5cm and 1cm of 0] {S$_s$};
     	\node        (E) [right=of D] {$N_s$};
-    	\node[state] (F) [right=of E] {end$_s$};
-    	\node[state] (G) [below right=of C, accepting]{end};
+    	\node[state] (F) [right=of E] {E$_s$};
+    	\node[state] (G) [below right=of C, accepting]{E};
 		\path[->] (0) edge[bend left] node[above] {$\epsilon$} (A);
 		\path[->] (0) edge[bend right] node[below] {$\epsilon$} (D);
 		\path[->] (C) edge[bend left] node[above] {$\epsilon$} (G);
 		\path[->] (F) edge[bend right] node[below] {$\epsilon$} (G);
-        \draw[thick] ($(A.north west)+(-0.5,0.5)$) rectangle ($(C.south east)+(0.5,-0.5)$);
-        \draw[thick] ($(D.north west)+(-0.5,0.5)$) rectangle ($(F.south east)+(0.5,-0.5)$);
+        \draw[thick] ($(A.north west)+(-0.25,0.25)$) rectangle ($(C.south east)+(0.25,-0.25)$);
+        \draw[thick] ($(D.north west)+(-0.25,0.25)$) rectangle ($(F.south east)+(0.25,-0.25)$);
 	\end{tikzpicture}
-	\item $r*$:\\
+	\\
+	\large$r*$ & 
     \begin{tikzpicture}
-    	\node[state] (0) [initial, initial text={}] {start};
-		\node[state] (A) [right=of 0]{start$_r$};
+    	\node[state] (0) [initial, initial text={}] {S};
+		\node[state] (A) [right=of 0]{S$_r$};
     	\node        (B) [right=of A] {$N_r$};
-    	\node[state] (C) [right=of B] {end$_r$};
-    	\node[state] (D) [right=of C, accepting]{end};
+    	\node[state] (C) [right=of B] {E$_r$};
+    	\node[state] (D) [right=of C, accepting]{E};
 		\path[->] (0) edge node[above] {$\epsilon$} (A);
-		\path[->] (0) edge[bend right=50] node[below] {$\epsilon$} (D);
+		\path[->] (0) edge[bend right=50] node[above] {$\epsilon$} (D);
 		\path[->] (C) edge[bend right=50] node[above] {$\epsilon$} (A);
 		\path[->] (C) edge node[below] {$\epsilon$} (D);
-        \draw[thick] ($(A.north west)+(-0.5,0.5)$) rectangle ($(C.south east)+(0.5,-0.5)$);
+        \draw[thick] ($(A.north west)+(-0.25,0.25)$) rectangle ($(C.south east)+(0.25,-0.5)$);
 	\end{tikzpicture}
-	\item $\epsilon$:\\
+	\\
+	\large$\epsilon$ & 
     \begin{tikzpicture}
-		\node[state] (A) [initial, initial text={}] {start};
-    	\node[state] (B) [right=of A, accepting] {end};
+		\node[state] (A) [initial, initial text={}] {S};
+    	\node[state] (B) [right=of A, accepting] {E};
 		\path[->] (A) edge node[above] {$\epsilon$} (B);
 	\end{tikzpicture}
-\end{itemize}
+	\\
+\end{tabular}
+\end{scriptsize}
+\caption{Construction de thompson}
+\end{table}
 
 \subsubsection{NFA to DFA}
 
@@ -818,10 +847,10 @@ grace à des partitions.
 
 \subsubsection{Table driven}
 
-For each DFA, a Table driven can be implemented as a 2D table (states
-and input).
-
+For each DFA, a Table driven can be implemented as a 2D table (states and input).
+\begin{lstlisting}[mathescape]
 For every $M(r, a) = s$, $T[r, a] = s$.
+\end{lstlisting}
 
 \paragraph{Recognize the longest match}
 
@@ -1994,6 +2023,9 @@ appropriés, toutes les instructions sont complète.
         \begin{enumerate}
             \item Peut amener à beaucoup d'erreur (double free/malloc, seg fault,\ldots)
             \item Programmation modulaire plus complexe (accord sur qui free/malloc,\ldots)
+            \item trouver de corriger les bugs est très compliqué car
+                parfois un bug apparait longtemps après le lancement du programme.
+
         \end{enumerate}
 
     \item Automatic memory management
@@ -2002,20 +2034,10 @@ appropriés, toutes les instructions sont complète.
         \end{enumerate}
 \end{itemize}
 
-<<<<<<< HEAD
 \paragraph{Allocation}
 \begin{itemize}
     \item On maintient plusieurs \textbf{freelist} tel que \texttt{freelist[i]} 
         contient les records de taille $i$
-=======
-Une première manière de manager la mémoire est de manière explicite, le programmeur doit s'en occuper (malloc/free). Cela présente plusieurs désavantages comme : 
-\begin{itemize}
-\item peut mener à bcp d'erreur (double free, seg fault,...) 
-\item programmation modulaire bcp plus complexe (il faut se mettre d'accord sur qui free, qui malloc,...).
-\item trouver de corriger les bugs est très compliqué car parfois un bug apparait longtemps après le lancement du programme.
-\end{itemize}
->>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
-
     \item Lorsqu'un objet demande un chunk, on peut donner n'importe
 quel block de taille >= celle demandée.
 \end{itemize}
@@ -2049,9 +2071,12 @@ quel block de taille >= celle demandée.
     \hline
 
     Copying collection & \begin{itemize}
-        \item[+] facile d'allouer de la mémoire (à la fin), pas de
+        \item[+] allocation facile et peu couteuse, pas de
             fragmentation (compactage automatique), le temps est proportionnel au
             nombre d'objets vivants
+             \begin{itemize}
+                 \item[$\to$] efficient
+             \end{itemize}
         \item[-] Il faut le double d'espace mémoire.
     \end{itemize}
     \\
@@ -2067,9 +2092,9 @@ quel block de taille >= celle demandée.
     \end{tabular}
     \caption{Garbage solution}
 \end{table}
+
 \subsection{Reference Counting}
 
-<<<<<<< HEAD
 \begin{itemize}
     \item Chaque objet retient le nombre de réference vers lui-même.
         \begin{itemize}
@@ -2084,6 +2109,8 @@ quel block de taille >= celle demandée.
         Problème si il y a des références circulaire (A ref B et B ref A)
 \end{itemize}
 
+
+
 \subsection{Mark \& Sweep}
 
 \begin{figure}[!h]
@@ -2094,8 +2121,8 @@ quel block de taille >= celle demandée.
 
 \begin{enumerate}
 
-    \item \textbf{Mark} : On démare de root, on trace l'object graph en
-marquant tout les objets atteints.
+    \item \textbf{Mark} : On démare de root, on parcour la mémoire comme un graph (object graph) en
+marquant tout les objets atteignables à partir des roots.
 
 \begin{figure}[!h]
 \begin{tabular}{cc}
@@ -2184,25 +2211,6 @@ function DFS(x)
                 $x.f_i$ = $y$
                 done[$x$] = ++$i$
 \end{lstlisting}
-=======
-Chaque objet retient le nombre de réference vers lui-même, incrémentation/décrémentation à chaque création/destruction de référence. Lorsque le compte tombe à 0, suppression de l'objet.
-
-Cette méthode est rapide, sûre et marche dans la plupart des cas mais si il y a des références circulaire (A ref B et B ref A), ca ne marche pas.
-
-\subsection{Mark \& Sweep}
-
-Mark \& Sweep contiene deux phases :
-
-\begin{enumerate}
-\item Mark : On démarre des roots, on parcour la mémoire comme un graph en marquant tout les objets atteignables à partir des roots.
-
-\item Sweep : On itère sur tout les objets du heap, on supprime les objets non marqué (non atteignables) et on remet à zéro les objets marqués.
-\end{enumerate}
-
-On peut le faire en Depht-first Search (avec ou sans récursion) ou alors en pointer reverse. Le pointer reverse est utilisé pour ne pas utiliser de la mémoire lors du garbage collection, en effet on lance en général un garbage collector quand on est a court de mémoire alors si il doit lui-même utiliser de la mémoire pour s'exécuter il va avoir un problème. De plus l'espace mémoire requis pour le garbadge collector avec Mark & Sweep n'est pas
-borné, il dépend du nombre d'éléments a concerver.
->>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
-
 
     \item \textbf{Sweep} : on itère sur tout les objets du heap, on
 supprime les objets non marqué et on clear les marks.
@@ -2225,75 +2233,32 @@ function DFS(x)
 \end{figure}
  
 
-<<<<<<< HEAD
 \end{enumerate}
-=======
-Le mark and Sweep permet de gérer les cycles et ne déplace pas les objets dans la mémoire ce qui lui permet d'être applicable à des langages comme C/C++. Par contre, il peut y avoir des problèmes de fragmentation de la mémoire et un cout d'allocation élevé.
->>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
+Le mark and Sweep permet de gérer les cycles et ne déplace pas les
+objets dans la mémoire ce qui lui permet d'être applicable à des
+langages comme C/C++. Par contre, il peut y avoir des problèmes de
+fragmentation de la mémoire et un cout d'allocation élevé.
 
 \subsubsection{Conclusion}
 On peut le faire en DFS mais contraignant pour la complexité
 spatiale donc une meilleur solution est d'utiliser l'idée du pointer reverse.
 
-<<<<<<< HEAD
+Le pointer reverse est utilisé pour ne pas utiliser de la mémoire
+lors du garbage collection, en effet on lance en général un garbage
+collector quand on est a court de mémoire alors si il doit lui-même
+utiliser de la mémoire pour s'exécuter il va avoir un problème. 
+
+De plus l'espace mémoire requis pour le garbadge collector avec Mark \&
+Sweep n'est pas borné, il dépend du nombre d'éléments a concerner.
+
 
 \paragraph{Garbage}
 
 Le cout peut être très élevé si il y a peu à supprimer.
-=======
-On divise la heap en 2 parties : 
-\begin{enumerate}
-\item from-space (old space) 
-\item to-space (new space)
-\end{enumerate}
-
-Initialement tout les chunck utilisé sont dans le from-space. Au lieu de marquer les chuncks utilisés, on les copie dans le to-space. Tout en maintenant à l'ancien emplacement un pointeur de référence vers le nouvel emplacement de l'objet.
-
-On déplace ainsi petit-à-petit en suivant les liens. Lorsque l'algo est fini, on inverse les utilisations des deux espaces (from devient to et to deviens from).
-
-Les avantages sont : 
-\begin{itemize}
-\item facile d'allouer de la mémoire (à la fin)
-\item pas de fragmentation (compactage automatique)
-\item le temps est proportionnel au nombre d'objets vivants. Par contre, il faut le double d'espace mémoire.
-\end{itemize}
-
-Par contre le même problème qu'avec mark and sweep sans la technique des pointeur inversé se pose. Il faut traverser tous les elements sans utilisé 
-de l'espace mémoire pour le faire. Pour cela le to-space (new space) va être divisé en 3 parties :
-
-\begin{itemize}
-\item copier et scanner : les pointeurs contenu dans l'objet ont été scanné et "suivit"
-\item copier non scanner : les pointeurs contenu dans l'objet n'ont pas été traité
-\item empty
-\end{itemize} 
-
-La première étape va être de copier dans le to-space les objets pointés par les roots et de créer les "forwarding pointers"
-La deuxième étape va scanner les objets non scanner et copier tous les objets pointer par ceux ci dans les to-space
-
-Si on rencontre un objet déjà copié il suffit de suivre son forwarding pointer pour savoir ou il se trouve.
-
-\subsubsection{Conclusion}
-
-\begin{itemize}
-\item copying collection is very efficient
-\item l'allocation est très peu couteuse
-\item le barbage collection des objets est également peu couteux spécialement si beaucoup d'objet sont à jeter
-\item Mais vu que ça déplace les objets dans la mémoire certain langages ne le suportte pas C/C++
-\end{itemize}
->>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
 Une meilleur solution est de mesuré $H$ (heap size) and $R$ (reachable data in heap)
 tel que si $\frac{R}{H} > 0.5$ on augmente la taille du heap.
-
-<<<<<<< HEAD
-=======
-On divise la heap en deux ou plusieur parties, les jeunes et les vieux objets. Quand on alloue de la place pour un objet il est mis dans la partie jeune.
-
-On fait du garbage collection sur dans les objets concidéré comme "jeune" a un rythme soutenu. Si ces objets ont survécu à plusieurs passage du garbage collector, alors on les place dans la partie des vieux objets. Les vieux objets subissent également les garbage collection mais beaucoup moins souvent que les jeunes objets.
-
-Un problème survient quand on a des objets dans la partie vieux et que ils référence des objets dans la partie jeune. Quand on va garbage collection les jeunes, on ne va pas voir que un objet est référencé par un "vieux". Pour cela on crée un table (remember set) qui contient tous les pointeurs des vieux vers les jeunes.
->>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
 $$\textrm{Cost: } \frac{c_1 R + c_2 H}{H-R}, \quad \textrm{avec c constant number of instructions}$$
 
@@ -2305,7 +2270,7 @@ avoir des problème de fragmentation et un cout d'allocation grand.
 
 \subsection{Copying collection : Cheney algorithm}
 
-On splitte la heap en 2 : from-space et to-space
+On splitte la heap en 2 : from-space (old space) et to-space (new space)
 
 \begin{figure}[!h]
     \centering
@@ -2335,7 +2300,7 @@ On splitte la heap en 2 : from-space et to-space
 \begin{enumerate}
     \item Initialement tout les chunck utilisé sont dans le from-space. 
     \item Au lieu
-        de marquer les chuncks utilisés, on les place dans le to-space tout
+        de marquer les chuncks utilisés, on les copie dans le to-space tout
         en maintenant à l'ancien emplacement une référence vers le nouvel
         emplacement. 
     \item[$\to$]On déplace ainsi petit-à-petit en suivant les liens.
@@ -2387,24 +2352,65 @@ while $scan < next$
 
 \begin{itemize}
     \item Simple: pas besoin de stack
-    \item Facile d'allouer de la mémoire: \texttt{malloc(n)} implémenté avec \texttt{next = next + n}
+    \item Allocation facile et peu couteuse: \texttt{malloc(n)} implémenté avec \texttt{next = next + n}
     \item Pas de fragmentation (compactage automatique)
     \item Le temps est proportionnel au nombre d'objets vivants.
+
+\item le garbage collection des objets est également peu couteux spécialement si beaucoup d'objet sont à jeter
+\item[]
+\item Mais vu que ça déplace les objets dans la mémoire certain langages ne le suportte pas C/C++
 \end{itemize}
 
 Par contre, il faut le \textbf{double} d'espace mémoire.
 
-\subsection{Generational collection}
+
+\subsubsection{Remarque}
+Par contre le même problème qu'avec mark and sweep sans la technique
+des pointeur inversé se pose. Il faut traverser tous les elements sans
+utiliséde l'espace mémoire pour le faire. 
+
+Pour cela le to-space (new space) va être divisé en 3 parties :
 
 \begin{itemize}
-    \item On ne fait du tris que dans les objets concidéré comme "jeune",
-        c'est à dire lorsqu'ils ont survécu à plusieurs passage du garbage
-        collector. 
+\item copier et scanner : les pointeurs contenu dans l'objet ont été scanné et "suivit"
+\item copier non scanner : les pointeurs contenu dans l'objet n'ont pas été traité
+\item empty
+\end{itemize} 
+
+\paragraph{Etapes}: 
+\begin{enumerate}
+    \item Copier dans le to-space les objets pointés par les roots et
+de créer les "forwarding pointers"
+
+\item Scanner les objets non scanner et copier tous les objets pointer par ceux ci dans les to-space
+
+\item[$\to$] Si on rencontre un objet déjà copié il suffit de suivre son forwarding pointer pour savoir ou il se trouve.
+    \end{enumerate}
+
+
+\subsection{Generational collection}
+
+On divise la heap en deux ou plusieur parties, les jeunes et les vieux
+objets. Quand on alloue de la place pour un objet il est mis dans la
+partie jeune.
+
+\begin{itemize}
+    \item On ne fait du garbage collection que dans les objets concidéré comme "jeune"
+        a un rythme \textbf{soutenu}.
+    \item Les vieux objets sont ceux qui ont survécu à plusieurs passage du garbage
+        collector. Le rythme est plus lent.
     \item En effet, la majorité des objects meurent ``\textbf{jeune} et ceux 
         qui reste atteignable pour longtemps sont souvent : global, referencé depuis la main
     \item[$\Rightarrow$] On a alors une siscion dans la mémoire entre jeune et vieux.
         Lorsqu'un objet devient vieux, il est déplacé dans la partie vieux.
 \end{itemize}
+
+Un problème survient quand on a des objets dans la partie vieux et que
+ils référence des objets dans la partie jeune. Quand on va garbage
+collection les jeunes, on ne va pas voir que un objet est référencé
+par un "vieux". Pour cela on crée un table (remember set) qui contient
+tous les pointeurs des vieux vers les jeunes.
+
 
 
 \begin{figure}[!h]
@@ -2417,8 +2423,6 @@ Par contre, il faut le \textbf{double} d'espace mémoire.
 
     \caption{Generation principle}
 \end{figure}
-
-
 
 
 \section{DSL \& Scala}
@@ -2590,18 +2594,10 @@ méthodes statiques, au sens \#Java8 du terme.
 
 \paragraph{getters and setters}
 
-<<<<<<< HEAD
 Pas de getter/setter en scala, on y accède comme un champs:
 \texttt{nomDeLaClasse.Champ = 'Hélène roule en tracteur'}
 
-\paragraph{Companion object and apply}
-
-Un objet compagnon est un objet qui porte le même nom que la classe
-qu'il accompagne.
-=======
-Ils n'existent pas en Scala. Il suffit de faire comme si on accédait a une champ en Java. "nomDeLaClasse.Champ = 'Hélène roule en tracteur'".
 Il y a aussi une autre technique si vos attributs sont privé vous pouvez les accéder comme ceci :
-
 \begin{lstlisting}
 private var battery = 0
 def power = battery // getter
@@ -2610,15 +2606,14 @@ def power_= (p: Int) { battery = p } // setter
 
 la ligne power\_= est un peu particulière, cela permet de définir un nom de fonction comprenant un espace. "power ="
 
-\subsubsection{Companion object and apply}
+\paragraph{Companion object and apply}
 
-Un objet compagnon est un objet qui porte le même nom que la classe qu'il accompagne.
-La spécificité étant que la classe peut accéder au membres privés de l'objet et vice versa.
-Le compagnion object peut être utilisé comme un genre de container.
->>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
+Un objet compagnon est un objet qui porte le même nom que la classe
+qu'il accompagne.
 
 La spécificité étant que la classe peut accéder au membres privés
 de l'objet et vice versa.
+Le compagnion object peut être utilisé comme un genre de container.
 
 \paragraph{\texttt{apply}} est une méthode qui agit un peu comme un
 constructeur pour les objects et qui peut être utilisée avec les
@@ -2642,6 +2637,8 @@ val c2 = Calculator("HP")      // Utilise apply() du compagnon
 }
 \end{lstlisting}
 
+Un compagnion object permet de construire un object sans utiliser de new.
+
 \paragraph{Operator overload}
 
 Il suffit de réecrire une méthode avec le même nom.
@@ -2655,13 +2652,7 @@ val plusOne = (x:Int) => x+1
 plusOne(5)    // va retourner 6
 \end{lstlisting}
 
-<<<<<<< HEAD
 \subsubsection{Closure}
-=======
-Un compagnion object permet de construire un object sans utiliser de new.
-
-\subsubsection{operator overload}
->>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
 Function anonyme qui peut référencé n'importe quelle valeur/variable
 dans le scope.
