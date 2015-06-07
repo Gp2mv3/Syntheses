@@ -191,20 +191,30 @@ garder au maximum les données dans les registres.
 
 Dans le cas d'un interpréteur, le code high-level est exécuté directement.
 
- \paragraph{Avantages compilateur}:
+\begin{center}
+\begin{tabular}{|p{0.5\linewidth}|p{0.5\linewidth}|}
+    \hline
+    \multicolumn{1}{|c|}{Avantages compilateur} & \multicolumn{1}{c|}{Avantage interpréteur} \\
+    \hline
+
 \begin{itemize}
     \item \textbf{Performances}: le code machine est plus rapidement
 exécuter, l'interpréteur doit lui redécoder à chaque fois les lignes
 de codes pour les transformer en instructions.
     \item \textbf{Secret}: le code source est très difficile à déduire depuis un code machine.
 \end{itemize}
-\paragraph{Avantages interpréteur}:
+&
+
 \begin{itemize}
     \item L'overhead de l'interpreteur ne nécessite pas toujours la mise
         en place d'un compilateur (ex: les scripts)
     \item \textbf{Contrôle}: le code source est disponible, facilement modifiable.
     \item \textbf{Portabilité}: le langage machine dépend de la machine alors qu'un interpréteur est portable.
 \end{itemize}
+\\
+    \hline
+\end{tabular}
+\end{center}
 
 \subsection{Why should we study compilers?}
 \begin{itemize}
@@ -221,8 +231,6 @@ de codes pour les transformer en instructions.
 \end{itemize}
 
 \subsection{How does a compiler work? Phases of compilation}
-On peut diviser en plusieurs étapes.
-
 \begin{figure}[!h]
 \begin{tikzpicture}
 	\node[text width=2.5cm,align=center] (A) {Programme source};
@@ -242,7 +250,6 @@ On peut diviser en plusieurs étapes.
 \begin{itemize}
 	\item Analyse du programme pour en deviner le sens
     \item dépend uniquement du langage de départ
-    \item peut être décomposé:
 \end{itemize}
 \begin{figure}[!h]
 \begin{tikzpicture}
@@ -267,7 +274,6 @@ On peut diviser en plusieurs étapes.
 \begin{itemize}
 	\item Prend le IR et produit le code machine
     \item Dépend de la machine d'arrivée uniquement
-    \item peut-être décomposé en phases
 \end{itemize}
 \begin{figure}[!h]
 \begin{tikzpicture}
@@ -570,45 +576,53 @@ caractère scanné n'est sur aucune flèche, on choisi celle non
 
 \subsection{Lexical analysis generator}
 
-% TODO schema
-%\begin{tikzpicture}
-%\end{tikzpicture}
+\begin{figure}[!h]
+\begin{tikzpicture}
+    \node[draw, shape=rectangle] (A)  {RegEx};
+    \node[draw, shape=rectangle] (C) [right=2cm of A] {NFA};
+    \node[draw, shape=rectangle] (E) [right=2cm of C] {DFA};
+    \node[draw, shape=rectangle] (G) [right=2cm of E] {DFA minimizing};
+    \node[draw, shape=rectangle] (I) [right=2cm of G] {Table driven};
+    
+    \path[->] (A) edge node[above] {\textcolor{red}{Thompson}} (C)
+              (C) edge node[above] {\textcolor{red}{$\epsilon$-closure}} (E)
+              (E) edge node[above] {\textcolor{red}{Partition}} (G)
+              (G) edge node [above] {\textcolor{red}{Algo}} (I);
+\end{tikzpicture}
+\caption{Generator lexical analysis}
+\end{figure}
+
+
 
 \subsubsection{Regular Expressions (regex)}
 
 On dit que les regex définissent un langage de strings sur un alphabet.
 
-Les regex peuvent prendre les formes suivantes:
-\begin{itemize}
-    \item Si $a$ est dans l'alphabet, alors le regex a décrit le langage
-        consistant en les strings $a$. On appelle ce langage $L(a)$
+\begin{table}[!h]
+\begin{tabular}{lccl}
+    Input & Language & regex & contient \\
+    \hline
+    $a \in$ alphabet & $L(a)$ & $a$ & Le string $a$ \\
 
-    \item Si $r$ et $s$ sont des regex, alors leur concaténation $rs$
-        est aussi une regex décrivant le langage de tous les strings possibles
-        obtenus par concaténation d'un string du langage $r$ et d'un string de
-        langage $s$. On appelle ce langage $L(rs)$
+    $r$ et $s$ des regex & $L(rs)$ &  $rs$ & Toute les combinaisons de concaténation $rs$ \\
 
-    \item Si $r$ et $s$ sont des regex, $L(r|s)$ décrit le langage
-        composé des strings de l'un ou l'autre langage
+    $r$ et $s$ des regex & $L(r|s)$ & $r|s$ & $L(r) \cup L(s)$ \\
 
-    \item Si $r$ est un regex, $L(r*)$ décrit le langage formé par
-        concaténation de zéro ou plusieurs instances de $r$ ($\epsilon$
-        représente la string vide)
+    $r$ une regex & $L(r*)$ & $r*$ & Concaténation de zéro ou plusieurs instance de $r$ \\
 
+    \hline
+    \multicolumn{4}{p{11cm}}{ 
+    \begin{itemize}
     \item $\epsilon$ est le langage contenant uniquement la string vide
-
     \item $r$ et $(r)$ sont les mémes regex. Les parenthèses sont
-        utilisées pour grouper les regex.
+     utilisées pour grouper les regex.
+     \end{itemize}
+ }
 
-\end{itemize}
-\paragraph{Exemple Exo: }
-\begin{itemize}
-	\item Pour l'alphabet=\{0,1\},donnez une expression régulière
-	définissant le langage M = $\{w\in \{0,1\}*$ | w a au moins
-	une paire de zéro consécutif\}
-	\item Trouvez l'expression régulière représentant l'ensemble
-	des string avec un nombre pair de a suivis d'un nombre impair de b
-\end{itemize}
+\end{tabular}
+\caption{Formes possibles des RegEx}
+\end{table}
+
 \subsubsection{Finite State Automate (FSA)}
 
 Pour tout langage décrit par une regex, il existe un diagramme à
@@ -655,63 +669,78 @@ On ne peut donc aps avoir $M(r, a) = s$ et $M(r, a) = t$ tel que $s \neq t$.
 
 \subsubsection{Regular expressions to NFA}
 
-On utilise les constructions de \textbf{Thompson}:
-\begin{itemize}
-	\item $a$:\\
+On utilise les constructions de \textbf{Thompson}.
+
+
+\begin{table}[!h]
+\begin{scriptsize}
+    \centering
+    \begin{tabular}{m{2cm}m{10cm}}
+
+	\large $a$ & 
     \begin{tikzpicture}
-		\node[state] (A) [initial, initial text={}] {start};
-    	\node[state] (B) [right=of A, accepting] {end};
+		\node[state] (A) [initial, initial text={}] {S};
+    	\node[state] (B) [right=of A, accepting] {E};
 		\path[->] (A) edge node[above] {$a$} (B); % [bend left]
 	\end{tikzpicture}
-	\item $rs$:\\
+	\\
+
+	\large$rs$ & 
     \begin{tikzpicture}
-		\node[state] (A) [initial, initial text={}] {start$_r$};
+		\node[state] (A) [initial, initial text={}] {S$_r$};
     	\node        (B) [right=of A] {$N_r$};
-    	\node[state] (C) [right=of B] {end$_r$};
-		\node[state] (D) [right=of C] {start$_s$};
+    	\node[state] (C) [right=of B] {E$_r$};
+		\node[state] (D) [right=of C] {S$_s$};
     	\node        (E) [right=of D] {$N_s$};
-    	\node[state] (F) [right=of E, accepting] {end$_s$};
+    	\node[state] (F) [right=of E, accepting] {E$_s$};
 		\path[->] (C) edge (D);
-        \draw[thick] ($(A.north west)+(-0.5,0.5)$) rectangle ($(C.south east)+(0.5,-0.5)$);
-        \draw[thick] ($(D.north west)+(-0.5,0.5)$) rectangle ($(F.south east)+(0.5,-0.5)$);
+        \draw[thick] ($(A.north west)+(-0.25,0.25)$) rectangle ($(C.south east)+(0.25,-0.25)$);
+        \draw[thick] ($(D.north west)+(-0.25,0.25)$) rectangle ($(F.south east)+(0.25,-0.25)$);
 	\end{tikzpicture}
-	\item $r|s$:\\
+	\\
+	\large$r|s$ & 
     \begin{tikzpicture}
-    	\node[state] (0) [initial, initial text={}] {start};
-		\node[state] (A) [above right=of 0]{start$_r$};
+    	\node[state] (0) [initial, initial text={}] {S};
+		\node[state] (A) [above right=0.5cm and 1cm of 0]{S$_r$};
     	\node        (B) [right=of A] {$N_r$};
-    	\node[state] (C) [right=of B] {end$_r$};
-		\node[state] (D) [below right=of 0] {start$_s$};
+    	\node[state] (C) [right=of B] {E$_r$};
+		\node[state] (D) [below right=0.5cm and 1cm of 0] {S$_s$};
     	\node        (E) [right=of D] {$N_s$};
-    	\node[state] (F) [right=of E] {end$_s$};
-    	\node[state] (G) [below right=of C, accepting]{end};
+    	\node[state] (F) [right=of E] {E$_s$};
+    	\node[state] (G) [below right=of C, accepting]{E};
 		\path[->] (0) edge[bend left] node[above] {$\epsilon$} (A);
 		\path[->] (0) edge[bend right] node[below] {$\epsilon$} (D);
 		\path[->] (C) edge[bend left] node[above] {$\epsilon$} (G);
 		\path[->] (F) edge[bend right] node[below] {$\epsilon$} (G);
-        \draw[thick] ($(A.north west)+(-0.5,0.5)$) rectangle ($(C.south east)+(0.5,-0.5)$);
-        \draw[thick] ($(D.north west)+(-0.5,0.5)$) rectangle ($(F.south east)+(0.5,-0.5)$);
+        \draw[thick] ($(A.north west)+(-0.25,0.25)$) rectangle ($(C.south east)+(0.25,-0.25)$);
+        \draw[thick] ($(D.north west)+(-0.25,0.25)$) rectangle ($(F.south east)+(0.25,-0.25)$);
 	\end{tikzpicture}
-	\item $r*$:\\
+	\\
+	\large$r*$ & 
     \begin{tikzpicture}
-    	\node[state] (0) [initial, initial text={}] {start};
-		\node[state] (A) [right=of 0]{start$_r$};
+    	\node[state] (0) [initial, initial text={}] {S};
+		\node[state] (A) [right=of 0]{S$_r$};
     	\node        (B) [right=of A] {$N_r$};
-    	\node[state] (C) [right=of B] {end$_r$};
-    	\node[state] (D) [right=of C, accepting]{end};
+    	\node[state] (C) [right=of B] {E$_r$};
+    	\node[state] (D) [right=of C, accepting]{E};
 		\path[->] (0) edge node[above] {$\epsilon$} (A);
-		\path[->] (0) edge[bend right=50] node[below] {$\epsilon$} (D);
+		\path[->] (0) edge[bend right=50] node[above] {$\epsilon$} (D);
 		\path[->] (C) edge[bend right=50] node[above] {$\epsilon$} (A);
 		\path[->] (C) edge node[below] {$\epsilon$} (D);
-        \draw[thick] ($(A.north west)+(-0.5,0.5)$) rectangle ($(C.south east)+(0.5,-0.5)$);
+        \draw[thick] ($(A.north west)+(-0.25,0.25)$) rectangle ($(C.south east)+(0.25,-0.5)$);
 	\end{tikzpicture}
-	\item $\epsilon$:\\
+	\\
+	\large$\epsilon$ & 
     \begin{tikzpicture}
-		\node[state] (A) [initial, initial text={}] {start};
-    	\node[state] (B) [right=of A, accepting] {end};
+		\node[state] (A) [initial, initial text={}] {S};
+    	\node[state] (B) [right=of A, accepting] {E};
 		\path[->] (A) edge node[above] {$\epsilon$} (B);
 	\end{tikzpicture}
-\end{itemize}
+	\\
+\end{tabular}
+\end{scriptsize}
+\caption{Construction de thompson}
+\end{table}
 
 \subsubsection{NFA to DFA}
 
@@ -813,10 +842,10 @@ grace à des partitions.
 
 \subsubsection{Table driven}
 
-For each DFA, a Table driven can be implemented as a 2D table (states
-and input).
-
+For each DFA, a Table driven can be implemented as a 2D table (states and input).
+\begin{lstlisting}[mathescape]
 For every $M(r, a) = s$, $T[r, a] = s$.
+\end{lstlisting}
 
 \paragraph{Recognize the longest match}
 
