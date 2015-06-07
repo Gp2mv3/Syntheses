@@ -1,4 +1,4 @@
-\documentclass[fr]{../../../eplsummary}
+	\documentclass[fr]{../../../eplsummary}
 \usepackage[french]{varioref} % \vref and \vpageref
 \usepackage{graphicx} % images
 \usepackage{float} % images
@@ -131,9 +131,9 @@ On définit un language de programmation en 3 étapes:
 \subsubsection{Machine language}
 
 \paragraph{Langage machine (ou ensemble d'instructions)} est un langage
-facilement interpreté par l'ordinateur lui-même. Chacune des
+facilement interpreté par l'ordinateur (le processeur plus précisement) lui-même. Chacune des
 instruction occupe un byte ou plus et est facilement
-acédé et interprété. On parle également d'architecture pour
+accédé et interprété. On parle également d'architecture pour
 l'ensemble d'instructions et le comportement d'une machine.
 
 \paragraph{Complexité instruction}
@@ -145,9 +145,11 @@ Il faut plusieurs instructions RISC pour obtenir une instruction CISC.
 Comme les registres sont très rapides, un ordinateur va essayer de
 garder au maximum les données dans les registres.
 
-\paragraph{Machine virtuelle} L'architecture est implémentée en software. Les étapes de l'analyse du compilateur pour produire le programme de sortie sont:
+\paragraph{Machine virtuelle} L'architecture de la machine est implémentée en software et cette implémentation exécute un programme comme une machine physique. Un exemple d'une machine virtuelle, JVM (java virtual machine). L'avantage d'une machine virtuelle est que les programmes générés sont indépendents de l'architecture réelle de la machine, il suffit qu'il existe une machine virtuel pour cette architecture.
+
+Les étapes de l'analyse du compilateur pour produire le programme de sortie sont:
 \begin{itemize}
-	\item Mapper les noms aux adresses mémoires, frames de la pile et registres.
+    \item Mapper les noms aux adresses mémoires, frames de la pile et registres.
     \item Générer la liste linéaire des instructions machines.
     \item détecter les erreurs
 \end{itemize}
@@ -450,18 +452,21 @@ différents types.
 
 \subsubsection{\texttt{preAnalyze()} and \texttt{analyze()}}
 
-\paragraph{\texttt{preAnalyze()}} est le premier passage où l'on
-vérifie le type. Il construit une partie de la table des symbol qui est
-au dessus du AST (déclare les types importés et ceux déclarés par
-les classes).
+\paragraph{\texttt{preAnalyze()}} l'étape de pré analyse doit traverse l'AST mais seleument jusqu'à un certain point pour : 
+\begin{itemize}
+\item declarer les types importés
+\item declarer les classe définie pas le programmeur
+\item declarer les attributs des classes
+\item declarer la signature des méthodes (nom et type des paramètres)
+\end{itemize} Il construit une partie de la table des symbol qui est
+au dessus du AST.
 
-Ce passage est nécessaire pour déclaré les noms qui peuvent être référencé avant
-leur définition.
+Cette étape est nécessaire car dans le code source on peut référencer certains types avant de les avoir déclarés.
 
 \paragraph{\texttt{analyze()}} reprend là où \texttt{preAnalyze()} s'est arrêté.
 Il s'occupe de:
 \begin{itemize}
-	\item Type checking: trouver le type de chaque expression
+    \item Type checking: trouver le type de chaque expression
     \item Accessibilité: Regarde aux \texttt{public}, \texttt{protected} et \texttt{private}
     \item Member finding: vérifie les signatures.
     \item Tree rewriting: réécrit certains tree
@@ -528,8 +533,8 @@ lexicaux en catégories:
 \subsection{Scanning tokens}
 
 \paragraph{Scanner} Un scanner est un programme
-écrit par le programmeur (\textit{handwritten}) ou bien générée
-automatiquement par une liste de regex . 
+écrit par le programmeur (\textit{handwritten}) ou bien généré
+automatiquement par une liste de regex comme JavaCC. 
 
 Les espaces peuvent servir à séparer des tokens mais pas tout le temps, par 
 exemple si on est entrain de scanner un \texttt{integer} et que l'on tombe
@@ -1896,8 +1901,8 @@ Une frame =
 
 \subsubsection{Operand stack}
 
-Appliquer des opérations se fait toujours sur les deux éléments
-en haut de la stack. 
+Appliquer des opérations se fait sur des éléments
+en haut de la stack. Dans cet example deux éléments sont consommé et un produit.
 
 \begin{figure}[!h]
 \begin{tikzpicture}
@@ -1997,10 +2002,19 @@ appropriés, toutes les instructions sont complète.
         \end{enumerate}
 \end{itemize}
 
+<<<<<<< HEAD
 \paragraph{Allocation}
 \begin{itemize}
     \item On maintient plusieurs \textbf{freelist} tel que \texttt{freelist[i]} 
         contient les records de taille $i$
+=======
+Une première manière de manager la mémoire est de manière explicite, le programmeur doit s'en occuper (malloc/free). Cela présente plusieurs désavantages comme : 
+\begin{itemize}
+\item peut mener à bcp d'erreur (double free, seg fault,...) 
+\item programmation modulaire bcp plus complexe (il faut se mettre d'accord sur qui free, qui malloc,...).
+\item trouver de corriger les bugs est très compliqué car parfois un bug apparait longtemps après le lancement du programme.
+\end{itemize}
+>>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
     \item Lorsqu'un objet demande un chunk, on peut donner n'importe
 quel block de taille >= celle demandée.
@@ -2055,6 +2069,7 @@ quel block de taille >= celle demandée.
 \end{table}
 \subsection{Reference Counting}
 
+<<<<<<< HEAD
 \begin{itemize}
     \item Chaque objet retient le nombre de réference vers lui-même.
         \begin{itemize}
@@ -2169,6 +2184,24 @@ function DFS(x)
                 $x.f_i$ = $y$
                 done[$x$] = ++$i$
 \end{lstlisting}
+=======
+Chaque objet retient le nombre de réference vers lui-même, incrémentation/décrémentation à chaque création/destruction de référence. Lorsque le compte tombe à 0, suppression de l'objet.
+
+Cette méthode est rapide, sûre et marche dans la plupart des cas mais si il y a des références circulaire (A ref B et B ref A), ca ne marche pas.
+
+\subsection{Mark \& Sweep}
+
+Mark \& Sweep contiene deux phases :
+
+\begin{enumerate}
+\item Mark : On démarre des roots, on parcour la mémoire comme un graph en marquant tout les objets atteignables à partir des roots.
+
+\item Sweep : On itère sur tout les objets du heap, on supprime les objets non marqué (non atteignables) et on remet à zéro les objets marqués.
+\end{enumerate}
+
+On peut le faire en Depht-first Search (avec ou sans récursion) ou alors en pointer reverse. Le pointer reverse est utilisé pour ne pas utiliser de la mémoire lors du garbage collection, en effet on lance en général un garbage collector quand on est a court de mémoire alors si il doit lui-même utiliser de la mémoire pour s'exécuter il va avoir un problème. De plus l'espace mémoire requis pour le garbadge collector avec Mark & Sweep n'est pas
+borné, il dépend du nombre d'éléments a concerver.
+>>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
 
     \item \textbf{Sweep} : on itère sur tout les objets du heap, on
@@ -2192,21 +2225,75 @@ function DFS(x)
 \end{figure}
  
 
+<<<<<<< HEAD
 \end{enumerate}
+=======
+Le mark and Sweep permet de gérer les cycles et ne déplace pas les objets dans la mémoire ce qui lui permet d'être applicable à des langages comme C/C++. Par contre, il peut y avoir des problèmes de fragmentation de la mémoire et un cout d'allocation élevé.
+>>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
 
 \subsubsection{Conclusion}
 On peut le faire en DFS mais contraignant pour la complexité
 spatiale donc une meilleur solution est d'utiliser l'idée du pointer reverse.
 
+<<<<<<< HEAD
 
 \paragraph{Garbage}
 
 Le cout peut être très élevé si il y a peu à supprimer.
+=======
+On divise la heap en 2 parties : 
+\begin{enumerate}
+\item from-space (old space) 
+\item to-space (new space)
+\end{enumerate}
+
+Initialement tout les chunck utilisé sont dans le from-space. Au lieu de marquer les chuncks utilisés, on les copie dans le to-space. Tout en maintenant à l'ancien emplacement un pointeur de référence vers le nouvel emplacement de l'objet.
+
+On déplace ainsi petit-à-petit en suivant les liens. Lorsque l'algo est fini, on inverse les utilisations des deux espaces (from devient to et to deviens from).
+
+Les avantages sont : 
+\begin{itemize}
+\item facile d'allouer de la mémoire (à la fin)
+\item pas de fragmentation (compactage automatique)
+\item le temps est proportionnel au nombre d'objets vivants. Par contre, il faut le double d'espace mémoire.
+\end{itemize}
+
+Par contre le même problème qu'avec mark and sweep sans la technique des pointeur inversé se pose. Il faut traverser tous les elements sans utilisé 
+de l'espace mémoire pour le faire. Pour cela le to-space (new space) va être divisé en 3 parties :
+
+\begin{itemize}
+\item copier et scanner : les pointeurs contenu dans l'objet ont été scanné et "suivit"
+\item copier non scanner : les pointeurs contenu dans l'objet n'ont pas été traité
+\item empty
+\end{itemize} 
+
+La première étape va être de copier dans le to-space les objets pointés par les roots et de créer les "forwarding pointers"
+La deuxième étape va scanner les objets non scanner et copier tous les objets pointer par ceux ci dans les to-space
+
+Si on rencontre un objet déjà copié il suffit de suivre son forwarding pointer pour savoir ou il se trouve.
+
+\subsubsection{Conclusion}
+
+\begin{itemize}
+\item copying collection is very efficient
+\item l'allocation est très peu couteuse
+\item le barbage collection des objets est également peu couteux spécialement si beaucoup d'objet sont à jeter
+\item Mais vu que ça déplace les objets dans la mémoire certain langages ne le suportte pas C/C++
+\end{itemize}
+>>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
 Une meilleur solution est de mesuré $H$ (heap size) and $R$ (reachable data in heap)
 tel que si $\frac{R}{H} > 0.5$ on augmente la taille du heap.
 
+<<<<<<< HEAD
+=======
+On divise la heap en deux ou plusieur parties, les jeunes et les vieux objets. Quand on alloue de la place pour un objet il est mis dans la partie jeune.
+
+On fait du garbage collection sur dans les objets concidéré comme "jeune" a un rythme soutenu. Si ces objets ont survécu à plusieurs passage du garbage collector, alors on les place dans la partie des vieux objets. Les vieux objets subissent également les garbage collection mais beaucoup moins souvent que les jeunes objets.
+
+Un problème survient quand on a des objets dans la partie vieux et que ils référence des objets dans la partie jeune. Quand on va garbage collection les jeunes, on ne va pas voir que un objet est référencé par un "vieux". Pour cela on crée un table (remember set) qui contient tous les pointeurs des vieux vers les jeunes.
+>>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
 $$\textrm{Cost: } \frac{c_1 R + c_2 H}{H-R}, \quad \textrm{avec c constant number of instructions}$$
 
@@ -2503,6 +2590,7 @@ méthodes statiques, au sens \#Java8 du terme.
 
 \paragraph{getters and setters}
 
+<<<<<<< HEAD
 Pas de getter/setter en scala, on y accède comme un champs:
 \texttt{nomDeLaClasse.Champ = 'Hélène roule en tracteur'}
 
@@ -2510,6 +2598,24 @@ Pas de getter/setter en scala, on y accède comme un champs:
 
 Un objet compagnon est un objet qui porte le même nom que la classe
 qu'il accompagne.
+=======
+Ils n'existent pas en Scala. Il suffit de faire comme si on accédait a une champ en Java. "nomDeLaClasse.Champ = 'Hélène roule en tracteur'".
+Il y a aussi une autre technique si vos attributs sont privé vous pouvez les accéder comme ceci :
+
+\begin{lstlisting}
+private var battery = 0
+def power = battery // getter
+def power_= (p: Int) { battery = p } // setter
+\end{lstlisting}
+
+la ligne power\_= est un peu particulière, cela permet de définir un nom de fonction comprenant un espace. "power ="
+
+\subsubsection{Companion object and apply}
+
+Un objet compagnon est un objet qui porte le même nom que la classe qu'il accompagne.
+La spécificité étant que la classe peut accéder au membres privés de l'objet et vice versa.
+Le compagnion object peut être utilisé comme un genre de container.
+>>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
 La spécificité étant que la classe peut accéder au membres privés
 de l'objet et vice versa.
@@ -2549,7 +2655,13 @@ val plusOne = (x:Int) => x+1
 plusOne(5)    // va retourner 6
 \end{lstlisting}
 
+<<<<<<< HEAD
 \subsubsection{Closure}
+=======
+Un compagnion object permet de construire un object sans utiliser de new.
+
+\subsubsection{operator overload}
+>>>>>>> f83bbfbbf57ccba8650ef0329394c74b5e4d552e
 
 Function anonyme qui peut référencé n'importe quelle valeur/variable
 dans le scope.
@@ -2860,11 +2972,20 @@ object MyComplex extends App {
 
 \subsubsection{implicit classes}
 
-\todo{heu ... ?}
+Une classe implicite permet d'enrichir une classe existante en y ajoutant des méthodes comme par exemple :
+
+\begin{lstlisting}
+implicit def StringWrapper(S: String) = { def method1() = {} }
+
+"test".method1
+\end{lstlisting}
+
+Le type string a maintenant une nouvelle méthode, method1 qui ne fait ... rien ! mais c'est quand même la classe.
 
 \subsubsection{implicit parameters}
 
 En gros, c'est une loucherie qui permet de remplacer automatiquement un argument d'une fonction si on apelle la fonction sans cet argument. Après...
+Le keyword implicit va dire au compilateur de lui-même procurer un paramètre à la méthode. Pour cela il faut qu'il y ai un paramètre implicit déclaré et visible par la fonction et qu'il ai le type requis.
 
 \todo{A completer}
 
