@@ -1,0 +1,97 @@
+\documentclass[en]{../../../eplexercises}
+
+\usepackage{todonotes}
+
+\hypertitle{Languages and Translators}{8}{INGI}{2132}
+{Houtain Nicolas \and Ndonda Kabasele Gorby Ndonda}
+{Pierre schauz}
+
+
+\section{Lexical Anal. IS-IS}
+
+\section{Grammar}
+
+\subsection{Give an example of ambiguity in a real programming language. How is it managed in practice?}
+\todo{explain}
+\begin{align}
+E ::=& E+E & & E ::= TE'\\
+E ::=& E\times E & & E' ::=  +TE'\\
+E ::=& (E) & &E' ::= \epsilon\\
+E ::=& id & & T ::= \times FT'\\
+& & & T' ::= \epsilon\\
+& & & F ::= id\\
+& & & F ::= (E)
+\end{align}
+À gauche, elle est ambigüe (on peut avoir deux arbres) mais pas à droite ($LL(1)$)
+
+\section{Parsing}
+
+\section{Chapitre 4 : Type checking}
+
+\subsection{Why a two phase analysis ? Describe what each phase does.}
+
+L'analyse sémantique de programmes j-- (et Java) requière deux parcours de l'AST parce qu'un nom de classe ou le nom d'un membre peut être référencé avant qu'il ne soit décllaré dans le code source.
+
+\subsubsection{pre-analyse}
+
+La pré-analyse traverse l'AST moins profondément que l'analyse.
+Cependant, elle va suffisamment loin pour :
+\begin{itemize}
+\item Les déclarations des noms des types importés.
+\item Les déclaration des noms des classes définies par l'utilisateur.
+\item Les déclarations de champs.
+\item Les déclarations de méthodes (incluant leur signature et le type des paramètres).
+\end{itemize}
+
+Pour cette raison, \texttt{preAnalyze()} ne doit être défini que pour certains noeuds de l'AST : \texttt{JCompilationUnit, JClassDeclaration, JFieldDeclaration, JMethodDeclaration, JConstructorDeclaration}.
+
+Donc, comme on peut le constater, la phase de pré-analyse ne parcourt pas le corps des méthodes.
+
+\subsubsection{analyse}
+
+Elle s'effectue logiquement après la pré-analyse, et parcourt l'entièreté de l'AST, jusqu'au feuilles.
+Elle sert à :
+\begin{itemize}
+\item Réécrit les initialisations de champs et de variables locales comme des assignements.
+\item Déclare les paramètres formels et les variables locales.
+\item Alloue des stack frames pour les paramètres formels et les variables locales.
+\item Résout le type des expressions et assure les règles de types du langage.
+\item Reclassifier les noms ambigus.
+\item Faire une partie de "tree surgery".
+\end{itemize}
+
+\subsection{When is the final modfifier of classes checked ?}
+
+Dans la méthode \texttt{preAnalyze()} applicable aux noeuds de type \texttt{JClassDeclaration}.
+
+Si une classe est "finale", elle ne peut pas être étendue. On vérifie donc pour chaque classe que le super-type n'est pas final.
+
+\subsection{When is abstract method body checked ?}
+
+Une méthode abstraite possède comme particularité qu'elle ne peut pas avoir de corps.
+On vérifie cela dans la méthode \texttt{preAnalyze()} applicable sur les noeuds de type
+\texttt{JMethodDeclaration}.
+
+\subsection{Explain memory allocation ? How variable offset are computed ?}
+
+Voir pages 143 à 152 du bouquin. \#JeFaisCommePoulpyPourReseau\\
+Mémoire: this, parameters, block (nextOffset + la place en mémoire)
+
+\subsection{Explain how variable shadowing is detected.}
+
+Dans le context de la méthodes, on alloue les stack frames (voir question précédente) au fur et à mesure de l'avancement dans la méthode. Chacune de ses frames contient, entre autre, le nom de la variable. Ce qu'on fait, c'est que dans la méthode \texttt{analyze()} applicable sur les noeuds de type \texttt{JVariableDeclaration}, avant d'ajouter la variable au \texttt{LocalContext}, on fait un lookup dans ce context pour vérifier que le nom n'est pas déjà utilisé. Si c'est le cas, on reporte une erreur ; sinon, on ajoute la variable au context.
+
+\subsection{Explain where type-checking is done ?}
+
+Dans la méthode \texttt{analyze()} applicable sur les noeuds de type \texttt{JVariable}.\\
+Surtout pour les check: if avec un boolean, cast correct
+
+\subsection{What do we do for the cast ?}
+
+Ca se fait dans la méthode \texttt{analyze()} pour les noeuds \texttt{JExpression}. On vérifie le type dans lequel on veut
+caster l'expression. S'il est valide, alors on crée un \texttt{Converter} qui va être utilisé au moment de la génération de code pour générer le code requis pour le cast. S'il n'y a aucun \texttt{Converter} défini, alors on peut conclure que le cast est invalide.
+
+
+
+
+\end{document}

@@ -108,7 +108,7 @@ par le PGCD de $k$ et $N$.
 Un signal déterministe est un signal à propos
 duquel il n'y a aucune incertitude sur sa valeur
 à aucun moment du temps. Par opposition, un signal
-alétoire est un signal dont on ne peut pas
+aléatoire est un signal dont on ne peut pas
 prédire la valeur à un instant $t$.
 
 % TODO : energy and power signals
@@ -310,10 +310,11 @@ $x$ est discret et de période $N$, sa période en continu est donc $NT_s$
 car $T_s$ est la distance entre deux valeurs discrètes.
 
 La transformée de Fourier a donc une période de discrétisation de $\omega_0 = \frac{2\pi}{NT_s}$
-et une période de $\frac{2\pi}{T_s}$.
-En prenant $\Omega = \omega T_s$ pour la même raison que pour la transformée de Fourier discrète,
+et une période de $\omega = \frac{2\pi}{T_s}$.
+En prenant $\Omega = \omega T_s$ (et donc $\Omega_0 = \omega_0 T_s$)
+pour la même raison que pour la transformée de Fourier discrète,
 on a un signal avec une période de discrétisation de $\Omega_0 = \frac{2\pi}{N}$ et une période
-de $2 \pi$.
+de $\Omega = 2 \pi$.
 La période de la transformée de Fourier en discret est donc $N$, comme celle du signal de départ!
 C'est pour ça que lorsqu'on applique FFT sur un vecteur de longueur $N$ on reçoit un vecteur de longueur
 $N$ également (voir \sectionref{fft}).
@@ -386,8 +387,8 @@ pour $T = 1$ ($\omega_0 = \frac{2\pi}{T} = 2\pi$).
 
 Il faut bien comprendre également que l'algorithme FFT
 est indépendant de $T_s$ et donc de $T = nT_s$.
-On lui donne un vecteur de $N$ élément, il nous renvoit $N$
-élément.
+On lui donne un vecteur de $N$ éléments, il nous renvoit $N$
+éléments.
 Il peut trouver $\Omega_0 = \frac{2\pi}{N}$ et utiliser
 l'équation~\eqref{eq:sfd} sans se soucier de $T_s$.
 On voit à la \sectionref{sfd} où le $T_s$ se simplifie.
@@ -419,6 +420,8 @@ il faut remplacer les lignes 4 et 5 par
 U = fftshift(fft(u)) / N;
 f = (0:N-1) - N/2;
 \end{lstlisting}
+
+% TODO : zero-padding
 
 \subsection{Propriétés de la transformée de Fourier}
 \label{sec:fourier-transform-properties}
@@ -462,7 +465,7 @@ où $X$ et $Y$ sont donc leur série de Fourier,
 La disparition du facteur $\frac{1}{2\pi}$ et du au facteur
 $\frac{1}{T}$ de l'équation~\eqref{eq:sfc}. Cette propriété
 de convolution permet d'expliquer le phénomène de
-Gibbs, plus d'informations dans~\cite[pp.~169]{haykin2003}.
+Gibbs, plus d'informations dans~\cite[p.~169]{haykin2003}.
 
 Une propriété très intéressante pour les équations différentielles est que
 \begin{align*}
@@ -647,12 +650,15 @@ et la différentiation en fréquence
 \begin{description}
   \item[Signal de support fini]
 		$\roc = \C$ ;
-  \item[Signal de support fini à gauche]
-		$\roc = \Re{s} > k$ ;
+  \item[Signal de support fini à gauche\footnotemark]\footnotetext{Un signal de
+	support fini à gauche (resp. à droite) est un signal entièrement
+	situé à droite (resp. à gauche) d'un axe vertical. Attention car
+	cela se traduit par \emph{right-sided} en anglais.}
+		$\roc = \Re(s) > k$ ;
 	\item[Signal de support fini à droite]
-		$\roc = \Re{s} < k$ ;
+		$\roc = \Re(s) < k$ ;
 	\item[Signal de support infini]
-		$\roc = k_1 < \Re{s} < k_2$.
+		$\roc = k_1 < \Re(s) < k_2$.
 \end{description}
 
 \subsection{Transformée de Laplace unilatérale}
@@ -728,7 +734,7 @@ et la différentiation en fréquence
 \subsection{Transformée en $z$ unilatérale}
 Comme pour la \sectionref{laplacu}, on a besoin
 d'une transformée en $z$ unilatérale pour résoudre les équations
-différentielles à conditions initiales non-nulles
+aux différences à conditions initiales non-nulles
 \begin{align*}
   X_u(z) & = \sum_{n=0}^\infty x[n] z^{-n}.
 \end{align*}
@@ -832,7 +838,7 @@ La réponse indicielle d'un système LTI notée $s(t)$ est par définition
 \begin{align*}
   s(t) & \eqdef h(t) * u(t)\\
   & = \int_{-\infty}^t h(\tau) \dif \tau &
-  s[n] & = \sum_{-\infty}^n h[k]
+  s[n] & = \sum_{k=-\infty}^n h[k]
 \end{align*}
 d'où
 \begin{align*}
@@ -1382,9 +1388,9 @@ possible d'un signal ``cible'' notée $r$ sur la \figuref{feedback}.
 	\begin{tikzpicture}[auto, node distance=2cm]
 			\node [input, name=input] {};
 			\node [sum, right of=input] (sum) {};
-			\node [block, right of=sum] (controller) {$H(s)$};
+			\node [block, right of=sum] (controller) {$H$};
 			\node [block, right of=controller, pin={[pinstyle]above:v},
-							node distance=3cm] (system) {$G(s)$};
+							node distance=3cm] (system) {$G$};
 
 			\draw [->] (controller) -- node[name=u] {$x$} (system);
 			\node [output, right of=system] (output) {};
@@ -1400,13 +1406,13 @@ possible d'un signal ``cible'' notée $r$ sur la \figuref{feedback}.
 	\caption{Système de contrôle avec feedback. On considère ici que
 	l'étape de mesure est idéale. $r$ désigne le signal de sortie ``cible'',
 	$e = r-y$ est l'erreur commise par la système, $v$ est un bruit
-	apparaissant à la sortie de $G(s)$.}
+	apparaissant à la sortie de $G$.}
 	\label{fig:feedback}
 \end{figure}
 
 On a du coup $Y = GH(R - Y)$ d'où 
-$(1+GH)Y = GHX$ et donc
-\[ T(s) \eqdef = \frac{Y(s)}{R(s)} = \frac{G(s)H(s)}{1+G(s)H(s)}. \]
+$(1+GH)Y = GHR$ et donc
+\[ T \eqdef \frac{Y}{R} = \frac{GH}{1+GH}. \]
 
 On défini la sensibilité $S$ de ce système
 \[ S \eqdef \frac{\Delta T/T}{\Delta G/G} =
@@ -1416,9 +1422,9 @@ On défini la sensibilité $S$ de ce système
 
 Si on a une perturbation $v$ à la sortie de $G$, on veut
 que la sortie du système reste proche du signal ``cible''
-\[ Y(s) = \underbrace{\frac{GH}{1+GH}}_{T(s)}X + \underbrace{\frac{1}{1+GH}}_{S} V(s) \approx R(s). \]
+\[ Y(s) = \underbrace{\frac{GH}{1+GH}}_{T}R + \underbrace{\frac{1}{1+GH}}_{S} V \approx R. \]
 L'objectif lors de la conception d'un système avec feedback sera
-donc de choisir $H(s)$ afin de rendre $T(s)$ proche de $1$ et $S$
+donc de choisir $H$ afin de rendre $T$ proche de $1$ et $S$
 petit afin de réduire la sensibilité du système aux pertubations.
 
 Le désavantage du feedback, c'est une complexité accrue et un risque
@@ -1518,6 +1524,7 @@ et est appelée ``Delta de Kronecker''.
 \begin{align}
   \nonumber
   \delta(t) & = \fdif{u(t)}{t}\\
+	\delta(at) & = \frac{1}{a}\delta(t) \text{ si } a>0\\
   \label{eq:uintdelta}
   u(t) & = \int_{-\infty}^t \delta(t) \dif t\\
   \nonumber
