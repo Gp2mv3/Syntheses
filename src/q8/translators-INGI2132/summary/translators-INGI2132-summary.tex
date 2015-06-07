@@ -546,6 +546,12 @@ mouvement d'un état à l'autre suivant ce qui est scanné. Si un
 caractère scanné n'est sur aucune flèche, on choisi celle non
 étiquetée.
 
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=10cm]{img/state.png}
+    \caption{State diagram}
+\end{figure}
+
 \paragraph{Implémentation}
 
 \begin{itemize}
@@ -563,6 +569,11 @@ caractère scanné n'est sur aucune flèche, on choisi celle non
 
 
 \subsection{Lexical analysis generator}
+
+% TODO schema
+%\begin{tikzpicture}
+%\end{tikzpicture}
+
 \subsubsection{Regular Expressions (regex)}
 
 On dit que les regex définissent un langage de strings sur un alphabet.
@@ -1052,13 +1063,13 @@ définit qui permet de voir plus loin qu'un symbole.
 Pour récupérer des erreurs, les \texttt{mustBe}, lorsqu'il rencontre
 un token inatendu, scanne jusqu'à trouver celui qu'il veut jusqu'à se
 remettre dans un état à nouveau correct.
-\paragraph{Left recursion removal}
+\subsubsection{Left recursion removal}
 Parfois pour faire un parsing de descente récursive, il faut
 modifier la grammaire même si elle n'est pas ambigüe. Par 
 exemple pour la grammaire:
 \begin{itemize}
 	\item Y ::= Y \textcolor{red}{a}
-	\item Y :: = Y \textcolor{green}{b}
+	\item Y :: = \textcolor{green}{b}
 \end{itemize}
 
 on ne peut pas  faire le parseur à cause de la left-recursion.
@@ -1082,6 +1093,29 @@ for i := 1 to n do
 			Eliminate any immediate left recursion
 
 \end{lstlisting}
+\paragraph{Indirect left recursion}
+Dans ce cas la, une première manipulation est nécessaire avant
+d'appliquer la régle de base.
+
+\begin{center}
+\begin{tikzpicture}
+    \node[text width=2.5cm,align=center] (A) 
+    {{\begin{lstlisting}
+S ::= A a | b
+A ::= S c | d
+\end{lstlisting}}};
+
+	\node[text width=2.5cm,align=center,  right= of A] (B) 
+	{{\begin{lstlisting}
+S ::= A a | b
+A ::= A ac | bc | d
+\end{lstlisting}}};
+		\path[->] (A) edge (B);
+
+\end{tikzpicture}
+\end{center}
+
+
 \paragraph{Left Factoring}
 Left Factoring consiste à retirer les facteurs gauche communs dans
 des règles de productions du même symbole terminal. Par exemple
@@ -1092,10 +1126,12 @@ des règles de productions du même symbole terminal. Par exemple
 deviens 
 \begin{itemize}
 	\item Y ::= $ \alpha$ Y'
-	\item Y' ::= $\beta \gamma$
+	\item Y' ::= $\beta | \gamma$
 \end{itemize}
 Cette technique est utile parce qu'elle permet d'éviter le 
 backtracking (donc utile pour les lookahead scanner) 
+
+
 \subsubsection{$LL(1)$ parsing}
 
 Contrairement au recursive descent, ici, la stack est explicite.
@@ -1171,11 +1207,12 @@ $$first(X_1 X_2 ... X_n) = \{ a \quad | \quad X_1 X_2 ... X_n
         \begin{lstlisting}[mathescape]
 For each terminal $x$, $first(x) = \{x\}$.
 For each non-terminal $X$, $first(X) = \{\}$.
-If there is a rule $X ::= \epsilon$ in $P$, add $\epsilon$ to $first(X)$.
+If there is a rule $X ::= \epsilon$ in $P$
+     $first(X)$ += $\epsilon$
 
 Repeat until no new symbols are added to any set: 
     For each rule$ Y ::= X_1 X_2 ... X_n \in P$ 
-        add all symbols from $first(X_1 X_2 ... X_n)$ to $first(Y)$.
+        $first(Y)$ += all symbols from $first(X_1 X_2 ... X_n)$
         \end{lstlisting}
 
     \item Calcul de $first(X_1 X_2 ... X_n)$:
@@ -1184,7 +1221,7 @@ Set S = first(X$_1$).
 i = 2
 While $\epsilon$ $\in$ S and i $\le$ n {
     S = S - $\epsilon$
-    Add first(X$_i$) to S
+    S += first(X$_i$)
     i = i+1
 return S
 \end{lstlisting}
@@ -1193,7 +1230,7 @@ return S
 \paragraph{Follow}
 
 Correspond à l'ensemble des terminaux qui peuvent suivre une règle.
-\textbf{First cannot contain $\epsilon$ }
+\textbf{Follow cannot contain $\epsilon$ }
 
 $$follow(X) = \{ a \quad | \quad S \Rightarrow * wX\alpha and \alpha \Rightarrow * a ...\}$$
 
@@ -1204,79 +1241,31 @@ $follow(X) = \{\}$ for all non-terminals X $\ne$ S.
 Repeat until no new symbols are added to any set:
     for each rule $Y ::= X_1 X_2... X_n \in P$,
         for each non-terminal $X_i$,
-            add $first(X_{i+1} X_{i+2}... X_n) - {\epsilon}$ to $follow(X_i)$, and
-            if $X_i$ is the rightmost symbol or $first(X_{i+1} X_{i+2}... X_n)$ contains $\epsilon$,
-                 add $follow(Y)$ to $follow(X_i)$.
-
+            $follow(X_i)$ += $first(X_{i+1} X_{i+2}... X_n) - {\epsilon}$
+            if $X_i$ is the rightmost symbol OR $first(X_{i+1} X_{i+2}... X_n)$ contains $\epsilon$,
+                $follow(X_i)$ += $follow(Y)$ 
 \end{lstlisting}
 
 \paragraph{Parsing table}
 
-Construire une table de parsing $LL(1)$ pour une grammaire $G=(N,T,S,P)$:\\
-For each non-terminal $Y$ in $G$,\\
-\hspace*{1em}For each rule $Y ::= X_1 X_2...X_n \in P$ with number $i$,\\
-\hspace*{2em}For each terminal $a$ $\in$ $first(X_1 X_2... X_n) - \{\epsilon\}$, add $i$ to $table[Y, a]$.\\
-\hspace*{2em}If $first(X_1 X_2... X_n)$ contains $\epsilon$, for each terminal (or \#) in $follow(Y)$, add $i$ to $table[Y, a]$.\\
+Construire une table de parsing $LL(1)$ pour une grammaire $G=(N,T,S,P)$:
+\begin{lstlisting}[mathescape]
+For each non-terminal $Y$ in $G$,
+    For each rule $Y ::= X_1 X_2...X_n \in P$ with number $i$
+        For each terminal $a$ $\in$ $first(X_1 X_2... X_n) - \{\epsilon\}$
+            $table[Y, a]$ += $i$
+
+        If $first(X_1 X_2... X_n)$ contains $\epsilon$
+            for each terminal (or \#) in $follow(Y)$
+                $table[Y, a]$ += $i$
+\end{lstlisting}
 
 Une grammaire est dite $LL(1)$ si la table de parsing produite n'a pas de conflits. Toute grammaire $LL(1)$ est non ambigue.\\
-On peut avoir des grammaire non $LL(1)$ mais $LL(k)$ avec $k>1$ (on regarde alors $k$ symboles). On peut transformer certaines grammaires non $LL(1)$ en une équivalente $LL(1)$  dans certains cas:
-\begin{align*}
-	\text{left recursive: } X &::= X\alpha & X &::= \beta X'\\
-    X &::= \beta & \Rightarrow X' &::= \alpha X'\\
-    & & X' &::= \epsilon\\
-    \text{left factoring: } X &::= \alpha \beta & X &::= \alpha X'\\
-    X &::= \alpha \gamma & \Rightarrow X' &::= \beta\\
-    & & X' &::= \gamma     
-\end{align*}
-
+On peut avoir des grammaire non $LL(1)$ mais $LL(k)$ avec $k>1$ (on regarde alors $k$ symboles). 
 
 \paragraph{Error recovery}
 Si il reçoit un input non attendu pour terminal/non-terminal ($T$) dans la stack,
 il va simplement skipper les tokens jusqu'a obtenir un token $\in$ Follow($T$).
-
-\subsubsection{Left recursion removal}
-
-\paragraph{Regle typique pour supprimer la left recursion}
-\begin{center}
-\begin{tikzpicture}
-    \node[text width=2.5cm,align=center] (A) 
-    {{\begin{lstlisting}
-Y ::= Y a
-Y ::= b
-\end{lstlisting}}};
-
-	\node[text width=2.5cm,align=center,  right= of A] (B) 
-	{{\begin{lstlisting}[mathescape]
-Y  ::= bY'
-Y' ::= aY'
-Y' ::= $\epsilon$
-\end{lstlisting}}};
-		\path[->] (A) edge (B);
-
-\end{tikzpicture}
-\end{center}
-
-\paragraph{Indirect left recursion}
-Dans ce cas la, une première manipulation est nécessaire avant
-d'appliquer la régle de base.
-
-\begin{center}
-\begin{tikzpicture}
-    \node[text width=2.5cm,align=center] (A) 
-    {{\begin{lstlisting}
-S ::= A a | b
-A ::= S c | d
-\end{lstlisting}}};
-
-	\node[text width=2.5cm,align=center,  right= of A] (B) 
-	{{\begin{lstlisting}
-S ::= A a | b
-A ::= A ac | bc | d
-\end{lstlisting}}};
-		\path[->] (A) edge (B);
-
-\end{tikzpicture}
-\end{center}
 
 
 \subsection{Bottom-up deterministic parsing}
@@ -1993,160 +1982,541 @@ appropriés, toutes les instructions sont complète.
 %TODO
 
 
-\section{Chapitre : Garbage Collection} \todo{quel chapitre?} %LN
+\section{Garbage Collection}
+
+\begin{itemize}
+    \item Explicit memory management
+        \begin{enumerate}
+            \item Peut amener à beaucoup d'erreur (double free/malloc, seg fault,\ldots)
+            \item Programmation modulaire plus complexe (accord sur qui free/malloc,\ldots)
+        \end{enumerate}
+
+    \item Automatic memory management
+        \begin{enumerate}
+            \item Illusion d'une infinité de mémoire
+        \end{enumerate}
+\end{itemize}
+
+\paragraph{Allocation}
+\begin{itemize}
+    \item On maintient plusieurs \textbf{freelist} tel que \texttt{freelist[i]} 
+        contient les records de taille $i$
+
+    \item Lorsqu'un objet demande un chunk, on peut donner n'importe
+quel block de taille >= celle demandée.
+\end{itemize}
 
 
-Une première manière de manager la mémoire est de manière explicit (malloc/free). Plusieurs désaventage: peut mener à bcp d'erreur (double free, seg fault,...), programmation modulaire bcp plus complexe (il faut se mettre d'accord sur qui free, qui malloc,...).
+\begin{table}[!h]
+    \centering
+    \begin{tabular}{|p{4cm}|p{9cm}|}
+    \hline
+        Nom & Avantage/inconvénient \\
+    \hline
+    \hline
 
-L'automatisation permet de donner l'illusion d'avoir une infinité de mémoire. Le programmeur ne doit également plus penser à cela. Cela retire également un tas de bugs.
+        Reference counting & \begin{itemize}
+            \item[+] Rapide, sûre
+            \item[-] Ne fonctionne pas avec des ref circulaires
+        \end{itemize}
+        \\
+    \hline
+    Mark \& sweep classique & \begin{itemize}
+        \item[-] Complexité spatiale $\bigoh(H)$, fragmentation et coût d'allocation
+    \end{itemize}
+    \\
+    \hline
 
+    Mark \& sweep reversibel & \begin{itemize}
+        \item[+] La stack est ``contenue'' dans le graph pointer
+        \item[-] Fragmentation et coût d'allocation
+    \end{itemize}
+    \\
+    \hline
 
+    Copying collection & \begin{itemize}
+        \item[+] facile d'allouer de la mémoire (à la fin), pas de
+            fragmentation (compactage automatique), le temps est proportionnel au
+            nombre d'objets vivants
+        \item[-] Il faut le double d'espace mémoire.
+    \end{itemize}
+    \\
+    \hline
+
+    Generation collection & Peut être utilisé pour \begin{itemize}
+        \item Mark \& sweep
+        \item Copying
+    \end{itemize}
+    \\
+    \hline
+
+    \end{tabular}
+    \caption{Garbage solution}
+\end{table}
 \subsection{Reference Counting}
 
-Chaque objet retient le nombre de réference vers lui-même, incrémentation/décrémentation à chaque création/destruction de référence. Lorsque le compte tombe à 0, suppression de l'objet.
-
-Cette méthode est rapide, sûre et marche dans la plupart des cas (si il y a des références circulaire (A ref B et B ref A), ca ne marche pas).
+\begin{itemize}
+    \item Chaque objet retient le nombre de réference vers lui-même.
+        \begin{itemize}
+            \item[$\to$] \texttt{cnt++}/\texttt{cnt--} lors decréation/destruction de
+                référence
+        \end{itemize}
+    \item Suppression lorsque le \texttt{cnt == 0}
+    \item[]
+    \item[+]
+        Méthode rapide, sûre et marche dans la plupart des cas.
+    \item[-]
+        Problème si il y a des références circulaire (A ref B et B ref A)
+\end{itemize}
 
 \subsection{Mark \& Sweep}
 
-Phase 1 : Mark : on démare de root, on trace l'object graph en marquant tout les objets atteints.
+\begin{figure}[!h]
+\centering
+\includegraphics[width=5cm]{img/marksweet.png}
+\caption{Mark \& sweet principe}
+\end{figure}
 
-Phase 2 : Sweep : on itère sur tout les objets du heap, on supprime les objets non marqué et on clear les marks.
+\begin{enumerate}
 
-On peut le faire en Depht-first Search (avec ou sans récursion) ou alors en pointer reverse.
+    \item \textbf{Mark} : On démare de root, on trace l'object graph en
+marquant tout les objets atteints.
 
-Le cout peut être très élevé si il y a peu à jetter. Si plus de 50\% de la heap est concervée, on augmente la taille de la heap.
+\begin{figure}[!h]
+\begin{tabular}{cc}
+\begin{minipage}{0.4\linewidth}
+\begin{lstlisting}[mathescape]
+function DFS(x)
+    if $x$ == pointer into the heap AND record $x$ is not marked
+        mark $x$
+        
+        foreach field $f_i$ of record $x$
+            DFS($x.f_i$)
+\end{lstlisting}
+\end{minipage}
+&
+\begin{minipage}{0.4\linewidth}
+\begin{lstlisting}[mathescape]
+function DFS(x)
+    if $x$ == pointer into the heap AND record $x$ is not marked
+        mark $x$
+        
+        t=1
+        stack[t] = x
+        
+        while t > 0
+            x = stack[t--]
+            
+            foreach field $f_i$ of record $x$ 
+                if $x.f_i$ == pointer AND record $x.f_i$ not marked
+                    mark $x.f_i$
+                    stack[++t] = $x.f_i$
+\end{lstlisting}
+\end{minipage}
+\end{tabular}
+\caption{Implementation mark phase sans re}
+\end{figure}
+                
+\begin{itemize}
+    \item Complexité temporel : proportionnel au number de node mark. 
 
-L'allocation de donnée dans le heap se fait par :
-Lorsqu'un objet demande un chunk, on peut donner n'importe quel block de taille >= celle demandée. C'est plus efficace de maintenir des listes des blocks disponible par taille.
+    \item Complexité spatial : Puisque DFS est recursive, la
+complexité pour un heap de size $H$ peut être de $\bigoh(H)$. $\to$
+Pas acceptable
+\end{itemize}
+
+\item{\textbf{Mark avec Pointer reversal}} : 
+
+\begin{tabular}{m{7cm}m{3cm}m{0.5cm}m{3cm}}
+l'idée est de faire un DFS et d'encoder
+la stack dans le graph pointer lui-même en inversant les pointeurs.
+&
+\includegraphics[width=3cm]{img/reverse1.png}
+& $\to$ &
+\includegraphics[width=3cm]{img/reverse2.png}
+\end{tabular}
+
+\begin{lstlisting}[mathescape]
+function DFS(x)
+    if $x$ == pointer AND record $x$ not marked
+        $t$ = nil
+        mark $x$
+        done[$x$] = 0
 
 
-Le mark and Sweep permet de gerer les cycles. Par contre, il peut y avoir des problème de fragmentation et un cout d'allocation grand.
+        while true
+            $i$ = done[$x$]
+            
+            if $i$ < $\#$ of fields in record $x$
+                $y$ = $x.f_i$
+                
+                if $y$ == pointer AND record $y$ not marked
+                    $x.f_i$ = $t$
+                    $t$ = $x$
+                    $x$ = $y$
+
+                    mark $x$
+                    done[$x$] = 0
+                else
+                    done[$x$] = ++$i$
+            else
+                $y$ = $x$
+                $x$ = $t$
+
+                if $x$ = nil then return
+                $i$ = done[$x$]
+                $t$ = $x.f_i$
+                $x.f_i$ = $y$
+                done[$x$] = ++$i$
+\end{lstlisting}
+
+
+    \item \textbf{Sweep} : on itère sur tout les objets du heap, on
+supprime les objets non marqué et on clear les marks.
+
+\begin{figure}[!h]
+    \centering
+\begin{lstlisting}[mathescape]
+function DFS(x)
+    $p$ = first address in heap
+    while $p$ < last adress in heap
+        if record $p$ marked
+            unmark $p$
+        else  %% (let f_1 the first field in p
+            $f_1$ = freelist
+            freelist = $p$
+        
+        $p$ = $p$ + sizeof($p$)
+\end{lstlisting}
+\caption{Implementation mark phase}
+\end{figure}
+ 
+
+\end{enumerate}
+
+
+\subsubsection{Conclusion}
+On peut le faire en DFS mais contraignant pour la complexité
+spatiale donc une meilleur solution est d'utiliser l'idée du pointer reverse.
+
+
+\paragraph{Garbage}
+
+Le cout peut être très élevé si il y a peu à supprimer.
+
+Une meilleur solution est de mesuré $H$ (heap size) and $R$ (reachable data in heap)
+tel que si $\frac{R}{H} > 0.5$ on augmente la taille du heap.
+
+
+$$\textrm{Cost: } \frac{c_1 R + c_2 H}{H-R}, \quad \textrm{avec c constant number of instructions}$$
+
+
+\paragraph{$\to$}
+Le mark and Sweep permet de gerer les cycles. Par contre, il peut y
+avoir des problème de fragmentation et un cout d'allocation grand.
 
 
 \subsection{Copying collection : Cheney algorithm}
 
-On splitte la heap en 2 : from-space et to-space.
+On splitte la heap en 2 : from-space et to-space
 
-Initialement tout les chunck utilisé sont dans le from-space. Au lieu de marquer les chuncks utilisés, on les place dans le to-space. Tout en maintenant à l'ancien emplacement une référence vers le nouvel emplacement.
-On déplace ainsi petit-à-petit en suivant les liens. Lorsque l'algo est fini, on inverse les utilisations des deux espaces (from devient to et to deviens from).
+\begin{figure}[!h]
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=7cm]{img/cheney.png}
+    &
+    \includegraphics[width=7cm]{img/cheney1.png}
+\end{tabular}
 
-Les aventages sont : facile d'allouer de la mémoire (à la fin), pas de fragmentation (compactage automatique), le temps est proportionnel au nombre d'objets vivants. Par contre, il faut le double d'espace mémoire.
+    \caption{Cheney principle}
+\end{figure}
+
+\begin{itemize}
+	\item Pour les references venant de la stack:
+		\begin{enumerate}
+			\item Si l'objet référencé est dans l'espace from, il faut l'amener
+			dans l'espace to et laisser un pointer qui pointer vers le nouvel
+			emplacement (forwarder pointer).
+			\item Si l'objet référencé est déjà dans l'espace to, il faut mettre
+			à jour la référence à partir du forwarder pointer.
+		\end{enumerate}
+	\item Pour les références venant de l'espace to, on effectue les même
+	opération que au dessus.	
+\end{itemize}
+
+\paragraph{Etapes}
+\begin{enumerate}
+    \item Initialement tout les chunck utilisé sont dans le from-space. 
+    \item Au lieu
+        de marquer les chuncks utilisés, on les place dans le to-space tout
+        en maintenant à l'ancien emplacement une référence vers le nouvel
+        emplacement. 
+    \item[$\to$]On déplace ainsi petit-à-petit en suivant les liens.
+
+    \item Lorsque l'algo est fini, on inverse les utilisations des deux espaces
+        (from devient to et to deviens from).
+\end{enumerate}
+
+\begin{figure}[!h]
+\begin{tabular}{cc}
+\begin{minipage}{0.4\textwidth}
+\begin{lstlisting}[mathescape]
+function Forward(p)
+    if $p$ points to from-space
+        if $p.f_1$ points to to-space
+            return $p.f_1$
+        else
+            foreach field $f_i$ of $p$
+                $next.f_i = p.fi$
+            $p.f_i = next$
+            $next = next$ + size of recod $p$
+            return $p.f_i$
+
+    else
+        return $p$
+\end{lstlisting}
+\end{minipage}
+&
+\begin{minipage}{0.4\textwidth}
+\begin{lstlisting}[mathescape]
+scan = next = beginning of to-space
+
+foreach root $r$
+    $r$ = Forward(r)
+
+while $scan < next$
+    foreach field $f_i$ of record at $scan$
+        $scan.f_i$ = Forward($scan.f_i$)
+
+    $scan = scan$ + size of record at $scan$
+\end{lstlisting}
+\end{minipage}
+\end{tabular}
+\caption{Cheney algorithm}
+\end{figure}
+
+
+\subsubsection{Avantages/inconvenient}
+
+\begin{itemize}
+    \item Simple: pas besoin de stack
+    \item Facile d'allouer de la mémoire: \texttt{malloc(n)} implémenté avec \texttt{next = next + n}
+    \item Pas de fragmentation (compactage automatique)
+    \item Le temps est proportionnel au nombre d'objets vivants.
+\end{itemize}
+
+Par contre, il faut le \textbf{double} d'espace mémoire.
 
 \subsection{Generational collection}
 
-On ne fait du tris que dans les objets concidéré comme "jeune", c'est à dire lorsqu'ils ont survécu à plusieurs passage du garbage collector. On a alors une siscion dans la mémoire entre jeune et vieux. Lorsqu'un objet devient vieux, il est déplacé dans la partie vieux.
+\begin{itemize}
+    \item On ne fait du tris que dans les objets concidéré comme "jeune",
+        c'est à dire lorsqu'ils ont survécu à plusieurs passage du garbage
+        collector. 
+    \item En effet, la majorité des objects meurent ``\textbf{jeune} et ceux 
+        qui reste atteignable pour longtemps sont souvent : global, referencé depuis la main
+    \item[$\Rightarrow$] On a alors une siscion dans la mémoire entre jeune et vieux.
+        Lorsqu'un objet devient vieux, il est déplacé dans la partie vieux.
+\end{itemize}
 
 
-\section{DSL \& Scala} % Alex
+\begin{figure}[!h]
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=7cm]{img/generation.png}
+    &
+    \includegraphics[width=7cm]{img/generation1.png}
+\end{tabular}
 
-\subsection{Les constructeurs}
+    \caption{Generation principle}
+\end{figure}
 
-En scala, un constructeur "simple" n'a pas besoin d'être défini.
 
-Exemple :
 
-\begin{lstlisting}
-class vehicle(name: String, price:Int) {
 
-}
+\section{DSL \& Scala}
 
-var car = new vehicle("Ferrari", 100000);
-\end{lstlisting}
+\subsection{Basic}
+\subsubsection{Variables}
 
-Il est également possible de définir un constructeur "custom" de cette façon là :
+\paragraph{Mot-clef}
 
-\begin{lstlisting}
-class vehicle(name: String, price:Int) {
-
-	def this(name: String) = {
-		this(name, 10)
-	}
-}
-\end{lstlisting}
-
-\subsection{Les variables}
-
-Deux mots-clefs permettent de définir des variables en Scala : \texttt{val} et \texttt{var}. La différence entre les deux est que les valeurs associées au "vars"
-peuvent être modifiées alors que pour les "vals", une seule assignation est possible.
-
+\begin{tabular}{m{3cm}m{9cm}}
+\begin{itemize}
+    \item \texttt{val} 
+    \item \texttt{var}
+    \item \texttt{lazy val}: evalué uniquement au premier accès
+\end{itemize}
+&
 \begin{lstlisting}
 var jizz = "jizz"
-jizz = "baufays" //Autorise
+jizz = "baufays"          // OK
 
 val poulpe = "poulpy"
-poulpe = "manteau louche" //INTERDIT !
+poulpe = "manteau louche" // NOP
 \end{lstlisting}
+\end{tabular}
 
-A noter qu'il n'est pas n"cessaire d'écrire le type. Cependant, on peut le faire :
+
+\paragraph{Type}
+
+\begin{tabular}{cc}
+    \begin{minipage}{0.4\linewidth}
+        \begin{lstlisting}
+val sum = 1 + 2 + 3
+val nums = List(1, 2, 3)
+        \end{lstlisting}
+    \end{minipage}
+    &
+    \begin{minipage}{0.4\linewidth}
+        \begin{lstlisting}
+val sum: Int = 1 + 2 + 3
+val nums: List[Int] = List(1, 2, 3)
+        \end{lstlisting}
+    \end{minipage}
+    \\
+    Type inference & Explicit types \\
+\end{tabular}
+
+
+
+\subsubsection{Mutability Vs non-mutability}
+
+On encourage val plutôt que var, ainsi que des collections immutable.
+
+\subsubsection{Pattern matching}
+\begin{tabular}{cccc}
+    \begin{minipage}{0.4\linewidth}
+        \begin{lstlisting}
+val times = 1
+times match {
+    // On value
+    case 1 => ...
+
+    // With guards
+    case i if i == 2 => ...
+
+    // On types
+    case j: Int  => ...
+    case d: Double if d > 0.0 => ...
+
+    // Default
+    case _ => ...
+}
+        \end{lstlisting}
+    \end{minipage}
+&
+    \begin{minipage}{0.5\linewidth}
+        \begin{lstlisting}
+object Test extends App {
+    def bookType(b: Book) = b mathc {
+        case Book(5) => ``Revue''
+        case Book(3) => ``Journal''
+        case Book(i) => ``default: %s''.format(i)
+    }
+}
+        \end{lstlisting}
+    \end{minipage}
+    \\
+\end{tabular}
+
+
+\subsubsection{Imports}
+Les imports peuvent apparaitre n'importe où dans le code.
+
+\subsubsection{Exception}
+\texttt{Nothing} est un subtype of tout les autres types.
 
 \begin{lstlisting}
-val answer: Int = 42 
+def error(message: String): Nothing = 
+    throw new RuntimeException(message)
+
+def divide(x: Int, y: Int): Int = 
+    if (y != 0) x / y
+    else error(``cannot divide by zero'')  
+
+// Return Int est respecte comme Nothing est un subtype de Int
 \end{lstlisting}
 
-\subsection{pure OO}
+\subsection{Orienté object}
 
-En Scala, tout est un objet (pas de type primitif). Ainsi, chaque opération est un appel de méthode. de ce fait, "1 + 2" peut s'écrire "1.+(2)".
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=\linewidth]{img/hierarchy.png}
+    \caption{Hierarchie}
+\end{figure}
 
-\subsection{Fonction anonymes}
+\subsubsection{Pure O.O.}
 
-\begin{lstlisting}
-val plusOne = (x:Int) => x+1
-plusOne(5) // va retourner 6
-\end{lstlisting}
+\begin{itemize}
+    \item Tout est un object: \texttt{1.toString}
+    \item Toute opération est un appel de méthode: \texttt{1 + 2 + 3}
+        $\to$ \texttt{(1).+(2).+(3)}
+    \item Can omit . and ()
+\end{itemize}
 
-\subsection{closure}
 
-\begin{lstlisting}
-//	plusFoo	can reference any values/variables in scope	
+\subsubsection{classes}
 
-var foo = 1
-val plusFoo = (x:Int) => x+foo
+App est utilisé comme la classe main en Java.
 
-plusFoo(5) //return 6
+\paragraph{Les constructeurs}
 
-foo = 5
-plusFoo(5) //now return 10
-\end{lstlisting}
+\begin{tabular}{cc}
+    \begin{minipage}{0.4\linewidth}
+        \begin{lstlisting}
+class vehicle(name: String, price:Int) {
 
-\subsection{Higher order function}
+}
 
-Deux choses importantes :
+val car = new vehicle("Ferrari", 100000);
+        \end{lstlisting}
+    \end{minipage}
+    &
+    \begin{minipage}{0.4\linewidth}
+        \begin{lstlisting}
+class truck(name: String, price:Int) {
 
-1. l'utilisation de \_ :
+    def this(name: String) = {
+        this(name, 10)
+    }
+}
+        \end{lstlisting}
+    \end{minipage}
+    \\
+    Constructeur simple par défaut & Constructeur custom \\
+\end{tabular}
 
-\begin{lstlisting}
-val nums = List(1,2,3)
 
-nums.exists(_ == 2) //return true
-\end{lstlisting}
+\paragraph{object}
 
-2. une fonction peut prendre une autre fonction en paramètre.
-
-\subsection{classes}
-
-\subsubsection{object}
-
-Les \texttt{object} sont comme des classes statiques. Donc :
+Les \texttt{object} sont comme des classes statiques.
+Ils représentent la déclaration d'une classe anonyme qui étend App ainsi
+que la création d'une unique instance "Test" de cette classe anonyme.
 
 \begin{lstlisting}
 object Test extends App
 \end{lstlisting}
 
-représente la déclaration d'une classe anonyme qui étend App ainsi que la création d'une unique instance "Test" de cette classe anonyme.\\
-A noter que "App" est utilisé comme la classe main en Java.\\
-A noter également que les méthodes définies à l'intérieur d'un object sont des méthodes statiques, au sens \#Java8 du terme.
+$\to$ Les méthodes définies à l'intérieur d'un object sont des
+méthodes statiques, au sens \#Java8 du terme.
 
-\subsubsection{getters and setters}
+\paragraph{getters and setters}
 
-Ils n'esistent pas en Scala. Il suffit de faire comme si on accédait a une champ en Java. "nomDeLaClasse.Champ = 'Hélène roule en tracteur'".
+Pas de getter/setter en scala, on y accède comme un champs:
+\texttt{nomDeLaClasse.Champ = 'Hélène roule en tracteur'}
 
-\subsubsection{companion object and apply}
+\paragraph{Companion object and apply}
 
-Un objet compagnon est un objet qui porte le même nom que la classe qu'il accompagne.
-La spécificité étant que la classe peut accéder au membres privés de l'objet et vice versa.
+Un objet compagnon est un objet qui porte le même nom que la classe
+qu'il accompagne.
 
-La méthode "apply" est une méthode qui agit un peu comme un constructeur pour les objects et qui peut être utilisée avec les classes comme sucre syntaxique :
+La spécificité étant que la classe peut accéder au membres privés
+de l'objet et vice versa.
+
+\paragraph{\texttt{apply}} est une méthode qui agit un peu comme un
+constructeur pour les objects et qui peut être utilisée avec les
+classes comme sucre syntaxique :
 
 \begin{lstlisting}
 //Exemple 1
@@ -2161,58 +2531,144 @@ object Calculator {
 
 object Test extends App {	
 	
-val c1 = new Calculator("HP") //sucre syntaxique pour Calculator.apply("HP")
-val c2 = Calculator("HP") // TODO : Different de celui du dessus ???
-}
-
-
-//Exemple 2
-
-class Test(n: Int) {
-	def apply(m: Int) = {
-    	return m+n
-    }
-}
-
-object Main extends App {
-	val t = Test(1)
-    println(t(2)) // va imprimer '3'
+val c1 = new Calculator("HP")  // Utilise le constructeur de Calculator
+val c2 = Calculator("HP")      // Utilise apply() du compagnon
 }
 \end{lstlisting}
 
-\subsubsection{operator overload}
+\paragraph{Operator overload}
 
-Il suffit de réecrire une méthode avec le même nom...
+Il suffit de réecrire une méthode avec le même nom.
 
-\subsection{Mutability}
+\subsection{Functional}
+\subsubsection{Fonction anonymes}
 
-\todo{What is this fuk ? En quoi c'est cool/pas cool ? \#poulpe}
+\begin{lstlisting}
+val plusOne = (x:Int) => x+1
 
-\subsection{Null and options}
+plusOne(5)    // va retourner 6
+\end{lstlisting}
 
-Null, c'est nul ! Difficle à gérer. Si une variable peut être nulle, il faut checker, sinon risque de \texttt{NullPointerException}.
+\subsubsection{Closure}
 
-A la place, il faut utiliser le type \texttt{Option[T]}. Selon le cas, cela va nous renvoyer \texttt{Some(x)} si x existe, \texttt{None} dans l'autre cas.
+Function anonyme qui peut référencé n'importe quelle valeur/variable
+dans le scope.
 
-\subsection{Currying (et safraning, paprikaning, etc.)}
+\begin{lstlisting}
+//	plusFoo	can reference any values/variables in scope	
+var foo = 1
+val plusFoo = (x:Int) => x + foo
+
+plusFoo(5)    //return 6
+foo = 5
+plusFoo(5)    //now return 10
+\end{lstlisting}
+
+\subsubsection{Higher order function}
+\begin{tabular}{m{4cm}m{7cm}}
+\begin{enumerate}
+    \item L'utilisation de \_
+    \item Une fonction peut prendre une autre fonction en paramètre.
+\end{enumerate}
+&
+\begin{lstlisting}
+val nums = List(1,2,3)
+
+nums.exists(_ == 2)     // true
+nums.map(x => x+1)      // List(2,3,4)
+\end{lstlisting}
+\end{tabular}
+
+
+\subsubsection{Currying}
 
 On peut définir plus qu'une séquence d'arguments.
 
+\begin{tabular}{cm{7cm}}
 \begin{lstlisting}
-def add(a)(b) = a+b
-add(1)(2)
+def add(a: Int)(b: Int) = a + b
+
+// Partially applied function
+val f = add(1)(_)
 \end{lstlisting}
+&
+\begin{lstlisting}
+def add(a: Int) = (b: Int) => a + b
+\end{lstlisting}
+\end{tabular}
+
+
+\subsection{Null and options}
+
+La valeur \texttt{null} est difficile à gérer pour empecher le risque
+de \texttt{NullPointerException}.
+
+\begin{tabular}{m{6cm}m{7cm}}
+\texttt{Option[T]}
+\begin{itemize}
+    \item Some(x) if x existe
+    \item None sinon
+\end{itemize}
+&
+\begin{lstlisting}
+trait Option[T] {
+    def isDefined: Boolean
+    def get: T
+    def getOrElse(t: T): T
+}
+\end{lstlisting}
+\end{tabular}
+
 
 \subsection{Call by name}
 
-En général, par exemple en \#Java8\footnote{pour les intimes...}, on fait du call by value. C'est à dire que les arguments d'une fonction seront toujours évalué avant l'exécution de la fonction. De ce fait, on connait la valeur de ces arguments. Par exemple, si un des argument est "2+2", on l'évaluera à "4"
-avant de lancer l'exécution de la fonction.
+Il existe deux types de passage d'argument :
+\begin{itemize}
+    \item \textbf{By value}: Les arguments sont toujours évalué \textsc{AVANT}
+        l'exécution de la fonction de la même manière que les opérateurs.
 
-Dans le call by name, on peut utiliser des fonctions comme argument, et celles-ci ne seront évaluées que lorsque l'on en aura besoin (un peu comme le "lazy" qu'on a vu en OZ).
+        L'idée est de réduire une expression à une valeur.
 
-L'avantage du by value est que la fonction utilisée en argument n'est évaluée qu'une seule foi. L'avantage du by name est que si on a pas besoin d'évaluer la fonction on ne le fera pas.
+         \begin{itemize}
+    \item[$\to$] Si on utilise une fonction en argument elle ne sera évalué qu'une
+        seule fois
+\end{itemize}
 
-Les deux méthodes sont équivalentes dans le cas de fonctions pures et si les exécutions terminent. Par exemple :
+    \item \textbf{By name}: Les arguments sont évalués lorsque l'on en a besoin.
+        ($\approx$ \textit{lazy})
+
+\begin{itemize}
+    \item[$\to$] Si on utilise une fonction en argument elle sera évalué à
+        chaque appel (jamais évalué si on ne l'utilise pas).
+        
+        \begin{tabular}{m{6cm}m{2cm}m{6cm}}
+            \begin{lstlisting}
+def foo(y: => Int): Int = y
+            \end{lstlisting}
+            & Compilé en $\to$ &
+            \begin{lstlisting}
+def foo(y: () => Int): Int = y
+            \end{lstlisting}
+            \\
+            \multicolumn{3}{c}{By name est un sucre synthaxique pour la définition de closure}
+        \end{tabular}
+
+\end{itemize}
+    \item[]
+    \item Si CBV se termine $\Rightarrow$ CBN se termine aussi.
+\end{itemize}
+
+\paragraph{Default}
+
+En scala, le \textbf{call by value} est le comportement par défaut,
+et pour faire du \textbf{call by name} il faut ajouter $\Rightarrow$
+devant le type de l'argument.
+
+
+\subsubsection{Fonctionnement}
+
+Les deux méthodes sont équivalentes dans le cas de fonctions pures et
+si les exécutions terminent. Par exemple :
 
 \begin{lstlisting}
 object Test {
@@ -2233,34 +2689,180 @@ object Test {
 }
 \end{lstlisting}
 
-Ici, si on fait du by value, les deux print imprimeront la même chose. Par contre, dans le cas du by name, la fonction sera recalculée et on aura deux valeur différente à imprimer. \todo{correct ?}\\
+Ici, si on fait du by value, les deux print imprimeront la même chose.
+Par contre, dans le cas du by name, la fonction sera recalculée et on
+aura deux valeur différente à imprimer. \todo{correct ?}\\
 
-Notons qu'en Scala, l'utilisation du by value est celle pas défaut. Si on veut du by name, on doit ajouter "=>" devant le type de l'argument.
 
-\subsection{implicit conversion}
+\subsubsection{Stream}
 
-Permet de convertir automatiquement un type en un autre pour pouvoir appliquer certaines opérations. Exemple :
+Un stream est une liste dans laquelle le \textbf{tail} n'est executé
+que lorsque l'on en a besoin.
+
+\begin{tabular}{m{6cm}m{9cm}}
+\begin{lstlisting}
+abstract class MyStream {
+    import MyStream._
+
+    def isEmpty: Boolean
+    def head: Int
+    def tail: MyStream
+
+    def apply(i: Int): Int = {
+        // exercise, i_th element of the stream
+    }
+    def filter(p: Int => Boolean): MyStream = {
+        // exercise
+    }
+}
+\end{lstlisting}
+&
+\begin{lstlisting}
+object MyStream {
+    def cons(hd: Int, tl: => MyStream) = new MyStream {
+        def isEmpty = false
+        def head: Int = hd
+        def tail: MyStream = tl
+    }
+
+    val empty = new MyStream {
+        def isEmpty = true
+        def head = throw new NoSuchElementException("empty.head")
+        def tail = throw new NoSuchElementException("empty.tail")
+    }
+}
+\end{lstlisting}
+\end{tabular}
+
+
+\subsubsection{Flow-control}
+
+\begin{tabular}{m{8cm}m{2cm}m{1cm}m{1cm}m{1cm}}
+\begin{lstlisting}
+def myLoop(n: Int)(body: Unit): Unit = {
+def myLoop(n: Int)(body: () => Unit): Unit = {
+def myLoop(n: Int)(body: => Unit): Unit = {
+
+    if (n > 0) {
+        println(n)
+
+        body
+        body()
+        body
+
+        myLoop(n-1) (body)
+    }
+}
+
+myLoop(5) {
+myLoop(5) { () =>
+myLoop(5) {
+
+    println("hello")
+}
+\end{lstlisting}
+&
+Résultat
+&
+\begin{lstlisting}
+hello
+5
+4
+3
+2
+1
+\end{lstlisting}
+&
+\begin{lstlisting}
+5
+hello
+4
+hello
+3
+hello
+2
+hello
+1
+hello
+\end{lstlisting}
+&
+\begin{lstlisting}
+5
+hello
+4
+hello
+3
+hello
+2
+hello
+1
+hello
+\end{lstlisting}
+
+
+\\
+\end{tabular}
+
+\subsubsection{Storing by-name parameters}
+
+\begin{lstlisting}
+class Observable {
+    private var listeners: List[() => Unit] = List()
+    def changed(): Unit = listeners.foreach(l =>l())
+    def onChange(b: => Unit): Unit = {
+        listeners = (() => b) :: listeners
+    }
+}
+\end{lstlisting}
+
+\paragraph{Example}
+
+\begin{tabular}{m{6cm}m{4cm}}
+\begin{lstlisting}
+class Counter() extends Observable {
+    private var c: Int = 0
+    def value = c
+    def incr(): Unit = {
+        c += 1
+        changed()
+    }
+}
+\end{lstlisting}
+&
+\begin{lstlisting}
+val c = new Counter()
+c.onChange {
+    println(c.value)
+}
+c.incr()
+c.incr()
+\end{lstlisting}
+\end{tabular}
+
+\subsection{Implicit}
+\subsubsection{implicit conversion}
+
+Permet de convertir automatiquement un type en un autre pour pouvoir appliquer certaines opérations.
 
 \begin{lstlisting}
 import ComplexImplicits._	
 	
 object ComplexImplicits {	
 	implicit def Double2Complex(value : Double) = new Complex(value,0.0) 	
-	}	
+}	
 
 object MyComplex extends App {	
-	
 	val d = Complex(1)(2)	
-	val e = 1+d	//Ici, le Int 1 va automatiquement etre converti en Complex
-    			//via la methode Double2Complex
+	val e = 1 + d	//Ici, le Int 1 va automatiquement etre converti en Complex
+                    //via la methode Double2Complex
 }
 \end{lstlisting}
 
-\subsection{implicit classes}
+\subsubsection{implicit classes}
 
 \todo{heu ... ?}
 
-\subsection{implicit parameters}
+\subsubsection{implicit parameters}
 
 En gros, c'est une loucherie qui permet de remplacer automatiquement un argument d'une fonction si on apelle la fonction sans cet argument. Après...
 
@@ -2270,134 +2872,123 @@ En gros, c'est une loucherie qui permet de remplacer automatiquement un argument
 
 Les traits sont à la frontière entre les interfaces et les classes abstraites.
 
-En effet, le trait est plus riche que l'interface en ce sens qu'elle peut contenir une implémentation. En outre, le trait diffère de la classe abstraite par le fait que son constructeur ne peut contenir aucun paramètre et, il est lié dynamiquement, permettant un héritage multiple.
+\begin{itemize}
+    \item[+ interface]
+    \item Contient des implementation $\Rightarrow$ plus riche que les interfaces
+    \item[- abstract]
+    \item Pas de paramètre dans le constructeur
+    \item Permet un héritage multiple car il est lié dynamiquement
 
-Ce n'est pas un objet (on ne peut pas l'instancier).
-C'est un truc entre les interfaces et les classe abstraite. Comme une interface, c'est implémenté par une classe et cela contient un certain nombre de signatures de méthodes que la classe devra implémenter. Mais comme une classe abstraite, il y a un certain nombre de méthodes déjà implémentées. Par contre un trait ne peut pas être instancié.
+    \item[]
+    \item[$\Rightarrow$] Ce n'est pas un object et on ne peut donc pas l'instancier
+\end{itemize}
 
-Exemple :
 
 \begin{lstlisting}
 trait Comp {
 
 def < (that : A): Boolean
-
 def > (that : A): Boolean = {...}
 def >= (that : A): Boolean = {...}
 ...
-
 }
 \end{lstlisting}
 
-\subsection {Monads}
-Il s'agit d'une structure e donnée qui défini à la fois \texttt{map} (prend un iterable et applique la fonction passée en argument) et \texttt{flatMap} (idem que map mais avec un flatten en plus: \texttt{[1, [2]]} $\Rightarrow$ \texttt{[1, 2]}: on aura plus qu'une seule liste à la fin) et \texttt{Unit}.\\
+\subsubsection{Stackable trait}
 
-Tous les types \texttt{M[T]} donc en gros des listes de \texttt{T} (structure de données génériques) et qui ont deux opérations spéciales: \texttt{flatMap} et \texttt{unit}
+\begin{tabular}{m{9cm}m{6cm}}
+    \begin{itemize}
+        \item Le trait (ou classe abstraite) de \textbf{base} défini
+            une interface abstraite que tout les cores ou stackables extend
+        \item Le trait (ou classes) de \textbf{core} implémente les méthodes abstraite
+        \item Chaque \textbf{stackable} override un ou plusieurs méthodes définie dans le 
+            \textbf{base} trait.
+    \end{itemize}
+    &
+    \includegraphics[width=6cm]{img/stackable.png}
+\end{tabular}
+
+
+\begin{figure}[!h]
+    \centering
+    \begin{tabular}{m{6cm}m{5cm}}
+        \begin{lstlisting}
+class Animal
+trait Furry extends Animal
+trait HasLegs extends Animal
+trait FourLegged extends HasLegs
+class Cat extends Animal with Furry with FourLegged
+\end{lstlisting}
+&
+    \includegraphics[width=5cm]{img/linearization.png}
+\end{tabular}
+    \caption{Linearisation des héritages}
+\end{figure}
+
+
+\subsection{Monads}
+
+Tous les types \texttt{M[T]} donc en gros des listes de \texttt{T}
+(structure de données génériques) et qui ont deux opérations
+spéciales: \texttt{flatMap} et \texttt{unit}
+
+Il s'agit d'une structure de donnée $M$ qui a un types paramétrique
+$M[T]$ qui défini:
 \begin{itemize}
-	\item[\texttt{flatMap}]: prend une fonction en argument et l'applique à tous les éléments de la structure et va faire un flatten (\texttt{[1, [2]]} $\Rightarrow$ \texttt{[1, 2]}: on aura plus qu'une seule liste à la fin)
-    \item[\texttt{unit}]: va prendre une valeur en argument (du type générique de la structure) et va créer une structure avec cette élément dedans. Ex: \texttt{List(x)}: on aura une liste avec \texttt{x} comme premier élément de la structure.
+    \item \texttt{map} : prend un iterable et applique la fonction passée en argument
+    \item \texttt{flatMap}:  idem que map mais avec un flatten en plus. 
+        
+        (\texttt{[1, [2]]} $\Rightarrow$ \texttt{[1, 2]})
+
+    \item \texttt{unit}: Prend une valeur en argument (du type
+    générique de la structure) et va créer une structure avec cette
+    élément dedans.
+
+        Ex: \texttt{List(x)}: on aura une liste avec \texttt{x} comme
+        premier élément de la structure.
+
 \end{itemize}
 
+
+\begin{lstlisting}
+trait M[T] {
+    def flatMap[U](f: T => M[U]): M[U]
+}
+
+def unit[T](x: T): M[T]
+\end{lstlisting}
 
 \subsection{Yield}
 Va faire une espère de link dans le type du premier du for:
 \begin{lstlisting}
 val A = Array(1,2)	
 val B = List(1,2)
-for (i <- A; j <- B) yield (i,j) 	
+
 // Array((1,1),	(1,2), (2,1), (2,2))	
-for (i <- B; j <- A) yield (i,j) 	
+for (i <- A; j <- B) yield (i,j) 	
+
 // List((1,1), (1,2), (2,1), (2,2))
+for (i <- B; j <- A) yield (i,j) 	
 \end{lstlisting}
 
+\subsubsection{Translation}
+\begin{tabular}{m{7.5cm}m{0.2cm}m{8.85cm}}
+\begin{lstlisting}
+for (x <- expr1) yield expr2
 
+for (x <- expr1 if expr2) yield expr3
 
+for (x <- expr1; y <- expr2; seq) yield expr3
+\end{lstlisting}
+& $\to$ &
+\begin{lstlisting}
+expr1.map(x => expr2)
 
-\chapter{Questions d'exam}
+for (x <- expr1 withFilter (x => expr2)) yield expr3
 
-\section{Lexical Anal. IS-IS}
-
-\section{Grammar}
-
-\subsection{Give an example of ambiguity in a real programming language. How is it managed in practice?}
-\todo{explain}
-\begin{align}
-E ::=& E+E & & E ::= TE'\\
-E ::=& E\times E & & E' ::=  +TE'\\
-E ::=& (E) & &E' ::= \epsilon\\
-E ::=& id & & T ::= \times FT'\\
-& & & T' ::= \epsilon\\
-& & & F ::= id\\
-& & & F ::= (E)
-\end{align}
-À gauche, elle est ambigüe (on peut avoir deux arbres) mais pas à droite ($LL(1)$)
-
-\section{Parsing}
-
-\section{Chapitre 4 : Type checking}
-
-\subsection{Why a two phase analysis ? Describe what each phase does.}
-
-L'analyse sémantique de programmes j-- (et Java) requière deux parcours de l'AST parce qu'un nom de classe ou le nom d'un membre peut être référencé avant qu'il ne soit décllaré dans le code source.
-
-\subsubsection{pre-analyse}
-
-La pré-analyse traverse l'AST moins profondément que l'analyse.
-Cependant, elle va suffisamment loin pour :
-\begin{itemize}
-\item Les déclarations des noms des types importés.
-\item Les déclaration des noms des classes définies par l'utilisateur.
-\item Les déclarations de champs.
-\item Les déclarations de méthodes (incluant leur signature et le type des paramètres).
-\end{itemize}
-
-Pour cette raison, \texttt{preAnalyze()} ne doit être défini que pour certains noeuds de l'AST : \texttt{JCompilationUnit, JClassDeclaration, JFieldDeclaration, JMethodDeclaration, JConstructorDeclaration}.
-
-Donc, comme on peut le constater, la phase de pré-analyse ne parcourt pas le corps des méthodes.
-
-\subsubsection{analyse}
-
-Elle s'effectue logiquement après la pré-analyse, et parcourt l'entièreté de l'AST, jusqu'au feuilles.
-Elle sert à :
-\begin{itemize}
-\item Réécrit les initialisations de champs et de variables locales comme des assignements.
-\item Déclare les paramètres formels et les variables locales.
-\item Alloue des stack frames pour les paramètres formels et les variables locales.
-\item Résout le type des expressions et assure les règles de types du langage.
-\item Reclassifier les noms ambigus.
-\item Faire une partie de "tree surgery".
-\end{itemize}
-
-\subsection{When is the final modfifier of classes checked ?}
-
-Dans la méthode \texttt{preAnalyze()} applicable aux noeuds de type \texttt{JClassDeclaration}.
-
-Si une classe est "finale", elle ne peut pas être étendue. On vérifie donc pour chaque classe que le super-type n'est pas final.
-
-\subsection{When is abstract method body checked ?}
-
-Une méthode abstraite possède comme particularité qu'elle ne peut pas avoir de corps.
-On vérifie cela dans la méthode \texttt{preAnalyze()} applicable sur les noeuds de type
-\texttt{JMethodDeclaration}.
-
-\subsection{Explain memory allocation ? How variable offset are computed ?}
-
-Voir pages 143 à 152 du bouquin. \#JeFaisCommePoulpyPourReseau\\
-Mémoire: this, parameters, block (nextOffset + la place en mémoire)
-
-\subsection{Explain how variable shadowing is detected.}
-
-Dans le context de la méthodes, on alloue les stack frames (voir question précédente) au fur et à mesure de l'avancement dans la méthode. Chacune de ses frames contient, entre autre, le nom de la variable. Ce qu'on fait, c'est que dans la méthode \texttt{analyze()} applicable sur les noeuds de type \texttt{JVariableDeclaration}, avant d'ajouter la variable au \texttt{LocalContext}, on fait un lookup dans ce context pour vérifier que le nom n'est pas déjà utilisé. Si c'est le cas, on reporte une erreur ; sinon, on ajoute la variable au context.
-
-\subsection{Explain where type-checking is done ?}
-
-Dans la méthode \texttt{analyze()} applicable sur les noeuds de type \texttt{JVariable}.\\
-Surtout pour les check: if avec un boolean, cast correct
-
-\subsection{What do we do for the cast ?}
-
-Ca se fait dans la méthode \texttt{analyze()} pour les noeuds \texttt{JExpression}. On vérifie le type dans lequel on veut
-caster l'expression. S'il est valide, alors on crée un \texttt{Converter} qui va être utilisé au moment de la génération de code pour générer le code requis pour le cast. S'il n'y a aucun \texttt{Converter} défini, alors on peut conclure que le cast est invalide.
+expr1.flatMap(x => for (y <- expr2; seq) yield expr3)
+\end{lstlisting}
+\end{tabular}
 
 
 \end{document}
