@@ -2822,9 +2822,10 @@ abstract class MyStream {
   }
 
   def filter(p: Int => Boolean): MyStream = {
-    p(head) match {
-      case true => MyStream.cons(head, tail.filter(p))
-      case false => tail filter(p)
+    if( p(head) )
+      MyStream.cons(head, tail.filter(p))
+    else
+      tail filter(p)
     }
   }
 }
@@ -2997,19 +2998,30 @@ object MyComplex extends App {
 Une classe implicite permet d'enrichir une classe existante en y ajoutant des méthodes comme par exemple :
 
 \begin{lstlisting}
-implicit def StringWrapper(S: String) = { def method1() = {} }
+object TestImplicits extends App {
+implicit class PrimeTester(i: Int) {
+    def isZero: Boolean = i == 0
+}
 
-"test".method1
+3.isPrime
 \end{lstlisting}
 
 Le type string a maintenant une nouvelle méthode, method1 qui ne fait ... rien ! mais c'est quand même la classe.
 
 \subsubsection{implicit parameters}
 
-En gros, c'est une loucherie qui permet de remplacer automatiquement un argument d'une fonction si on apelle la fonction sans cet argument. Après...
-Le keyword implicit va dire au compilateur de lui-même procurer un paramètre à la méthode. Pour cela il faut qu'il y ai un paramètre implicit déclaré et visible par la fonction et qu'il ai le type requis.
+\begin{lstlisting}
+def speakImplicitly (implicit greeting : String) = println(greeting)
+speakImplicitly("Goodbye world")
+speakImplicitly // error: no implicit argument matching parameter type String was found.
+implicit val hello = "Hello world"
+speakImplicitly
+\end{lstlisting}
 
-\todo{A completer}
+Le keyword implicit va dire au compilateur de lui-même procurer un
+paramètre à la méthode. Pour cela il faut qu'il y ai un paramètre
+implicit déclaré et visible par la fonction et qu'il ai le type
+requis.
 
 \subsection{Traits}
 
@@ -3222,10 +3234,15 @@ expr1.flatMap(x => for (y <- expr2; seq) yield expr3)
 
 \subsection{Try}
 \begin{lstlisting}
+abstract class Try[+T]
+case class Success[T](x: T) extends Try[T]
+case class Failure(ex: Exception) extends Try[Nothing]
+
 object Try {
     def apply[T](expr: => T): Try[T] =
     try Success(expr) catch {
         case NonFatal(ex) => Failure(ex)
+    }
 }
 
 abstract class Try[T] {
@@ -3240,5 +3257,26 @@ abstract class Try[T] {
     }
 }
 \end{lstlisting}
+
+\paragraph{Example}: 
+
+\begin{lstlisting}
+def divide: Try[Int] = {
+    val dividend = Try(Console.readLine("Enter an Int to divide:\n").toInt)
+    val divisor = Try(Console.readLine("Enter an Int to divide by:\n").toInt)
+    val problem = dividend.flatMap(x => divisor.map(y => x / y))
+
+    problem match {
+        case Success(v) =>
+            println("Result of " + dividend.get + "/" + divisor.get + " is: " + v)
+            Success(v)
+        case Failure(e) =>
+            println("You must've divided by zero. Try again!")
+            println("Info from the exception: " + e.getMessage)
+            divide
+    }
+}
+\end{lstlisting}
+
 
 \end{document}
