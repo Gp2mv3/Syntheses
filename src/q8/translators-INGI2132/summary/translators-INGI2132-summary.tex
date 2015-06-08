@@ -2810,38 +2810,64 @@ que lorsque l'on en a besoin.
 \begin{tabular}{m{6cm}m{9cm}}
 \begin{lstlisting}
 abstract class MyStream {
-    import MyStream._
+  def isEmpty: Boolean
+  def head: Int
+  def tail: MyStream
 
-    def isEmpty: Boolean
-    def head: Int
-    def tail: MyStream
+  def apply(i: Int): Int = {
+    i match {
+      case 0 => head
+      case i => tail(i-1)
+    }
+  }
 
-    def apply(i: Int): Int = {
-        // exercise, i_th element of the stream
+  def filter(p: Int => Boolean): MyStream = {
+    p(head) match {
+      case true => MyStream.cons(head, tail.filter(p))
+      case false => tail filter(p)
     }
-    def filter(p: Int => Boolean): MyStream = {
-        // exercise
-    }
+  }
 }
 \end{lstlisting}
 &
 \begin{lstlisting}
 object MyStream {
-    def cons(hd: Int, tl: => MyStream) = new MyStream {
-        def isEmpty = false
-        def head: Int = hd
-        def tail: MyStream = tl
-    }
+  def cons(hd: Int, tl: => MyStream) : MyStream = new MyStream {
+    def isEmpty = false
+    def head: Int = hd
+    def tail: MyStream = tl
+  }
 
-    val empty = new MyStream {
-        def isEmpty = true
-        def head = throw new NoSuchElementException("empty.head")
-        def tail = throw new NoSuchElementException("empty.tail")
-    }
+  val empty = new MyStream {
+    def isEmpty = true
+    def head = throw new NoSuchElementException("empty.head")
+    def tail = throw new NoSuchElementException("empty.tail")
+  } 
 }
 \end{lstlisting}
 \end{tabular}
 
+\paragraph{Utilisation}:
+
+\begin{lstlisting}
+object TestStream extends App{
+  def streamFrom(from: Int): MyStream =
+    MyStream.cons(from,streamFrom(from+1))
+
+  def streamFilter(from: Int, f: (Int) => Boolean): MyStream =
+    streamFrom(from).filter(x => f(x))
+
+
+  def nextPrime(from: Int, i: Int): Int =
+    streamFilter(from, (x) => isPrime(x)) (i)
+
+  def isPrime(i: Int): Boolean = {
+    if (i <= 1) false
+    else if (i == 2) true
+    else !(2 to (i - 1)).exists(x => i \% x == 0)
+  }
+}
+\end{lstlisting}
 
 \subsubsection{Flow-control}
 
@@ -3075,11 +3101,41 @@ $M[T]$ qui défini:
 \begin{lstlisting}
 trait M[T] {
     def flatMap[U](f: T => M[U]): M[U]
+    def map[U](f: T => U): M[U]
+
+    def withFilter[U](p: T => Boolean): M[T]
+    def foreach(f: T => Unit): Unit
 }
 
 def unit[T](x: T): M[T]
 
 \end{lstlisting}
+
+\begin{lstlisting}
+val l : List[Option[Int]] = List( Some(5), None, Some(7), Some(8))
+
+// Link with for( ; ) yield
+println( l map(_ map(x => x)) flatten)
+println( l flatMap(_ map(x => x)))
+println( l flatMap(_ flatMap(x => Some(x))))
+println( for(i <- l; j <- i) yield j)
+
+=> List(5, 7, 8)
+
+// Link with for( ) yield
+println( l map(x => x))
+println( l flatMap(x => Some(x)))
+println( for(i <- l) yield i)
+
+=> List(Some(5), None, Some(7), Some(8))
+
+// Link with for
+println( l foreach(x => print(x)))
+println( for(i <- l) print(i))
+
+=> Some(5)NoneSome(7)Some(8)()
+\end{lstlisting}
+
 
 \subsubsection{map - flatmap}
 \begin{lstlisting}
@@ -3100,6 +3156,36 @@ unit(x) flatMap f == f(x)
  m flatMap unit == m
 \end{lstlisting}
 \end{tabular}
+
+\paragraph{Example}:
+
+\begin{lstlisting}
+// Monads Laws
+val m : List[Int] = List(1, 2, 3, 4, 5)
+val x = 5
+val f = (i : Int) => List(i * 2)
+val g = (i: Int) => List(i + 10)
+
+// Associativity
+println ( m.flatMap(f(_)).flatMap(g(_)) == m.flatMap( f(_).flatMap(g(_))) )
+
+// Left Unit
+println ( List(x).flatMap(f(_)) == f(x) )
+
+// Right Unit
+println ( m.flatMap(List(_)) == m )
+\end{lstlisting}
+
+
+\subsubsection{Exercice}
+\begin{lstlisting}
+  def sequenceOption[A](x: List[Option[A]]): Option[List[A]] = {
+    x match {
+      case Nil => Some(Nil)
+      case h :: t => h flatMap (x => sequenceOption(t) map (x :: _))
+    }
+  }
+\end{lstlisting}
 
 \subsection{Yield}
 Va faire une espère de link dans le type du premier du for:
@@ -3133,5 +3219,26 @@ expr1.flatMap(x => for (y <- expr2; seq) yield expr3)
 \end{lstlisting}
 \end{tabular}
 
+
+\subsection{Try}
+\begin{lstlisting}
+object Try {
+    def apply[T](expr: => T): Try[T] =
+    try Success(expr) catch {
+        case NonFatal(ex) => Failure(ex)
+}
+
+abstract class Try[T] {
+    def flatMap[U](f: T => Try[U]): Try[U] = this match {
+        case Success(x) => try f(x) catch { case NonFatal(ex) => Failure(ex) }
+        case fail: Failure => fail
+    }
+
+    def map[U](f: T => U): Try[U] = this match {
+        case Success(x) => Try(f(x))
+        case fail: Failure => fail
+    }
+}
+\end{lstlisting}
 
 \end{document}
