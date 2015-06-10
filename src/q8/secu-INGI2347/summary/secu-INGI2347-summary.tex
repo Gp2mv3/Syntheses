@@ -484,13 +484,13 @@ additionnels.
                 Original program instruction\\
                 \hline
     \end{tabular}};
-    \node (B) [below= of A] {
+    \node (B) [below=1cm of A] {
             \begin{tabular}{|c|m{3.5cm}|}
                 \hline
                 Virus & Original program instruction\\
                 \hline
     \end{tabular}};
-    \node (C) [below= of B] {
+    \node (C) [below=1cm of B] {
             \begin{tabular}{|c|m{3.5cm}|c|}
                 \hline
                  & Original program instruction & Virus \\
@@ -534,8 +534,138 @@ Le problème (pour un créateur de virus) est donc
 Le virus se propage en insérant une nouvelle copie \textbf{encrypté} de lui 
 même, en variant évidement l'encryption (clé différente ou random padding).
 
-\paragraph{Encryption} Elle ne doit pas être \textsc{strong}, juste rapide
-simple et \textit{cacher} le virus.
+\begin{enumerate}
+
+\item Avec \textbf{Encryption} : elle ne doit pas être \textsc{strong}, juste rapide
+simple et \textit{cacher} le virus (= obfuscation).
+
+\begin{figure}[!h]
+    \centering
+    \scriptsize
+    \begin{tikzpicture}[scale=0.7]
+        \node (A) {
+            \begin{tabular}{|m{6.5cm}|m{3.5cm}|}
+                \hline
+                Virus & Original program instruction\\
+                \hline
+    \end{tabular}};
+
+        \node (B) [below=0.4cm of A] {
+            \begin{tabular}{|m{1.5cm}|m{1cm}|m{3cm}|m{3.5cm}|}
+                \hline
+                Decryptor & Key & Encrypted & Original program instruction\\
+                \hline
+    \end{tabular}};
+
+        \node (C) [below=1cm of B] {
+            \begin{tabular}{|m{1.5cm}|m{1cm}|m{1.5cm}|m{1.5cm}|m{3.5cm}|}
+                \hline
+                Decryptor & Key & Main virus & Encryptor & Original program instruction\\
+                \hline
+    \end{tabular}};
+
+        \node (D) [below=1cm of C] {
+            \begin{tabular}{|m{1.5cm}|m{1cm}|m{3cm}|m{3.5cm}|}
+                \hline
+                Decryptor & Key 2 & Encrypted 2 & Original program instruction\\
+                \hline
+    \end{tabular}};
+
+    \draw[->] (B.180) edge[bend right] node[right] {1.} (C.180);
+    \draw[->] (B.185) edge node[above right] {2.} (C.170);
+    \draw[->] (C.265) edge node[above left] {3.} (D.175);
+
+\end{tikzpicture}
+
+    \captionsetup{singlelinecheck=off}
+    \caption[level]{\begin{enumerate}
+    \item Décrypte le virus gràce à la clé
+    \item Jmp sur le début du code du virus
+    \item Dupplique le virus en changeant sa signature avec une encryption différente
+    \end{enumerate}}
+\end{figure}
+
+\paragraph{Détection}
+\begin{itemize}
+\item Utiliser une signature plus étroite pour cibler le decryptor. Dans ce cas, il y aura 
+plus de \textit{false positives}.
+\item Regarder (par analyze static ou en éxécutant) si le code se décrypte lui même.
+Certains code non malicieux se décrytpte (ex: decompression).
+\end{itemize}
+
+\item Avec \textbf{code rewriter}: l'idée est de se propager en générant une version
+sémanticallement différente (au niveau de l'exécution).
+
+\begin{itemize}
+\item Renumber register
+\item Change order of conditional code
+\item Reorder operations not dependent 
+\item Replace one low-level algortihm with another
+\end{itemize}
+
+\paragraph{Detection}: besoin d'anayser le comportement de l'exécution
+\begin{itemize}
+\item AV compagnie génère des \textbf{behavioral signature}
+\item AV software test if code match with signature
+\end{itemize}
+
+\end{enumerate}
+
+
+\subsection{Infection cleanup}
+%TODO
+
+\subsection{Large-scale malware}
+
+\begin{tabular}{m{11cm}m{4cm}}
+La propagation est \textbf{plus rapide} que les virus car il 
+peut parrallélisé le processus de propagation.
+
+En effet, le worm se propage en s'arrengeant pour être immédiatement exécuté.
+&
+\includegraphics[width=3cm]{img/worm.png}
+\end{tabular}
+
+\subsubsection{Worm spread}
+Décrit l'épidémié d'infection.
+
+\begin{tabular}{m{6cm}m{6cm}}
+\begin{description}
+\item[$N$] : population size
+\item[$S(t)$] : susceptible host at time $t$
+\item[$I(t)$] : infected host at time $t$
+\item[$\beta$] : contact rate
+\item[$i(t)$] : $I(t)/N$
+\item[$s(t)$] : $S(t)/N$
+\item[$\to$] : $S = N - I$, $s(t) + i(t) = 1$
+\end{description}
+&
+$$ N = S(t) + I(t)$$
+$$S(0) = I(0) = N/2$$
+
+\end{tabular}
+
+\paragraph{In continuous time}:
+
+\begin{tabular}{m{4cm}m{0.5cm}m{4cm}m{0.5cm}m{4cm}}
+$$ \frac{dI}{dt} = \beta I \frac{S}{N}$$
+&==&
+$$\frac{di}{dt} = \beta i (1-i)$$
+& == &
+$$i(t) = \frac{e^{\beta t}}{1+ e^{\beta t}}$$
+\end{tabular}
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=11cm]{img/wormspread.png}
+\caption{1. Initial exponential growth, 2. Grow slow as it become harder to find new victims}
+\end{figure}
+
+
+%TODO slammer stuxnet
+
+
+
 
 \section{Cryptographie}
 La cryptogaphie a pour but d'assurer plusieurs propriétés:
