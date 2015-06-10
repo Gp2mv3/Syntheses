@@ -615,10 +615,16 @@ efficace A, $Adv_ss[A,E]$ est négligeable ( négligeable n'est pas
 vraiment défini)
 \paragraph{Modèle d'assaillant}
 \begin{description}
+	\item[Ciphertext-only attack:] L'attacker a accès au cipertext
+	de un ou plusieurs message encrypté avec la même clé.
+	\item[Known-plaintext attack:] L'attacker a accès à des 
+	paires ciphertext-plaintext encrypté avec la même clé.
 	\item[Chosen-ciphertext attack:] L'attacker a un oracle de décryption
-	Il peut choisir un cipher text et recevoir le plaintext correspondant
+	Il peut choisir des ciphertext (basé sur la même clé) et recevoir le 
+	plaintext correspondant.
 	\item[Chosen-plaintext attack:]  L'attacker a un oracle d'encryption,
-	Il peut choisir un plaintext et recevoir le ciphertext correspondant.
+	Il peut choisir un plaintext et recevoir le ciphertext correspondant
+	basé sur la même clé.
 	(Plus puissant que le CCA)
 \end{description}
 \subsubsection{Block Ciphers}
@@ -652,73 +658,228 @@ des blocks suivants.
 	\item La distribution de la clé
 \end{itemize}
 \subsection{Tiers de Confiance}
-
+Stocké un clé mutuel pour chaque utilisateur d'un réseau signifie
+qu'il va y avoir $O(n^2)$ clé dans le systéme ce qui n'est pas très 
+efficace. On utlise alors un tier qui va générer les clés partagées
+à partir des clés des utilisateurs.$\to$ Chaque utilisateur 
+doit seulement retenir une clé.
+\subsubsection{Toy Protocol}
+Supposons que Alice a une clé $k_A$ et Bob a une clé $k_B$.
+Alice veut une clé partagé avec Bob.
+\begin{enumerate}
+	\item Alice prévient le tier de confiance qu'elle veut une clé
+	partagé avec Bob.
+	\item Le tier de confiance va choisir de façon aléatoire une 
+	clé $k_AB$.
+	\item Le tier de confiance envoie à Alice
+		\begin{itemize}
+			\item $E(k_A,''A,B'' || k_AB)$
+			\item Un ticket : $E(k_B,'''A,B''||k_AB)$
+		\end{itemize}
+	\item Alice va envoyer à Bob le ticket.
+	\item Alice et Bob vont pouvoir decrypter ce qui a été
+	envoyer par le tier de confiance grâce à leurs clé respective.
+\end{enumerate}
+Alice et Bob partage donc une clé $K_AB$.\\
+Ce protocol est sécurisé contre les eavesdroppers mais vulnérable au 
+attaque man-in-the-middle. Tout ce que eavesdropper voit c'est 
+$E(k_A,''A,B''||k_AB)\quad;\quad E(k_B,'''A,B''||k_AB)$.
+\paragraph{Note:} $(E,D) \rightarrow$ eavesdropper learns nothing about $k_AB$
 \subsection{Crytographie à clé asymétrique}
-
-
+\begin{itemize}
+	\item Le sender encrypte en utilisant une clé publique.
+	\item Le receiver décrypte en utilisant une clé privée.
+	\item Seul la clé privée doit être secrète.
+\end{itemize}
+Chaque acteur va générer une paire clés (privé/publique). Si l'on veut
+envoyer un message crypté à un destinataire, il faut utiliser sa clé publique.
+\paragraph{}
+un cipher de crypto à clé publique est composé de 3 algos:
+\begin{itemize}
+	\item G() : un algo aléatoire qui génére une paire de clé (PK,SK)
+	\item E(PK,m) : un algo aléatoire qui prend $m\in M$et une
+	clé PK qui renvoie $c \in C$
+	\item D(SK,c) : algo deterministe qui prend $c \in C$ et renvoie
+	$m \in M \ ou \ \perp$
+\end{itemize}
+Le cipher doit aussi respecté la propriété de consistance 
+$$\forall(PK,SK)\ retourné\ par\ G:\quad D(SK,E(PK,m))=m\quad \forall m \in M$$
+\subsubsection{Sécurité sémantique}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[scale=0.5]{img/semantic_security_pc.PNG}
+\end{figure}
+\subsubsection{Etablir un secret partagé}
+Pour que Alice et Bob partage un secret:
+\begin{enumerate}
+	\item Alice génére une paire clé (pk,sk) et envoie (''Alice'',pk) à Bob
+	\item Bob choisit un secret  $x \in \{0,1\}$
+	\item Bob encrypte x avec pk (retourne c) et envoie (''Bob'',c)
+	\item Alice décrypte le message de Bob avec sk et connait x.
+\end{enumerate}
+Cette façon est sécurisé contre les eavesdroppers mais pas contre le 
+man-in-the-middle. En effet le MiTM peut se faire passer pour
+Alice quand il communique avec Bob et inversément.
+\subsubsection{Trade-offs}
+La crypto à clé publique demande plus de calcul que la crypto 
+à clé partagé.
+\subsubsection{RSA Algorithm}
+C'est l'algorithme à clé publique qui est le plus utiliser. Son 
+implémentation en hardware est 1000 fois plus lente que pour le DES 
+mais pour l'instant personne n'y a trouvé de faille.
+\begin{itemize}
+	\item La paire de clé est dérivé de nombre premiers.
+	\item Le plaintext est considéré comme un très grand nombre
+	binaire.
+	\item Pour pouvoir casser, l'encryption il faut pouvoir factorisé
+	de très gros nombre (pour l'instant n'a pas l'air d'être dans P)
+\end{itemize}
+\paragraph{Generation de la paire}
+La génération de la paire de clé se fait avec l'indicatrice d'
+Euler(totient function) $\phi$ et le theoreme d'Euler.
+\begin{itemize}
+	\item $\phi(n)$ compte tout les entiers positifs $\le$n qui 
+	sont premier avec n. (GDC avec n = 1)
+	\item Le théorème d'Euler nous dit $a^{\phi(n)}\equiv 1 mod n$ pour
+	n'importe quelle a premier avec n.
+\end{itemize}
+\begin{enumerate}
+	\item Choisir deux nombre premiers $p$ et$q$
+	\item Calculer le modulus $n = p\times q$
+	\item Calculer  $\phi(n)=(p-1)(q-1)$ 
+	\item Choisir $e$ tel que $1<e<\phi(n)$ avec
+	$e$ et $\phi(n)$ premier entre eux. 
+	\item Determiner $d$ tel que $d\equiv\ e^{-1}\ mod \ \phi{n}$
+	$d\times e\equiv 1\ mod\ \phi(n)$
+\end{enumerate}
+La clé publique = (e,n) et la clé secrète = (d,n).
+\paragraph{Encryption/Decryption}
+Avant d'encrypter le message M, , il est changé en entier m tel que
+ $0 \le m < n$.
+Pour encrypter, on utilise (e,n)
+\begin{itemize}
+	\item $c\equiv\ m^e\ mod\ n$
+	\item  \begin{enumerate}
+		\item $m^e\equiv\ (m^2\ mod\ n)^{(e/2)}\ mod\ n$ si $e\equiv\ 0\ mod\ 2$
+		\item $m^e\equiv\ (m^2\ mod\ n)^{(e-1)/2))}\ mod\ n$ sinon
+	\end{enumerate}
+\end{itemize}
+On effectue les puissance avec les racines carré pour aller plus vite.\\
+La décryption se fait avec (d,n), $m\equiv\ c^d\ mod\ n$.
+$begin{array}{rcr}
+  c^d\ mod\ n & \equiv & (m^e\ mod\ n)^d\ mod\ n\\
+ 			    &\equiv & m^{e\times d}\ mod\ n\\
+ 			    &\equiv & m^1\ mod n
+  \end{array}$
+La dernière étape fonction grâce au théorême de Euler.
+\paragraph{}
+Pour encrypter un message tel que m > n, il faut utiliser un encryption
+hybrid. Cela consiste à encrypter la clé symmétrique avec RSA, puis 
+d'utiliser cette clé pour encrypter.\\
+Pour signer un message, il faut l'encrypter avec la clé privé.
+Le message pourra être décrypter avec le clé publique.
+\subsubsection{Trapdoor Function}
+Une trapdoor function est une fonction qui facile à calculer dans un sens 
+mais difficie de calculer dans le sens opposé sans information 
+supplémentaire.
+\begin{itemize}
+	\item Si f est une trapdoor function alors il existe un 
+	secret y tel que avec f(x) et y il est facile de trouver x
+\end{itemize}
+\subsection{Diffie-Hellman Echange de clé}
+Le probléme de la crypto à clé partagé est de savoir comment distribuer
+le clé partagé.  Diffie-Hellman permet de régler ce problème sans
+forcément utiliser un tier de confiance.\\
+Supposons que l'Alice et Bob veulent se mettre d'accord sur 
+un secret.
+\begin{enumerate}
+	\item Alice choisit un nombre premier $g$ (sur $\ge$512bits)
+	\item Alice choisit $g<p$ tel $g$ est une racine primitive de p.
+	\item \begin{description}
+			\item[Racine primitive]: $g$ est une racine primitive de $p$
+			si $\forall n \in \{1,...,p-1\} peut être écrit comme $g^k\ mod\ p$
+			\item[] Ex: 2 est une racine primitive de 5, $2^k=1,2^1=2,2^2=4,2^3=3\ mod\ 5$
+		  \end{description}•}
+	\item Alice et Bob se mettent d'accord pour utiliser g et p
+	\item Alice choisit un nombre A et Bob choisit un nombre B
+	\item Alice envoie $g^A\ mod\ p$ à Bob et Bob envoie $g^B\ mod\ p$
+	\item Le secret partagé devient $g^{AB}\ mod\  p$
+\end{enumerate} 
+Alice peut calculer $g^{AB}\ mod\ p$ car elle connait A:$$g^{AB}\ mod\ p=(g^B\ mod\ p)^A\ mod\ p$$
+Le eavesdropper connait $g^A\ mod\ p$ et $g^B\ mod\ p$, il peut calculer
+$g^{A+B}\ mod\ p$ mais ça ne l'aide pas. 
+\paragraph{Note:} Cette façon de faire est vulnérable au man-in-the-middle.
+La sécurité vient du fait qu'il va être difficile de trouver A (B) à partir
+de $g^A\ mod\ p$
+\subsection{Authentification}
+Pour pouvoir prévénir les attaque man-in-the-middle, il faut que le 
+canal de communication soit authentifier. Cela se fera grâce à 
+SSL/TLS
+\subsection{Résistance au collision}
+\subsubsection{Fonction de hash cryptographique}
+Ce sont des fonction qui sont difficile à inverser $$h: \{0,1\} * \to \{0,1\}^n.$\\
+Ces fonctions ont les propriétés suivantes:
+\begin{description}
+	\item[One way hash function]: Pour une valeur de hash y, il devrait être
+	impossible de trouver un message m tel que h(m)=y
+	\item[Collisions resistance]: Il devrait être impossible de trouver 
+	2 messages différents $m_1$ et $m_2$ tel que $h(m_1)=h(m_2)$
+	\item[Random oracle value]: h(m) est indistinguable d'un valeur de 
+	n-bit. Un attacke doit avoir dur à modifier un message sans
+	changer la hash value. 
+\end{description}
+Les example de fonction sont SHA(Secure Hash Algorithm) et MD(Message
+Digest)
+\paragraph{Le paradoxe de l'anniversaire}
+Dans un groupe de 23 personnes, la probabilité d'avoir au moins 2 
+personnes nés le même jour est à peu prés 50\%.
+L'utilisation du paradoxe de l'anniversaire permet de trouver des
+collisions. On hache beaucoup de message aléatoire jusqu'à ce 
+qu'on trouve un collision. Pour des message de n bits, 
+on a de bonne chance de trouver une collision après $2^{\frac{n}{2}}$ 
+essaie.
+\subsection{MAC}
+Les MAC (Message Authentification code) sont utilisés pour s'assurer 
+de l'intégrité d'un message.
+Ils sont définis par deux algos I=(S,V) qui agissent sur
+\begin{itemize}
+	\item K, l'ensemble des clés.
+	\item M, l'ensemble des messages.
+	\item T, l'ensemble des Tag.
+\end{itemize}
+S(k,m) renvoie t dans T et V(k,m,t) renvoie vrai ou faux. Ils doivent
+respecté la propriété de consistence$$\forall k \in K, \forall m\in M\quad V(k,m,S(k,m))='yes'$$
+Un MAC est considéré comme sécurisé si un attacker ne peut pas produire
+ une paire message/tag
+valide meme en ayant une paire valide.
+\subsubsection{Pseudo Random Function}
+Pour une fonction $F:K\  x\  Y\to Z$ définir un MAC $I_F =(S,V)$
+\begin{itemize}
+	\item S(k,m) := F(k,m)
+	\item V(k,m,t) : renvoie `yes' si t = F(k,m), `no' sinon
+\end{itemize}
+$I_F$ est sécure si Y est très large $(2^80)$
+\subsubsection{Hash-MAC}
+C'est MAC le plus utilisé sur internet. Le MAC est construit à partir 
+d'une fonction de hash $$HMAC: S(k,m)=H(k\oplus opad || H(k\oplus ipad||m))$$
+où opad et ipad représente le padding et H est la fonction de hash.
+Les fonctions de hash les plus utilisé sont SHA256 (output de 256 bits)
+et SHA1 (output 160 bits)
+\paragraph{SHA-256} Le message est découpé en bloc, chaque bloc 
+hashé et utilisé pour hashé les suivants.
 \subsection{Comparaison}
-%TODO faire un petit tableau avantage incovénient
-8.2 Symmetric-key vs Asymmetric-key Cryptography :
-La cryptographie à clé symétrique:
-
-\begin{itemize}
-  \item Même clé secrète est utilisée pour le chiffrement et le déchiffrement.
-  \item Taille typique de la clé: 128 bits.
-  \item Basé sur des opérations sur les bits ou octets (substitutions, permutations).
-  \item Rapide dans les implémentations logicielles ou matérielles.
-La cryptographie à clé asymétrique:
-  \item Il s'agit d'une clé publique pour crypter et une clé privée pour décrypter.
-  \item Taille typique de la clé: 1024 bits.
-  \item Basé sur des problèmes mathématiques (FACT par exemple, DL)
-  \item Cryptages et décryptages sont lents.
-Comparaison Sym / Asym Cryptographie:
-  \item Speed.
-  \item Key-size.
-  \item La distribution des clés.
-8.3 Authentication :
-Authentification d'entité:
-  \item Asymétrique ou symétrique.
-  \item Exemples: Challenge / Response, Zero-Knowledge.
-Authentification des données:
-  \item Asymétrique (signature) ou symétrique (contrôle d'intégrité).
-  \item Exemples: RSA, MAC.
-      \end{itemize}
-8.4 Cryptographic Hash Functions :
-Idée intuitive:
-$h: \{0,1\} * \to \{0,1\}^n.$
-exemple: MD5, SHA-1.
-Propriétés:
-Définition (First preimage resistance)
-\begin{itemize}
-  \item Compte tenu d'une valeur de hachage y, il est impossible de trouver m tel que h (m) = y.
-      \end{itemize}
-Définition (Second preimage resistance)
-\begin{itemize}
-  \item Étant donné un message m1, il est impossible de trouver un message différent, m2 tel que
-h (m1) = h (m2).
-      \end{itemize}
-Définition (Collision Resistance)
-\begin{itemize}
-  \item Il est impossible à deux messages différents m1 et m2 tels que h (m1) = h (m2).
-      \end{itemize}
-Définition (Random Oracle Property)
-\begin{itemize}
-  \item h (m) est in-distinguable d'une valeur de n bits aléatoires.
-      \end{itemize}
-- 24 -
-Théorème du paradox de l'anniversaire:
-Si nous choisissons $\omega$ N nombres aléatoires, indépendant et uniforme, dans {1,2,3, ..., N}, nous
-obtenons au moins un chiffre deux fois avec une probabilité:
-8.5 Algorithm and Key :
-ES keys = 128 bits, 192 bits ou 256 bits.
-DES keys = 64 bits (56 key bits + 12 salt bits).
-AES block = 128 bits.
-DES block = 64 bits.
-SHA1 (output) = 160 bits.
-MD5 (output) = 128 bits.
-RSA keys = 1024 bits, 2048 bits ou 4096 bits.
-
-
+\begin{tabular}{|c|c|c|c|}
+\hline
+Algo&Type&taille de clé(bits)&taille de bloc(bits)\\
+\hline
+3DES&clé partagée&112,168&64\\
+\hline
+DES&clé partagée&64 (8 ignorés)&64\\
+\hline
+AES&clé partagée&128,192,256&128\\
+\hline
+RSA&clé publique&1024,2048,4096&\\
+\end{tabular}
 
 \section{Network Attacks}
 \subsection{Exploits on the web}
