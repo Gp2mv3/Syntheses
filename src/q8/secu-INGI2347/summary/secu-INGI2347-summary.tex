@@ -1862,12 +1862,12 @@ h: A $\to$B La fonction de hashage de notre mot de passe.
 r: B $\to$ A Une fonction (arbitraire, rapide, surjective, déterministe) de réduction qui permet de
 revenir à l'ensemble (A) de départ de notre fonction de hashage.
 Un nombre M de chaine est généré avec comme une valeur arbitraire de départ dans A :
-\begin{itemize*}
-\item Start1 = A1,1─h B1,1 ─r A1,2 ─ h  B1,2─ r... ─rA1,t-1─ h B1,t-1─r A1,t = End1
-\item Start2 = A2,1─h B2,1─r  A2,2─ h B2,2─r... ─rA2,t-1─ h B2,t-1─r A2,t = End2
-...
-\item Startm = Am,1─h Bm,1─ r Am,2─ h Bm,2─ r ... ─ r Am,t-1─ h Bm,t-1─ rAm,t = Endm
-\end{itemize}
+%\begin{itemize}
+%\item Start1 = A1,1─h B1,1 ─r A1,2 ─ h  B1,2─ r... ─rA1,t-1─ h B1,t-1─r A1,t = End1
+%\item Start2 = A2,1─h B2,1─r  A2,2─ h B2,2─r... ─rA2,t-1─ h B2,t-1─r A2,t = End2
+%...
+%\item Startm = Am,1─h Bm,1─ r Am,2─ h Bm,2─ r ... ─ r Am,t-1─ h Bm,t-1─ rAm,t = Endm
+%\end{itemize}
 Toutes les chaines doivent couvrir au final l'ensemble A. À la fin du pré-calcule d'une chaine,
 on ne garde que la première valeur et la dernière valeur de la chaine. Les valeurs intermédiaire son
 retrouvable avec la fonction de hashage et de réduction.
@@ -1956,705 +1956,706 @@ Puis vient l'attaque à proprement parler, la recherche du hash dans la table :
   \item Pas besoin de beaucoup de mémoire.
 \end{itemize}
 
-\section{WEP}
-12.1 Introduction Wifi :
-Un point d'accès connecté via un câble au réseau. Plusieurs machines connectées via WIFI à ce point
-d'accès.
-Plusieurs manière : réseau ad hoc et mode infrastructure (cf cours de réseau). L'utilisation la plus
-simple et la plus courante des réseaux ad-hoc est faite par les réseaux sans fil Wi-Fi en permettant une
-mise en place rapide d'une connexion réseau entre deux ordinateurs.
-Les stations et le point d'accès communique via des ondes. (Non c'est vrai ?)
-Problème : n'importe qui peut capter/injecter des ondes avec une interface appropriée. (Record du
-monde : transmission de 382 km)
-War driving
-Un plouc peut se balader dans les rues en voitures et construire un carte des réseaux disponibles (un
-PC, un GPS et un bon software et le tour est joué).
-Security needs (en générale, valable pas uniquement pour le WEP)
-Vu que n'importe qui peut intervenir sur un réseau sans fil, on a besoin de s'assurer de trois choses :
-- L'authentification
-- L'intégrité des données
-- La confidentialité des données
-Authentification
-Plusieurs possibilités :
-- pas d'authentification : n'importe qui peut se connecter au réseau.
-c'est de moins en moins utilisé. Les providers donnent des boites contenant des clés par
-défaut. Il reste néanmoins certains endroits comme les cafés où on trouve des hots spots
-gratuits. A ne pas confondre avec les trucs de type FON.
-- Authentification via le SSID
-chaque modem broadcast son SSID. Tous les clients a porté peuvent découvrir le modem. On
-peut utiliser ce principe comme authentification : le client doit connaitre le SSID pour pouvoir
-se connecter. Pas du tout sécurisé car n'importe qui peut eavesdropper le SSID quand un client
-légitime se connecte.
-en pratique, il suffit de sniffer le réseau avec kismet ou Airodump.
-- MAC address authentification
-le routeur contient une liste de MAC adresses autorisées et vérifie si celle du client en fait
-partie. L'attaquant peut tjs sniffer une adresse MAC valable facilement. Il lui suffit de changer
-la sienne pour pouvoir se connecter au réseau. 3 lignes de commande en Unix :
-ifconfig INTERFACE down
-- 36 -
--
-ifconfig INTERFACE hw ether NEW\_MAC\_ADR
-ifconfig INTERFACE up
-Authentification cryptée
-WEP ou WPA. C'est ce qui nous intéresse vraiment.
-WEP : wired equivalent privacy
-Le WEP fait partie du standard de l'IEEE 802.11 (standard de tout ce qui est réseau sans fil). Son but
-est de rendre les réseaux LAN aussi sécurisés que les réseaux câblés.
-Les grandes propriétés du WEP sont :
-- Pas de key management
-- Pas de protection contre les attaques replay
-- Authentification : une clé pour plusieurs utilisateurs
-- La confidentialité repose sur RC4 (stream cipher)
-- Dispose d'un system de vérification d'intégrité : CRC-32
-No key management
-Toutes les stations sans fils et le routeur ont la même clé pré-partagée. Cette clé est utilisée pour
-l'authentification et pour les encryptions.
-La clé est encodée manuellement sur chaque machine. Trop souvent, la clé entrée par le fabricant et
-n'est plus jamais modifiée.
-Replay attacks
-Vu que la clé n'est jamais changée, le méchant pirate peut attendre que le IV soit réutilisé et alors
-renvoyer un message qui est déjà passé. L'IV est sur 24 bits (16 777 216). Grace à notre ami le
-théorème des anniversaires, on sait qu'il y a 50% de chances qu'un IV se répète après 5000 paquets.
-Plusieurs solutions peuvent être implémentées pour éviter ca:
-- Nounce : challenge/réponse. A envoie un nonce (c.-à-d. un chiffre aléatoire fraichement
-généré). B l'encrypte et l'envoie à A. A vérifie que c'est bon.
-- Timestamp : A envoie son message accompagné d'un MAC (message authentification code : ça
-sert à être sûr de l'intégrité du message. Prenez le cours de crypto si vous voulez en savoir
-plus)
-- Sequence number : A et B discute en incrémentant un compteur.
--
-Intégrité
-L'intégrité est assurée via CRC (contrôle de redondance cyclique). Cependant, CRC est designé pour
-détecter les erreurs de transmissions (erreurs aléatoires) mais pas les erreurs intelligentes des pirates.
-- 37 -
-Schéma d'encryptions
-La figure ci-dessous présente le schéma d'encryptions.
-On entre un message m. Celui-ci est coupé en byte mi et encodé via un xor avec le keystream.
-Le keystream est généré par RC4.
-RC4 est un stream cipher orienté byte. Il est donc très efficient en software (10x plus rapide que DES)
-et a l'avantage d'être simple. Il se passe en deux phases : l'initialisation et la génération de clé.
-Initialisation \& scrambling
-RC4 comporte un registre principal: le registre d'état (N=256 bytes). Il est noté S dans la suite
-La clé et le vecteur d'initialisation servent à initialiser un second registre le registre K.
-Dans un premier temps, le tableau S est rempli des 0->N-1.
-Ensuite, le tableau est mélangé avec le registre de K de la manière suivante.
-Génération de clé
-Vient ensuite la génération de clé: elle est faite de la manière suivante :
-Maintenant que nous connaissons le fonctionnement du WEP, nous pouvons passer à
-l'authentification cryptée.
-- 38 -
-Je crois que l'image en dit suffisamment long. C'est comme d'habitude un challenge/réponse.
-12.2 Attaque contre le WEP :
-1ere attaque : Exhaustive search
-WEP: 40bits de clé + 24 bits de IV = 64 bits  264 bits c'est encore faisable avec un gros gros pc.
-Il existe des versions de WEP avec 104 bits de clé +24 bit d'IV. Là c'est plus possible.
-2eme attaque : CRC property
-CRC a une sale propriété : CRC est linéaire par rapport au XOR c.-à-d. que
-Ça craint vachement !
-Je m'explique : un attaquant connait l'adresse ip contenue dans le message M. Il peut calculer un ∆m
-tel que m xor ∆m = l'adresse ip du pirate. Il lui suffit ensuite de calculer CRC(∆m) et de xor le tout.
-L'attaquant a réussi à modifier un message sans connaitre la clé K tout en gardant l'intégrité du
-message.
-3eme attaque : Keystream Reused
-Comme dit précedement, le IV fait 24 bits=3bytes.
-Vu que les gens changent jamais de clé, un keystream donnée (cad un IV) revient relativement
-souvent.
-En général l'IV est un compteur. Il est donc possible de forcer la réutilisation d'un IV en reboutant le
-routeur (compteur réinitialisé). Il y a 50% de chances de revoir passer un IV dans 212 paquets (birthday
-paradox).
-Si on connait un message qui a été encrypté avec un certain IV, on peut retrouver un autre message
-encrypté avec un même IV.
-C= K xor M
-C'=K xor M'  M' = C' xor C xor M
-A nouveau pas besoin de la clé.
-on peut facilement connaitre un message M( entête de paquets connus, etc)
-4eme attaque : Cryptanalyse
-C'est ici que les choses marantes commencent !
-2 ans après la sortie de WEP, on commence à piger que y des IV qui font tout foirer. Ils permettent de
-retrouver certains états internes du registre S dont je vous parlais précédemment et parfois même la
-clé complète.
-Pour réaliser cette attaque, on doit connaitre l'IV et les premiers bytes d'un message et de son chiffré.
-(L'IV est envoyé en clair et le chiffré est sniffé)
-Le message est encrypté avec la clé (IV||key) = (K0, K1, K2, K3, K4,..., K7) = (3,255, X, K3,..., K7)
-- 39 -
-Donc l'IV est (3, 255, X) et X est supposé connu.
-On effectue les quatre premières étapes de l'initialisation :
-On suppose pour un instant que on s'arrete ici pour l'initialisation.
-Si on doit encoder un truc à ce stade, le keystream généré sera 6+X+K3 :
-Comme le keystream est connu, on peut trouver K3 pour i=3
-Cependant, on ne peut pas arrêter l'initialisation au 4eme stade.
-Quelle est la probabilité que les éléments 0,1 et 3 du tableau ne soient pas modifiés dans le reste de
-l'initialisation? Apparemment c'est
- .
-Donc si on voit suffisamment de IV, on finira bien par en trouver un qui fera l'affaire.
-Une fois que K3 est connu, on refait la même chose avec un autre IV :
-Si IV = {4, 255, X}, on peut effectuer la même démarche. On trouve alors pour i=4,
-On peut donc trouver toute la clé byte par byte en continuant.
-En moyenne, il faut 4millions de IV pour retrouver une clé de 128 bits. Le nombre de IV nécessaire est
-linéaire en fonction de la longueur de clé (-> très mauvais).
-Further attacks
-Il existe des attaques du même styles mais plus puissantes mais elles ne sont (heureusement) pas
-détaillées dans le cours.
-
-\section{WPA}
-\subsection{WPA}
-Le WPA ou « Wifi protected access » a pour but de remplacer le WEP. Comme vous avez pu le voir, le
-WEP c'est de la merde. Ce remplacement est un patch assez urgent avant la publication de WPA2
-(802.11i).
-Depuis 2003, tous les appareils Wifi doivent implémenter le WPA.
-Propriétés-
--
--
--
--
--
-et amélioration par rapport au WEP
-Un compteur est utilisé pour éviter les attaques par répétition.
-L'IV est sur 48 bits
-Chaque utilisateur est authentifié contrairement au WEP ou les machines seulement sont
-identifiées.
-Les clés sont dynamiquement rafraichies en utilisant TKIP.
-AES est utilisé dans WPAE au lieu de RC4 dans WEP et WPA2
-Il existe deux modes de fonctionnement du WPA :
-o Personnal : on utilise alors des « pre-shared key » (PSK)
-chaque appareil connecté utilise le même mot de passe de 256 bits.
-Cette clé peut être saisie soit sous forme de chaîne de 64 chiffres hexadécimaux, ou
-comme une phrase de passe de 8 à 63 caractères ASCII imprimables. Si les caractères
-ASCII sont utilisés, la clé de 256 bits est calculée en appliquant la fonction de
-dérivation de clé PBKDF2 au mot de passe, en utilisant le SSID comme le sel de 4096
-itérations de HMAC-SHA1. L'authentification de se fait via EAP-MD5. (MD5 +
-Extensible Authentication Protocol voir plus loin)
-o Entreprise : on utilise l « IEEE802.1x Authentification Server »
-chaque utilisateur doit s'identifier. On a besoin d'un serveur qui gère tous les comptes
-des utilisateurs (genre Radius)
-http://en.wikipedia.org/wiki/IEEE\_802.1X
-13.2 Architecture et protocoles :
-On considère 3 acteurs :
-- Le client (supplicant)
-- Le point d'accès (authentificateur)
-- Le serveur d'authentification
-- 41 -
-Il y a quatre phases importantes
-- L'accord sur la politique de sécurité
-- L'authentification
-- La génération de clé et leur distribution
-- La confidentialité et l'intégrité des données
-Phase 1 : L'accord sur la politique de sécurité
-Phase 2: l'authentification
-Pour l'authentification, comme dit précédemment EAP est utilisé.
-EAP n'est vraiment un protocole d'authentification en lui-même. Seul, il ne sert à rien. Il a été créé
-pour transporter les messages selon un cadre bien défini. Il contient 4 sortes de message : request,
-response, succes et failure. Les paquets request sont émis par l'authentificateur (Acces Point). Le
-suppliant doit y répondre correctement afin de recevoir un paquet succes.
-- 42 -
-L'AP peut envoyer autant de paquets request qu'il a envie avant d'accorder ou non l'accès.
-EAP est utilisé avec plusieurs outils :
-- Legacy based methods : EAP-MD5
-- Méthodes basées sur un certificat : EAP-TLS, EAP-TTLS, PEAP
-- Méthodes basées sur des mots de passe : LEAP, SPEKE
-- ...
-EAP-MD5
-Utilisé uniquement en mode Personnal WPA.
-L'authentification se fait via le hash d'un challenge et du mot de passe. Cependant, MD5 est
-absolument plus suffisant de nos jours. Cette méthode n'est PAS sécurisée.
-Comme le dit Wikipédia: It offers minimal security; the MD5 hash function is vulnerable to dictionary
-attacks, and does not support key generation, which makes it unsuitable for use with dynamic WEP, or
-WPA/WPA2 enterprise.
-EAP-TLS
-EAP est utilisé avec le TLS. EAP se base sur les PKI (public key infrastructure -> certificat) pour sécuriser
-les communications entre le serveur d'authentification (AS). L'authentification est donc très fortement
-sécurisée mais nécessite la mise en place des PKI.
-Le client et le serveur ont un certificat.
-L'EAP-TLS est donc essentiellement utilisé en entreprise.
-EAP-TTLS
-C'est grosso modo la même chose sauf qu'ici il n'y a que l'AS qui a un certificat. On peut utiliser une
-méthode d'authentification moins sécurise pour le client (CHAP ou PAP)
--
--
-PAP : Password authentication protocol
-Quand l'AS te demande d'envoyer ton pass, tu l'envoies.
-CHAP: Challenge-Handshake Authentication Protocol
-lorsque tu reçois un challenge, le prouveur encrypte le challenge avec sa clé et envoie le chiffré
-au vérifieur
-- 43 -
-Phase 3 : key dérivation
-4 way hands shake:
-http://en.wikipedia.org/wiki/IEEE\_802.11i-2004 -> c'est bien expliqué dans le cours y a que dale.
-The Master Key key is designed to last the entire session and should be exposed as little as possible.
-Therefore the four-way handshake is used to establish another key called the PTK (Pairwise Transient
-Key). The PTK is generated by concatenating the following attributes: PMK, AP nonce (ANonce), STA
-nonce (SNonce), AP MAC address, and STA MAC address. The product is then put through PBKDF2-
-SHA1 as the cryptographic hash function.
-The handshake also yields the GTK (Group Temporal Key), used to decrypt multicast and broadcast
-traffic.
-1.2.3.4.The AP sends a nonce-value to the STA (ANonce). The client now has all the attributes to
-construct the PTK.
-The STA sends its own nonce-value (SNonce) to the AP together with a MIC, including
-authentication, which is really a Message Authentication and Integrity Code: (MAIC).
-The AP sends the GTK and a sequence number together with another MIC. This sequence
-number will be used in the next multicast or broadcast frame, so that the receiving STA can
-perform basic replay detection.
-The STA sends a confirmation to the AP.
-- 44 -
-As soon as the PTK is obtained it is divided into five separate keys:
-PTK (Pairwise Transient Key – 64 bytes)
-1. 16 bytes of EAPOL-Key Confirmation Key (KCK)– Used to compute MIC on WPA EAPOL Key
-message
-2. 16 bytes of EAPOL-Key Encryption Key (KEK) - AP uses this key to encrypt additional data sent
-(in the 'Key Data' field) to the client (for example, the RSN IE or the GTK)
-3. 16 bytes of Temporal Key (TK) – Used to encrypt/decrypt Unicast data packets
-4. 8 bytes of Michael MIC Authenticator Tx Key – Used to compute MIC on unicast data packets
-transmitted by the AP
-5. 8 bytes of Michael MIC Authenticator Rx Key – Used to compute MIC on unicast data packets
-transmitted by the station
-Pour ceux qui veulent comparer avec le schéma du cours :
-- 45 -
-1.2.GEK (Group Encryption Key): Key for data encryption (used by CCMP for authentication and
-encryption and by TKIP).
-GIK (Group Integrity Key): Key for data authentication (used only by Michael with TKIP)
-Group key Hands shake
-The GTK used in the network may need to be updated due to the expiry of a preset timer. When a
-device leaves the network, the GTK also needs to be updated. This is to prevent the device from
-receiving any more multicast or broadcast messages from the AP.
-To handle the updating, 802.11i defines a Group Key Handshake that consists of a two-way handshake:
-1. The AP sends the new GTK to each STA in the network. The GTK is encrypted using the KEK
-assigned to that STA, and protects the data from tampering, by use of a MIC.
-2. The STA acknowledges the new GTK and replies to the AP.
-En gros à partir de la clé principale (master key), la station et l'AS vont générer toute une série de clé.
-Chaque clé est utilisée dans un but différent. Le schéma ci-dessous explique bien les relations entre ces
-différents clés.
-- 46 -
-Phase 4 : data integrity
-Deux algorithmes possibles peuvent être utilisés avec WPA :
-- TKIP : RCA+ MIC
-- CCMP : AES en mode compteur (WPA2 uniquement)
-TKIP: key mixing scheme and encryption
-MIC
-Mic utilise l'algorithme de Michael a la place de CRC32. Michael est utilisé avec une clé. Pourquoi
-Michael ? Simplement parce que c'était le plus puissant des MIC compatible avec les vieilles cartes.
-A cause des faiblesses de Michael, le réseau est coupé pendant une minute si 2 frames ne passent pas
-le check de Michael. Ensuite, des nouvelles clés doivent être régénérées.
-- 47 -
-13.3 Attaques :
-Attaque sur PSK
-Toutes les clés dérivent de la PSK :
-PMK = PBKDF2(SSID,PSK) suivi d'un 4-way hands shake.
-Sachant qu'on peut écouter ce hand shake, on peut tester toutes les clés possibles :
-Procédure :
-Pour chaque candidat de mot de passe, on calcule le PMK associé.
-On calcule ensuite la PTK
-Et finalement le MIC et on le compare avec celui qu'on a écouté.
-Il existe des rainbows tables pré calculée pour les 1000 SSID les plus courants.
-Attaque sur TKIP
--
- injection de paquets
--
- Décryptions de paquets de l'AP vers le client
- \subsection{Conclusion}
-Glossaire:
-
-\section{IPsec}
-Protéger les données au network layer avec Virtual Private Networks (VPNs) construits avec IPSec
-(Internet Protocol Security).
-14.1 VPN :
-Les VPNs permettent d'étendre un réseau privé à travers un réseau public.
-Applications: Interconnexion de sites distants à travers Internet, accès au réseau de l'entreprise à
-partir d'un ordinateur connecté à Internet comme si on était à l'entreprise.
-Mécanisme :
-\begin{itemize}
-  \item 2 sets d'adresses : IP public pour échanger des données sur Internet et des adresses privées
-qui routent les paquets entre les hôtes sur le réseau privé.
-  \item Encapsulation : le paquet est encapsulé dans un paquet IP pour son voyage sur Internet.
-  \item Encryption : pour éviter le eavesdropping et les modifications de données sur le réseau
-public.
-\end{itemize}
-Protocoles :
-\begin{itemize}
-  \item PPTP (Point to Point Tunneling Protocol) : développé par Microsoft.
-  \item L2TP (Layer 2 Tunneling Protocol) : développé par IETF, rassemble L2F de Cisco et PPTP de
-Microsoft.
-  \item IPSec (IP Security) : développé par IETF.
-\end{itemize}
-14.2 IPSec :
-Le standard est ouvert et extensible. Des algorithmes publics sont utilisés pour la confidentialité,
-l'authentification et l'intégrité.
-14.2.1 Modes d'opération :
-\begin{itemize}
-  \item Transport : les données sont encryptées et/ou authentifiées. La sécurité est faite de
-manière end-to-end.
-  \item Tunnel : tout le paquet est encapsulé dans un nouveau paquet. La sécurité peut être faite
-par les routeurs intermédiaires.
-Chaque routeur contient une Security Policy Database qui défini quel paquet doit être sécurisé
-en fonction de sa destination et de sa source par exemple (e.g. : sécuriser le trafic telnet,
-UDP,...)
-\end{itemize}
-14.2.2 Protocole d'échange de clés :
-Internet Key Exchange (IKE) :
-Protocole permettant l'installation d'un tunnel sécurisé entre partenaires.
-Objectifs :
-\begin{itemize}
-  \item Authentification du partenaire
-  \item Echange de clé entre partenaires
-  \item Négociation du paramètre
-\end{itemize}
-- 51 -
-Phases :
-1. Négocier un IKE SA (Internet Key Exchange Security Association) pour protéger les négociations
-\begin{itemize}
-  \item Authentification : pre-shared secret (PSS), clés asymétriques, utiliser la clé publique
-d'une certification authority (X.509)
-  \item Echange de clés : clés générées avec Diffie-Hellman
-  \item Négocier le paramètre
-\end{itemize}
-o Main mode : clé de session générée avec Diffie-Hellman (plein de paramètres) and
-utilisée pour protéger le reste de la transaction (négociation du paramètre et
-authentification).
-
- un eavesdropper ne sait pas dire l'identité des paires.
-o Agressive mode : piggyback sur l'étape d'authentification pour l'échange de Diffie-
-Hellman, les identités et le pwd hash sont envoyés en clair. MAIS ne doit échanger
-que 3 paquets !
-
- attaquable (CKY cookie dans les headers des paquets IKE)
-2.Définir les besoins du SA (Security Association) pour les flux ESP (Encapsulated Security
-Payload) ou AH (Authetification Header)
-Quick mode :
-\begin{itemize}
-  \item Sans Perfect Forward Secrecy (PFS) :
-o Les session keys sont rafraichies périodiquement (1h)
-o Les session keys sont issues du même secret
-o Voler ce secret compromet toutes les clés
-  \item Avec PFS
-o A chaque nouvelle session key, on fait un Diffie-Hellman (plus lent)
-o Voler 1 clé ne compromet pas les clés précédentes
-\end{itemize}
-Security Association :
-Avant de pouvoir échanger des paquets en toute sécurité, les ordinateurs doivent établir une
-Security Association (SA) en utilisant IKE.
-Pour chaque communication sécurisée, le SA mémorise les algorithmes, les clés, la période de
-validité des clés, le numéro de séquence et l'identité du partenaire.
-Il faut 1 SA pour chaque flux unidirectionnel : une connexion TCP demande un SA pour chaque
-direction. (1 SA par destination par protocole, par port).
-Les SAs sont identifiés par un Security Parameter Index (SPI) :
-\begin{itemize}
-  \item La source indique le SPI sur tous les paquets qui sont envoyés (elle décide quels paquets
-doivent être exécuté avec quel SA)
-  \item La destination utilise le SPI pour trouver le SA qui décrit comment traiter ce paquet.
-\end{itemize}
-14.2.3 Protocole sécurisé :
-Authentication Header (AH)
-Pour vérifier l'authenticité et l'intégrité du paquet.
-- 52 -
-L'authentification est calculée sur base de :
-\begin{itemize}
-  \item Données qui suivent le AH
-  \item Le header (mis à 0 quand il faut calculer l'information d'authentification)
-  \item Les champs importants dans l'IP header : source, destination, protocol, length, version,...
-  \item Les champs exclus de l'IP header : type of service, flags, fragment offset, TTL, header
-checksum.
-\end{itemize}
-L'algorithme utilisé pour générer les données d'authentification est négocié à la création du SA.
-
- utilise le HMAC : sécurité démontrable, peut être utilisé avec n'importe quelle hash function,
-maintient les performances de la hash function originale :
-HMAC(K,m) = H( (K xor opad) || H((K xor ipad) || m) )
-HMAC-SHA1-96 signifie HMAC calculé avec H=SHA1 et la sortie tronquée à 96 bits.
-Encapsulated Security Payload (ESP)
-Pour l'encryption et l'authentification du paquet.
-L'encryption est seulement faite sur l'encapsulated data et le trailer (à la fin du paquet). PAS
-d'encryption sur les champs du header, ni sur les données d'authentification.
-L'authentification (optionnelle) est faite sur l'ESP header et tout ce qui suit MAIS PAS sur l'IP
-header (différence avec AH).
-Exemple d'algorithme :
-\begin{itemize}
-  \item Encryption : DES-CBC, NULL
-  \item Authentification : HMAC-SHA-96, HMAC-MD5-96, NULL
-\end{itemize}
-NULL ne peut pas être utilisé dans le même SA pour l'encryption et l'authentification.
-14.2.4 IPSec avec NAT
-AH : que ça soit en mode transport ou tunnel, AH authentifie l'IP header et donc ne
-permet pas au NAT de modifier l'IP source sans provoquer une perte d'intégrité.
-ESP :
-\begin{itemize}
-  \item Mode transport : en TCP ou UDP, les headers sont encryptés et donc le checksum ne peut
-pas être mis à jour
-  \item Mode tunnel : le checksum TCP ou UDP fait référence à l'IP header interne, qui n'est pas
-modifié par le NAT.
-\end{itemize}
-
- ESP en mode tunnel est le seul moyen de traverser un NAT !
-- 53 -
-Sécurité au transport layer.
-15. SSL :
-15.1 SSL
-SSL = Secure Socket Layer à été développé par NetScape
-15.1.1 Applications
-\begin{itemize}
-  \item Créer un nouveau protocole à partir d'un protocole existant : HTTP -> HTTPS
-o Désavantage : seuls les clients supportant TLS peuvent se connecter
-o Avantage : sur que la communication est sécurisée
-  \item Etendre un protocole pour négocier SSL/TLS : demander TLS avec STARTTLS
-o Avantage : le client ne doit pas forcément supporter TLS pour utiliser le service
-\end{itemize}
-Exemples :
-\begin{itemize}
-  \item HTTPS :
-o L'utilisation de TLS n'est pas négociable
-o Garanti la confidentialité et l'authenticité des données transmises
-o Le server doit avoir un certificat
-o Le client peut en avoir un (e.g. : eBanking)
-  \item Mail
-o ESMTP, POP3, IMAP transmettent par défaut le mot de passe en clair
-o TLS protège le mot de passe et le contenu du mail
-\end{itemize}
-15.2 TLS
-TLS = Transport Layer Security (version actuelle de SSL). Se situe entre l'application et le network layer.
-- 54 -
-15.2.1 Record Layer
-Traitement des données
-\begin{itemize}
-  \item Fragmentation
-  \item Compression (optionnel)
-  \item Authentification (MAC)
-  \item Encryption
-\end{itemize}
-Transmets les fragments traités au transport layer
-Une fois, transmis, les opérations inverses sont effectuées.
-MAC :
-MAC= hash ( MAC\_key || Pad2 ||
-
-hash(MAC\_key || Pad1 || Seq\_Nb || Length || Content))
-- MAC\_key: secret shared by client and server.
-- Pad1: constant character 0x36 repeated 48 times (if MD5) or 40 times (if SHA1).
-- Pad2: constant character 0x5c repeated the same number of times.
-- Seq\_Nb: sequence number of this message.
-- Hash: Either HMAC-MD5 or HMAC-SHA1
-- Length: Length in bytes of the compressed record.
-- Content: Compressed record.
-Encryption :
-Faite sur des records compresses et authentifiés.
-Soit avec du chiffrement par blocs:
-o DES (40 bits ou 56 bits), 3DES, IDEA, RC2 (40 bits)
-o AES (128 bits ou 256 bits) dans TLS v1.1 (256 bits pour les mails UCL)
-Soit avec du chiffrement en flux:
-o NULL, RC4 (40 bits ou 128 bits)
-
- le client doit refuser des clés de 40 bits si cette longueur est suggérée par le serveur.
-15.2.2 Handshake protocol
-Négociation de:
-- protocole version (SSL 3.0, TLS 1.0, TLS 1.1).
-- algorithmes:
-o Key exchange (RSA, Diffie-Hellman).
-o Encryption (DES, 3DES, IDEA, RC4, RC2, AES).
-o MAC (HMAC-MD5, HMAC-SHA).
-- Le client propose les algorithmes par ordre de préférence, le serveur choisi.
-- Authentification optionnelle du partenaire en utilisant un certificat.
-- Les messages ne sont pas cryptés.
-- Le dernier message authentifie l'échange.
-- 55 -
-
-Client\_Hello : utilisé par le client pour initialiser une connexion SSL (envoyé en clair sans
-signature)
-o Crypto : liste des algorithmes cryptographiques supportés (Authentication + key
-exchange + cipher + hash).
-Content:
--
--
--
--
--
--
-Protocol Version.
-32 bytes long random number.
-Composed of two parts:
-o 4 bytes Unix time (number of seconds since 01/01/1970)
-o 28 bytes random number
-Optional Session Identifier.
-o Each SSL session has an identifier which can be used later to restart a
-session.
-List of supported Ciphers.
-
-List of supported Compression Methods.
-\begin{itemize}
-  \item Server\_Hello : réponse du serveur (envoyé en clair sans signature)
-\end{itemize}
-Content:
--
--
--
--
--
-Protocol version: highest version of the protocol supported by both client and
-server.
-Random number.
-Optional Session Identifier, if it allows sessions to be resumed.
-Cipher Suite: One of the cipher suites proposed by client.
-Compression Method.
-- 56 -
-
-Server\_Certificate : le serveur s'authentifie (un serveur peut avoir plusieurs certificats à partir
-de différentes certification authorities). Le certificat peut aussi être envoyé par le client quand
-l'identification du client est demandée par le serveur avec Certificate\_Request.
-Content:
--
-A list of X.509 certificates:
-o Server certificate.
-o Certificates of certification authorities if any.
-
-
-Server Hello\_Done : indique que le serveur a fini la 1ere phase du handshake (envoyé non
-crypté).
-Client\_Key\_Exchange : utilisé par le client pour envoyé le PreMasterSecret (encrypté avec la
-clé publique du serveur).
-o Utilise des nonce de 32B et un masterSecret de 48B
-Content:
--
-Encrypted PreMasterSecret with the public key of the server.
-
-
-Change\_Cipher\_Spec :
-o Utilisé par le client et le serveur pour signaler qu'il vont utiliser une nouvelle clé.
-o Durant le handshake, indique que le prochain message sera encrypté avec la clé
-appropriée.
-Handshake\_Finished :
-o Envoyé par le client et le serveur pour confirmer l'établissement d'une session SSL
-sécurisée. (Sécurisée ssi le client et le serveur ont reçu ce message).
-o Permet de détecter les man in the middle attack sur des messages Client\_Hello et
-Server\_Hello (e.g.: proposer un chiffrement plus faible).
-o Premier message encrypté dans chaque direction.
-Content:
--
--
-Keyed hash (MD5 or SHA-1) of all the handshake messages and the
-MasterSecret.
-
-\section{Kerberos}
-1.1 Motivation :
-Parfois plusieurs utilisateurs veulent avoir l'accès à plusieurs serveurs sur un même réseau. Une
-solution pour gérer la sécurité de l'authentification est que chaque serveur retienne les mots de passe
-de chaque utilisateur. Cette approche n'est cependant pas idéale :
-\begin{itemize}
-  \item Elle n'est pas sure. Un seul serveur compromis peut compromettre tous les utilisateurs.
-  \item Elle est inefficace. Les mots de passes doivent chaque fois être changés sur tous les serveurs.
-  \item Elle n'est pas pratique. Les mots de passes doivent être entrés pour chaque requête.
-\end{itemize}
-Dès lors, il est plus raisonnable de centraliser les informations. Kerberos permet cela.
-1.2 Kerberos :
-Kerberos est un protocole d'authentification réseau qui repose sur un mécanisme de clés secrètes
-l'utilisation de tickets. Il est basé sur de la cryptographie à clef symétrique. Une fois que
-l'authentification est faire, on peut accéder au réseau sans devoir redonner son mot de passe ou nom
-d'utilisateur.
-1.3 Elements principaux :
-Kerberos utilise tous les éléments suivants :
-\begin{itemize}
-  \item Un client C. C'est la personne qui veut se connecter au réseau.
-  \item Un serveur d'authentification AS 1. Ce serveur va fournir au client un premier ticket (TGT 2 ), au
-client qui en fait la demande.
-  \item Un serveur de ticket (TGS 3). Une fois qu'un client présente son ticket à ce serveur, ce dernier
-peut lui donner un autre ticket pour accéder à certaines ressources.
-  \item un serveur S dont le client veut avoir l'accès. Pour avoir l'accès à ce serveur, le client doit avoir
-le ticket correspondant fourni par le TGS.
-Au final, pour qu'un client ait accès au serveur S, il doit avoir son ticket ainsi qu'un authentifiant.
-Le ticket contient les informations suivantes
-  \item Ic, l'identité du client.
-  \item v, la période de validité du ticket.
-  \item Kc,s, la clef symétrique de session à utiliser entre le client et le serveur.
-  \item D'autres trucs comme des flags, l'adresse IP, etc.
-\end{itemize}
-Ce ticket est encryptée avec la clef Ks du serveur. L'authentifiant est juste l'identité du client (Ic) suivi
-d'un timestamp t. Regardons à présent tous les messages échangés pour obtenir ce fameux ticket. Le
-schéma ci dessous reprend l'ensemble des échanges.
-Analysons les séparément.
-1. Authentication server.
-2. Ticket-granting ticket.
-3. Ticket granting server.
-- 58 -
-1.3.1 Echange entre le client et AS:
-Le client doit être authentifié pour pouvoir accéder au TGS. Dès lors, il va en tout premier lieu faire une
-demande d'authentification à AS. Ce dernier va lui renvoyer un TGT encrypté avec la clef du TGS ainsi
-qu'une clef de session encryptée avec la clef de C. Plus particulièrement, on a les messages suivants :
-1. Ic, ITGS,N. Le client envoie à AS son identité, celle du TGS dont il veut faire une requête, ainsi
-qu'un nonce utilisé pour éviter les replay attaques.
-2. {ITGS,N,KC,TGS}KC , {IC, v,KC,TGS}KTGS . Le premier bloc peut être décrypté par le client pour
-qu'il puisse le KC,TGS nécessaire pour la suite du protocole. Le deuxième bloc ne peut être
-décrypté que par le TGS.
-1.3.2 Echange entre le client et TGS:
-Une fois le TGT reçu, le client va envoyer une requête au TGS. Le TGS va alors utiliser la clef de session
-pour vérifier le ticket. Il peut alors voir si le client est autorisé à accéder au serveur S.
-Si oui, il va donner au client un ticket lui accordant ce service. Pratiquement, on a les messages
-suivants
-1. Is,N0, {IC, v,KC,TGS}KTGS , {IC, t}Kc,TGS . On a l'identité du service voulu, un nounce, le TGT
-ainsi que d'autres données encryptées avec la clef KC,TGS entre le client et le TGS et qui
-comprend l'identité du client et un timestamp.
-2. {IS,N0,KC,S}KC,TGS , {IC, v,KC,S}Ks . Le TGS répond un message pouvant être décrypté par le
-client et qui contient une clef de session avec le service S, et un autre message ne pouvant être
-décrypté que par S.
-1.3.3 Echange entre le client et S:
-Finalement, le client va demander l'accès au serveur S à travers les messages suivants
-1. {Ic, v,KC,S}KS , {IC, t}KC,S . Le client envoie son ticket de service ainsi qu'un autre message que
-le serveur ne pourra décrypter que quand il aura obtenu le KC,S. Il pourra alors voir que les
-deux Ic correspondent bien.
-2. {t}KC,S . Le serveur lui renvoie simplement un timestamp que le client peut décrypter.
-Le client peut maintenant accéder au serveur !
-1.4 Commentaires :
-Avec Kerberos, la responsabilité de stocker les tickets revient exclusivement au client. Par
-ailleurs, une fois qu'un client a eu son authentification (il la garde environ 8 heures), il ne doit plus
-contacter AS. Il peut accéder aux autres services même si ce dernier est down. Et il est finalement
-impossible de révoquer le ticket d'un client qui a été authentifié.
-
-\section{PGP}
-Pretty Good Privacy (PGP) est un logiciel de chiffrement et de déchiffrement cryptographique.
-Il garantit la confidentialité et l'authentification pour la communication des données. Il est le plus
-souvent utilisé pour la signature de données, et sa gestion des clefs.
-17.1 Encryption hybride :
-PGP utilise pour encrypter les données à la fois des clefs asymétriques et symétriques, comme
-le montre le schéma suivant.
-Le système est donc hybride. Pour chiffrer un document, PGP utilise une clef symétrique aléatoire (clef
-de session). Ensuite, PGP chiffre la clef de session avec la clef publique du destinataire.
-Cela à d'une part l'avantage d'être rapide, au lieu de crypter l'entièreté du document avec la clef
-publique (fort lent), on ne l'utilise que pour crypter la clef de session qui est nettement plus petite, et
-d'autre part, le problème de distribution des clefs est réglé puisque la symétrique est encryptée. Pour
-l'encryption symétrique beaucoup d'algorithmes peuvent être utilisés (TDES, IDEA, AED, etc.), pour
-l'asymétrique on utilise généralement le RSA ou l'Elgamal qui se base sur le problème du logarithme
-discret.
-17.2 Signature de la clef publique :
-Pour la signature, on utilise généralement l'algorithme DSA ou RSA. L'Elgamal n'est plus
-recommandé du fait qu'une attaque a révélé que les clefs Elgemal n'étaient plus sûre lors qu'elles sont
-utilisées pour l'encryption et pour la signature. De manière générale, il ne faut jamais utiliser la même
-clef pour plusieurs choses.
-17.3 Protection des clefs privées :
-Les clefs privées sont encryptées sur le disque de l'utilisateur avec un algorithme se basant sur
-une passphrase. Quand la clef est nécessaire, l'utilisateur utilise sa passphrase pour déchiffrer sa clef.
-Cependant, pour préserver la sécurité, et respecter le principe du maillon le plus faible, la passphrase
-doit être choisie intelligemment de sorte qu'elle soit aussi solide que les clefs utilisées pour la
-signature ou l'encryption. Le tableau ci dessous reprend une correspondance de taille entre les clefs
-symétriques et asymétriques pour avoir une même solidité.
-- 60 -
-17.4 Validité des clefs publiques :
-Comment être sur qu'une clef qu'on utilise pour chiffrer un message est la clef correcte ? Une
-manière sûre de vérifier cela, est de faire une rencontre IRL, vérifier l'identité de la personne, vérifier
-le hash de la clef, et puis seulement signer la clef. En procédant comme cela, on peut être sûr que
-la clef n'a pas été modifiée par la suite. On peut aussi utiliser des certificats.
-17.5 Distribution des clefs publiques :
-Il y a deux notions importances dans PGP.
-1. La validité : Je sais à qui appartient cette clef.
-2. La confiance : Je sais que cette personne ne signe pas des clefs n'importe comment.
-Quand on signe une clef, on déclare sa validité. Sachant cela, on peut former un graphe dirigé
-où les sommets correspondent aux différentes personnes et où les arêtes A ! B signifient que A a validé
-la clef de B. On met aussi des poids sur les arêtes, 1 si A fait entièrement confiance à B, et 0.5 s'il lui
-fait partiellement confiance. Dès lors, une personne peut considérer les clefs d'autres personnes
-comme valide si d'une part, elle fait totalement confiance à une personne qui a vérifié l'adresses de
-ces autres personnes (A fait confiance à B, et B a validé la clef de C : La clef de C est valide pour A) , ou
-si d'autre part, elle fait moyennement confiance à plusieurs personnes qui ont vérifié la clef (A fait
-moyennement confiance à B et C, mais B et C ont tout deux validé la clef de D : le clef de D est valide
-pour A).
-17.6 Révocation de clef :
-Une manière naïve de procéder est de simplement enlever la clef du serveur. Cependant, il se
-peut que la clef a été dupliquée sur d'autres serveurs, que des personnes l'aient téléchargée, etc.
-On doit donc procéder autrement. On peut créer un certification de révocation de la clef quand on
-génère cette dernière. On l'envoie alors sur le serveur PGP quand on veut révoquer la clef. Pour bien
-faire, il faut aussi l'envoyer aux correspondants réguliers. Par ailleurs, lors de la génération d'une clef,
-on met une limite de validité qui fait que la clef expire après cette date.
-
-
+% Il ne faut pas connaitre ce qu'il se trouve après
+%\section{WEP}
+%12.1 Introduction Wifi :
+%Un point d'accès connecté via un câble au réseau. Plusieurs machines connectées via WIFI à ce point
+%d'accès.
+%Plusieurs manière : réseau ad hoc et mode infrastructure (cf cours de réseau). L'utilisation la plus
+%simple et la plus courante des réseaux ad-hoc est faite par les réseaux sans fil Wi-Fi en permettant une
+%mise en place rapide d'une connexion réseau entre deux ordinateurs.
+%Les stations et le point d'accès communique via des ondes. (Non c'est vrai ?)
+%Problème : n'importe qui peut capter/injecter des ondes avec une interface appropriée. (Record du
+%monde : transmission de 382 km)
+%War driving
+%Un plouc peut se balader dans les rues en voitures et construire un carte des réseaux disponibles (un
+%PC, un GPS et un bon software et le tour est joué).
+%Security needs (en générale, valable pas uniquement pour le WEP)
+%Vu que n'importe qui peut intervenir sur un réseau sans fil, on a besoin de s'assurer de trois choses :
+%- L'authentification
+%- L'intégrité des données
+%- La confidentialité des données
+%Authentification
+%Plusieurs possibilités :
+%- pas d'authentification : n'importe qui peut se connecter au réseau.
+%c'est de moins en moins utilisé. Les providers donnent des boites contenant des clés par
+%défaut. Il reste néanmoins certains endroits comme les cafés où on trouve des hots spots
+%gratuits. A ne pas confondre avec les trucs de type FON.
+%- Authentification via le SSID
+%chaque modem broadcast son SSID. Tous les clients a porté peuvent découvrir le modem. On
+%peut utiliser ce principe comme authentification : le client doit connaitre le SSID pour pouvoir
+%se connecter. Pas du tout sécurisé car n'importe qui peut eavesdropper le SSID quand un client
+%légitime se connecte.
+%en pratique, il suffit de sniffer le réseau avec kismet ou Airodump.
+%- MAC address authentification
+%le routeur contient une liste de MAC adresses autorisées et vérifie si celle du client en fait
+%partie. L'attaquant peut tjs sniffer une adresse MAC valable facilement. Il lui suffit de changer
+%la sienne pour pouvoir se connecter au réseau. 3 lignes de commande en Unix :
+%ifconfig INTERFACE down
+%- 36 -
+%-
+%ifconfig INTERFACE hw ether NEW\_MAC\_ADR
+%ifconfig INTERFACE up
+%Authentification cryptée
+%WEP ou WPA. C'est ce qui nous intéresse vraiment.
+%WEP : wired equivalent privacy
+%Le WEP fait partie du standard de l'IEEE 802.11 (standard de tout ce qui est réseau sans fil). Son but
+%est de rendre les réseaux LAN aussi sécurisés que les réseaux câblés.
+%Les grandes propriétés du WEP sont :
+%- Pas de key management
+%- Pas de protection contre les attaques replay
+%- Authentification : une clé pour plusieurs utilisateurs
+%- La confidentialité repose sur RC4 (stream cipher)
+%- Dispose d'un system de vérification d'intégrité : CRC-32
+%No key management
+%Toutes les stations sans fils et le routeur ont la même clé pré-partagée. Cette clé est utilisée pour
+%l'authentification et pour les encryptions.
+%La clé est encodée manuellement sur chaque machine. Trop souvent, la clé entrée par le fabricant et
+%n'est plus jamais modifiée.
+%Replay attacks
+%Vu que la clé n'est jamais changée, le méchant pirate peut attendre que le IV soit réutilisé et alors
+%renvoyer un message qui est déjà passé. L'IV est sur 24 bits (16 777 216). Grace à notre ami le
+%théorème des anniversaires, on sait qu'il y a 50% de chances qu'un IV se répète après 5000 paquets.
+%Plusieurs solutions peuvent être implémentées pour éviter ca:
+%- Nounce : challenge/réponse. A envoie un nonce (c.-à-d. un chiffre aléatoire fraichement
+%généré). B l'encrypte et l'envoie à A. A vérifie que c'est bon.
+%- Timestamp : A envoie son message accompagné d'un MAC (message authentification code : ça
+%sert à être sûr de l'intégrité du message. Prenez le cours de crypto si vous voulez en savoir
+%plus)
+%- Sequence number : A et B discute en incrémentant un compteur.
+%-
+%Intégrité
+%L'intégrité est assurée via CRC (contrôle de redondance cyclique). Cependant, CRC est designé pour
+%détecter les erreurs de transmissions (erreurs aléatoires) mais pas les erreurs intelligentes des pirates.
+%- 37 -
+%Schéma d'encryptions
+%La figure ci-dessous présente le schéma d'encryptions.
+%On entre un message m. Celui-ci est coupé en byte mi et encodé via un xor avec le keystream.
+%Le keystream est généré par RC4.
+%RC4 est un stream cipher orienté byte. Il est donc très efficient en software (10x plus rapide que DES)
+%et a l'avantage d'être simple. Il se passe en deux phases : l'initialisation et la génération de clé.
+%Initialisation \& scrambling
+%RC4 comporte un registre principal: le registre d'état (N=256 bytes). Il est noté S dans la suite
+%La clé et le vecteur d'initialisation servent à initialiser un second registre le registre K.
+%Dans un premier temps, le tableau S est rempli des 0->N-1.
+%Ensuite, le tableau est mélangé avec le registre de K de la manière suivante.
+%Génération de clé
+%Vient ensuite la génération de clé: elle est faite de la manière suivante :
+%Maintenant que nous connaissons le fonctionnement du WEP, nous pouvons passer à
+%l'authentification cryptée.
+%- 38 -
+%Je crois que l'image en dit suffisamment long. C'est comme d'habitude un challenge/réponse.
+%12.2 Attaque contre le WEP :
+%1ere attaque : Exhaustive search
+%WEP: 40bits de clé + 24 bits de IV = 64 bits  264 bits c'est encore faisable avec un gros gros pc.
+%Il existe des versions de WEP avec 104 bits de clé +24 bit d'IV. Là c'est plus possible.
+%2eme attaque : CRC property
+%CRC a une sale propriété : CRC est linéaire par rapport au XOR c.-à-d. que
+%Ça craint vachement !
+%Je m'explique : un attaquant connait l'adresse ip contenue dans le message M. Il peut calculer un ∆m
+%tel que m xor ∆m = l'adresse ip du pirate. Il lui suffit ensuite de calculer CRC(∆m) et de xor le tout.
+%L'attaquant a réussi à modifier un message sans connaitre la clé K tout en gardant l'intégrité du
+%message.
+%3eme attaque : Keystream Reused
+%Comme dit précedement, le IV fait 24 bits=3bytes.
+%Vu que les gens changent jamais de clé, un keystream donnée (cad un IV) revient relativement
+%souvent.
+%En général l'IV est un compteur. Il est donc possible de forcer la réutilisation d'un IV en reboutant le
+%routeur (compteur réinitialisé). Il y a 50% de chances de revoir passer un IV dans 212 paquets (birthday
+%paradox).
+%Si on connait un message qui a été encrypté avec un certain IV, on peut retrouver un autre message
+%encrypté avec un même IV.
+%C= K xor M
+%C'=K xor M'  M' = C' xor C xor M
+%A nouveau pas besoin de la clé.
+%on peut facilement connaitre un message M( entête de paquets connus, etc)
+%4eme attaque : Cryptanalyse
+%C'est ici que les choses marantes commencent !
+%2 ans après la sortie de WEP, on commence à piger que y des IV qui font tout foirer. Ils permettent de
+%retrouver certains états internes du registre S dont je vous parlais précédemment et parfois même la
+%clé complète.
+%Pour réaliser cette attaque, on doit connaitre l'IV et les premiers bytes d'un message et de son chiffré.
+%(L'IV est envoyé en clair et le chiffré est sniffé)
+%Le message est encrypté avec la clé (IV||key) = (K0, K1, K2, K3, K4,..., K7) = (3,255, X, K3,..., K7)
+%- 39 -
+%Donc l'IV est (3, 255, X) et X est supposé connu.
+%On effectue les quatre premières étapes de l'initialisation :
+%On suppose pour un instant que on s'arrete ici pour l'initialisation.
+%Si on doit encoder un truc à ce stade, le keystream généré sera 6+X+K3 :
+%Comme le keystream est connu, on peut trouver K3 pour i=3
+%Cependant, on ne peut pas arrêter l'initialisation au 4eme stade.
+%Quelle est la probabilité que les éléments 0,1 et 3 du tableau ne soient pas modifiés dans le reste de
+%l'initialisation? Apparemment c'est
+% .
+%Donc si on voit suffisamment de IV, on finira bien par en trouver un qui fera l'affaire.
+%Une fois que K3 est connu, on refait la même chose avec un autre IV :
+%Si IV = {4, 255, X}, on peut effectuer la même démarche. On trouve alors pour i=4,
+%On peut donc trouver toute la clé byte par byte en continuant.
+%En moyenne, il faut 4millions de IV pour retrouver une clé de 128 bits. Le nombre de IV nécessaire est
+%linéaire en fonction de la longueur de clé (-> très mauvais).
+%Further attacks
+%Il existe des attaques du même styles mais plus puissantes mais elles ne sont (heureusement) pas
+%détaillées dans le cours.
+%
+%\section{WPA}
+%\subsection{WPA}
+%Le WPA ou « Wifi protected access » a pour but de remplacer le WEP. Comme vous avez pu le voir, le
+%WEP c'est de la merde. Ce remplacement est un patch assez urgent avant la publication de WPA2
+%(802.11i).
+%Depuis 2003, tous les appareils Wifi doivent implémenter le WPA.
+%Propriétés-
+%-
+%-
+%-
+%-
+%-
+%et amélioration par rapport au WEP
+%Un compteur est utilisé pour éviter les attaques par répétition.
+%L'IV est sur 48 bits
+%Chaque utilisateur est authentifié contrairement au WEP ou les machines seulement sont
+%identifiées.
+%Les clés sont dynamiquement rafraichies en utilisant TKIP.
+%AES est utilisé dans WPAE au lieu de RC4 dans WEP et WPA2
+%Il existe deux modes de fonctionnement du WPA :
+%o Personnal : on utilise alors des « pre-shared key » (PSK)
+%chaque appareil connecté utilise le même mot de passe de 256 bits.
+%Cette clé peut être saisie soit sous forme de chaîne de 64 chiffres hexadécimaux, ou
+%comme une phrase de passe de 8 à 63 caractères ASCII imprimables. Si les caractères
+%ASCII sont utilisés, la clé de 256 bits est calculée en appliquant la fonction de
+%dérivation de clé PBKDF2 au mot de passe, en utilisant le SSID comme le sel de 4096
+%itérations de HMAC-SHA1. L'authentification de se fait via EAP-MD5. (MD5 +
+%Extensible Authentication Protocol voir plus loin)
+%o Entreprise : on utilise l « IEEE802.1x Authentification Server »
+%chaque utilisateur doit s'identifier. On a besoin d'un serveur qui gère tous les comptes
+%des utilisateurs (genre Radius)
+%http://en.wikipedia.org/wiki/IEEE\_802.1X
+%13.2 Architecture et protocoles :
+%On considère 3 acteurs :
+%- Le client (supplicant)
+%- Le point d'accès (authentificateur)
+%- Le serveur d'authentification
+%- 41 -
+%Il y a quatre phases importantes
+%- L'accord sur la politique de sécurité
+%- L'authentification
+%- La génération de clé et leur distribution
+%- La confidentialité et l'intégrité des données
+%Phase 1 : L'accord sur la politique de sécurité
+%Phase 2: l'authentification
+%Pour l'authentification, comme dit précédemment EAP est utilisé.
+%EAP n'est vraiment un protocole d'authentification en lui-même. Seul, il ne sert à rien. Il a été créé
+%pour transporter les messages selon un cadre bien défini. Il contient 4 sortes de message : request,
+%response, succes et failure. Les paquets request sont émis par l'authentificateur (Acces Point). Le
+%suppliant doit y répondre correctement afin de recevoir un paquet succes.
+%- 42 -
+%L'AP peut envoyer autant de paquets request qu'il a envie avant d'accorder ou non l'accès.
+%EAP est utilisé avec plusieurs outils :
+%- Legacy based methods : EAP-MD5
+%- Méthodes basées sur un certificat : EAP-TLS, EAP-TTLS, PEAP
+%- Méthodes basées sur des mots de passe : LEAP, SPEKE
+%- ...
+%EAP-MD5
+%Utilisé uniquement en mode Personnal WPA.
+%L'authentification se fait via le hash d'un challenge et du mot de passe. Cependant, MD5 est
+%absolument plus suffisant de nos jours. Cette méthode n'est PAS sécurisée.
+%Comme le dit Wikipédia: It offers minimal security; the MD5 hash function is vulnerable to dictionary
+%attacks, and does not support key generation, which makes it unsuitable for use with dynamic WEP, or
+%WPA/WPA2 enterprise.
+%EAP-TLS
+%EAP est utilisé avec le TLS. EAP se base sur les PKI (public key infrastructure -> certificat) pour sécuriser
+%les communications entre le serveur d'authentification (AS). L'authentification est donc très fortement
+%sécurisée mais nécessite la mise en place des PKI.
+%Le client et le serveur ont un certificat.
+%L'EAP-TLS est donc essentiellement utilisé en entreprise.
+%EAP-TTLS
+%C'est grosso modo la même chose sauf qu'ici il n'y a que l'AS qui a un certificat. On peut utiliser une
+%méthode d'authentification moins sécurise pour le client (CHAP ou PAP)
+%-
+%-
+%PAP : Password authentication protocol
+%Quand l'AS te demande d'envoyer ton pass, tu l'envoies.
+%CHAP: Challenge-Handshake Authentication Protocol
+%lorsque tu reçois un challenge, le prouveur encrypte le challenge avec sa clé et envoie le chiffré
+%au vérifieur
+%- 43 -
+%Phase 3 : key dérivation
+%4 way hands shake:
+%http://en.wikipedia.org/wiki/IEEE\_802.11i-2004 -> c'est bien expliqué dans le cours y a que dale.
+%The Master Key key is designed to last the entire session and should be exposed as little as possible.
+%Therefore the four-way handshake is used to establish another key called the PTK (Pairwise Transient
+%Key). The PTK is generated by concatenating the following attributes: PMK, AP nonce (ANonce), STA
+%nonce (SNonce), AP MAC address, and STA MAC address. The product is then put through PBKDF2-
+%SHA1 as the cryptographic hash function.
+%The handshake also yields the GTK (Group Temporal Key), used to decrypt multicast and broadcast
+%traffic.
+%1.2.3.4.The AP sends a nonce-value to the STA (ANonce). The client now has all the attributes to
+%construct the PTK.
+%The STA sends its own nonce-value (SNonce) to the AP together with a MIC, including
+%authentication, which is really a Message Authentication and Integrity Code: (MAIC).
+%The AP sends the GTK and a sequence number together with another MIC. This sequence
+%number will be used in the next multicast or broadcast frame, so that the receiving STA can
+%perform basic replay detection.
+%The STA sends a confirmation to the AP.
+%- 44 -
+%As soon as the PTK is obtained it is divided into five separate keys:
+%PTK (Pairwise Transient Key – 64 bytes)
+%1. 16 bytes of EAPOL-Key Confirmation Key (KCK)– Used to compute MIC on WPA EAPOL Key
+%message
+%2. 16 bytes of EAPOL-Key Encryption Key (KEK) - AP uses this key to encrypt additional data sent
+%(in the 'Key Data' field) to the client (for example, the RSN IE or the GTK)
+%3. 16 bytes of Temporal Key (TK) – Used to encrypt/decrypt Unicast data packets
+%4. 8 bytes of Michael MIC Authenticator Tx Key – Used to compute MIC on unicast data packets
+%transmitted by the AP
+%5. 8 bytes of Michael MIC Authenticator Rx Key – Used to compute MIC on unicast data packets
+%transmitted by the station
+%Pour ceux qui veulent comparer avec le schéma du cours :
+%- 45 -
+%1.2.GEK (Group Encryption Key): Key for data encryption (used by CCMP for authentication and
+%encryption and by TKIP).
+%GIK (Group Integrity Key): Key for data authentication (used only by Michael with TKIP)
+%Group key Hands shake
+%The GTK used in the network may need to be updated due to the expiry of a preset timer. When a
+%device leaves the network, the GTK also needs to be updated. This is to prevent the device from
+%receiving any more multicast or broadcast messages from the AP.
+%To handle the updating, 802.11i defines a Group Key Handshake that consists of a two-way handshake:
+%1. The AP sends the new GTK to each STA in the network. The GTK is encrypted using the KEK
+%assigned to that STA, and protects the data from tampering, by use of a MIC.
+%2. The STA acknowledges the new GTK and replies to the AP.
+%En gros à partir de la clé principale (master key), la station et l'AS vont générer toute une série de clé.
+%Chaque clé est utilisée dans un but différent. Le schéma ci-dessous explique bien les relations entre ces
+%différents clés.
+%- 46 -
+%Phase 4 : data integrity
+%Deux algorithmes possibles peuvent être utilisés avec WPA :
+%- TKIP : RCA+ MIC
+%- CCMP : AES en mode compteur (WPA2 uniquement)
+%TKIP: key mixing scheme and encryption
+%MIC
+%Mic utilise l'algorithme de Michael a la place de CRC32. Michael est utilisé avec une clé. Pourquoi
+%Michael ? Simplement parce que c'était le plus puissant des MIC compatible avec les vieilles cartes.
+%A cause des faiblesses de Michael, le réseau est coupé pendant une minute si 2 frames ne passent pas
+%le check de Michael. Ensuite, des nouvelles clés doivent être régénérées.
+%- 47 -
+%13.3 Attaques :
+%Attaque sur PSK
+%Toutes les clés dérivent de la PSK :
+%PMK = PBKDF2(SSID,PSK) suivi d'un 4-way hands shake.
+%Sachant qu'on peut écouter ce hand shake, on peut tester toutes les clés possibles :
+%Procédure :
+%Pour chaque candidat de mot de passe, on calcule le PMK associé.
+%On calcule ensuite la PTK
+%Et finalement le MIC et on le compare avec celui qu'on a écouté.
+%Il existe des rainbows tables pré calculée pour les 1000 SSID les plus courants.
+%Attaque sur TKIP
+%-
+% injection de paquets
+%-
+% Décryptions de paquets de l'AP vers le client
+% \subsection{Conclusion}
+%Glossaire:
+%
+%\section{IPsec}
+%Protéger les données au network layer avec Virtual Private Networks (VPNs) construits avec IPSec
+%(Internet Protocol Security).
+%14.1 VPN :
+%Les VPNs permettent d'étendre un réseau privé à travers un réseau public.
+%Applications: Interconnexion de sites distants à travers Internet, accès au réseau de l'entreprise à
+%partir d'un ordinateur connecté à Internet comme si on était à l'entreprise.
+%Mécanisme :
+%\begin{itemize}
+%  \item 2 sets d'adresses : IP public pour échanger des données sur Internet et des adresses privées
+%qui routent les paquets entre les hôtes sur le réseau privé.
+%  \item Encapsulation : le paquet est encapsulé dans un paquet IP pour son voyage sur Internet.
+%  \item Encryption : pour éviter le eavesdropping et les modifications de données sur le réseau
+%public.
+%\end{itemize}
+%Protocoles :
+%\begin{itemize}
+%  \item PPTP (Point to Point Tunneling Protocol) : développé par Microsoft.
+%  \item L2TP (Layer 2 Tunneling Protocol) : développé par IETF, rassemble L2F de Cisco et PPTP de
+%Microsoft.
+%  \item IPSec (IP Security) : développé par IETF.
+%\end{itemize}
+%14.2 IPSec :
+%Le standard est ouvert et extensible. Des algorithmes publics sont utilisés pour la confidentialité,
+%l'authentification et l'intégrité.
+%14.2.1 Modes d'opération :
+%\begin{itemize}
+%  \item Transport : les données sont encryptées et/ou authentifiées. La sécurité est faite de
+%manière end-to-end.
+%  \item Tunnel : tout le paquet est encapsulé dans un nouveau paquet. La sécurité peut être faite
+%par les routeurs intermédiaires.
+%Chaque routeur contient une Security Policy Database qui défini quel paquet doit être sécurisé
+%en fonction de sa destination et de sa source par exemple (e.g. : sécuriser le trafic telnet,
+%UDP,...)
+%\end{itemize}
+%14.2.2 Protocole d'échange de clés :
+%Internet Key Exchange (IKE) :
+%Protocole permettant l'installation d'un tunnel sécurisé entre partenaires.
+%Objectifs :
+%\begin{itemize}
+%  \item Authentification du partenaire
+%  \item Echange de clé entre partenaires
+%  \item Négociation du paramètre
+%\end{itemize}
+%- 51 -
+%Phases :
+%1. Négocier un IKE SA (Internet Key Exchange Security Association) pour protéger les négociations
+%\begin{itemize}
+%  \item Authentification : pre-shared secret (PSS), clés asymétriques, utiliser la clé publique
+%d'une certification authority (X.509)
+%  \item Echange de clés : clés générées avec Diffie-Hellman
+%  \item Négocier le paramètre
+%\end{itemize}
+%o Main mode : clé de session générée avec Diffie-Hellman (plein de paramètres) and
+%utilisée pour protéger le reste de la transaction (négociation du paramètre et
+%authentification).
+%
+% un eavesdropper ne sait pas dire l'identité des paires.
+%o Agressive mode : piggyback sur l'étape d'authentification pour l'échange de Diffie-
+%Hellman, les identités et le pwd hash sont envoyés en clair. MAIS ne doit échanger
+%que 3 paquets !
+%
+% attaquable (CKY cookie dans les headers des paquets IKE)
+%2.Définir les besoins du SA (Security Association) pour les flux ESP (Encapsulated Security
+%Payload) ou AH (Authetification Header)
+%Quick mode :
+%\begin{itemize}
+%  \item Sans Perfect Forward Secrecy (PFS) :
+%o Les session keys sont rafraichies périodiquement (1h)
+%o Les session keys sont issues du même secret
+%o Voler ce secret compromet toutes les clés
+%  \item Avec PFS
+%o A chaque nouvelle session key, on fait un Diffie-Hellman (plus lent)
+%o Voler 1 clé ne compromet pas les clés précédentes
+%\end{itemize}
+%Security Association :
+%Avant de pouvoir échanger des paquets en toute sécurité, les ordinateurs doivent établir une
+%Security Association (SA) en utilisant IKE.
+%Pour chaque communication sécurisée, le SA mémorise les algorithmes, les clés, la période de
+%validité des clés, le numéro de séquence et l'identité du partenaire.
+%Il faut 1 SA pour chaque flux unidirectionnel : une connexion TCP demande un SA pour chaque
+%direction. (1 SA par destination par protocole, par port).
+%Les SAs sont identifiés par un Security Parameter Index (SPI) :
+%\begin{itemize}
+%  \item La source indique le SPI sur tous les paquets qui sont envoyés (elle décide quels paquets
+%doivent être exécuté avec quel SA)
+%  \item La destination utilise le SPI pour trouver le SA qui décrit comment traiter ce paquet.
+%\end{itemize}
+%14.2.3 Protocole sécurisé :
+%Authentication Header (AH)
+%Pour vérifier l'authenticité et l'intégrité du paquet.
+%- 52 -
+%L'authentification est calculée sur base de :
+%\begin{itemize}
+%  \item Données qui suivent le AH
+%  \item Le header (mis à 0 quand il faut calculer l'information d'authentification)
+%  \item Les champs importants dans l'IP header : source, destination, protocol, length, version,...
+%  \item Les champs exclus de l'IP header : type of service, flags, fragment offset, TTL, header
+%checksum.
+%\end{itemize}
+%L'algorithme utilisé pour générer les données d'authentification est négocié à la création du SA.
+%
+% utilise le HMAC : sécurité démontrable, peut être utilisé avec n'importe quelle hash function,
+%maintient les performances de la hash function originale :
+%HMAC(K,m) = H( (K xor opad) || H((K xor ipad) || m) )
+%HMAC-SHA1-96 signifie HMAC calculé avec H=SHA1 et la sortie tronquée à 96 bits.
+%Encapsulated Security Payload (ESP)
+%Pour l'encryption et l'authentification du paquet.
+%L'encryption est seulement faite sur l'encapsulated data et le trailer (à la fin du paquet). PAS
+%d'encryption sur les champs du header, ni sur les données d'authentification.
+%L'authentification (optionnelle) est faite sur l'ESP header et tout ce qui suit MAIS PAS sur l'IP
+%header (différence avec AH).
+%Exemple d'algorithme :
+%\begin{itemize}
+%  \item Encryption : DES-CBC, NULL
+%  \item Authentification : HMAC-SHA-96, HMAC-MD5-96, NULL
+%\end{itemize}
+%NULL ne peut pas être utilisé dans le même SA pour l'encryption et l'authentification.
+%14.2.4 IPSec avec NAT
+%AH : que ça soit en mode transport ou tunnel, AH authentifie l'IP header et donc ne
+%permet pas au NAT de modifier l'IP source sans provoquer une perte d'intégrité.
+%ESP :
+%\begin{itemize}
+%  \item Mode transport : en TCP ou UDP, les headers sont encryptés et donc le checksum ne peut
+%pas être mis à jour
+%  \item Mode tunnel : le checksum TCP ou UDP fait référence à l'IP header interne, qui n'est pas
+%modifié par le NAT.
+%\end{itemize}
+%
+% ESP en mode tunnel est le seul moyen de traverser un NAT !
+%- 53 -
+%Sécurité au transport layer.
+%15. SSL :
+%15.1 SSL
+%SSL = Secure Socket Layer à été développé par NetScape
+%15.1.1 Applications
+%\begin{itemize}
+%  \item Créer un nouveau protocole à partir d'un protocole existant : HTTP -> HTTPS
+%o Désavantage : seuls les clients supportant TLS peuvent se connecter
+%o Avantage : sur que la communication est sécurisée
+%  \item Etendre un protocole pour négocier SSL/TLS : demander TLS avec STARTTLS
+%o Avantage : le client ne doit pas forcément supporter TLS pour utiliser le service
+%\end{itemize}
+%Exemples :
+%\begin{itemize}
+%  \item HTTPS :
+%o L'utilisation de TLS n'est pas négociable
+%o Garanti la confidentialité et l'authenticité des données transmises
+%o Le server doit avoir un certificat
+%o Le client peut en avoir un (e.g. : eBanking)
+%  \item Mail
+%o ESMTP, POP3, IMAP transmettent par défaut le mot de passe en clair
+%o TLS protège le mot de passe et le contenu du mail
+%\end{itemize}
+%15.2 TLS
+%TLS = Transport Layer Security (version actuelle de SSL). Se situe entre l'application et le network layer.
+%- 54 -
+%15.2.1 Record Layer
+%Traitement des données
+%\begin{itemize}
+%  \item Fragmentation
+%  \item Compression (optionnel)
+%  \item Authentification (MAC)
+%  \item Encryption
+%\end{itemize}
+%Transmets les fragments traités au transport layer
+%Une fois, transmis, les opérations inverses sont effectuées.
+%MAC :
+%MAC= hash ( MAC\_key || Pad2 ||
+%
+%hash(MAC\_key || Pad1 || Seq\_Nb || Length || Content))
+%- MAC\_key: secret shared by client and server.
+%- Pad1: constant character 0x36 repeated 48 times (if MD5) or 40 times (if SHA1).
+%- Pad2: constant character 0x5c repeated the same number of times.
+%- Seq\_Nb: sequence number of this message.
+%- Hash: Either HMAC-MD5 or HMAC-SHA1
+%- Length: Length in bytes of the compressed record.
+%- Content: Compressed record.
+%Encryption :
+%Faite sur des records compresses et authentifiés.
+%Soit avec du chiffrement par blocs:
+%o DES (40 bits ou 56 bits), 3DES, IDEA, RC2 (40 bits)
+%o AES (128 bits ou 256 bits) dans TLS v1.1 (256 bits pour les mails UCL)
+%Soit avec du chiffrement en flux:
+%o NULL, RC4 (40 bits ou 128 bits)
+%
+% le client doit refuser des clés de 40 bits si cette longueur est suggérée par le serveur.
+%15.2.2 Handshake protocol
+%Négociation de:
+%- protocole version (SSL 3.0, TLS 1.0, TLS 1.1).
+%- algorithmes:
+%o Key exchange (RSA, Diffie-Hellman).
+%o Encryption (DES, 3DES, IDEA, RC4, RC2, AES).
+%o MAC (HMAC-MD5, HMAC-SHA).
+%- Le client propose les algorithmes par ordre de préférence, le serveur choisi.
+%- Authentification optionnelle du partenaire en utilisant un certificat.
+%- Les messages ne sont pas cryptés.
+%- Le dernier message authentifie l'échange.
+%- 55 -
+%
+%Client\_Hello : utilisé par le client pour initialiser une connexion SSL (envoyé en clair sans
+%signature)
+%o Crypto : liste des algorithmes cryptographiques supportés (Authentication + key
+%exchange + cipher + hash).
+%Content:
+%-
+%-
+%-
+%-
+%-
+%-
+%Protocol Version.
+%32 bytes long random number.
+%Composed of two parts:
+%o 4 bytes Unix time (number of seconds since 01/01/1970)
+%o 28 bytes random number
+%Optional Session Identifier.
+%o Each SSL session has an identifier which can be used later to restart a
+%session.
+%List of supported Ciphers.
+%
+%List of supported Compression Methods.
+%\begin{itemize}
+%  \item Server\_Hello : réponse du serveur (envoyé en clair sans signature)
+%\end{itemize}
+%Content:
+%-
+%-
+%-
+%-
+%-
+%Protocol version: highest version of the protocol supported by both client and
+%server.
+%Random number.
+%Optional Session Identifier, if it allows sessions to be resumed.
+%Cipher Suite: One of the cipher suites proposed by client.
+%Compression Method.
+%- 56 -
+%
+%Server\_Certificate : le serveur s'authentifie (un serveur peut avoir plusieurs certificats à partir
+%de différentes certification authorities). Le certificat peut aussi être envoyé par le client quand
+%l'identification du client est demandée par le serveur avec Certificate\_Request.
+%Content:
+%-
+%A list of X.509 certificates:
+%o Server certificate.
+%o Certificates of certification authorities if any.
+%
+%
+%Server Hello\_Done : indique que le serveur a fini la 1ere phase du handshake (envoyé non
+%crypté).
+%Client\_Key\_Exchange : utilisé par le client pour envoyé le PreMasterSecret (encrypté avec la
+%clé publique du serveur).
+%o Utilise des nonce de 32B et un masterSecret de 48B
+%Content:
+%-
+%Encrypted PreMasterSecret with the public key of the server.
+%
+%
+%Change\_Cipher\_Spec :
+%o Utilisé par le client et le serveur pour signaler qu'il vont utiliser une nouvelle clé.
+%o Durant le handshake, indique que le prochain message sera encrypté avec la clé
+%appropriée.
+%Handshake\_Finished :
+%o Envoyé par le client et le serveur pour confirmer l'établissement d'une session SSL
+%sécurisée. (Sécurisée ssi le client et le serveur ont reçu ce message).
+%o Permet de détecter les man in the middle attack sur des messages Client\_Hello et
+%Server\_Hello (e.g.: proposer un chiffrement plus faible).
+%o Premier message encrypté dans chaque direction.
+%Content:
+%-
+%-
+%Keyed hash (MD5 or SHA-1) of all the handshake messages and the
+%MasterSecret.
+%
+%\section{Kerberos}
+%1.1 Motivation :
+%Parfois plusieurs utilisateurs veulent avoir l'accès à plusieurs serveurs sur un même réseau. Une
+%solution pour gérer la sécurité de l'authentification est que chaque serveur retienne les mots de passe
+%de chaque utilisateur. Cette approche n'est cependant pas idéale :
+%\begin{itemize}
+%  \item Elle n'est pas sure. Un seul serveur compromis peut compromettre tous les utilisateurs.
+%  \item Elle est inefficace. Les mots de passes doivent chaque fois être changés sur tous les serveurs.
+%  \item Elle n'est pas pratique. Les mots de passes doivent être entrés pour chaque requête.
+%\end{itemize}
+%Dès lors, il est plus raisonnable de centraliser les informations. Kerberos permet cela.
+%1.2 Kerberos :
+%Kerberos est un protocole d'authentification réseau qui repose sur un mécanisme de clés secrètes
+%l'utilisation de tickets. Il est basé sur de la cryptographie à clef symétrique. Une fois que
+%l'authentification est faire, on peut accéder au réseau sans devoir redonner son mot de passe ou nom
+%d'utilisateur.
+%1.3 Elements principaux :
+%Kerberos utilise tous les éléments suivants :
+%\begin{itemize}
+%  \item Un client C. C'est la personne qui veut se connecter au réseau.
+%  \item Un serveur d'authentification AS 1. Ce serveur va fournir au client un premier ticket (TGT 2 ), au
+%client qui en fait la demande.
+%  \item Un serveur de ticket (TGS 3). Une fois qu'un client présente son ticket à ce serveur, ce dernier
+%peut lui donner un autre ticket pour accéder à certaines ressources.
+%  \item un serveur S dont le client veut avoir l'accès. Pour avoir l'accès à ce serveur, le client doit avoir
+%le ticket correspondant fourni par le TGS.
+%Au final, pour qu'un client ait accès au serveur S, il doit avoir son ticket ainsi qu'un authentifiant.
+%Le ticket contient les informations suivantes
+%  \item Ic, l'identité du client.
+%  \item v, la période de validité du ticket.
+%  \item Kc,s, la clef symétrique de session à utiliser entre le client et le serveur.
+%  \item D'autres trucs comme des flags, l'adresse IP, etc.
+%\end{itemize}
+%Ce ticket est encryptée avec la clef Ks du serveur. L'authentifiant est juste l'identité du client (Ic) suivi
+%d'un timestamp t. Regardons à présent tous les messages échangés pour obtenir ce fameux ticket. Le
+%schéma ci dessous reprend l'ensemble des échanges.
+%Analysons les séparément.
+%1. Authentication server.
+%2. Ticket-granting ticket.
+%3. Ticket granting server.
+%- 58 -
+%1.3.1 Echange entre le client et AS:
+%Le client doit être authentifié pour pouvoir accéder au TGS. Dès lors, il va en tout premier lieu faire une
+%demande d'authentification à AS. Ce dernier va lui renvoyer un TGT encrypté avec la clef du TGS ainsi
+%qu'une clef de session encryptée avec la clef de C. Plus particulièrement, on a les messages suivants :
+%1. Ic, ITGS,N. Le client envoie à AS son identité, celle du TGS dont il veut faire une requête, ainsi
+%qu'un nonce utilisé pour éviter les replay attaques.
+%2. {ITGS,N,KC,TGS}KC , {IC, v,KC,TGS}KTGS . Le premier bloc peut être décrypté par le client pour
+%qu'il puisse le KC,TGS nécessaire pour la suite du protocole. Le deuxième bloc ne peut être
+%décrypté que par le TGS.
+%1.3.2 Echange entre le client et TGS:
+%Une fois le TGT reçu, le client va envoyer une requête au TGS. Le TGS va alors utiliser la clef de session
+%pour vérifier le ticket. Il peut alors voir si le client est autorisé à accéder au serveur S.
+%Si oui, il va donner au client un ticket lui accordant ce service. Pratiquement, on a les messages
+%suivants
+%1. Is,N0, {IC, v,KC,TGS}KTGS , {IC, t}Kc,TGS . On a l'identité du service voulu, un nounce, le TGT
+%ainsi que d'autres données encryptées avec la clef KC,TGS entre le client et le TGS et qui
+%comprend l'identité du client et un timestamp.
+%2. {IS,N0,KC,S}KC,TGS , {IC, v,KC,S}Ks . Le TGS répond un message pouvant être décrypté par le
+%client et qui contient une clef de session avec le service S, et un autre message ne pouvant être
+%décrypté que par S.
+%1.3.3 Echange entre le client et S:
+%Finalement, le client va demander l'accès au serveur S à travers les messages suivants
+%1. {Ic, v,KC,S}KS , {IC, t}KC,S . Le client envoie son ticket de service ainsi qu'un autre message que
+%le serveur ne pourra décrypter que quand il aura obtenu le KC,S. Il pourra alors voir que les
+%deux Ic correspondent bien.
+%2. {t}KC,S . Le serveur lui renvoie simplement un timestamp que le client peut décrypter.
+%Le client peut maintenant accéder au serveur !
+%1.4 Commentaires :
+%Avec Kerberos, la responsabilité de stocker les tickets revient exclusivement au client. Par
+%ailleurs, une fois qu'un client a eu son authentification (il la garde environ 8 heures), il ne doit plus
+%contacter AS. Il peut accéder aux autres services même si ce dernier est down. Et il est finalement
+%impossible de révoquer le ticket d'un client qui a été authentifié.
+%
+%\section{PGP}
+%Pretty Good Privacy (PGP) est un logiciel de chiffrement et de déchiffrement cryptographique.
+%Il garantit la confidentialité et l'authentification pour la communication des données. Il est le plus
+%souvent utilisé pour la signature de données, et sa gestion des clefs.
+%17.1 Encryption hybride :
+%PGP utilise pour encrypter les données à la fois des clefs asymétriques et symétriques, comme
+%le montre le schéma suivant.
+%Le système est donc hybride. Pour chiffrer un document, PGP utilise une clef symétrique aléatoire (clef
+%de session). Ensuite, PGP chiffre la clef de session avec la clef publique du destinataire.
+%Cela à d'une part l'avantage d'être rapide, au lieu de crypter l'entièreté du document avec la clef
+%publique (fort lent), on ne l'utilise que pour crypter la clef de session qui est nettement plus petite, et
+%d'autre part, le problème de distribution des clefs est réglé puisque la symétrique est encryptée. Pour
+%l'encryption symétrique beaucoup d'algorithmes peuvent être utilisés (TDES, IDEA, AED, etc.), pour
+%l'asymétrique on utilise généralement le RSA ou l'Elgamal qui se base sur le problème du logarithme
+%discret.
+%17.2 Signature de la clef publique :
+%Pour la signature, on utilise généralement l'algorithme DSA ou RSA. L'Elgamal n'est plus
+%recommandé du fait qu'une attaque a révélé que les clefs Elgemal n'étaient plus sûre lors qu'elles sont
+%utilisées pour l'encryption et pour la signature. De manière générale, il ne faut jamais utiliser la même
+%clef pour plusieurs choses.
+%17.3 Protection des clefs privées :
+%Les clefs privées sont encryptées sur le disque de l'utilisateur avec un algorithme se basant sur
+%une passphrase. Quand la clef est nécessaire, l'utilisateur utilise sa passphrase pour déchiffrer sa clef.
+%Cependant, pour préserver la sécurité, et respecter le principe du maillon le plus faible, la passphrase
+%doit être choisie intelligemment de sorte qu'elle soit aussi solide que les clefs utilisées pour la
+%signature ou l'encryption. Le tableau ci dessous reprend une correspondance de taille entre les clefs
+%symétriques et asymétriques pour avoir une même solidité.
+%- 60 -
+%17.4 Validité des clefs publiques :
+%Comment être sur qu'une clef qu'on utilise pour chiffrer un message est la clef correcte ? Une
+%manière sûre de vérifier cela, est de faire une rencontre IRL, vérifier l'identité de la personne, vérifier
+%le hash de la clef, et puis seulement signer la clef. En procédant comme cela, on peut être sûr que
+%la clef n'a pas été modifiée par la suite. On peut aussi utiliser des certificats.
+%17.5 Distribution des clefs publiques :
+%Il y a deux notions importances dans PGP.
+%1. La validité : Je sais à qui appartient cette clef.
+%2. La confiance : Je sais que cette personne ne signe pas des clefs n'importe comment.
+%Quand on signe une clef, on déclare sa validité. Sachant cela, on peut former un graphe dirigé
+%où les sommets correspondent aux différentes personnes et où les arêtes A ! B signifient que A a validé
+%la clef de B. On met aussi des poids sur les arêtes, 1 si A fait entièrement confiance à B, et 0.5 s'il lui
+%fait partiellement confiance. Dès lors, une personne peut considérer les clefs d'autres personnes
+%comme valide si d'une part, elle fait totalement confiance à une personne qui a vérifié l'adresses de
+%ces autres personnes (A fait confiance à B, et B a validé la clef de C : La clef de C est valide pour A) , ou
+%si d'autre part, elle fait moyennement confiance à plusieurs personnes qui ont vérifié la clef (A fait
+%moyennement confiance à B et C, mais B et C ont tout deux validé la clef de D : le clef de D est valide
+%pour A).
+%17.6 Révocation de clef :
+%Une manière naïve de procéder est de simplement enlever la clef du serveur. Cependant, il se
+%peut que la clef a été dupliquée sur d'autres serveurs, que des personnes l'aient téléchargée, etc.
+%On doit donc procéder autrement. On peut créer un certification de révocation de la clef quand on
+%génère cette dernière. On l'envoie alors sur le serveur PGP quand on veut révoquer la clef. Pour bien
+%faire, il faut aussi l'envoyer aux correspondants réguliers. Par ailleurs, lors de la génération d'une clef,
+%on met une limite de validité qui fait que la clef expire après cette date.
+%
+%
 \end{document}
