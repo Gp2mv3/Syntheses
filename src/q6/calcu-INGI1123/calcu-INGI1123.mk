@@ -1,2 +1,2 @@
 COURSE=calcu-INGI1123
-include ../../q6.mk
+include $(BASE_DIR)../../q6.mk

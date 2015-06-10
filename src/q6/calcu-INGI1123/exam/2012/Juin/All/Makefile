@@ -1,3 +1,3 @@
-SOL=only
+SOL=none
 MINMAJ=All
 include ../Juin.mk
