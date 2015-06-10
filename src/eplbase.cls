@@ -53,7 +53,7 @@
 \newcommand{\annexe}{\part{Annexes}\appendix}
 
 % Bibliography
-\newcommand{\biblio}{\bibliographystyle{plain}\bibliography{biblio}}
+\newcommand{\biblio}[1][plain]{\bibliographystyle{#1}\bibliography{biblio}}
 
 \RequirePackage{fullpage}
 
@@ -158,7 +158,7 @@
    votre aide est la bienvenue.}
 
    \IfLanguageName{english}
-   {to contribute to the bug tracker of the wiki,
+   {To contribute to the bug tracker or the wiki,
    you just have to create an account on GitHub.
    To interact with the source code of the summaries,
    you will have to install}
