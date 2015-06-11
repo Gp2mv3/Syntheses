@@ -1,2 +1,2 @@
 TYPE=summary
-include ../coo.mk
+include $(BASE_DIR)../coo.mk
