@@ -1,2 +1,2 @@
 TYPE=summary
-include ../telecom.mk
+include ../telecom-ELEC1930.mk
