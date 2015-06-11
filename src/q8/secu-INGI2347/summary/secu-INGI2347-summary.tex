@@ -1333,6 +1333,35 @@ injectant une requête SQL non prévue par le système et pouvant compromettre s
 
 \subsection{Denial of Service}
 
+Le déni de service consiste à empecher quelqu'un d'utiliser un service.
+Il y a deux approches possibles :
+
+\begin{itemize}
+	\item Déni de service dû a une faille dans le programme(ex:
+	input qui force le serveur a crash
+	\item Déni de service dû à l'épuisement des ressources du système
+	(ex:while(1);) 
+\end{itemize}
+
+\subsubsection{DoS et OS}
+
+Différentes façon de faire un DoS dans un systeme comme écrire 
+sur tout le disque dur ou créer plein de processus\\
+$\rightarrow$ Défense en isolant les utilisateurs et imposant des quotas.
+
+\subsubsection{Dos et Réseau}
+
+Pour faire un DoS sur l'accès internet d'une victime, il suffit de lui 
+envoyer plein de packet. Pour pouvoir faire cela, l'attacker a besoin
+de ressource:
+
+\begin{itemize}
+	\item Il lui faut au moins un bande passante supérieur au lien 
+	le plus faible de la connection internet de la victime.
+	\item Ou bien pouvoir surchager le routeur qui a la capacité de 
+	calcul la plus faible.
+\end{itemize}
+
 \subsubsection{Ping of death}
 
 La taille normale d'un Ping est de 64 octets (84 avec en-tête).
@@ -1395,14 +1424,40 @@ Protection:
     broadcast.
 \end{itemize}
 
+\subsubsection{DNS lookup}
+L'attacker profite du fait que les réponses DNS soit beaucoup plus
+grande. L'attacjer va donc envoyer des requêtes DNS avec l'IP 
+de la victime.\\
+$\rightarrow$ Autre techniques d'amplification car avec des
+petit paquet, on peut en générer de gros.
+
 \subsubsection{DDoS (Distributed Denial of Service)}
 
 Pour augmenter l'efficacité du déni de service, les pirates vont pirater plusieurs machines et installer
-des agents. Plusieurs machines maîtres contrôlent les agents. Le pirate envoie ensuite des commandes
-aux maîtres qui, vont exécuter l'attaque ordonnée par les agents.
+des agents.
+
+\begin{itemize}
+	\item L'attacker est appelé le \textbf{Botmaster} et il dispose de plusieurs
+	serveur appelés \textbf{Serveur-Maître} ou Commande\&Controle
+	\item Les C\&C envoient des ordres à des machines infectées
+	appelées \textbf{Bots} selon les désirs du Botmaster.
+\end{itemize}
+
 La puissance (bande passante) de l'attaque est multipliée par les agents.
 Il est plus difficile de retracer les pirates (2 couches intermédiaires).
-Puisque l'attaque provient de plusieurs sources, elle est beaucoup plus difficile à filtrer.
+Puisque l'attaque provient de plusieurs sources, elle est beaucoup plus 
+difficile à filtrer.
+
+\paragraph{Combattre bots} 
+\begin{itemize}
+	\item  Une approche serait de trouver l'IP du C\&C et le descendre.
+	 $\rightarrow$ L'attacker peut utiliser un nom de domaine pour pouvoir
+	 changer d'IP
+	\item  On pourrait alors saisir le nom de domaine $\rightarrow$
+	L'attaker change de nom de domaine et le bot génère un liste
+	de nom possible.
+\end{itemize}
+
 
 \subsubsection{RST injection}
 
@@ -1420,10 +1475,13 @@ La réponse à un message forgé est envoyé à l'adresse falsifiée.
 Facile à utiliser avec les protocoles basés sur UDP.
 
 \subsubsection{TCP/IP Spoofing}
+Il est difficil de faire une attaque spoofing dans une connection 
+TCP car il faut utiliser le bon numéro de séquence.
 
 \subsubsection{TCP/IP Spoofing Dans un LAN}
-
-L'attacker a un accès physique à un subnet.
+En sniffant le traffic circulant dans la LAN, l'attacker pourra
+facilement les numéros de séquences qu'il doit utiliser 
+pour spoofer une connection TCP.
 
 \subsubsection{TCP/IP Spoofing De l'extérieur}
 Prédiction de l'ISN (Incremental Sequence Number):
@@ -1490,12 +1548,13 @@ Si le pirate peut espionner ces données, il peut créer des demandes qui feraie
   Je définis l'abus e-mail comme un e-mail qui répond aux les trois de critères suivants:
   \begin{enumerate}
     \item Il est non sollicitée.
-    \item Il fait partie d'un ``mailing de masse''.
+    \item Il fait partie d'un ''mailing de masse''.
       (envois en nombre)
     \item L'expéditeur est un inconnu pour le destinataire.
       (Le destinataire n'a jamais eu de contact personnel volontaire avec l'expéditeur.)
   \end{enumerate}
 \end{mydef}
+Le spam est possible car de base SMTP ne vérife pas l'adresse de l'expéditeur
 
 \subsection{Conséquence du spam}
 Infrastructure.
@@ -1534,29 +1593,31 @@ Sources de bénéfices.
 
 \subsection{Spamming techniques:}
 \subsubsection{Méthode 1: utilisation de son propre serveur SMTP / ISP.}
-Le protocole utilisé par les serveurs de messagerie sur Internet est SMTP (Simple protocole de
-transfert de courrier), RFC 821, 1982.
-Comme ce protocole n'utilise aucune authentification, il est facile de forger des mails.
-Limitations :
-Le serveur qui reçoit le courrier initialement note:
+
+Comme ce protocole n'utilise aucune authentification, il est facile
+ de forger des mails.\\
+$\rightarrow$ Il facile de tracer l'expediteur cae chaque serveur 
+indique l'IP de la machine qui lui a envoyé le message. 
+\paragraph{Note: }Pour être non détectable, il faut lancer la 
+connexion telnet sur une machine qui ne log pas les
+utilisateurs.
+
+\subsubsection{Méthode 2: Abus de relais ouverts (Open Relay).}
+
+Un seul message est déposé dans quelques serveurs SMTP avec des 
+milliers d'adresses de destination
+chacun. Les serveurs abusés envoient poliment sur une copie du message
+à chaque destination.
+Éviter Open Relay:
 \begin{itemize}
-  \item Le contenu de la commande HELO.
-  \item L'adresse IP de l'expéditeur du courrier.
-  \item Le temps de réception.
+	\item Pour qu'un message soit accepté par le serveur de messagerie,
+	 l'adresse du destinataire ou de l'expéditeur doivent appartenir au 
+	 même domaine que le serveur.
+	 \item Seul les machines appartenant au même domaine que le serveur 
+	 de messagerie peuvent envoyer un email avec un expéditeur faisant
+	 partie du domaine.
 \end{itemize}
 
-Avec ces données, il est souvent facile de trouver l'auteur de l'e-mail. Il est souvent facile d'obtenir les
-mêmes résultats en seulement modifiant la configuration de votre programme de messagerie.
-Pour être non détectable, il faut lancer la connexion telnet sur une machine qui ne log pas les
-utilisateurs.
-\subsubsection{Méthode 2: Abus de relais ouverts (Open Relay).}
-Un seul message est déposé dans quelques serveurs SMTP avec des milliers d'adresses de destination
-chacun. Les serveurs abusés envoient poliment sur une copie du message à chaque destination.
-Éviter Open Relay:
-Pour qu'un message soit accepté par le serveur de messagerie, l'adresse du destinataire ou de
-l'expéditeur doivent appartenir au même domaine que le serveur.
-Ou encore que seul les machines appartenant au même domaine que le serveur de messagerie puisse
-transmettre des email avec un envoyeur du domaine, à celui-ci.
 
 \subsubsection{Méthode 3: l'abus d'un compte webmail.}
 Utilisez un script pour ouvrir de nombreux comptes webmail et envoyer du spam jusqu'a ce que les
@@ -1565,11 +1626,7 @@ comptes soient fermés.
 \subsubsection{Méthode 4: pirater des ordinateurs personnels.}
 Utilisez un virus qui infecte les ordinateurs personnels (les transformant en «bots»).
 Utilisez un réseau de bots pour envoyer le spam.
-Note : Botnet
-Botnet = Un réseau de machines piratées contrôlées par un hacker.
-Généralement, les bots se connectent à un Relay chat Internet et
-attendent les commandes de leur maître.
-Récupération d'adresse e-mail :
+
 \begin{itemize}
   \item Acheter un fichier d'adresses email.
   \item Crawler (robot d'indexation) qui parcours le Web.
@@ -1596,34 +1653,49 @@ Logiciel de filtrage (Ex. Spamhaus ) utilisant les listes SBL et XBL.
   \item XBL: adresses IP des systèmes détournés s'appuyant spams.
 \end{itemize}
 Les serveurs de messagerie peuvent utiliser cette base pour filtrer le trafic entrant.
-Avantages:
-\begin{itemize}
-  \item Pas cher.
-  \item Facile à mettre en pratique, mais nécessitent une liste noire centralisée pour que la technique soit efficace.
-\end{itemize}
-Inconvénient:
-\begin{itemize}
-  \item Beaucoup de faux négatifs.
-  \item Gestionnaire de la liste noire doit être réactif.
-\end{itemize}
+\begin{figure}[h!]
+\centering
+	\begin{tabular}{|c|c|}
+		\hline
+		Avantage&Inconvénient\\
+		\hline
+		Pas cher&Beaucoup de faux négatifs\\
+		Facile à mettre en pratique&Mise à jour de la liste noire\\
+		\hline
+	\end{tabular}
+\end{figure}
 
 \subsubsection{Filtre: listes blanches}
 Au lieu de bloquer des e-mails, la réception n'est possible que si l'expéditeur (domaine, adresse IP, etc)
 appartient à la liste blanche.
-Avantages:
-\begin{itemize}
-  \item Pas cher.
-  \item Facile à mettre en pratique.
-\end{itemize}
-Inconvénient:
-\begin{itemize}
-  \item Expéditeurs autorisés doivent être connus a priori.
-  \item Beaucoup de faux positifs.
-\end{itemize}
+\begin{figure}[h!]
+\centering
+	\begin{tabular}{|c|c|}
+		\hline
+		Avantage&Inconvénient\\
+		\hline
+		Pas cher&Beaucoup de faux positifs\\
+		Facile à mettre en pratique&Expéditeurs autorisés connus a priori\\
+		\hline
+	\end{tabular}
+\end{figure}
 
 \subsubsection{Filtre: Spam Database}
 Base de données maintenue sur un serveur centralisé. Le logiciel vérifie si le message reçu apparaît
 dans la base de données.
+
+\begin{figure}[h!]
+\centering
+	\begin{tabular}{|c|c|}
+		\hline
+		Avantage&Inconvénient\\
+		\hline
+		Base de donnée partagée&Variante spam non detectées\\
+		Peu de faux positif&Beaucoup de faux négatif\\
+		&Exige calcul et bande passante\\
+		\hline
+	\end{tabular}
+\end{figure}
 Avantages:
 \begin{itemize}
   \item La base de données est partagée.
@@ -1667,7 +1739,14 @@ Inconvénient:
   \item[Ajout coût aux e-mails.]
     L'ordinateur doit effectuer un calcul pour envoyer un e-mail.
 \end{description}
-
+\subsubsection{Monétisation Spam}
+\begin{itemize}
+	\item Louer le service de spammer pour améliorer les ventes.
+	\item Utiliser le phishing pour glaner des informations pour ensuite
+	les revendres.
+	\item Arnaquer des victimes.
+	\item ...
+\end{itemize}
 
 \section{Firewall}
 Devoir gérer la sécurité sur un grand nombre de nombre de machine,
@@ -2264,7 +2343,8 @@ remplacé par un nouveau, un site sécurisé peut toujours être
 vulnérable.
 \subsection{SSL/TLS}
 SSL inventé à la base pour offrir un protection de la communication en
-se focalisant sur la couche transport. %TODO ajouter image couche 
+se focalisant sur la couche transport (SSL entre la couche transport
+et Application). \\
 Plusieurs version de SSL existent, le version est celle qui a amené à TLS.
 Par défaut, les protocols comme SMTP ou HTTP envoie les mots de passes
 en texte clair. TLS permet de palier à se problème en étendant ces protocoles
@@ -2313,15 +2393,21 @@ Les messages lors de l'handshake ne sont pas cryptés, les entitées négocient:
 	\item La version du protocole (SSL 3.0,TLS 1.0,1.1)
 	\item Algo pour:
 	\begin{itemize}
-		\item Échanger les clés
-		\item Encrypter
-		\item MAC
+		\item Échanger les clés (RSA,Diffe-Hellman)
+		\item Encrypter (3DES,AES,...)
+		\item MAC (HMAC-MD5,HMAC-SHA)
 	\end{itemize}
 \end{itemize}
+Le client propose les algo désirés par ordre de préférence et le serveur
+choisis.
 \begin{figure}[h]
 	\centering
 	\includegraphics[scale=0.5]{img/handshake.png}
 \end{figure}
+\paragraph{Pretty Good Privacy}
+Ce fut le premier logiciel qui permettait de protéger les documents
+et les messages. Il utilisait les algo de cryptographie tel que 
+RSA,SHA-1,...
 
 \section{Passwords}
 \subsection{Stockage}
