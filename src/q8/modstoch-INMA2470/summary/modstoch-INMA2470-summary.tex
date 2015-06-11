@@ -1,0 +1,991 @@
+\documentclass[en]{../../../eplsummary}
+
+\newcommand{\E}{\mathbb{E}}
+\DeclareMathOperator{\var}{\mathbb{V}ar}
+
+\DeclareMathOperator{\expo}{Expo}
+\DeclareMathOperator{\erlang}{Erlang}
+\DeclareMathOperator{\po}{Po}
+
+\renewcommand{\P}{\mathbf{P}}
+\renewcommand{\r}{\mathbf{r}}
+\renewcommand{\v}{\mathbf{v}}
+\newcommand{\w}{\mathbf{w}}
+\renewcommand{\k}{\mathbf{k}}
+\newcommand{\1}{\mathbf{1}}
+
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+% http://tex.stackexchange.com/questions/86883/cancelling-out-cells-in-tables
+\usepackage{tikz}
+\usepackage{tkz-graph}
+\newcommand{\tikzmark}[1]{\tikz[remember picture,overlay, baseline=-0.5ex]\node (#1){};}
+\newcommand{\connect}[3][3mm]{\tikz[remember picture,overlay]\draw[shorten <=-#1, shorten >=-#1](#2)--(#3);}
+
+\hypertitle{Discrete stochastic models}{8}{3}{4}
+{Benoît Legat}
+{Philippe Chevalier}
+
+\begin{center}
+  \begin{tikzpicture}
+    \node[left] at (-2,-1) {Poisson Processes};
+    \node[left] at (-2, 1) {Renewal Processes};
+    \draw[thick,->] (-2, 1) to (-1,.1);
+    \draw[thick,->] (-2, -1) to (-1,-.1);
+    \node[right] at (-1,0) {Markov Processes};
+    \draw[thick,->] (.8, .8) to (.8,.2);
+    \node[above] at (.8, .8) {Markov Chains};
+    \draw[thick,->] (2.8, 0) to (3.4,0);
+    \node[right] at (3.4, 0) {Queueing Systems};
+    \draw[thick,->] (2.5, 1) to (3.4,1);
+    \node[right] at (3.4, 1) {Markov Decision Processes (MDP)};
+  \end{tikzpicture}
+\end{center}
+
+We can see that the Semi-Markov Processes are the generalization of all the process we will see.
+
+\begin{center}
+  \begin{tabular}{l|l|l}
+    & No state & $X_n$ only dependent on $X_{n-1}$\\
+    \hline
+    No transition time & & Markov Chain\\
+    \hline
+    $T_n$ general & Renewal Process & Semi-Markov Process\\
+    \hline
+    $T_n \sim \expo(\lambda)$ & Poisson Process & Markov Process
+  \end{tabular}
+\end{center}
+
+\section{Probability}
+For more information for this chapter, read \cite[\S1.7]{gallager1995discrete} or \cite[\S1.5]{gallager2010discrete}.
+%\[ \bar{F}_X(x) = 1 - F_X(x) \]
+
+\begin{myineg}[Markov's inequality]
+  Let $Y$ be a positive random variable.
+  We have
+  \[ \Pr[Y \geq y] \leq \frac{1}{y}\E[Y] \]
+  \begin{proof}
+    We can see that
+    \begin{align*}
+      E[Y]
+      & = \int_0^\infty x f(x) \dif x\\
+      & \geq \int_y^\infty x f(x) \dif x\\
+      & \geq y \int_0^y f(x) \dif x\\
+      & = y \Pr[Y \geq y].
+    \end{align*}
+  \end{proof}
+\end{myineg}
+
+If the variance is known, there is a useful corollary
+\begin{myineg}[Chebyshev's inequality]
+  Let $Y$ be a random variable.
+  For an $\epsilon > 0$, we have
+  \[ \Pr[|Y-\E[Y]| \geq \epsilon] \leq \frac{\sigma_Y^2}{\epsilon^2}. \]
+  \begin{proof}
+    Let $Z = (Y - \E[Y])^2$, we see that $Z$ is a positive random variable so we can use Markov's inequality with $z = \epsilon^2$:
+    \begin{align*}
+      \var[Y]
+      & = E[Z]\\
+      & \geq \epsilon^2 \Pr[Z \geq \epsilon^2]\\
+      & = \epsilon^2 \Pr[(Y - \E[Y])^2 \geq \epsilon^2].
+    \end{align*}
+  \end{proof}
+\end{myineg}
+
+It is easy to prove the weak law of large numbers using Chebyshev's inequality.
+\begin{mytheo}[Weak Law of Large Numbers]
+  Let $X_1, \ldots, X_n$ we idependent and identically distributed random variables
+  with finite mean $\bar{X}$ and finite variance $\sigma_X^2$.
+  Denote their sum
+  \[ S_n = X_1 + \cdots + X_n. \]
+  For any $\epsilon > 0$,
+  \[ \lim_{n \to \infty} \Pr\Big[ \Big|\frac{S_n}{n} - \bar{X}\Big| \geq \epsilon \Big] = 0. \]
+
+  \begin{proof}
+    Let's fix $n$ and consider the random variable $Y = S_n/n$.
+    It is easy to see that $\E\{Y\} = \bar{X}$ and $\var\{Y\} = \sigma_X^2/n$~\cite[(1.41)]{gallager2010discrete}.
+    Applying the Chebyshev's inequality we get
+    \[ \Pr[|Y - \E[Y]| \geq \epsilon] \leq \frac{\sigma_X^2}{n\epsilon^2}. \]
+    Since $\sigma_X^2 = 0$, we see directly that
+    \[ \lim_{n \to \infty} \Pr[|Y - \E[Y]| \geq \epsilon] = 0. \]
+  \end{proof}
+\end{mytheo}
+
+\begin{mytheo}[Central limit theorem (CLT)]
+  Let $X_1, X_2, \ldots$ be iid random variables with
+  finite mean $\bar{X}$ and finite variance $\sigma^2$.
+  Then for every real number $z$,
+  \[ \lim_{n \to \infty} \Pr\left\{ \frac{S_n-n\bar{X}}{\sigma\sqrt{n}} \sim \Phi(z) \right\} \]
+  where $\Phi$ is the normal distribution function
+  \[ \Phi(z) = \int_{-\infty}^z \frac{1}{\sqrt{2\pi}} \exp\Big(-\frac{y^2}{2}\Big) \dif y. \]
+\end{mytheo}
+
+\begin{center}
+``The strong law requires considerable patience to understand, but it is a basic and essential result in understanding stochastic processes''\hfill\cite[p.~35]{gallager2010discrete}.
+\end{center}
+
+\begin{mytheo}[Strong Law of Large Numbers (SLLN)]
+  For each integer $n \geq 1$.
+  Let $X_1, X_2, \ldots$ be iid random variables with $\E[|X|] < \infty$.
+  Then
+  \[ \Pr\Big\{ \lim_{n \to \infty} \frac{S_n}{n} = \bar{X} \Big\} = 1. \]
+\end{mytheo}
+
+In short, the Weak Law of Large Numbers guarantees a convergence in probability and the Strong Law a convergence in distribution.
+
+\section{Poisson Processes}
+\cite[\S2]{gallager1995discrete,gallager2010discrete}
+
+A Poisson Process is represented by an arrival rate $\lambda$.
+
+The time between two consecutive arrivals are represented by the iid random variable $X_i$ (see \figuref{poisson}).
+For a fixed $i$, $X_i \sim \expo(\lambda)$ is a continuous random variable for which
+\begin{align*}
+  f_X(t) & = \lambda \exp(-\lambda t), & x \geq 0,\\
+  F_X(t) & = 1 - \exp(-\lambda t), & x \geq 0,\\
+  \E[X]  & = \frac{1}{\lambda},\\
+  \var[X]  & = \frac{1}{\lambda^2}.
+\end{align*}
+The key property of the exponential distribution is the lack of memory:
+$\forall t,x > 0$,
+\[ \Pr[X > t+x \mid X > t] = \Pr[X > x]. \]
+It somewhat defies the intuition.
+If there have been no arrival for a lot of time, it does not mean that it is more likely that there will be an arrival soon.
+
+The exponential law shouldn't be misinterpreted, it really means that the chance of arrival is uniform in time.
+However the uniform distribution doesn't fit here
+since $X_1$ represents the time for one arrival so we kind of stop counting when someone has arrived.
+Therefore of course $f_{X_1}(t_1) > f_{X_1}(t_2)$ if $t_1 < t_2$.
+That doesn't mean that it is less likely that someone arrive at $t_2$ than $t_1$.
+It just means that it is less likely that the \emph{first} arrival will be at $t_2$ than $t_1$.
+
+Their sum, $S_n$ is the time from the start the the $n$th arrival.
+For a fixed $n$, $S_n \expo \erlang_n(\lambda,n)$ is a continuous random variable for which
+\begin{align*}
+  f_{S_n}(t) & = \frac{\lambda^nt^{n-1}\exp(-\lambda t)}{(n-1)!}, & t \geq 0,\\
+  F_{S_n}(t) & = \frac{\gamma(n,\lambda t)}{(n-1)!} = 1 - \sum_{k=0}^{n-1} \frac{1}{k!}\exp(-\lambda t) (\lambda t)^n, & t \geq 0\\
+  \E[S_n] & = \frac{n}{\lambda},\\
+  \var[S_n] & = \frac{n}{\lambda^2}.
+\end{align*}
+
+$N(t)$ is the number of arrival from the start to the time $t$.
+For a fixed $t$, $N(t) \sim \po(\lambda t)$ is a discrete random variable for which
+\begin{align*}
+  \Pr[N(t) = n] & = \frac{(\lambda t)^n\exp(-\lambda t)}{n!}, & n \geq 0,\\
+  F_{N(t)}(n)   & = \frac{\Gamma(n+1,\lambda t)}{n!} = \exp(-\lambda t) \sum_{i=0}^n \frac{(\lambda t)^i}{i!}, & n \geq 0\\
+  \E[N(t)]      & = \lambda t,\\
+  \var[N(t)]    & = \lambda t.
+\end{align*}
+The key property of $N$ is
+\begin{description}
+  \item[Property of stationary increment] The number of arrivals between $t$ and $t'$ is
+    \[ N(t') - N(t) = N(t'-t) - N(t-t) = N(t'-t). \]
+  \item[Property of independent increment] For any sequence $0 < t_1 < t_2 < t_2 < \cdots < t_k$,
+    the random variables $N(t_1), N(t_2-t_1), \ldots, N(t_k-t_{k-2})$ are independent.
+\end{description}
+For small $t = \delta$, we can use the following equations to build approximations
+\begin{align}
+  \label{eq:inc1}
+  \Pr[N(\delta) = 0]    & = 1 - \lambda \delta + o(\delta)\\
+  \label{eq:inc2}
+  \Pr[N(\delta) = 1]    & = \lambda \delta + o(\delta)\\
+  \label{eq:inc3}
+  \Pr[N(\delta) \geq 2] & = o(\delta)
+\end{align}
+where $o$ is such that $\lim_{x \downarrow 0} \frac{o(x)}{x} = 0$ and $o(0) = 0$.
+
+It is important to stress the fact that on the contrary to what the intuition would say,
+if there have been many arrival or few arrival preceding a time $t$, it won't affect the time before the next arrival after $t$.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{tikzpicture}
+    \draw[thick,->] (0,0) to (11.5,0);
+    \draw (0,.1) to (0,-.1);
+    \draw[<->] (0,-1) to (1,-1);
+    \node[below] at (.5,-1) {$X_1$};
+    \draw (1,.1) to (1,-.1);
+    \node[below] at (1,-.1) {$t_1$};
+    \draw[<->] (1,-1) to (3.5,-1);
+    \node[below] at (2.25,-1) {$X_2$};
+    \draw (3.5,.1) to (3.5,-.1);
+    \node[below] at (3.5,-.1) {$t_2$};
+    \draw[<->] (3.5,-1) to (7,-1);
+    \node[below] at (5.25,-1) {$X_3$};
+    \draw (7,.1) to (7,-.1);
+    \node[below] at (7,-.1) {$t_3$};
+    \draw[<->] (7,-1) to (8,-1);
+    \node[below] at (7.5,-1) {$X_4$};
+    \draw (8,.1) to (8,-.1);
+    \node[below] at (8,-.1) {$t_4$};
+    \draw[<->] (8,-1) to (11,-1);
+    \node[below] at (9.5,-1) {$X_5$};
+    \draw (11,.1) to (11,-.1);
+    \node[below] at (11,-.1) {$t_5$};
+
+    \draw[<->] (0,-2) to (3.5,-2);
+    \node[below] at (1.75,-2) {$S_2$};
+    \draw[<->] (0,-2.5) to (8,-2.5);
+    \node[below] at (4,-2.5) {$S_4$};
+
+    \draw[dashed] (5,.3) to (5,0);
+    \node[above] at (5,.3) {$N(t) = 2$};
+
+    \draw[dashed] (10,.3) to (10,0);
+    \node[above] at (10,.3) {$N(t) = 4$};
+  \end{tikzpicture}
+  \caption{Example of Poisson Process}
+  \label{fig:poisson}
+\end{figure}
+
+A crucial question that the reader is totally right to ask now is:
+how do we prove that ``something'' is a Poisson Process ?
+Excellent question ! Let me answer this using the following theorem.
+\begin{mytheo} % TODO define renewable process
+  Consider a process counting arrivals.
+  \begin{itemize}
+    \item The process is a Poisson Process with arrival rate $\lambda$.
+    \item The process is a renewable process (i.e. iid arrivals) for which the interarrival intervals have an exponential distribution function with parameter $\lambda$.
+    \item The counting process has independent and stationary increment properties and for all $y \geq 0$, \( N(t) \sim \po(\lambda t) \).
+    \item The counting process has independent and stationary increment properties and for all \eqref{eq:inc1}, \eqref{eq:inc2} and \eqref{eq:inc3} hold for all $t,\delta \geq 0$
+  \end{itemize}
+\end{mytheo}
+
+\paragraph{Combining Poisson Processes}
+If we combine two \emph{independent} poisson processes with arrival rate $\lambda_1$ and $\lambda_2$,
+the combination has arrival rate $\lambda_1 + \lambda_2$.
+
+\paragraph{Subdividing a Poisson Process}
+If an arrival for a Poisson Process is either redirected to
+the process 1 with probability $p$ or to
+the process 2 with probability $1-p$, then
+the process 1 and 2 are \emph{independent} poisson processes with respective arrival rate
+$\lambda_1 = p\lambda$ and $\lambda_2 = (1-p)\lambda$.
+
+\subsection{Symmetry and order}
+If it is known that $N(T) = n$,
+$S_1, \ldots, S_n$ behave like uniform random variables of support $[0,T]$.
+Precisely, we can see the sampling process for $S_1, \ldots, S_n$
+as picking $n$ uniform random variables $U_1, \ldots, U_n$ in $[0,T]$ then sorting them
+and giving to $S_i$ the value of the $i$th one.
+
+Since we sort them, the $n$ values $s_1, \ldots, s_n$ have probability 0 to happen if they are not in nondecreasing order (of course),
+but if they are in increasing order, there are $n!$ different choice of $u_1, \ldots, u_n$ that give those values of $s_1, \ldots, s_n$.
+Therefore, we have
+\[ f_{S_1, \ldots, S_n}(s_1, \ldots, s_n \mid N(T) = n) = \frac{n!}{T^n}. \]
+The $X_i$ are still independent an for $1 \leq i \leq n$,
+\begin{align*}
+  f_{X_i}(t \mid N(T) = n) & = n \Big(\frac{T-t}{T}\Big)^{n-1}, & t & \geq 0,\\
+  F_{X_i}(t \mid N(T) = n) & = 1 - \Big(\frac{T-t}{T}\Big)^n,   & t & \geq 0,\\
+  \E[X_i \mid N(T) = n]    & = \frac{t}{n+1}.
+\end{align*}
+For $S_i$ we have
+\begin{align*}
+  f_{S_i}(t \mid N(T) = n) & = \frac{t^{i-1}(T-t)^{n-i}n!}{T^n(n-i)!(i-1)!} & t & \geq 0.
+\end{align*}
+
+\subsection{Non-homogeneous Poisson Processes}
+For now we have assumed that $\lambda(t)$ was constant in time, i.e. $\lambda(t) = \lambda$ $\forall t \geq 0$.
+
+If it is not constant, we lose the property of stationary increment.
+We could keep it if we consider a non-linear time scale.
+Let's consider small increments $\dif t$.
+The property of stationary increment said that $N(t + \dif t) - N(t) = N(\dif t)$.
+For Non-homogeneous Poisson Processes, we have instead
+\[ N\Big(t + \frac{\dif t}{\lambda(t)}\Big) - N(t) = N\Big(\frac{\dif t}{\lambda_0}\Big). \]
+That is, we partition the time axis in increments $\dif t/\lambda(t)$.
+We have
+\begin{align*}
+  \Pr\Big[N\Big(t+\frac{\delta}{\lambda(t)}\Big) - N(t) =    0\Big] & = 1 - \delta + o(\delta)\\
+  \Pr\Big[N\Big(t+\frac{\delta}{\lambda(t)}\Big) - N(t) =    1\Big] & = \delta + o(\delta)\\
+  \Pr\Big[N\Big(t+\frac{\delta}{\lambda(t)}\Big) - N(t) \geq 2\Big] & = o(\delta)
+\end{align*}
+
+From this idea, one can show that~\cite[Theorem~2.5]{gallager2010discrete}
+\begin{align*}
+  \Pr[N(t_2)-N(t_1) = n] & = \frac{[m(t_1,t_2)]^n \exp[-m(t_1,t_2)]}{n!}, & t_1,t_2 & \geq 0,\\
+  m(t_1, t_2)            & = \int_{t_1}^{t_2} \lambda(\tau) \dif \tau.
+\end{align*}
+Note that $\Pr[N(t) = n]$ is easily obtained by taking $t_1 = 0$ and $t_2 = t$.
+
+\begin{myexem}
+  Let's consider an M/G/$\infty$ Queueing System.
+  We want to analyse the number of people in the being serviced at a given time $\tau$.
+  Let $N_\tau(t)$ be the number of people arrived between $0$ and $t$ and still being serviced at $\tau$.
+  We have the independent increment property.
+  Let's see the stationarity of the increment:
+  \[ N_\tau(t+\dif t) - N_\tau(t) = (1 - F_G(\tau - t)) N(\dif t). \]
+  That means that $\lambda_\tau(t) = (1-F_G(\tau-t)) \lambda$.
+  We have
+  \begin{align}
+    \notag
+    m(0,\tau) & = \lambda \int_0^\tau 1 - F_G(\tau - t) \dif t\\
+    \notag
+              & = \lambda \tau - \lambda \int_0^\tau \int_0^{\tau-t} f_G(t') \dif t' \dif t\\
+    \notag
+              & = \lambda \tau - \lambda \int_0^\tau f_G(t') \int_0^{\tau-t'} \dif t \dif t'\\
+    \notag
+              & = \lambda \tau - \lambda \int_0^\tau f_G(t') (\tau-t') \dif t'\\
+    \label{eq:mginf}
+              & = \lambda \int_0^\tau f_G(t') t' \dif t'
+               %& = \lambda \int_0^\infty f_G(t') \int_{t_1}^{\min(t_2,t')}  \dif t \dif t'\\
+  \end{align}
+  so
+  \begin{align*}
+    \lim_{\tau \to \infty} m(0,\tau) & = \lambda\E[G].
+  \end{align*}
+  Therefore
+  \[ \lim_{\tau\to\infty} \Pr[N_{\tau}(\tau) = n] = \frac{[\lambda\E[G]]^n \exp[-\lambda\E[g]]}{n!} \]
+  hence the number of people being serviced tends to (or is in steady state) a Poisson distribution $\po(\lambda\E[G])$.
+  In other word, $N_\tau$ tends to be an homogeneous Poisson Process with arrival rate $\lambda$ that has started at time $\tau - \E[G]$.
+
+  It is interesting to compare \figuref{mginf} with \eqref{eq:mginf}.
+  For $\tau < \inf$, we $m(0,\tau) < \lambda \E[G]$ because the
+  part of the integral form $\tau$ to $\infty$ is missing.
+
+  \begin{figure}[!ht]
+    \begin{subfigure}{0.5\textwidth}
+      \begin{tikzpicture}[scale=1.3]
+        \draw[thick, domain=0:4] plot
+        (\x, {1/2});
+        \draw[thick, domain=0:4] plot
+        (\x, {exp((\x)-4)});
+        \draw[dashed,->] (0,0) to (4.5,0);
+        \draw[dashed,->] (0,0) to (0,1.5);
+        \draw (-0.1,1/2) to (0.1,1/2);
+        \node[left] at (-0.1,1/2) {$\lambda$};
+        \draw (-0.1,1) to (0.1,1);
+        \node[left] at (-0.1,1) {$1$};
+        \draw (4,.1) to (4,-.1);
+        \node[below] at (4,-.1) {$\tau$};
+        \node[above] at (4,1) {$1 - F_G(\tau-t)$};
+      \end{tikzpicture}
+      \caption{Plot of $\lambda$ and the probability to be still serviced at $\tau$.
+      $\lambda(t)$ is the product of the two curves.}
+      \label{fig:mginf}
+    \end{subfigure}
+    \begin{subfigure}{0.5\textwidth}
+      \begin{tikzpicture}[scale=1.3]
+        \draw[thick, domain=0:4] plot
+        (\x, {1/2});
+        \draw[thick, domain=0:3] plot
+        (\x, {0});
+        \draw[thick] (3,0) to (3,1);
+        \draw[thick, domain=3:4] plot
+        (\x, {1});
+        \draw[dashed,->] (0,0) to (4.5,0);
+        \draw[dashed,->] (0,0) to (0,1.5);
+        \draw (-0.1,1/2) to (0.1,1/2);
+        \node[left] at (-0.1,1/2) {$\lambda$};
+        \draw (-0.1,1) to (0.1,1);
+        \node[left] at (-0.1,1) {$1$};
+        \draw (4,.1) to (4,-.1);
+        \node[below] at (4,-.1) {$\tau$};
+        \draw (3,.1) to (3,-.1);
+        \node[below] at (3,-.1) {$\tau-\E[G]$};
+      \end{tikzpicture}
+      \caption{$N_\tau(\tau)$ tends to a homogeneous Poisson Process
+      of arrival rate $\lambda$ having started at $\tau-\E[G]$.}
+    \end{subfigure}
+  \end{figure}
+\end{myexem}
+
+% TODO arithmetic, Bernoulli
+
+\section{Renewal Processes}
+\cite[\S3]{gallager1995discrete,gallager2010discrete}
+A Renewal Process is a counting process for which the times between 2 arrivals are iid random variables.
+
+We define $X_i, S_n, N(t)$ the same way as for Poisson Process except that here $X_i$ is not an exponential.
+After an arrival, it is like $t = 0$ since the $X_i$ are iid: i.e.
+for $t \geq 0$, $N(S_n+t) - N(S_n)$ has the same distribution than $N(t)$.
+However, it is not the same of the property of stationary increment of Poisson process where we can take any $t,t'$.
+Here we look at the increment starting at $S_n$ because we cannot start at the middle of an arrival because since the $X_i$
+are not exponential they are not memoryless.
+
+The mean $\bar{X} = \E[X_i]$ of $X_i$ is supposed to be finite but the variance $\sigma$ can be infinite.
+
+We have a useful property linking $S_n$ and $N(t)$: $\forall n,t$,
+\begin{align}
+  \label{eq:snnt}
+  S_n \leq t & \Leftrightarrow N(t) \geq n & S_n \geq t & \Leftrightarrow N(t) < n.
+\end{align}
+Note that since Poisson Processes is a particular case of Renewal Processes, it is also true for Poisson Processes.
+
+We can show that
+\[ \lim_{t \to \infty} N(t) = \infty \]
+with probability 1 and
+\[ \lim_{t \to \infty} \E[N(t)] = \infty. \]
+Note that for the second identity,
+since $\E[N(t)]$ is deterministic we do not need to specify the type of convergence (e.g. with probability 1, ...).
+
+Using this identity and the String Law of Large Numbers (SLLN), we can show that
+\[ \lim_{t \to \infty} \frac{N(t)}{t} = \frac{1}{\bar{X}} \]
+with probability 1.
+
+\begin{mydef}[Decision rule]
+  A \emph{decision rule} is a sequence $\{I_n\}_{n=1}^\infty$ that is the indicator function of a set $\{\, 1 \leq n \leq N \,\}$ where $N$ is a random function.
+\end{mydef}
+
+\begin{mydef}[Stopping time]
+  A \emph{stopping time} for a sequence of rv $\{X_i\}_{i=1}^\infty$ is a positive integer rw $N$ such that
+  $\forall n$, $I_n$ is independent of $X_i$ for $i \geq n$.
+\end{mydef}
+
+Note that for renewal processes, $N(t)$ is not a stopping time.
+Indeed, using \eqref{eq:snnt},
+we can see that $I_n = [N(t) \geq n] = [S_n \leq t]$ where $\P$ is 1 if $P$ is true and 0 otherwise.
+
+$N(t)+1$ however, is a stopping time,
+since that means that $I_n = [N(t)+1 \geq n] = [N(t) \geq n-1] = [S_{n-1} \leq t]$
+and $S_{n-1}$ is independent of $X_i$ for $i \geq n$.
+
+\begin{mytheo}[Wald's equality]
+  If $N$ is a stopping time of a sequence of rv $\{X_i\}_{i=1}^\infty$ then
+  \[ \E[S_N] = \bar{X}\E[N]. \]
+\end{mytheo}
+
+Note that now that the distribution of $X_i$ is not necessarily an exponential,
+it may be discrete.
+The distribution can even be arithmetic,
+i.e. $\exists d > 0$ such that $X_i$ can only be a multiple of $d$: $\Pr[X_i/d \in \mathbb{N}] = 1$.
+We call $d$ the distribution step.
+
+\begin{mytheo}[Blackwell]
+  If the distribution of $X_i$ is arithmetic with a step $d$, then $\forall n \geq 1$,
+  \[ \lim_{t \to \infty} [\E[N(t + nd)] - \E[N(t)]] = \frac{nd}{\E[X]}, \]
+  otherwise, $\forall \delta \geq 0$,
+  \[ \lim_{t \to \infty} [\E[N(t + \delta)] - \E[N(t)]] = \frac{\delta}{\E[X]}. \]
+\end{mytheo}
+We could be tempted to say that the derivative of $\E[N(t)]$ with $t$ is $1/\E[X]$ but for that we would need to prove that this is still true for $\delta \to 0$.
+
+With a non-arithmetic distribution with $P[X_i = 0] = 0$, we have
+\begin{align*}
+  \lim_{t \to \infty} \Pr[N(t+\delta) - N(t) =    0] & = 1 - \delta/\bar{X} + o(\delta)\\
+  \lim_{t \to \infty} \Pr[N(t+\delta) - N(t) =    1] & = \delta/\bar{X} + o(\delta)\\
+  \lim_{t \to \infty} \Pr[N(t+\delta) - N(t) \geq 2] & = o(\delta)
+\end{align*}
+so asymptotically, we have stationnary increment.
+
+Do we have independent increment asymptotically ?
+No.
+However if we merge many independent renewal processes we will get closer and closer
+to a poisson process with independent increment.
+
+\[ \lim_{t \to \infty} \frac{1}{t} \int_0^t Y(\tau) \dif \tau = \frac{1}{2}\bar{X} + \frac{1}{2}\frac{\sigma^2}{\bar{X}} > \frac{1}{2}\bar{X} \]
+with probability 1.
+
+\subsection{Renewal-Reward Processes}
+A \emph{reward function} is a function $R(t)$ that only depends on the the particular inter-renewal interval containing $t$.
+Let $X(t)$ be the duration of this interval, i.e. $X(t) = X_{N(t)+1} = S_{N(t)+1} - S_{N(t)}$.
+We denote the \emph{age} $Z(t) = t - S_{N(t)}$ as the time we have already waited for the current renewal
+and the \emph{residual life} $Y(t) = X(t) - Z(t) = S_{N(t)+1} - t$.
+
+Since $R(t)$ only depends on the particular inter-renewal interval containing $t$,
+it only depends on $X(t),Y(t),Z(t)$ and since $Y(t) = X(t) - Z(t)$,
+it only depends on $X(t)$ and $Z(t)$.
+Denote $\mathcal{R}$ the function such that $R(t) = \mathcal{R}(Z(t), X(t))$.
+
+Let $R(n)$ be the reward accumulated at the $n$th interval.
+As $X_n$ are iid, the $R_n$ are iid and for any $n$,
+\[ \E[R_n] = \int_{x = 0}^\infty \int_{z=0}^x \mathbb{R}(z,x) \dif z f_X(x) \dif x. \]
+
+We can show that if $\bar{X} < \infty$, then
+\begin{equation}
+  \label{eq:rew}
+  \lim_{t \to \infty} \frac{1}{t} \int_0^t R(\tau) \dif \tau = \frac{\E[R_n]}{\bar{X}}
+\end{equation}
+with probability 1.
+An easy way to show it, which is also useful to use directly is to see that
+\[ \lim_{t \to \infty} \frac{1}{t} \int_0^t R(\tau) \dif \tau = \lim_{t \to \infty} \frac{N(t)}{t} \cdot \frac{1}{N(t)} \int_0^t R(\tau) \dif \tau = \frac{1}{\bar{X}} \cdot \E[R_n]. \]
+
+Let $X_t$ be the asymptotic distribution of $X(t)$, i.e. $X_t = \lim_{t \to \infty} X(t)$.
+We can see that $f_{X_t}(x) = \frac{xf_X(x)}{\bar{X}}$ so if $X$ has a arithmetic distribution with a step $d$,
+\[ \lim_{n \to \infty} \E[R(nd)] = \frac{\E[R_n]}{\bar{X}}, \]
+otherwise,
+\[ \lim_{t \to \infty} \E[R(t)] = \frac{\E[R_n]}{\bar{X}}. \]
+
+As examples, with $R(t) = X(t)$, we have $\mathbb{R}(z,x) = x$ so $\E[R_n] = \E[X^2]$ and
+\[ \lim_{t \to \infty} \frac{1}{t} \int_0^t X(\tau) \dif \tau = \lim_{t \to \infty} \E[X(t)] = \frac{\E[X^2]}{\bar{X}} \geq \bar{X} \]
+with probability 1.
+
+With $R(t) = Z(t)$, we have $\mathbb{R}(z,x) = z$ so $\E[R_n] = \E[X^2]/2$ and
+\[ \lim_{t \to \infty} \frac{1}{t} \int_0^t Z(\tau) \dif \tau = \lim_{t \to \infty} \E[Z(t)] = \frac{\E[X^2]}{2\bar{X}} \geq \frac{\bar{X}}{2} \]
+with probability 1.
+For $R(t) = Y(t)$, the result is the same than with $Z$ since $\E[Z_n] = \E[X_n]/2$ and $\E[Y_n] = \E[X_n] - \E[Y_n]$.
+
+It is not surprising that we have the inequalities ${} \geq \bar{X}$ and ${} \geq \bar{X}/2$ since it is more likely that
+when choosing a random $t$ we fall into an inter-renewal interval with large duration rather than one with a small duration.
+
+\subsubsection{Little's Law}
+Let us analyse a queuing system with
+$A(t)$ denoting the number of arrivals between 0 and $t$ and
+$D(t)$ denoting the number of departures between 0 and $t$.
+The rv $L(t) = A(t) - D(t)$ is the number of custumers in the system at $t$
+and the iid rv $W_i$ of mean $\bar{W}$ are the time spent in the system by the customer $i$.
+
+We would like to compute the averate waiting time but $L$ depends on the all the customer of the queue,
+not just the last one.
+However, if we look at idle time, i.e. time when no one is in the system,
+and the busy period between the idle times, we can see that $L(t)$ only depends on the busy period at $t$.
+Therefore, if we consider the counting process for which $N(t)$ is the number of busy period already finished,
+$L(t)$ is a reward function for this process.
+
+We can apply \eqref{eq:rew} (actually we reuse the prove to make it clear),
+\[ \bar{L} = \lim_{t \to \infty} \frac{1}{t} \int_0^t L(\tau) \dif \tau = \lim_{t \to \infty} \frac{A(t)}{t} \cdot \frac{\sum_{i=1}^{A(t)} W_i}{A(t)} = \frac{1}{\bar{X}} \cdot \bar{W}. \]
+Here $\E[R_n] = \E[L_n] = \bar{W}$.
+
+For a Poisson Process of arrival rate $\bar{X} = 1/\lambda$, we have $\bar{L} = \lambda \bar{W}$, so
+\[ \bar{L} = \lim_{t \to \infty} \E[L(t)] = \lim_{t \to \infty} \frac{1}{t} \int_0^t L(\tau) \dif \tau = \lambda \bar{W}. \]
+
+\paragraph{M/G/1 queue}
+Note that in $W_i$ we have the waiting time in the queue and the service time.
+Let us consider a M/G/1 queue, the reward function $L_q$ be the number of customers in the queue at time $t$ and the rv $Z_i$ of mean $\bar{Z}$ be the service time.
+We also have the identity
+\[ \bar{L}_q = \lim_{t \to \infty} \E[L_q(t)] = \lim_{t \to \infty} \frac{1}{t} \int_0^t L_q(\tau) \dif \tau = \lambda \bar{W}_q \]
+Since $\bar{W} = \bar{W}_q + \bar{Z}$ and $\bar{L} = \bar{L}_q + \rho$
+where $\rho$ is the expected asymptotic number of customers being served,
+we have
+\[ \rho = \lambda \bar{Z}. \]
+
+\section{Markov Chains}
+\cite[\S4--5]{gallager1995discrete,gallager2010discrete}, \cite[Appendix~A]{puterman2014markov}
+A Markov Chain is a stochastic process with fixed time interval, $\{X_n\}_{n=0}^\infty$
+where each random variable $X_n$ only depends on $X_{n-1}$ and not on $X_{n-2},X_{n-3},\ldots$.
+We note
+\[ P_{ij} = \Pr[X_n = j \mid X_{n-1} = i]. \]
+$X_n$ is the state of the Markov chain.
+The set of possible state is countable.
+If $P_{ij}(n)$ does not depend on $n$ the chain is stationary or time homogeneous,
+we only consider this case.
+
+Let $P_{ij}^k = \Pr[X_n = j \mid X_{n-k} = i]$.
+If we consider the matrix $[P^k]$ such that its entry at line $i$ column $j$ is $P_{ij}^k$ we can see that
+$\P^k = \P^k$,
+it is like the relation with the number of paths in Graph Theory.
+It is called the Chapman-Kolmogorov Equation.
+Note that if the number of state if infinite, the matrix $P$ has size $\infty \times \infty$.
+
+\paragraph{Classes}
+We say that state $j$ is \emph{accessible} from state $i$ (denoted $i \to j$) if $P_{ij}^k > 0$ for some $k \geq 0$.
+State $j$ \emph{communicates} with state $i$ (denoted $i \leftrightarrow j$) if $i \to j$ and $j \to i$.
+A set of states $S$ is
+%\begin{itemize}
+%  \item \emph{closed} if no state outside $S$ is accessible from any state in $S$,
+%  \item \emph{irreducible} if no proper subset of $S$ is closed,
+%  \item
+    \emph{a class} if no state outside $S$ communicates with any state in $S$ and all pairs of states in $S$ communicate.
+%\end{itemize}
+%If Chain contains a single class with all the states, it is called irreducible.
+%If there is only one closed irreducible set, the chain is called unichain,
+%otherwise it is called multichain.
+
+If we consider the induced graph of the chain,
+i.e. the graph where the nodes are the state and there is an edge between $i$ and $j$ if $i \to j$,
+the classes are the strongly connected components.
+
+If there is only one class the chain is said to be \emph{irreducible},
+note that this class can be transient, null recurrent or recurrent.
+
+We will now see two class properties: the type and the period.
+We define these two properties for a state and
+we can say that the property of the class is simply the property of its states because of the following theorem.
+\begin{mytheo}
+  In a class, all states are of the same type and same period.
+\end{mytheo}
+
+\subsection{Type of a state}
+Let $f_{ij}(n)$ be the probability that the \emph{first} visit to $j$ is at time $n$ when starting at $i$ at time 0.
+Note that we have $f_{ij}(1) = P_{ij}$ and the recurrence relation
+\[ f_{ij}(n) = \sum_{k \neq j} P_{ik}f_{kj}(n-1). \]
+We also define $F_{ij}(n)$ as the probability that $j$ is visited at time $n$ \emph{or before} when starting at $i$ at time 0.
+We have clearly
+\[ F_{ij}(n) = \sum_{m=1}^n f_{ij}(m). \]
+Let the random variable $T_{ij}$ be the time for the first visit to $j$ when starting at $i$.
+Its mean is
+\[ \bar{T}_{ij} = 1 + \sum_{n=1}^\infty 1 - F_{ij}(n). \]
+
+Note that if $F_{jj}(\infty) < 1$, that means that there is a probability to never return at $j$ when starting at $j$.
+In that case $\bar{T}_{jj} = \infty$, we say that $j$ is a \emph{transient} state.
+If $T_{jj} = \infty$ we say that $j$ is recurrent. See Table~\ref{tab:state}.
+
+\begin{table}[!ht]
+  \centering
+  \begin{tabular}{c|c|c}
+    & $F_{jj}(\infty) < 1$ & $F_{jj}(\infty) = 1$\\
+    \hline
+    $\bar{T}_{jj} < \infty$ & \tikzmark{b} & positive recurrent\\
+    \hline
+    $\bar{T}_{jj} = \infty$ & transient & null recurrent
+    \connect[0mm]{b.north west}{b.south east}
+    \connect[0mm]{b.north east}{b.south west}
+  \end{tabular}
+  \caption{Types of states}
+  \label{tab:state}
+\end{table}
+
+\subsection{Period of a state}
+The period of a given state $j$ is the greatest common divider of
+all the numbers $n$ such that $P_{jj}^n > 0$.
+If the period is 1, we say that the state is aperiodic.
+
+If the period of a class is $d$,
+there exists a partition $\mathcal{X}_1, \ldots, \mathcal{X}_d$ of the states of the class
+such that for $1 \leq n \leq d-1$, all the transitions from a state of $\mathcal{X}_n$ are to a state $\mathcal{X}_{n+1}$
+and all the transition from a state of $\mathcal{X}_d$ are to a state of $\mathcal{X}_1$.
+
+\subsection{Ergodic class}
+A class recurrent and aperiodic is called \emph{ergodic}.
+\begin{mytheo}
+  If the states $i$ and $j$ are in the same class
+  and their class is ergodic then
+  \[ \lim_{n \to \infty} P_{ij}^n = \frac{1}{\bar{T}_{jj}}. \]
+\end{mytheo}
+
+\subsection{Perron vector}
+The Perron vector $\pi$ represents the limiting probability distribution.
+If it exists, independently on where we start, after an infinite number of transition,
+we have a probability $\pi_j$ to be at the state $j$.
+We represent $\pi$ as a line vector.
+\begin{mytheo}
+  For an irreducible Markov Chain,
+  the system
+  \begin{align*}
+    \pi & = \pi \P\\
+    \pi\mathbf{1} & = 1\\
+    \pi & \geq 0.
+  \end{align*}
+  has a unique solution iff all the states (which have the same type since it is irreducible)
+  are positive recurrent.
+  If the solution exists, satifies $\pi_j = 1/\bar{T}_{jj}$ for all state $j$.
+\end{mytheo}
+
+If we take a random vector $x \geq 0$ such that $x \mathbf{1} = 0$ and compute
+$\lim_{n \to \infty} x \P^n$, do we get $\pi$ ?
+This actually only works if the chain is aperiodic.
+For example, for
+\[
+  \P =
+  \begin{pmatrix}
+    0 & 1\\
+    1 & 0
+  \end{pmatrix},
+\]
+$\pi = \begin{pmatrix}1/2 & 1/2\end{pmatrix}$
+but if $x \neq \pi$,
+we will have $x\P^{2n} = x$ and $x\P^{2n+1} = x\P \neq x$.
+
+We can see that $\P^{n} = \P \cdot \P^{n-1}$ so the lines are the lines
+or $\P$ for which we apply $n-1$ times $\P$.
+Therefore
+\begin{mytheo}
+  For an ergodic Markov Chain for which the unique class is positive recurrent,
+  \[ \lim_{n \to \infty} \P^n = \mathbf{1} \pi. \]
+\end{mytheo}
+
+\subsection{Reversible Markov chain}
+\cite[\S5.3]{gallager1995discrete,gallager2010discrete}
+
+Consider at backward chain: at each transition,
+we are at a state $X_n$ we wonder what were the state $X_{n-1}$ we were coming from.
+Not surprisingly, the probability distribution of the states we were at $n-1$ does not
+depend on $X_{n+1}, X_{n+2}, \ldots$, i.e. the backward chain is also a Markov Chain.
+The way to compute the transition probabilities of the backward chain it is using the Bayes rule
+\[ P_{ij}^*(n) = \Pr[X_{n-1} = j | X_n = i] = \frac{P_{ji}\Pr[X_{n-1} = j]}{\Pr[X_n = i]}. \]
+We can see that the backward chain is not homogeneous.
+For example, consider the chain starting at the state 0, with $1/2$ probability
+of doing $+1$ and $1/2$ of doing $-1$ at each transition.
+$\Pr[X_1 = 1] = 1/2 = \Pr[X_1 = -1]$ and $\Pr[X_1 = x] = 0$ for $x \notin \{-1,1\}$.
+$\Pr[X_0 = 0 | X_1 = 1] = 1$ but $\Pr[X_2 = 0 | X_3 = 1] = P_{01} \cdot \Pr[X_2=0]/\Pr[X_3=1] = (1/2) \cdot (1/2) / (3/8) = 2/3$.
+
+In steady-state, $\Pr[X_{n-1} = j] = \pi_j$ and $\Pr[X_n = i] = \pi_i$ so the backward chain is homogeneous and we have
+\[ P_{ij}^* = P_{ji} \frac{\pi_j}{\pi_i} \]
+or equivalently, $P_{ij}^*\pi_i = P_{ji} \pi_j$.
+We say that a Markov chain is reversible if in steady-state,
+$P_{ij}^* = P_{ij}$ (or equivalently $P_{ij}\pi_i = P_{ji} \pi_j$),
+i.e. in steady-state there is no distinction between backward and forward order.
+If you were to observe a reversible Markov Chain in steady-state, you would not be able to tell whether it is running
+backward or forward.
+
+We can see that for periodic Markov Chain with period $d > 2$,
+it is not reversible,
+Recall that we can do a partition of the states $\mathcal{X}_1, \ldots, \mathcal{X}_d$.
+Suppose the current state belongs tof $\mathcal{X}_2$,
+if the next state belongs to $\mathcal{X}_3$,
+it is going forward and if it belongs to $\mathcal{X}_1$,
+it is going backward.
+
+The reversibility is very useful because if we feel that a chain is reversible,
+we can find the transition probabilities using the following theorem.
+\begin{mytheo}
+  \label{theo:reversible}
+  If a Markov Chain is irreducible,
+  if the vector $\pi > 0$ is such that
+  \begin{equation}
+    \label{eq:reversible}
+    P_{ij}\pi_i = P_{ji} \pi_j, \quad \forall i,j
+  \end{equation}
+  and $\pi\1 = 1$
+  then $\pi$ is the steady-state distribution
+  and the chain is reversible.
+\end{mytheo}
+Note that if the period is 2 the there is no steady-state,
+or there is a steady-state for even time and one for odd times.
+The value of $\pi$ found by this theorem is the average of both.
+
+We have also seen that if a chain is reversible, then \eqref{eq:reversible} holds.
+That can be used to prove that a chain is not reversible.
+We can see that if $P_{ij} > 0$ and $P_{ji} = 0$, we must have $\pi_i = 0$.
+If $i$ it is not transient, that is impossible so the chain cannot be reversible.
+It can also be shown that if a chain is reversible,
+for every cycle, $i_1, \ldots, i_n$ we must have $P_{i_1i_2} \cdots P_{i_{n-1}i_n} = P_{i_ni_{n-1}} \cdots P_{i_2i_1}$,
+that can also be used to prove that a chain is not reversible.
+
+What can we do if a chain is not reversible to find the vector $\pi$ ?
+We can still use the backward chain, it won't be indistinguishable from the forward chain but it doesn't matter.
+\begin{mytheo}
+  If a Markov Chain is irreducible,
+  if the vector $\pi > 0$ is such that
+  \begin{equation}
+    \label{eq:backward}
+    P_{ij}^*\pi_i = P_{ji} \pi_j, \quad \forall i,j
+  \end{equation}
+  and $\pi\1 = 1$
+  then $\pi$ is the steady-state distribution
+  and $\P^*$ is the transition matrix of the backward chain in steady-state.
+\end{mytheo}
+To use this Theorem, the $P_{ij}$ need to be guessed.
+Remember when trying to guess it that it is the probability that $X_{n-1} = i$
+if $X_{n} = j$ in \emph{steady-state}.
+It is not something valid for all $n$.
+
+\subsubsection{Birth-Death Markov chains}
+Consider the Markov Chain represented by the \figuref{birthdeath}.
+The experienced reader have already guessed that this chain is reversible.
+We will, at the same time, prove it and compute the Perron vector using Theorem~\ref{theo:reversible}.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{tikzpicture}
+    \SetGraphUnit{3}
+    \SetUpEdge[style={->}, labelstyle={draw}]
+    \Vertex{0}
+    \EA(0){1} \EA(1){2} \EA(2){3} \EA[empty=true](3){4}
+    \node[right] at (12,0) {$\cdots$};
+    \tikzset{EdgeStyle/.append style = {bend left}}
+    \Edge[label=$p_0$](0)(1)
+    \Edge[label=$p_1$](1)(2)
+    \Edge[label=$p_2$](2)(3)
+    \Edge[label=$p_3$](3)(4)
+    \Edge[label=$q_1$](1)(0)
+    \Edge[label=$q_2$](2)(1)
+    \Edge[label=$q_3$](3)(2)
+    \Loop[dist=50,dir=EA,label=$1-p_0$,labelstyle={fill=white,draw}](0)
+    \Loop[dist=50,dir=EA,label=$1-p_1-q_1$,labelstyle={fill=white,draw}](1)
+    \Loop[dist=50,dir=EA,label=$1-p_2-q_2$,labelstyle={fill=white,draw}](2)
+    \Loop[dist=50,dir=EA,label=$1-p_3-q_3$,labelstyle={fill=white,draw}](3)
+  \end{tikzpicture}
+  \caption{Birth-Death Markov Chain}
+  \label{fig:birthdeath}
+\end{figure}
+
+If we apply it between $i$ and $i+1$, we get $p_i\pi_i = q_{i+1}\pi_{i+1}$.
+Let $\rho_i = p_i / q_{i+1}$, we have $\pi_{i+1} = \pi_i \rho_i$.
+More generally, we have $\pi_n = \pi_0 \prod_{i=0}^{n-1} \rho_i$.
+Since $\pi\1 = 1$, we have
+\[ \pi_0 = \frac{1}{1 + \sum_{n=1}^\infty \sum_{i=0}^{n-1} \rho_i}. \]
+\begin{itemize}
+  \item If $\sum_{n=1}^\infty \sum_{i=0}^{n-1} \rho_i < \infty$ (e.g. $\exists \epsilon > 0$ and $I$ such that $\rho_i \leq 1 - \epsilon$ for all $i > I$)
+    then all the states are positive recurrent: $\pi > 0$.
+  \item Otherwise, no state is positive recurrent: $\pi = 0$.
+\end{itemize}
+
+Suppose now that $p_i$ and $q_i$ are constant.
+\begin{itemize}
+  \item If $\rho < 1$, all the states are positive recurrent and $\pi_i = \rho^i(1-\rho)$.
+  \item Otherwise, they are either null-recurrent or transient.
+    If $p + q = 1$ and $\rho > 1$ they are all transient.
+\end{itemize}
+
+\section{Finite Markov Chain}
+We say that a Markov Chain is finite if it has a finite number of states.
+Note that the result we have derived involving the transition matrix $\P$ are more relevant for Finite Markov Chain.
+
+For Finite Markov Chain,
+\begin{itemize}
+  \item null recurrent states do not exist,
+    all recurrent state are positive recurrent and
+  \item there is at least one class that is recurrent.
+\end{itemize}
+
+Therefore in the case of an irreducible Finite Markov Chain,
+the unique class is positive recurrent.
+
+If the Finite Markov Chain is not irreducible,
+there may be transient states but there
+also may be several recurrent classes.
+
+If there is only one recurrent class,
+the chain is called unichain.
+If this recurrent class is ergodic, we say that the chain is ergodic recurrent.
+
+We have seen the condition for the existence of the Perron vector for irreducible Markov Chain.
+If the Markov Chain is finite and unichain,
+the Perron vector also exists.
+For every transient state $j$ we have $\pi_j = 0$ and the part of $\pi$ in the recurrent class
+is the same if we remove the transient states.
+
+\subsection{Markov Decision Processes (MDP)}
+\cite[\S4.5]{gallager1995discrete,gallager2010discrete},
+\cite{puterman2014markov}
+
+\subsection{Markov Chain with Rewards}
+Suppose we assign to each state a reward $r_i$.
+If the reward is rather assigned to each transition from $i$ to $j$,
+just take $r_i = \sum_{j} r_{ij} P_{ij}$, the expected reward at state $i$.
+
+Clearly, the expected reward for an infinite time is just infinite (in most cases).
+Let us look at the expected reward over $n$ transitions starting at $i$.
+We define $v_i(n)$ as the expected reward of the $n$ states $i, \ldots$ visited plus
+$v_j(0)$ where $j$ is the $(n+1)$th state.
+The value of the vector $\mathbf{v}(0)$ doesn't really matter since we will look at the value of $v_i(n)$ for large $n$.
+
+We know that the distribution will tend to be $\pi$ even if we start at $i$ for ergodic Markov Chains.
+Let
+\( g = \pi \r, \)
+we can expect that for large $p$, $\v(n) = \w + ng\1 + \beta\1$, where $w_i$ is the relative advantage of starting at $i$.
+Since it is relative we will typically set $w_1 = 0$ (otherwise, $\beta$ would be useless).
+We cannot hope to get rid of $\beta$ since $\v(0)$ is arbitrary and its contribution is not related to the starting state $i$
+for large $n$.
+
+We can see that $\w$ should satify the relation
+\[ \w + g\1 + \r + \P\w. \]
+Since $\P$ is row stochastic, we can see that $\w$ is solution iff $\w + \alpha\1$ for all $\alpha \in \R$.
+Therefore, it is wrong to thing that according to this equation $g$ depends on $\w$ and for different values of
+$\w$ we have different values of $g$.
+What we rather have is that for values of $g$ different than $\pi \r$ we have no solution for $\w$ and if
+we have a solution for $\w$ we have an infinite number of solution.
+If we add a condition such as $w_1 = 0$, we can hope to get a unique solution.
+
+Actually, if the Markov Chain is irreducible then with the conditions such as $w_1 = 0$ or $\1^T\w = 0$,
+the solution exists and is unique.
+Furthermore, if it is irreducible, we have
+\[ \lim_{n \to \infty} \v(n) - ng\1 = \w + \beta\1 \]
+with $\beta = \pi(\v(0) + \w)$.
+
+Again, we see that since $\pi\1 = 1$, the right hand side does not change if we replace $\w$ by $\w+\alpha\1$.
+That means that this equation holds whether we add $w_1 = 0$, $w_2 = 0$ or $\1^T\w$ to find the value of $\w$.
+
+\subsection{Markov Decision Processes}
+Suppose that we want to find the decisions that maximize $g$ or $\v(n)$.
+The decisions can affects the matrix $\P$ and the rewards vector $\r$.
+At each state $i$ we can take any decision of the set of decisions $K_i$ and the decision taken at state $i$ does not affect the decision $K_j$ for $j \neq i$.
+Denote the line $i$ of the transition matrix if we take the decision $k_i$ at $i$ as $P_i^{(k_i)}$
+and the reward at $i$ as $r_i^{(k_i)}$.
+
+\subsection{Dynamic Policy: Dynamic Programming Algorithm}
+Suppose we want to maximize all the entries of $\v(n)$ at each $n$
+and that we can change the policy at each step.
+Normally it is not well defined to maximize different scalar at the same time but since we can
+change the policy we can do it so it is well defined.
+
+We can see that we can compute the optimal decision $k_i^*(n)$ if we know the optimal decisions $\k^*(n-1), \ldots, \k^*(1)$.
+Actually, we just need the corresponding vector $\v^*(n-1)$.
+We have
+\[ k^*_i(n) \in \argmax_{k \in K_i} r_i^{(k)} + \P_i^{(k)} \v^*(n-1) \]
+Once we have $k_i^*(n)$ we can get $v_i^*(n)$.
+In short, we can compute $\v^*(n)$ if we have $\v^*(n-1)$.
+
+\paragraph{Principle of Dynamic Programming}
+Consider the graph that have the nodes $0, 1, \ldots$
+and an edge from $n$ to $n-1$ for all $n = 1, 2, \ldots$.
+At node $n$, the edges represents what we need to compute $\v^*(n)$.
+When this directed graph is acyclic that means that there is an order of the node such that we can compute every node in that order with problem of requirement.
+Think about the course and their requirement,
+if there is no cyclic requirement there is an order of the course such that the student can follow all the course in that order.
+This is the principle of dynamic programming.
+Computing the nodes in this order is called the bottom up approach,
+it is used when the order is easy to compute.
+Otherwise we just use the top down approach that consists in recursively compute every node that is a requirement that is not yet computed remembering the result of previous computation.
+It is very usefull to think of Dynamic Programming as a method to be used when the computation requirements form a Directed Acyclic Graph (DAG)~\cite[\S15.3]{cormen2009algorithm} and Greedy Programming as a method to be used when the feasible solutions have a matroid structure~\cite[\S16.4]{cormen2009algorithm}.
+
+This results in the Algorithm~\ref{algo:dynalgo}.
+
+\begin{algorithm}
+  \caption{Dynamic Programming algorithm for a given $\v(0)$ using the bottom up approach.}
+  \label{algo:dynalgo}
+  \begin{algorithmic}
+    \FOR{$n = 1, 2, \ldots$}
+      \FOR{each state $i$}
+        \STATE $v_i^*(n) \leftarrow \max_{k \in K_i} r_i^{(k)} + \P_i^{(k)} \v^*(n-1)$
+      \ENDFOR
+    \ENDFOR
+  \end{algorithmic}
+\end{algorithm}
+
+\subsection{Stationnary policy: Policy iteration}
+Let us now suppose that we want to maximize $g$ and that we must apply the same policy $k_i$ for all $n$.
+
+Does it change something to impose that we cannot change the policy ?
+It depends on $\v(0)$.
+If $\v(0) = \w^{(\k^*)}$ where $w^{(\k^*)}$ is the relative advantage for $P^{(\k^*)}$ and $r^{(\k^*)}$,
+then even if we allow to change the policy, the optimal policy will be the same for each $n$, i.e. $\k^*(n) = \k^*$.
+
+\begin{mytheo}
+  If the Markov Chain is irreducible then $\k^*$ is a stationnary optimal policy iff
+  for all policy $\k$,
+  \[ \r^{(\k^*)} + \P^{(\k^*)} \w^{(\k^*)} \geq \r^{k} + \P^{k} \w^{(\k^*)}. \]
+\end{mytheo}
+
+This optimality condition allows us to write Algorithm~\ref{algo:policyiteration}.
+The number of iteration is finite since $g^{\k^n}$ increases at each iteration.
+\begin{algorithm}
+  \caption{Policy Iteration algorithm (Howard~\cite{howard1960dynamic}).}
+  \label{algo:policyiteration}
+  \begin{algorithmic}
+    \STATE Choose an artitrary starting policy $\k^0$
+    \STATE $n \leftarrow 1$
+    \WHILE{$\k^n \neq \k^{n-1}$}
+      \STATE Compute $\w^{(\k^{n-1})}$
+      \FOR{each state $i$}
+        \STATE $k_i^n \leftarrow \argmax_{k \in K_i} r_i^{(k)} + \P_i^{(k)} \w^{(\k^{n-1})}$
+      \ENDFOR
+      \STATE $n \leftarrow n + 1$
+    \ENDWHILE
+  \end{algorithmic}
+\end{algorithm}
+
+If the Markov Chain is irreducible for all policy
+and ergodic for an optimal stationnary policy $\k^*$ then
+\[ \lim_{n \to \infty} \v^*(n) - ng^{(\k^*)}\1 = \w^{(\k^*)} + (\beta'-\pi^{(\k^*)}\w^{(\k^*)})\1. \]
+The relative gain $\w$ of all optimal stationnary policy is the same.
+Also we have
+\[ \min_i v_i^*(n) - v_i^*(n-1) \leq g^{(\k^*)} \leq \max_i v_i^*(n) - v_i^*(n-1) \]
+
+That gives Algorithm~\ref{algo:valueiteration}.
+At the end of the algorithm we have $g^{\k^*} = \min_i v_i^*(n) - v_i^*(n-1) = \max_i v_i^*(n) - v_i^*(n-1)$.
+\begin{algorithm}
+  \caption{Value Iteration algorithm for a given $\v(0)$.}
+  \label{algo:valueiteration}
+  \begin{algorithmic}
+    \STATE Choose an arbitrary starting value $\v(0)$
+    \STATE $n \leftarrow 1$
+    \WHILE{$\min_i v_i^*(n) - v_i^*(n-1) < \max_i v_i^*(n) - v_i^*(n-1)$}
+      \FOR{each state $i$}
+        \STATE $v_i^*(n) \leftarrow \max_{k \in K_i} r_i^{(k)} + \P_i^{(k)} \v^*(n-1)$
+      \ENDFOR
+      \STATE $n \leftarrow n + 1$
+    \ENDWHILE
+  \end{algorithmic}
+\end{algorithm}
+
+\section{Markov Processes}
+\cite[\S6]{gallager1995discrete,gallager2010discrete}
+
+\section{Queueing Systems}
+
+\nocite{*}
+\biblio[alpha]
+
+\end{document}

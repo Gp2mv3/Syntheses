@@ -1,2 +1,2 @@
-month=Janvier
+MONTH=month
 include ../../year.mk
