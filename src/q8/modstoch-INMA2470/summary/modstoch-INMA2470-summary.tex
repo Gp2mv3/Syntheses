@@ -19,6 +19,7 @@
 
 % http://tex.stackexchange.com/questions/86883/cancelling-out-cells-in-tables
 \usepackage{tikz}
+\usepackage{tkz-graph}
 \newcommand{\tikzmark}[1]{\tikz[remember picture,overlay, baseline=-0.5ex]\node (#1){};}
 \newcommand{\connect}[3][3mm]{\tikz[remember picture,overlay]\draw[shorten <=-#1, shorten >=-#1](#2)--(#3);}
 
@@ -390,6 +391,8 @@ Note that $\Pr[N(t) = n]$ is easily obtained by taking $t_1 = 0$ and $t_2 = t$.
   \end{figure}
 \end{myexem}
 
+% TODO arithmetic, Bernoulli
+
 \section{Renewal Processes}
 \cite[\S3]{gallager1995discrete,gallager2010discrete}
 A Renewal Process is a counting process for which the times between 2 arrivals are iid random variables.
@@ -628,9 +631,9 @@ all the numbers $n$ such that $P_{jj}^n > 0$.
 If the period is 1, we say that the state is aperiodic.
 
 If the period of a class is $d$,
-there exists a partition $S_1, \ldots, S_d$ of the states of the class
-such that for $1 \leq n \leq d-1$, all the transitions from a state of $S_n$ are to a state $S_{n+1}$
-and all the transition from a state of $S_d$ are to a state of $S_1$.
+there exists a partition $\mathcal{X}_1, \ldots, \mathcal{X}_d$ of the states of the class
+such that for $1 \leq n \leq d-1$, all the transitions from a state of $\mathcal{X}_n$ are to a state $\mathcal{X}_{n+1}$
+and all the transition from a state of $\mathcal{X}_d$ are to a state of $\mathcal{X}_1$.
 
 \subsection{Ergodic class}
 A class recurrent and aperiodic is called \emph{ergodic}.
@@ -681,7 +684,131 @@ Therefore
   \[ \lim_{n \to \infty} \P^n = \mathbf{1} \pi. \]
 \end{mytheo}
 
-\subsection{Finite Markov Chain}
+\subsection{Reversible Markov chain}
+\cite[\S5.3]{gallager1995discrete,gallager2010discrete}
+
+Consider at backward chain: at each transition,
+we are at a state $X_n$ we wonder what were the state $X_{n-1}$ we were coming from.
+Not surprisingly, the probability distribution of the states we were at $n-1$ does not
+depend on $X_{n+1}, X_{n+2}, \ldots$, i.e. the backward chain is also a Markov Chain.
+The way to compute the transition probabilities of the backward chain it is using the Bayes rule
+\[ P_{ij}^*(n) = \Pr[X_{n-1} = j | X_n = i] = \frac{P_{ji}\Pr[X_{n-1} = j]}{\Pr[X_n = i]}. \]
+We can see that the backward chain is not homogeneous.
+For example, consider the chain starting at the state 0, with $1/2$ probability
+of doing $+1$ and $1/2$ of doing $-1$ at each transition.
+$\Pr[X_1 = 1] = 1/2 = \Pr[X_1 = -1]$ and $\Pr[X_1 = x] = 0$ for $x \notin \{-1,1\}$.
+$\Pr[X_0 = 0 | X_1 = 1] = 1$ but $\Pr[X_2 = 0 | X_3 = 1] = P_{01} \cdot \Pr[X_2=0]/\Pr[X_3=1] = (1/2) \cdot (1/2) / (3/8) = 2/3$.
+
+In steady-state, $\Pr[X_{n-1} = j] = \pi_j$ and $\Pr[X_n = i] = \pi_i$ so the backward chain is homogeneous and we have
+\[ P_{ij}^* = P_{ji} \frac{\pi_j}{\pi_i} \]
+or equivalently, $P_{ij}^*\pi_i = P_{ji} \pi_j$.
+We say that a Markov chain is reversible if in steady-state,
+$P_{ij}^* = P_{ij}$ (or equivalently $P_{ij}\pi_i = P_{ji} \pi_j$),
+i.e. in steady-state there is no distinction between backward and forward order.
+If you were to observe a reversible Markov Chain in steady-state, you would not be able to tell whether it is running
+backward or forward.
+
+We can see that for periodic Markov Chain with period $d > 2$,
+it is not reversible,
+Recall that we can do a partition of the states $\mathcal{X}_1, \ldots, \mathcal{X}_d$.
+Suppose the current state belongs tof $\mathcal{X}_2$,
+if the next state belongs to $\mathcal{X}_3$,
+it is going forward and if it belongs to $\mathcal{X}_1$,
+it is going backward.
+
+The reversibility is very useful because if we feel that a chain is reversible,
+we can find the transition probabilities using the following theorem.
+\begin{mytheo}
+  \label{theo:reversible}
+  If a Markov Chain is irreducible,
+  if the vector $\pi > 0$ is such that
+  \begin{equation}
+    \label{eq:reversible}
+    P_{ij}\pi_i = P_{ji} \pi_j, \quad \forall i,j
+  \end{equation}
+  and $\pi\1 = 1$
+  then $\pi$ is the steady-state distribution
+  and the chain is reversible.
+\end{mytheo}
+Note that if the period is 2 the there is no steady-state,
+or there is a steady-state for even time and one for odd times.
+The value of $\pi$ found by this theorem is the average of both.
+
+We have also seen that if a chain is reversible, then \eqref{eq:reversible} holds.
+That can be used to prove that a chain is not reversible.
+We can see that if $P_{ij} > 0$ and $P_{ji} = 0$, we must have $\pi_i = 0$.
+If $i$ it is not transient, that is impossible so the chain cannot be reversible.
+It can also be shown that if a chain is reversible,
+for every cycle, $i_1, \ldots, i_n$ we must have $P_{i_1i_2} \cdots P_{i_{n-1}i_n} = P_{i_ni_{n-1}} \cdots P_{i_2i_1}$,
+that can also be used to prove that a chain is not reversible.
+
+What can we do if a chain is not reversible to find the vector $\pi$ ?
+We can still use the backward chain, it won't be indistinguishable from the forward chain but it doesn't matter.
+\begin{mytheo}
+  If a Markov Chain is irreducible,
+  if the vector $\pi > 0$ is such that
+  \begin{equation}
+    \label{eq:backward}
+    P_{ij}^*\pi_i = P_{ji} \pi_j, \quad \forall i,j
+  \end{equation}
+  and $\pi\1 = 1$
+  then $\pi$ is the steady-state distribution
+  and $\P^*$ is the transition matrix of the backward chain in steady-state.
+\end{mytheo}
+To use this Theorem, the $P_{ij}$ need to be guessed.
+Remember when trying to guess it that it is the probability that $X_{n-1} = i$
+if $X_{n} = j$ in \emph{steady-state}.
+It is not something valid for all $n$.
+
+\subsubsection{Birth-Death Markov chains}
+Consider the Markov Chain represented by the \figuref{birthdeath}.
+The experienced reader have already guessed that this chain is reversible.
+We will, at the same time, prove it and compute the Perron vector using Theorem~\ref{theo:reversible}.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{tikzpicture}
+    \SetGraphUnit{3}
+    \SetUpEdge[style={->}, labelstyle={draw}]
+    \Vertex{0}
+    \EA(0){1} \EA(1){2} \EA(2){3} \EA[empty=true](3){4}
+    \node[right] at (12,0) {$\cdots$};
+    \tikzset{EdgeStyle/.append style = {bend left}}
+    \Edge[label=$p_0$](0)(1)
+    \Edge[label=$p_1$](1)(2)
+    \Edge[label=$p_2$](2)(3)
+    \Edge[label=$p_3$](3)(4)
+    \Edge[label=$q_1$](1)(0)
+    \Edge[label=$q_2$](2)(1)
+    \Edge[label=$q_3$](3)(2)
+    \Loop[dist=50,dir=EA,label=$1-p_0$,labelstyle={fill=white,draw}](0)
+    \Loop[dist=50,dir=EA,label=$1-p_1-q_1$,labelstyle={fill=white,draw}](1)
+    \Loop[dist=50,dir=EA,label=$1-p_2-q_2$,labelstyle={fill=white,draw}](2)
+    \Loop[dist=50,dir=EA,label=$1-p_3-q_3$,labelstyle={fill=white,draw}](3)
+  \end{tikzpicture}
+  \caption{Birth-Death Markov Chain}
+  \label{fig:birthdeath}
+\end{figure}
+
+If we apply it between $i$ and $i+1$, we get $p_i\pi_i = q_{i+1}\pi_{i+1}$.
+Let $\rho_i = p_i / q_{i+1}$, we have $\pi_{i+1} = \pi_i \rho_i$.
+More generally, we have $\pi_n = \pi_0 \prod_{i=0}^{n-1} \rho_i$.
+Since $\pi\1 = 1$, we have
+\[ \pi_0 = \frac{1}{1 + \sum_{n=1}^\infty \sum_{i=0}^{n-1} \rho_i}. \]
+\begin{itemize}
+  \item If $\sum_{n=1}^\infty \sum_{i=0}^{n-1} \rho_i < \infty$ (e.g. $\exists \epsilon > 0$ and $I$ such that $\rho_i \leq 1 - \epsilon$ for all $i > I$)
+    then all the states are positive recurrent: $\pi > 0$.
+  \item Otherwise, no state is positive recurrent: $\pi = 0$.
+\end{itemize}
+
+Suppose now that $p_i$ and $q_i$ are constant.
+\begin{itemize}
+  \item If $\rho < 1$, all the states are positive recurrent and $\pi_i = \rho^i(1-\rho)$.
+  \item Otherwise, they are either null-recurrent or transient.
+    If $p + q = 1$ and $\rho > 1$ they are all transient.
+\end{itemize}
+
+\section{Finite Markov Chain}
 We say that a Markov Chain is finite if it has a finite number of states.
 Note that the result we have derived involving the transition matrix $\P$ are more relevant for Finite Markov Chain.
 
@@ -852,7 +979,6 @@ At the end of the algorithm we have $g^{\k^*} = \min_i v_i^*(n) - v_i^*(n-1) = \
     \ENDWHILE
   \end{algorithmic}
 \end{algorithm}
-
 
 \section{Markov Processes}
 \cite[\S6]{gallager1995discrete,gallager2010discrete}
