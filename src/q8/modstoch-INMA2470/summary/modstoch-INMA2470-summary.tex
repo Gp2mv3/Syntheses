@@ -6,6 +6,7 @@
 \DeclareMathOperator{\expo}{Expo}
 \DeclareMathOperator{\erlang}{Erlang}
 \DeclareMathOperator{\po}{Po}
+\DeclareMathOperator{\diag}{diag}
 
 \renewcommand{\P}{\mathbf{P}}
 \renewcommand{\r}{\mathbf{r}}
@@ -13,6 +14,12 @@
 \newcommand{\w}{\mathbf{w}}
 \renewcommand{\k}{\mathbf{k}}
 \newcommand{\1}{\mathbf{1}}
+\newcommand{\Q}{\mathbf{Q}}
+\newcommand{\p}{\mathbf{p}}
+
+\usepackage{bm}
+\newcommand{\bnu}{\bm{\nu}}
+\newcommand{\bpi}{\bm{\pi}}
 
 \usepackage{algorithm}
 \usepackage{algorithmic}
@@ -51,9 +58,9 @@ We can see that the Semi-Markov Processes are the generalization of all the proc
     \hline
     No transition time & & Markov Chain\\
     \hline
-    $T_n$ general & Renewal Process & Semi-Markov Process\\
+    $U_n$ general & Renewal Process & Semi-Markov Process\\
     \hline
-    $T_n \sim \expo(\lambda)$ & Poisson Process & Markov Process
+    $U_n \sim \expo(\lambda)$ & Poisson Process & Markov Process
   \end{tabular}
 \end{center}
 
@@ -420,8 +427,11 @@ with probability 1 and
 Note that for the second identity,
 since $\E[N(t)]$ is deterministic we do not need to specify the type of convergence (e.g. with probability 1, ...).
 
-Using this identity and the String Law of Large Numbers (SLLN), we can show that
-\[ \lim_{t \to \infty} \frac{N(t)}{t} = \frac{1}{\bar{X}} \]
+Using this identity and the Strong Law of Large Numbers (SLLN), we can show that
+\begin{equation}
+  \label{eq:Nt}
+  \lim_{t \to \infty} \frac{N(t)}{t} = \frac{1}{\bar{X}}
+\end{equation}
 with probability 1.
 
 \begin{mydef}[Decision rule]
@@ -518,36 +528,7 @@ For $R(t) = Y(t)$, the result is the same than with $Z$ since $\E[Z_n] = \E[X_n]
 It is not surprising that we have the inequalities ${} \geq \bar{X}$ and ${} \geq \bar{X}/2$ since it is more likely that
 when choosing a random $t$ we fall into an inter-renewal interval with large duration rather than one with a small duration.
 
-\subsubsection{Little's Law}
-Let us analyse a queuing system with
-$A(t)$ denoting the number of arrivals between 0 and $t$ and
-$D(t)$ denoting the number of departures between 0 and $t$.
-The rv $L(t) = A(t) - D(t)$ is the number of custumers in the system at $t$
-and the iid rv $W_i$ of mean $\bar{W}$ are the time spent in the system by the customer $i$.
-
-We would like to compute the averate waiting time but $L$ depends on the all the customer of the queue,
-not just the last one.
-However, if we look at idle time, i.e. time when no one is in the system,
-and the busy period between the idle times, we can see that $L(t)$ only depends on the busy period at $t$.
-Therefore, if we consider the counting process for which $N(t)$ is the number of busy period already finished,
-$L(t)$ is a reward function for this process.
-
-We can apply \eqref{eq:rew} (actually we reuse the prove to make it clear),
-\[ \bar{L} = \lim_{t \to \infty} \frac{1}{t} \int_0^t L(\tau) \dif \tau = \lim_{t \to \infty} \frac{A(t)}{t} \cdot \frac{\sum_{i=1}^{A(t)} W_i}{A(t)} = \frac{1}{\bar{X}} \cdot \bar{W}. \]
-Here $\E[R_n] = \E[L_n] = \bar{W}$.
-
-For a Poisson Process of arrival rate $\bar{X} = 1/\lambda$, we have $\bar{L} = \lambda \bar{W}$, so
-\[ \bar{L} = \lim_{t \to \infty} \E[L(t)] = \lim_{t \to \infty} \frac{1}{t} \int_0^t L(\tau) \dif \tau = \lambda \bar{W}. \]
-
-\paragraph{M/G/1 queue}
-Note that in $W_i$ we have the waiting time in the queue and the service time.
-Let us consider a M/G/1 queue, the reward function $L_q$ be the number of customers in the queue at time $t$ and the rv $Z_i$ of mean $\bar{Z}$ be the service time.
-We also have the identity
-\[ \bar{L}_q = \lim_{t \to \infty} \E[L_q(t)] = \lim_{t \to \infty} \frac{1}{t} \int_0^t L_q(\tau) \dif \tau = \lambda \bar{W}_q \]
-Since $\bar{W} = \bar{W}_q + \bar{Z}$ and $\bar{L} = \bar{L}_q + \rho$
-where $\rho$ is the expected asymptotic number of customers being served,
-we have
-\[ \rho = \lambda \bar{Z}. \]
+For an application of Renewal-Reward Process, jump to the Section~\ref{sec:littleslaw}.
 
 \section{Markov Chains}
 \cite[\S4--5]{gallager1995discrete,gallager2010discrete}, \cite[Appendix~A]{puterman2014markov}
@@ -643,19 +624,22 @@ A class recurrent and aperiodic is called \emph{ergodic}.
   \[ \lim_{n \to \infty} P_{ij}^n = \frac{1}{\bar{T}_{jj}}. \]
 \end{mytheo}
 
-\subsection{Perron vector}
-The Perron vector $\pi$ represents the limiting probability distribution.
+\subsection{Steady-state distribution}
+The steady-state distribution $\pi$ represents the limiting probability distribution.
 If it exists, independently on where we start, after an infinite number of transition,
 we have a probability $\pi_j$ to be at the state $j$.
 We represent $\pi$ as a line vector.
 \begin{mytheo}
   For an irreducible Markov Chain,
   the system
-  \begin{align*}
+  \begin{align}
+    \label{eq:piP}
     \pi & = \pi \P\\
+    \notag
     \pi\mathbf{1} & = 1\\
+    \notag
     \pi & \geq 0.
-  \end{align*}
+  \end{align}
   has a unique solution iff all the states (which have the same type since it is irreducible)
   are positive recurrent.
   If the solution exists, satifies $\pi_j = 1/\bar{T}_{jj}$ for all state $j$.
@@ -720,8 +704,8 @@ The reversibility is very useful because if we feel that a chain is reversible,
 we can find the transition probabilities using the following theorem.
 \begin{mytheo}
   \label{theo:reversible}
-  If a Markov Chain is irreducible,
-  if the vector $\pi > 0$ is such that
+  Consider an irreducible Markov Chain.
+  If the vector $\pi > 0$ is such that
   \begin{equation}
     \label{eq:reversible}
     P_{ij}\pi_i = P_{ji} \pi_j, \quad \forall i,j
@@ -745,7 +729,8 @@ that can also be used to prove that a chain is not reversible.
 What can we do if a chain is not reversible to find the vector $\pi$ ?
 We can still use the backward chain, it won't be indistinguishable from the forward chain but it doesn't matter.
 \begin{mytheo}
-  If a Markov Chain is irreducible,
+  \label{theo:backward}
+  Consider an irreducible Markov Chain.
   if the vector $\pi > 0$ is such that
   \begin{equation}
     \label{eq:backward}
@@ -755,15 +740,20 @@ We can still use the backward chain, it won't be indistinguishable from the forw
   then $\pi$ is the steady-state distribution
   and $\P^*$ is the transition matrix of the backward chain in steady-state.
 \end{mytheo}
-To use this Theorem, the $P_{ij}$ need to be guessed.
+To use this Theorem, the $P_{ij}*$ need to be guessed.
 Remember when trying to guess it that it is the probability that $X_{n-1} = i$
 if $X_{n} = j$ in \emph{steady-state}.
 It is not something valid for all $n$.
+\begin{center}
+  ``One might think that guessing is somehow unscientific,
+  but in fact, the art of educated guessing and intuitive reasoning is at the heart of all good scientific work.''
+  \cite[p.~273]{gallager2010discrete}
+\end{center}
 
 \subsubsection{Birth-Death Markov chains}
 Consider the Markov Chain represented by the \figuref{birthdeath}.
 The experienced reader have already guessed that this chain is reversible.
-We will, at the same time, prove it and compute the Perron vector using Theorem~\ref{theo:reversible}.
+We will, at the same time, prove it and compute the steady-state distribution using Theorem~\ref{theo:reversible}.
 
 \begin{figure}[!ht]
   \centering
@@ -830,9 +820,9 @@ If there is only one recurrent class,
 the chain is called unichain.
 If this recurrent class is ergodic, we say that the chain is ergodic recurrent.
 
-We have seen the condition for the existence of the Perron vector for irreducible Markov Chain.
+We have seen the condition for the existence of the steady-state distribution for irreducible Markov Chain.
 If the Markov Chain is finite and unichain,
-the Perron vector also exists.
+the steady-state distribution vector also exists.
 For every transient state $j$ we have $\pi_j = 0$ and the part of $\pi$ in the recurrent class
 is the same if we remove the transient states.
 
@@ -980,10 +970,326 @@ At the end of the algorithm we have $g^{\k^*} = \min_i v_i^*(n) - v_i^*(n-1) = \
   \end{algorithmic}
 \end{algorithm}
 
+\section{Semi-Markov Process}
+\cite[\S6.8]{gallager1995discrete,gallager2010discrete}
+A Semi-Markov Process is the generalization of all the process we have seen.
+It can either be seen as a renewal process with states where the distribution of $U_n$ depends on $X_{n-1}$ and $X_n$
+or as a Markov Process for which we add a time $U_{ij}(n)$ between the transition between the state $i$ and $j$.
+The Markov Process is somewhat composed of an \emph{embedded Markov Chain} and an \emph{embedded renewal process} for which
+the transition rate depends on the current state of the embedded Markov Chain.
+
+We say that a Markov Process is irreducible if the embedded Markov Chain is irreducible.
+
+At a time $t$, we are in a transition between $X_{n-1}$ and $X_n$ for some $n$.
+The distribution of the time $U(n)$ that this distribution will take depends on the value of $X_{n-1}$ and $X_n$.
+Since we are not sure of the value of $X_n$ we do not know its distribution in advance.
+For each pair of state $i,j$ we have a distribution of mean $\bar{U}(i,j)$.
+Since we know the probability to have a transition to $j$ when at $i$ we can be more precise,
+at a state $i$ we have a distribution of mean $\bar{U}(i)$ for the transition time where
+\[ \bar{U}(i) = \sum_j P_{ij} \bar{U}(i,j). \]
+
+Since $\bar{U}(i)$ may differ from one state to another,
+$\pi_i > \pi_j$ does not mean that is is more likely to be in state $j$ than state $i$.
+If the embedded Markov Chain is irreducible and positive recurrent with steady-state distribution $\pi$,
+then the steady-state probability to be at state $i$ is
+\begin{equation}
+  \label{eq:pisemi}
+  p_i = \frac{\pi_i \bar{U}(i)}{\bar{U}_\pi} = \frac{\bar{U}(i)}{\bar{U}_{ii}}
+\end{equation}
+where
+\[ \bar{U}_\pi = \sum_j \pi_j \bar{U}(j) \]
+is the expected transition time \emph{in steady-state}.
+The expected return time is $\bar{U}_{ii}$ which is like $\bar{T}_{ii}$ but with the transition time taken into account.
+We have $\pi_i = 1/\bar{T}_{ii}$, from the above equation, we see that
+\begin{equation*}
+  \bar{U}_{ii} = \bar{T}_{ii} \bar{U}_\pi.
+\end{equation*}
+Using \eqref{eq:Nt} ($\bar{U}_\pi$ is only valid in steady state but since we take $t \to \infty$, we turn a blind eye to it)
+we get
+\[ \lim_{t \to \infty} \frac{N(t)}{t} = \frac{1}{\bar{U}_\pi}. \]
+with probability 1.
+
+Consider the counting process $N_{jj}(t)$,
+we can see that it is a renewal process with transition time with mean $\bar{U}_{jj}$.
+For the counting process $N_{ij}(t)$ it is almost the same,
+the only difference is the first transition time that hs mean $\bar{U}_{ij}$.
+A renewal process with just a different first transition time is a delayed renew process.
+We can still use \eqref{eq:Nt} for such process so we have
+\[ \lim_{t \to \infty} \frac{N_{ij}(t)}{t} = \frac{1}{\bar{U}_{jj}}. \]
+with probability 1.
+
+One last identity:
+The probability that we are in the transition from $i$ to $j$ in steady-state is
+\[ p_i \frac{P_{ij}\bar{U}(i,j)}{\bar{U}(i)}. \]
+
 \section{Markov Processes}
 \cite[\S6]{gallager1995discrete,gallager2010discrete}
+A Markov Process is a Semi-Markov Process such that $P_{ii} = 0$ for all state $i$ (i.e. no ``self-loop''),
+and $U_n$ only depends on $X_{n-1}$ and is exponential of rate $\nu_{X_{n-1}}$.
+We define the transition rates to from $i$ to $j$ as $Q_{ij} = \nu_i P_{ij}$ (i.e. $\Q = (\diag{\bnu})\P$),
+we see that $\sum_j Q_{ij} = \nu_i$, in other words, $(\Q - \diag(\bnu)) \1 = 0$.
+
+Here $\bar{U}(i,j) = \bar{U}(i) = 1/\nu_i$ so \eqref{eq:pisemi} becomes
+\begin{equation}
+  \label{eq:ppinu}
+  p_i = \pi_i / (\nu_i \bar{U}_\pi)
+\end{equation}
+and if $\bar{U}_\pi < \infty$ which is the case in virtually all applications,
+$\pi_i = p_i \nu_i \bar{U}_\pi$.
+Note that this gives an expression of $\bpi$ in terms of $\p$ because using $\bpi\1 = 1$ we see that $\bar{U}_\pi = \sum_i p_i \nu_i \eqdef \bar{U}_p$:
+\begin{equation}
+  \label{eq:pipnu}
+  \bpi = \p\diag{\bnu} / \bar{U}_p
+\end{equation}
+Using this in \eqref{eq:piP} then cancelling $\bar{U}_p$ and using $\Q = (\diag{\bnu})\P$ gives \eqref{eq:pnuQ}.
+\begin{mytheo}
+  Let $\p$ be the solution of the following system
+  \begin{align}
+    \label{eq:pnuQ}
+    \p \diag{\bnu} & = \p\Q\\
+    \p \1 & = 1.
+  \end{align}
+  If $\bar{U}_p < \infty$ then the solution is unique, $\p > 0$, the embedded Markov Chain is positive recurrent
+  and $\bpi$ is given by \eqref{eq:pipnu}.
+
+  If the embedded Markov Chain is positive recurrent and $\bar{U}_\pi < \infty$, then the system has a unique solution
+  given by \eqref{eq:ppinu}.
+\end{mytheo}
+
+Let $p_{ij}(t) = \Pr[X(t)=j|X(0)=i]$,
+we have the \emph{Chapman-Komogorov differential equation}:
+\[ \fdif{\p(t)}{t} = (Q - \diag(\nu))\p(t) = \p(t)(Q - \diag(\nu)). \]
+We have seen that $Q - \diag(\nu)$ has an eigenvalue 0 with right eigenvector $\1$ and left eigenvector $\p$ (see \eqref{eq:pnuQ}).
+It turns out that the other eigenvalues have a negative real part.
+Let $\Lambda,V$ be such that $\Q = V\Lambda V^{-1}$, we have
+\( \p(t) = V\exp(t\Lambda)V^{-1} \).
+As $t \to \infty$, for all the negative eigenvalues, $\exp(t\lambda_i) \to 0$ and for the eigenvalue 0, $\exp(t0) = 1$ so we have
+\[ \lim_{t \to \infty} p(t) = \1\p. \]
+That means that in steady state the probability to be in $j$ does not depend on the starting state,
+i.e. $\lim_{t \to \infty} p_{ij}(t) = p_j$.
+
+\subsection{Uniformization}
+Note that since we have enforced that $P_{ii} = 0$, we also have $Q_{ii} = 0$.
+Suppose that we increase $Q_{ii}$ and let $Q_{ij}$ constant for $j \neq i$, what happens ?
+The probability $P_{ij}$ decreases for $j \neq i$ since $P_{ii}$ increases and $\P$ must stay row-stochastic
+but since we want to keep $Q_{ij}$ constant, $\nu_i$ must increase.
+We have an higher rate $\nu_i$ but a part of this rate is just a self-loop so the outgoing rate to $j \neq i$ doesn't change.
+Since $\Q = \diag(\nu)$, and $Q_{ij}$ is constant for $j \neq i$ we see that if we increase $Q_{ii}$ from 0 to $Q_{ii}$, $\nu_i$ increases by $Q_{ii}$.
+We see that in \eqref{eq:pnuQ}, the columns $j$ is increased by $p_jQ_{jj}$ on both side so the solution $\p$ is not affected.
+However, $\pi_j$ increases since we have added a chance to self-loop insead of leaving state $j$.
+If we set $Q_{ii}$ at each node such that $\nu_i$ is a constant $\nu^*$, we will have $\bpi = \p$.
+Since $\nu_i$ is the same at each state, the embedded Poisson Process won't need to care about the states anymore,
+it will just behave like a Poisson of arrival rate $\nu^*$.
+
+It is important to see that the uniformized process is related to the original process.
+We have seen that $\p$ is unchanged but $X(t)$ is also unchanged.
+We just add dummy self-loop events, quantities sensible to the events like $N(t)$ or $\nu_i$ increases but
+$X(t)$ is unaffected by those dummy events since we stay at the same state.
+This uniformized process is very useful to extend the Markov Decision theory to Markov Processes.
+
+\subsection{Reversibility}
+Remember the backward chain for Markov Chains.
+Here we consider a similar backward process.
+The tricky part is how we consider the start and end time at state $i$.
+If the forward chain is at state $i$ from $t_1$ to $t_2$,
+the backward chain is at state $i$ from $t_2$ to $t_1$ (not $t_3$ to $t_2$ or $t_1$ to $t_0$).
+With that choice, the backward process is a Markov Process the same rate $\nu_i$ at state $i$
+and probability $P_{ij}^*$ such that $P_{ij}^* \pi_i = P_{ji} \pi_j$.
+A similiar way to define the backward process is through $Q_{ij}^*$:
+$Q_{ij}^* p_i = Q_{ji} p_j$.
+
+We define the process to be reversible if $Q_{ij} = Q_{ij}^*$.
+\begin{mytheo}
+  Consider an irreducible Markov Process.
+  If the steady states probability $\p > 0$ exists and $\bar{U}_\p < \infty$ then
+  the Markov Process is reversible iff the embedded Markov Chain is reversible
+\end{mytheo}
+
+We have a similar Theorem than Theorem~\ref{theo:reversible}
+to prove reversibility and find the steady-state distribution at the same time.
+\begin{mytheo}
+  \label{theo:reversibleprocess}
+  Consider an irreducible Markov Process.
+  If the vector $\p \geq 0$ is such that
+  \begin{equation}
+    \label{eq:reversibleprocess}
+    Q_{ij} p_i = Q_{ji} p_j, \quad \forall i,j,
+  \end{equation}
+  $\p\1 = 1$ and $\bar{U}_\p < \infty$,
+  then $\p$ is the steady-state distribution,
+  $\p > 0$,
+  the process is reversible and
+  the embedded chain is positive recurrent.
+\end{mytheo}
+
+If the Process is not reversible,
+we have a Theorem similar to Theorem~\ref{theo:backward}
+to find the steady-state distribution and prove
+that our guess on the backward process is right.
+\begin{mytheo}
+  Consider an irreducible Markov Process.
+  If the vector $\p > 0$ and the nonnegative matrix $\Q^*$ are such that
+  \begin{align*}
+    \Q^*\1 & = \Q\1,\\
+    Q_{ij}^*p_i & = Q_{ji} p_j, \quad \forall i,j,
+  \end{align*}
+  $\pi\1 = 1$ and $\bar{U}_\p < \infty$,
+  then $\pi$ is the steady-state distribution,
+  $\p > 0$,
+  $\P^*$ is the transition matrix of the backward process and
+  the embedded chain is positive recurrent.
+\end{mytheo}
+
+\subsubsection{Birth-Death Markov Process}
+The Birth-Death Markov Process is represented by the \figuref{birthdeathprocess}.
+We have $Q_{i,i+1} = \lambda_i$ and $Q_{i,i-1} = \mu_i$.
+To see this as a Markov Process, we can set $\nu_i = \lambda_i + \mu_i$, $P_{i,i+1} = \lambda_i/\nu_i$, $P_{i,i-1} = \mu_i/\nu_i$.
+However we do not really care, we will rather work with $\Q$ and $\p$.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{tikzpicture}
+    \SetGraphUnit{3}
+    \SetUpEdge[style={->}, labelstyle={draw}]
+    \Vertex{0}
+    \EA(0){1} \EA(1){2} \EA(2){3} \EA[empty=true](3){4}
+    \node[right] at (12,0) {$\cdots$};
+    \tikzset{EdgeStyle/.append style = {bend left}}
+    \Edge[label=$\lambda_0$](0)(1)
+    \Edge[label=$\lambda_1$](1)(2)
+    \Edge[label=$\lambda_2$](2)(3)
+    \Edge[label=$\lambda_3$](3)(4)
+    \Edge[label=$\mu_1$](1)(0)
+    \Edge[label=$\mu_2$](2)(1)
+    \Edge[label=$\mu_3$](3)(2)
+  \end{tikzpicture}
+  \caption{Birth-Death Markov Process}
+  \label{fig:birthdeathprocess}
+\end{figure}
+
+We have following result useful to prove reversibility for general Birth-Death Markov Process.
+\begin{mytheo}
+  For a Birth-Death Markov Process, if there is a solution $\p$ of \eqref{eq:reversibleprocess}
+  such that $\p\1 = 1$ and $\bar{U}_\p < \infty$, then the process is reversible and the embedded Markov Chain is positive recurrent and reversible.
+\end{mytheo}
+
+If we define $\rho_i$ as $\lambda/\mu_{i+1}$,
+we have exactly the same relations than with Birth-Death Markov Chain with $\p$ instead of $\bpi$.
+
+We use Theorem~\ref{theo:reversibleprocess}, to get $p_{i+1} = \rho_i p_i$.
+Since $\p\1 = 1$, we have
+\[ \p_0 = \frac{1}{1 + \sum_{n=1}^\infty \sum_{i=0}^{n-1} \rho_i}. \]
+
+Suppose now that $p_i$ and $q_i$ are constant and $\rho < 1$,
+we have $p_i = \rho^i(1-\rho)$.
+We can see that in steady state, $\Pr[X(t) \geq n] = \rho^n$ and
+\begin{equation}
+  \label{eq:barL}
+  \bar{L} = \lim_{t \to \infty} \E[X(t)] = \sum_{n=1}^\infty np_n = \sum_{n=1}^\infty \Pr[X(t) \geq n] = \frac{\rho}{1-\rho}.
+\end{equation}
+where $\bar{L}$ is the average queue length for M/M/1 queue with arrival rate $\lambda$ and exponential service time of rate $\mu$.
+Note that the 2 differente series are different ways to compute the same thing, the equality between them is not necessarily trivial.
+
+We end this section with the following Theorem.
+Note that the 2 first properties are also valid for Birth-Death Markov Chain.
+\begin{mytheo}
+  Given an M/M/1 queueing system in steady state with $\lambda < \mu$,
+  \begin{enumerate}
+    \item the departure process is Poisson with rate $\lambda$,
+    \item the state $X(t)$ at any time $t$ is independent of departures prior to $t$, and
+    \item for First Come First Served (FCFS) service,
+      given that a customer departs at time $t$,
+      the arrival time of that customer is independent of the departures prior to $t$.
+  \end{enumerate}
+\end{mytheo}
+Not that $\lambda < \mu$ implies that $\rho < 1$ so the Process is reversible.
+For the backward process (which is the same that the forward process in steady state since it is reversible),
+the third property is
+``given that a customer arrives at time $t$,
+the departure time of that customer is independent of the arrivals after $t$.''
+This is a direct consequence of the FCFS service.
 
 \section{Queueing Systems}
+We represent a Queueing System by ``A/B/$s$''
+where
+\begin{itemize}
+  \item A is the type of distribution of the arrival time interval,
+  \item B is the time of distribution of the service time,
+  \item $s$ is the number of servers.
+\end{itemize}
+There is a single queue and as soon as one server is not busy and the queue is not empty,
+the first customer of the queue is assigned to the server and the service time begins.
+
+Different values of A and B are
+\begin{itemize}
+  \item M which represents an exponential distribution,
+  \item D which represents an deterministic duration,
+  \item E which represents an Erlang distribution,
+  \item G which represents a General distribution.
+\end{itemize}
+
+This is a Semi-Markov Process for which the states are the number of customer in the system.
+The Birth-Death Markov Process is a good example, it is an M/M/1 Queueing System.
+
+Denote
+the number of arrivals between 0 and $t$ as $A(t)$ and
+the number of departures between 0 and $t$ as $D(t)$.
+The rv $L(t) = A(t) - D(t)$ is the number of customers in the system at $t$
+and the iid rv $W_i$ are the time spent in the system by the customer $i$.
+
+Note that in $W_i$ we have the waiting time in the queue and the service time.
+Let $(W_q)_i$ be time spent in the queue by the customer $i$, $L_q$ be the number of customers in the queue at time $t$ and the rv $Z_i$ of mean $\bar{Z}$ be the service time.
+
+In \emph{steady state},
+we are interested by
+\begin{itemize}
+  \item the expected number of customer in the system $\bar{L} = \lim_{t \to \infty} \E[X(t)]$,
+  \item the expected time spent in the system $\bar{W}$,
+  \item the expected number of customer in the queue $\bar{L}_q$ and
+  \item the expected time spent in the queue $\bar{W}_q$.
+\end{itemize}
+
+Those 4 values are linked together by the Little's Law and the identity
+\begin{equation}
+  \label{eq:wwq}
+  \bar{W} = \bar{W}_q + \bar{Z}.
+\end{equation}
+Once we have one we get the 3 other ones easily.
+Typically, we compute $\bar{L}$ similarly as with \eqref{eq:barL}.
+
+\subsection{Little's Law}
+\label{sec:littleslaw}
+We would like to compute the averate waiting time but $L$ depends on the all the customer of the queue,
+not just the last one.
+However, if we look at idle time, i.e. time when no one is in the system,
+and the busy period between the idle times, we can see that $L(t)$ only depends on the busy period at $t$.
+Therefore, if we consider the counting process for which $N(t)$ is the number of busy period already finished,
+$L(t)$ is a reward function for this process.
+
+We can apply \eqref{eq:rew} (actually we reuse the proof to make it clear),
+\[ \bar{L} = \lim_{t \to \infty} \frac{1}{t} \int_0^t L(\tau) \dif \tau = \lim_{t \to \infty} \frac{A(t)}{t} \cdot \frac{\sum_{i=1}^{A(t)} W_i}{A(t)} = \frac{1}{\bar{U}} \cdot \bar{W} \]
+with probability 1.
+Here $\E[R_n] = \E[L_n] = \bar{W}$.
+
+Similarly if we consider the reward function $L_q(t)$ we get
+\[ \bar{L}_q = \lim_{t \to \infty} \frac{1}{t} \int_0^t L_q(\tau) \dif \tau = \frac{1}{\bar{U}} \bar{W}_q \]
+with probability 1.
+
+Note that using Little's Law, \eqref{eq:wwq} becomes
+\[ \bar{L} = \bar{L}_q + \rho. \]
+where $\rho = \frac{\bar{Z}}{\bar{U}}$ is the expected number of customer being served in steady-state.
+
+\subsubsection{M/G/$s$ queue}
+For Poisson arrival, we can rid of this ``with probability 1''.
+Let $\lambda$ such that $\bar{X} = 1/\lambda$, we have
+\begin{align*}
+  \bar{L}   & = \lim_{t \to \infty} \E[L(t)] = \lim_{t \to \infty} \frac{1}{t} \int_0^t L(\tau) \dif \tau = \lambda \bar{W}\\
+  \bar{L}_q & = \lim_{t \to \infty} \E[L_q(t)] = \lim_{t \to \infty} \frac{1}{t} \int_0^t L_q(\tau) \dif \tau = \lambda \bar{W}_q.
+\end{align*}
+where the equality with the integral is with probability 1 but if we remove it we get a deterministic equality.
+
+For M/M/$k$ queue, let $\mu$ such that $\bar{Z} = 1/\mu$, we get $\rho = \frac{\lambda}{\mu}$,
+our notation is consistent with Birth-Death Markov Processes.
 
 \nocite{*}
 \biblio[alpha]
