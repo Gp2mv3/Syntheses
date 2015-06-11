@@ -2663,18 +2663,37 @@ La fonction de hash peut être basé sur le DES, MD5, Blowfish, SHA256, SHA512.
 \subsubsection{Unix (DES)}
 Le méchanisme consiste à générer la hash d'un mot de passe en chiffrant
 25 fois avec une variante de l'algorithme DES une chaîne de caractère null 
-(64bit valant 0).\\
-La clé de chiffrement est le mot de passe à hacher. On
+(64bit valant 0).
+
+\begin{itemize}
+    \item La clé de chiffrement est le mot de passe à hacher. On
 ne prend que le 8 premiers charactère du mots de passe et on 
 extrait les 7bits de poids faible de chaque caractères $\to$ clé de
-56 bits pour le DES.\\
-L'algo utilise en plus un paramètre de 12 bits appelé \textbf{salt} 
+56 bits pour le DES.
+\item L'algo utilise en plus un paramètre de 12 bits appelé \textbf{salt} 
 (générer aléatoirement à la création du mit de passe).
-Il permet que deux utilisateurs ayant le même mots de passe n'est
+\begin{itemize}
+    \item[$\Rightarrow$] Il permet que deux utilisateurs ayant le même mots de passe n'est
 pas le même valeur de hash.
-\begin{figure}
+\end{itemize}
+\end{itemize}
+
+\begin{figure}[!h]
 	\centering
-	\includegraphics[scale = 0.5]{img/auth_unix_des.png}
+    \begin{tikzpicture}
+        \node[draw, rectangle] (A) {25x DES};
+
+        \node (B) [left=of A] {\begin{tabular}{c}plaintext\\64bits block of 0\end{tabular}};
+        \node (C) [above left=of A] {\begin{tabular}{c}key extracted\\from password\end{tabular}};
+        \node (D) [above=of A] {\begin{tabular}{c}random salt\\12bits\end{tabular}};
+
+        \node (E) [right=of A] {\begin{tabular}{c}ciphertext\\64bits hash\end{tabular}};
+
+        \draw[->] (B) -- (A);
+        \draw[->] (C) -- (A);
+        \draw[->] (D) -- (A);
+        \draw[->] (A) -- (E);
+    \end{tikzpicture}
 \end{figure}
 
 Le hash est stocké dans le fichier /etc/shadow sous la forme :
@@ -2686,54 +2705,121 @@ Où :
 	des infos temporelle sur le mot de passe, tel que 
 	le nombre de jours avant qu'il puisse (may) ou doit (must) être modifié.
 \end{itemize}
+
+
 \subsubsection{Unix(MD5)}
+
 Le DES devenu obsolète, une alternative est MD5. Comparé un DES qui est
-un algorithme de chiffrement, MD5 est un fonction de hachage.\\
-MD5 permet l'utilisation des mot de passes plus longs et les charactères
-ne sont plus limités à 7 bits.\\
-Le salt n'est plus sur 12 bits mais 48 bits (8 caractère encodé en 
-Base64).\\
-La valeur de hash est sur 128 bits.
-\begin{figure}[h]
+un algorithme de chiffrement, MD5 est un fonction de hachage.
+
+\begin{itemize}
+    \item MD5 permet l'utilisation des mot de passes plus longs et les charactères
+ne sont plus limités à 7 bits.
+\item Le salt n'est plus sur 12 bits mais 48 bits (8 caractère encodé en 
+Base64).
+\item La valeur de hash est sur 128 bits.
+    \end{itemize}
+
+\begin{figure}[!h]
 	\centering
-	\includegraphics[scale = 0.5]{img/auth_unix_md5.png}
+    \begin{tikzpicture}
+        \node[draw, rectangle] (A) {MD5};
+
+        \node (B) [left=of A] {\begin{tabular}{c}random salt\\48bits\end{tabular}};
+        \node (C) [above left=of A] {\begin{tabular}{c}key extracted\\from password\end{tabular}};
+
+        \node (E) [right=of A] {\begin{tabular}{c}128-bit hash\end{tabular}};
+
+        \draw[->] (B) -- (A);
+        \draw[->] (C) -- (A);
+        \draw[->] (A) -- (E);
+    \end{tikzpicture}
 \end{figure}
+
+
 Dans le fichier /etc/shadow, le champs passwd commence avec \$1\$ pour
 indiquer l'utilisation de MD5.Le salt est ensuite concaténé et se termine 
 par \$. Ensuite viens la valeur de hash.
+
 \subsection{Authentification Windows}
+
 \subsubsection{Win9x}
+
 Windows utilise le Lan Manager Hash pour hasher ses mots de passe.
-Le mot de passe est d'abord converti en majuscule puis divisé en deux 
+
+\begin{enumerate}
+    \item Le mot de passe est d'abord converti en majuscule puis divisé en deux 
 blocks de 7 caractères après l'avoir complétés avec le char vide pour qu'il 
-atteingne 14 caractères \\
-Chaque bloc de 7 bytes est utilisé comme clé pour crypter une constante
-avec l'algorithme DES (pas d'utilisation de salt). Il y a donc 2 valeur 
+atteingne 14 caractères.
+\item Chaque bloc de 7 bytes est utilisé comme clé pour crypter une constante
+avec l'algorithme DES (pas d'utilisation de salt). 
+\item[$\Rightarrow$] Il y a donc 2 valeur 
 de hash de 64bits qui sont ensuite concaténé.
-%%TODO faire un belle image
+\end{enumerate}
+
+\begin{figure}[!h]
+	\centering
+    \begin{tikzpicture}
+        \coordinate (A);
+        \node[draw, rectangle] (A1) [above=of A] {DES};
+        \node[draw, rectangle] (A2) [below=of A] {DES};
+
+        \node (B) [left=of A] {password (112bit)};
+        \node (B1) [left=of A1] {Constant string (64bit)};
+        \node (B2) [left=of A2] {Constant string (64bit)};
+
+        \node (C1) [right=of A1] {hash (64bits)};
+        \node (C2) [right=of A2] {hash (64bits)};
+
+        \node (C) [right=6cm of A] {hash (128bit)};
+        \node (E) [left=of C] {Concat};
+
+        \draw (B1) -- (A1);
+        \draw (B2) -- (A2);
+        \draw (B) edge node[above] {split} (A);
+        \draw[->] (A) -- (A1);
+        \draw[->] (A) -- (A2);
+
+        \draw[->] (A1) -- (C1);
+        \draw[->] (A2) -- (C2);
+
+        \draw (C1) -| (E);
+        \draw (C2) -| (E);
+
+        \draw[->] (E) -- (C);
+    \end{tikzpicture}
+\end{figure}
+
+
 \subsubsection{Win NT/2000/XP/Vista/Seven}
 Ces versions de Windows utilisent le NT Lan Manager Hash (NT Hash) qui 
-utilise MD4.\\
+utilise MD4.
+
+
 Cette fois, le mot de passe n'est pas:
 \begin{itemize}
 	\item pas séparé en deux 
 	\item peut-être plus grand que 14 caractères
 	\item et n'est pas converti en majuscule.
 \end{itemize}
+
 \subsubsection{Stockage des mots de passe }
 Par défaut, LM Hash et NT Hash sont tous les deux conservés sur la 
 machine (jusqu'à Windows XP compris). Il est donc possible de récupérer 
-le mot de passe NT Hash en récupérant le mot de passe LM
-Hash. \\
+le mot de passe NT Hash en récupérant le mot de passe LM Hash. 
+
+\paragraph{Note}:
 Il est possible de désactivé le LM Hash (désactivé par défaut à partir de
 Vista), dans le registre ou en choisissant un mot de passe de plus de 14 
 caractères.
+
+\subparagraph{ }
 En dessous de W2K, XP et 2003, NT Hash et LN Hash sont stockés dans le 
-Security Account Manager ou dans le Active Directory (ntds.dit).\\
-Le fichier est crypté mais par défaut la clé est récupérable et le
+Security Account Manager ou dans le Active Directory (ntds.dit).
+
+$\rightarrow$ Le fichier est crypté mais par défaut la clé est récupérable et le
 fichier de hash également avec les droits administrateur et un exploit 
 ou en bootant sur un autre OS.
-
 
 
 \subsection{Bonnes pratiques}
