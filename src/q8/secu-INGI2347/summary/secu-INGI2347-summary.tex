@@ -1568,7 +1568,7 @@ Comme ce protocole n'utilise aucune authentification, il est facile
  de forger des mails.
 
 $\rightarrow$ Il facile de tracer l'expediteur car chaque serveur 
-indique l'IP de la machine qui lui a envoyé le message. 
+indique l'adresse IP de la machine qui lui a envoyé le message. 
 
 \paragraph{Note:} Pour être non détectable, il faut lancer la 
 connexion telnet sur une machine qui ne log pas les
@@ -1603,6 +1603,12 @@ transformant en \textit{bots}). Utilisez un réseau de bots pour envoyer le
 spam.
 
 \end{enumerate}
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=4cm]{img/spam.png}
+\caption{Spam}
+\end{figure}
 
 
 \subsubsection{Récupérer les adresses mail}
@@ -1753,6 +1759,11 @@ pose un problème de ''scalabilité''. Pour faire face à cela on
 utilise un firewall par lequel tout le traffic va passer. 
 Le FW peut exiger une authentification afin d'obtenir une connexion.
 
+\begin{itemize}
+\item Stateless : pas de mémoire des paquet déja vu
+\item Stateful : Garde une trace pour construire l'état de chaque connection
+ \end{itemize}
+
 \paragraph{Traffic}
 
 \begin{itemize}
@@ -1873,7 +1884,7 @@ Les firewalls (Stateless FW) les plus basique filtre les paquets.
 \end{itemize}
 
 \paragraph{Règles}
-Chaque règle a la forme $$<Action><Proto><SRC:PORT> \ ->\ <DST:PORT>$$
+Chaque règle a la forme $$<Action><Proto><SRC:PORT> \to <DST:PORT>$$
 Les régles ont comme priorité l'ordre dans lequelle, elles sont définis.
 
 \subparagraph{Note:}
@@ -1958,8 +1969,6 @@ Un serveur proxy permet de réaliser :
    \item Peut augmenter l'efficacité du serveur en utilisant une cache dans le proxy.
 \end{itemize}
 
-
-
 \subsubsection{Type de proxy}
 
 \paragraph{Proxy Transparent}
@@ -2011,15 +2020,62 @@ Le client doit d'abord s'authentifier au près du proxy avant de pouvoir
 communiquer avec l'un des serveurs.
 
 
-\subsection{FW avec Zone Démilitarisé}
+\subsection{Architecture}
 
-\begin{figure}[!h]
-\centering
-\includegraphics[width=9cm]{img/DMZ.png}
-\caption{DMZ}
-\end{figure}
+\subsubsection{Personal firewall}
+
+\begin{tabular}{m{11cm}m{2cm}}
+Le pare-feu personnel interdit d'abord toutes les connexions, et à chaque alarme, l'utilisateur peut
+autoriser l'application à se connecter, pour une fois ou pour toujours.
+&
+\includegraphics[width=2cm]{img/personalFW.png}
+\end{tabular}
+
+\subsubsection{NAT + Filtering}
+
+\begin{tabular}{m{9cm}m{4cm}}
+\begin{itemize}
+\item NAT dynamique pour les machines internes
+\item NAT statique pour les serveurs accessibles
+\item Filtrage entrant/sortant
+\item[-] Pas d'analyse du contenu (virus)
+\item[-] Connection direct sur les serveurs internes
+\end{itemize}
+&
+\includegraphics[width=5cm]{img/natFW.png}
+\end{tabular}
+
+\subsubsection{FW avec Zone Démilitarisé}
+
+\begin{tabular}{m{9cm}m{4cm}}
+\begin{itemize}
+\item Machine interne se connecte au proxy
+\item Seul le proxy va à internet
+\item outbound NAT dynamique
+\item inbound NAT statique vers le proxy
+\item[-] FW est un point critique
+\item[-] une vulnérabilité du proxy donne à accès à tous
+\end{itemize}
+&
+\includegraphics[width=5cm]{img/DMZ.png}
+\end{tabular}
 
 La zone démilitarisée (DMZ) n'est relié ni à Internet ni au réseau interne.
+
+\subsubsection{Sandwiched FW avec Zone Démilitarisé}
+
+\begin{tabular}{m{9cm}m{4cm}}
+\begin{itemize}
+\item Machine interne se connecte aux proxies (un par protocol)
+\item Seul le proxy va à internet
+\item Par de routage dans les proxies
+\item Outbound NAT dynamique, inbound statique
+\end{itemize}
+&
+\includegraphics[width=5cm]{img/SDMZ.png}
+\end{tabular}
+
+
 
 \paragraph{Configuration}:
 \begin{itemize}
@@ -2431,6 +2487,12 @@ signature de certificat (CSR) pour que le CA remplit le certificat.
 remplacé par un nouveau, un site sécurisé peut toujours être 
 vulnérable.
 
+\begin{figure}[!h]
+\centering
+\includegraphics[width=11cm]{img/certificat.png}
+\caption{Signing and verification certificat}
+\end{figure}
+
 \subsection{SSL/TLS}
 
 SSL inventé à la base pour offrir un protection de la communication en
@@ -2511,6 +2573,7 @@ Les mot de passe ne doivent jamais être stocké en clair.
 	\item Pour le login, hashé le mot de passe et ensuite comparer avec
 	la valeur stocké.
 \end{itemize}
+
 \subsection{Vulnerabilités}
 Quelques vulnérabilités :
 \begin{itemize}
@@ -2521,20 +2584,23 @@ Quelques vulnérabilités :
 	\item Key Loggers
 	\item Écoute du réseau
 	\item Multi-Website Password 
-	\item Les traces (ex: gestionnaire de mot de passe (qui les enregistre)
+	\item Les traces (ex: gestionnaire de mot de passe qui les enregistre)
 	sur les ordinateurs public.
 	\item Attaques par essaie erreurs 
 \end{itemize}
 
 \subsection{Online attack}
+
 Les online attack consistent à tester des mots de passe successivement à travers l'interface (web par
-exemple) qui sépare le pirate et le serveur.\\
-Le serveur va alors indiquer au pirate si le mot de passe est
+exemple) qui sépare le pirate et le serveur.
+
+$\Rightarrow$ Le serveur va alors indiquer au pirate si le mot de passe est
 bon ou non et dans ce cas, essayer un autre (le serveur fonctionne comme une black box, un oracle).
 Ce système est lent, mais ne nécessite pas de connaitre la fonction de hash.
-Pour contrer ce genre d'attaque :
+
+\paragraph{Pour contrer ce genre d'attaque}: 
 \begin{itemize}
-  \item Ajouter un délai de réponse :Un délai est ajouté avant que le client (pirate ici) ne reçoit la
+  \item Ajouter un délai de réponse : un délai est ajouté avant que le client (pirate ici) ne reçoit la
 réponse du serveur.
   \item Notifier l'utilisateur (par mail) et bloquer son compte : Attention, cette mesure permet de faire
 du déni de service. En effet, un pirate peut essayer plusieurs mot de passe random pour
@@ -2549,20 +2615,25 @@ connexion.
 des humains. Il suffit donc de demander au client une réflexion simple pour un humain mais
 compliqué pour un ordinateur.
 \end{itemize}
+
 \subsection{Offline attack}
 Les offline attack consiste à voler le fichier qui contient tous les hash, trouver la fonction de hash et
 ensuite faire une attaque par dictionnaire, brute force, etc. En connaissant la fonction de hash, le
 pirate peut comparer des mots de passe hashé au fichier récupérer sur le serveur.
-\subsection{Attaques par dictionnaire}
+
+\subsubsection{Attaques par dictionnaire}
+
 Beaucoup de gens utilise des mots de passe issus du dictionnaire (plus simple à retenir) mais celui-ci
 est fini (entre 150000 mots et 200000 mots) et est réduit donc considérément les possibilités. Un
 dictionnaire déjà hashé peut accélérer l'attaque. Un ordinateur peut calculer entre 200 000 hash et 10
 000 000 hash par second en fonction de la fonction de hash.
-\subsection{Brute-force}
+
+\subsubsection{Brute-force}
 Les attaques par brute-force consiste à essayer un grand nombre de possibilité même si celle-ci n'ont
 pas obligatoirement un sens (« aaa » puis « bbb » puis « abb », etc). Cette attaque permet de trouver
 les mots de passe abstrait sans signification qui ne se trouve pas dans un dictionnaire.
-\paragraph{Heuristique d'attaque}
+
+\subsubsection{Heuristique d'attaque}
 On peut combiner l'attaque par dictionnaire et l'attaque par brute force en appliquant certaines règles
 souvent utilisé par les gens :
 \begin{itemize}
@@ -2575,6 +2646,7 @@ souvent utilisé par les gens :
   \item Remplacer certain caractère par des similaires (Fred).
   \item Ajouter X caractère au début ou à la fin du mot (aaaFred).
 \end{itemize}
+
 \subsection{Faiblesse}
 Les mots de passes considéré comme faibles sont ceux:
 \begin{itemize}
@@ -2584,8 +2656,10 @@ Les mots de passes considéré comme faibles sont ceux:
 	\item basé sur les pattern du clavier (''qwerty''...)
 	\item composé d'un seul type de symbole 
 \end{itemize}
+
 \subsection{Authentification Unix}
 La fonction de hash peut être basé sur le DES, MD5, Blowfish, SHA256, SHA512.
+
 \subsubsection{Unix (DES)}
 Le méchanisme consiste à générer la hash d'un mot de passe en chiffrant
 25 fois avec une variante de l'algorithme DES une chaîne de caractère null 
@@ -2659,6 +2733,9 @@ Security Account Manager ou dans le Active Directory (ntds.dit).\\
 Le fichier est crypté mais par défaut la clé est récupérable et le
 fichier de hash également avec les droits administrateur et un exploit 
 ou en bootant sur un autre OS.
+
+
+
 \subsection{Bonnes pratiques}
 Un mot de passe doit contenir au moins un élément de chaque point 
 \begin{itemize}
