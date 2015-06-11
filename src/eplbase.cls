@@ -107,11 +107,11 @@
    yours is therefore welcome as well.
    It is always possible to improve it,
    it is even more true if the course has changed because the summary must be updated accordingly.
-   The source code can be found at the following address}
+   The source code and a link to the latest version of the pdf can be found at the following address}
    {Il est écrit par les auteurs susnommés avec l'aide de tous
    les autres étudiants, la vôtre est donc la bienvenue.
    Il y a toujours moyen de l'améliorer, surtout si le cours change car la synthèse doit alors être mise à jour en conséquence.
-   On peut retrouver le code source à l'adresse suivante}
+   On peut retrouver le code source et un lien vers la dernière version du pdf à l'adresse suivante}
    \begin{center}
      \url{https://github.com/Gp2mv3/Syntheses}.
    \end{center}
