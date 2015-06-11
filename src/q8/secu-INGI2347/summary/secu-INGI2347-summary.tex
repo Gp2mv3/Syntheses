@@ -2190,19 +2190,26 @@ utiliser cette sur un de ses sites, il peut réussir à récupéter les cookies.
 \end{itemize}
 
 \section{Web Attack and Defense}
+
 \subsection{Shell Shock code}
-Un serveur Unix map les composants d'une requête HTTP(extra headers ) des variables 
-d'envirionments. \\
+Un serveur Unix map les composants d'une requête HTTP(extra headers) dans des variables 
+d'environments. 
+
+\paragraph{Problème}
 Le probleme est que bash a un bug dans son parsing. Si un string commence
 avec un ensemble de bytes mal formé, bash continue le parsing et execute 
 les commande qu'ils trouvent.
+
+\subsection{XSS defenses}
+
 \paragraph{XSS}
 C'est un bonne exemple de mauvaise désinfection de contenu. Une 
 attaque XSS consiste à injecter du code (ex:JS) dans une page coté 
 client qui sera ensuite vu par d'autre client. Á ce moment là,
 le browser exécutera le code. 
-\subsection{XSS defenses}
-\paragraph{Heuristiques}
+
+
+\subsubsection{Heuristiques}
 Les browsers modernes utilisent une heuristique pour detecter les
 attaques XSS. 
 \begin{itemize}
@@ -2215,48 +2222,79 @@ attaques XSS.
 \end{itemize}
 Cette technique ne fonctionne pour les attaques XSS persistente 
 (ex: code dans une section commentaire)
-\paragraph{Set-Cookie: Httponly}
+
+\subsubsection{Type}
+
+\begin{enumerate}
+
+\item \textbf{Set-Cookie: Httponly}
 Une façon de se défendre est d'utiliser les Httponly cookie. Le serveur
-dit au browser que le JS coté client ne peut pas avoir accés au cookie.\\
+dit au browser que le JS coté client ne peut pas avoir accés au cookie.
+
 $\to$ Pas assez puissant car l'attacker peut toujours faire des requêtes
 avec le cookie de l'utilisateur. (CSRF)
-\paragraph{Séparation de Privilièges}
+
+\item \textbf{Séparation de Privilièges}
 Utiliser un domain séparé pour le contenu dans lequel on a pas confiance
-(C'est ce Google fait).Si jamais l'attaque est possible, le code tourne dans 
-un autre domaine.\\
+(C'est ce Google fait). Si jamais l'attaque est possible, le code tourne dans 
+un autre domaine.
+
 $\to$ Devient un problème si le contenu du domaine séparé pointe vers 
 le domaine principale.
-\paragraph{Désinfection du contenu}
+
+\item \textbf{Désinfection du contenu}
 L'idée est de prendre le contenu dans lequels on a pas confiance et de
-l'encoder de façon à limiter la façon dont il peut être interpréter.\\
-$\to$ Il difficile de parser l'HTML de façon non-ambigüe.\\
+l'encoder de façon à limiter la façon dont il peut être interpréter.
+
+$\to$ Il difficile de parser l'HTML de façon non-ambigüe.
+
+\paragraph{Alternative}
 Une autre façon de faire serait d'interdire l'HTML venant de l'extérieur
 et forcer ce contenu extérieur à être écrit dans un plus petit langage.
 (Ce langage sera alors traduit en HTML).
-\paragraph{Content Security Policy}
-Les serveurs web informent les browsers quels types de ressources
+
+\item \textbf{Content Security Policy}
+Les serveurs web informent les browsers de quels types de ressources
 peuvent être chargées et les origines autorisées pour ces ressources.
-\subsection{Stateless Cookies}
+
+\end{enumerate}
+
+
+\subsection{Session management}
+
+La solution classique consiste à mettre une random session ID
+dans le cookies.
+
+Les sessions expirent après un certain délai.
+
+\subsubsection{Stateless Cookies}
+
 Si la notion de session disparait, il faut un moyen pour authentifier 
-les requêtes. L'idée est d'authentifier les cookie en utililsant la 
-crypto (MAC).\\
+chaque requêtes. L'idée est d'authentifier les cookie en utililsant la 
+crypto (MAC).
+
+\paragraph{Fonctionnement}
 Le client et le serveur se partage un clé qui va être utiliser pour 
 envoyer (coté client) et vérifier les messages (coté serveur).  
-\subsection{Altertnative}
+
+\paragraph{Alternative}
 Ils existent des alternatives aux cookies pour la gestion de session
 \begin{itemize}
-	\item Utiliser le stokage local de HTML5 and implémenter 
+	\item Utiliser le stokage local de HTML5 et implémenter 
 	l'authentification en JS. Cela a l'avantage 
 	de ne pas devoir envoyer le cookie via le network et ce 
 	n'est pas sujet au modèle complexe de same-origin policy.
+
 	\item Certificat coté client %TODO
 \end{itemize}
+
 \subsection{Ambiguité des protocols}
 \begin{itemize}
 	\item JS peut demander au browser d'envoyer une XMLHttpRequest et
 	d'ajouter des en-tête à la requêtes. Le problème c'est que les valeurs 
 	de ces en-tête peut être en conflict avec celle calculé par le browser.
 	(Content-length,Host,...)	
+
 	\item Le parsing d'une URL peut amené de l'ambiguité: http://example.com:80@foo.com/
 	\begin{itemize}
 		\item Pour Flash l'origine est example.com
@@ -2265,55 +2303,76 @@ Ils existent des alternatives aux cookies pour la gestion de session
 \end{itemize}
 
 
-\section{IDS}
-Systèmes de détection d'intrusion (IDS)
-Les systèmes de détection d'intrusion (IDS) analysent le trafic réseau (réseau IDS, NIDS), généralement
+\section{Systèmes de détection d'intrusion (IDS)}
+
+Les IDS analysent le trafic réseau (réseau IDS, NIDS), généralement
 en face du pare-feu et/ou les événements sur les serveurs (Host IDS, HIDS).
-En cas d'attaque, ils lancer une alarme (SMS, courrier, etc) et permettent de reconfigurer le pare-feu
-(filtrage de l'attaque) ou les serveurs.
+
+\textbf{En cas d'attaque}, ils lancer une alarme (SMS, courrier,
+etc) et permettent de reconfigurer le pare-feu (filtrage de l'attaque)
+ou les serveurs.
+
 L'analyse peut se faire en temps réel ou en analysant les logs.
-IDS avec caractérisation du trafic (IDS with Traffic Characterization):
-IDS qui réalise des statistiques sur le trafic.
-Si la valeur va au-delà de ses limites habituelles, alors l'IDS suppose qu'il y a une attaque.
-\begin{itemize}
-  \item Ce système peut reconnaître de nouvelles attaques.
-  \item Il peut aussi ne pas les reconnaître ... (faux négatifs).
-  \item Il peut voire attaques où il n'y a pas (faux positifs).
-\end{itemize}
-Le taux élevé auquel il génère des faux positifs rend ce type d'IDS impopulaire.
-IDS basés sur les signatures (Signature-based IDS):
-L'IDS dispose d'une base de données avec les attaques connues.
-Il ne reconnaît pas de nouvelles attaques (doit être constamment mis à jour).
-Les faux négatifs.
-\begin{itemize}
-  \item Attaques manuelles peuvent avoir des variations qui ne sont pas détectés.
-  \item Les signatures sont pas toujours précis.
-Les faux positifs.
-  \item L'IDS, dans la plus part des cas, ne sait pas si une tentative d'attaque a réussi.
-  \item L'IDS ne sait pas si la cible de l'attaque est vulnérable (par exemple attaque Linux sur serveur
-Windows).
-\end{itemize}
-Exemple d'IDS basés sur les signatures : Snort
-IDS basé sur l'intégrité de l'host (Integrity-based Host IDS):
-Tripwire est un exemple typique d'un HIDS avec une analyse différée.
-\begin{itemize}
-  \item Il crée une signature numérique de tous les fichiers et répertoires qui ne doivent pas être
-modifiés.
-  \item Les signatures ne peuvent pas être modifiées par un pirate.
-  \item Il compare régulièrement les fichiers et les signatures pour détecter d'éventuelles
-modifications.
-  \item Il génère une alarme lorsqu'il détecte une modification et peut restaurer automatiquement la
-version originale du fichier.
+
+\subsection{Réaction au attaque}
 Systèmes de prévention des intrusions (IPS):
-Un IPS est un IDS qui réagit à une attaque.
-  \item Niveau IP: Filtres l'adresse IP source dans le pare-feu (pour un temps).
-  \item Niveau TCP: Envoie un spoofed paquet TCP 'reset' à la destination pour tuer la connexion.
-  \item Niveau application: «corrige» une requête Web pour enlever les caractères spéciaux.
-\end{itemize}
+    Un IPS est un IDS qui réagit à une attaque.
+    \begin{itemize}
+    \item Niveau IP: Filtres l'adresse IP source dans le pare-feu (pour un temps).
+    \item Niveau TCP: Envoie un spoofed paquet TCP 'reset' à la destination pour tuer la connexion.
+    \item Niveau application: «corrige» une requête Web pour enlever les caractères spéciaux.
+    \end{itemize}
+
+\subsection{Type}
+
+\begin{enumerate}
+\item IDS avec caractérisation du trafic (IDS with Traffic Characterization):
+    réalise des statistiques sur le trafic.
+
+    $\to$ Si la valeur va au-delà de ses limites habituelles, alors
+        l'IDS suppose qu'il y a une attaque.
+
+    \begin{itemize}
+        \item Peut reconnaître de nouvelles attaques.
+        \item faux négatifs
+        \item faux positifs (taux élevé)
+    \end{itemize}
+
+\item IDS basés sur les signatures (Signature-based IDS):
+    dispose d'une base de données avec les attaques connues.
+
+    \paragraph{Attention} Il ne reconnaît pas de nouvelles attaques
+(besoin de màj). Les faux négatifs.
+
+    \begin{itemize}
+    \item Attaques manuelles peuvent avoir des variations qui ne sont pas détectés.
+    \item Les signatures sont pas toujours précis. (Les faux positifs)
+    \item L'IDS, dans la plus part des cas, ne sait pas si une tentative d'attaque a réussi.
+    \item L'IDS ne sait pas si la cible de l'attaque est vulnérable (par exemple attaque Linux sur serveur
+            Windows).
+    \end{itemize}
+    Exemple d'IDS basés sur les signatures : Snort
+
+\item IDS basé sur l'intégrité de l'host (Integrity-based Host IDS):
+    Tripwire est un exemple typique d'un HIDS avec une analyse différée.
+    \begin{itemize}
+    \item Il crée une signature numérique de tous les fichiers et répertoires qui ne doivent pas être
+    modifiés.
+    \item Les signatures ne peuvent pas être modifiées par un pirate.
+    \item Il compare régulièrement les fichiers et les signatures pour détecter d'éventuelles
+    modifications.
+    \item Il génère une alarme lorsqu'il détecte une modification et peut restaurer automatiquement la
+    version originale du fichier.
+    \end{itemize}
+\end{enumerate}
+
 
 \section{Certificates}
+
 \subsection{Bases}
+
 L'objectif d'un certificat est de relier une clé publique avec son propriétaire.
+
 \begin{itemize}
 	\item Le couple (clé publique, propriétaire) est signé par un tiers de 
 	confiance appelé autorité de certification (CA). Pour vérifier la signature
@@ -2321,9 +2380,11 @@ L'objectif d'un certificat est de relier une clé publique avec son propriétair
 	\item Le couple (clé publique du CA, CA) est auto-signé: certificat 
 	racine. L'authenticité du certificat racine est fondamentale.
 \end{itemize}
-Trois champs obligatoires.
+
+\paragraph{Trois champs obligatoires}
+
 \begin{itemize}
-  \item TBS certificat (TBS = " To Be Signed "): La charge utile du certificat, elle contient
+  \item \textbf{TBS certificat} (TBS = " To Be Signed "): La charge utile du certificat, elle contient
   	\begin{itemize}
 		\item Numéro de série: Numéro unique attribué par le CA à la certificat.
   		\item Domaine de la société: Identifies l'entité qui a signé et délivré le certificat.
@@ -2334,13 +2395,17 @@ Trois champs obligatoires.
 		\item Subject Public Key Info: La clé publique et identification de 
 		l'algorithme avec lequel la clé est utilisée.
 	\end{itemize}
-  \item CA algorithme de signature: identificateur de l'algorithme 
+  \item \textbf{CA algorithme de signature}: identificateur de l'algorithme 
   cryptographique utilisé par l'AC pour signer le certificat.
-  \item Valeur de signature CA: Signature du certificat par le CA.
+  \item \textbf{Valeur de signature CA}: Signature du certificat par le CA.
 \end{itemize}
+
 \subsection{Obtenir et vérifier un certificat}
- Le couple (clé publique du CA, CA) est auto-signécertificat racine. L'authenticité 
- du certificat racine est fondamentale.
+
+Le couple (clé publique du CA, CA) est auto-signécertificat racine.
+L'authenticité du certificat racine est fondamentale.
+
+\paragraph{Etapes}
 \begin{enumerate}
 	\item Le postulant s'enregistre avec un CA.
 	\item Le CA (physiquement) authentifie le demandeur.
@@ -2350,9 +2415,11 @@ Trois champs obligatoires.
 	\item Le CA fournit une copie de sa clé publique à la postulant.
 	\item Le demandeur peut propager son certificat.
 \end{enumerate}
-Un CA peut décider déléguer l'enregistrement d'un postulant à une 
+
+$\Rightarrow$ Un CA peut décider déléguer l'enregistrement d'un postulant à une 
 autorité d'enregistrement (RA). Le RA remplit juste un requête de 
 signature de certificat (CSR) pour que le CA remplit le certificat.
+
 \paragraph{Vérification d'un certificat}
 \begin{itemize}
   \item Vérifiez le chemin de certification.
@@ -2363,13 +2430,17 @@ signature de certificat (CSR) pour que le CA remplit le certificat.
 \paragraph{Note:} Même si un certificat compromis est revoqué et
 remplacé par un nouveau, un site sécurisé peut toujours être 
 vulnérable.
+
 \subsection{SSL/TLS}
+
 SSL inventé à la base pour offrir un protection de la communication en
-se focalisant sur la couche transport (SSL entre la couche transport
-et Application). \\
+se focalisant sur la couche transport (SSL entre la couche transport et
+Application). \\
+
 Plusieurs version de SSL existent, le version est celle qui a amené à TLS.
 Par défaut, les protocols comme SMTP ou HTTP envoie les mots de passes
 en texte clair. TLS permet de palier à se problème en étendant ces protocoles
+
 \subsection{TLS protocole}
 \begin{figure}[h]
 	\centering
