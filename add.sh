@@ -108,7 +108,8 @@ contains() {
 if [ $# -lt $nbr_arg ] ||  [ $1 = "--help" ]; then
     echo "
     use: bash add.sh quadri titre sigle code repertory year month minmaj
-    e.g: bash add.sh 1      math  FSAB  1101 summary   2015 Juin  All
+    e.g: bash add.sh 1      math  FSAB  1101 summary
+    e.g: bash add.sh 1      info  FSAB  1104 exam   2015 Juin  All
 
     where repertory is summary, notes, exam, exercises or all"
 
