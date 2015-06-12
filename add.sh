@@ -21,12 +21,16 @@ size_titre=20
 
 
 function subdirectory {
-    if [ $1 == exam ]; then
+    if [ $1 == exam ] || [ $1 == test ]; then
       makef=Makefileexam
       fullname="$name-$1-$year-$month-$minmaj"
       base=exam
     else
-      makef=Makefile
+      if [ $1 == exercises ]; then
+        makef=Makefileexercises
+      else
+        makef=Makefile
+      fi
       fullname="$name-$1"
       base=tex
     fi
@@ -56,7 +60,7 @@ function subdirectory {
     fi
 
     if ! [ -f "$fulldir/Makefile" ]; then
-        sed "s/section/$1/g; s/name/$name/g; s/minmaj/$minmaj/g; s/month/$month/g" ./templates/$makef >> "$fulldir/Makefile"
+        sed "s/sol/$sol/g; s/section/$1/g; s/name/$name/g; s/minmaj/$minmaj/g; s/month/$month/g" ./templates/$makef >> "$fulldir/Makefile"
     fi
 
     import="epl$1"
@@ -107,11 +111,15 @@ contains() {
 
 if [ $# -lt $nbr_arg ] ||  [ $1 = "--help" ]; then
     echo "
-    use: bash add.sh quadri titre sigle code repertory year month minmaj
+    use: bash add.sh quadri titre sigle code repertory sol year month minmaj
     e.g: bash add.sh 1      math  FSAB  1101 summary
-    e.g: bash add.sh 1      info  FSAB  1104 exam   2015 Juin  All
+    e.g: bash add.sh 1      math  FSAB  1201 exercises only
+    e.g: bash add.sh 1      info  FSAB  1401 exam      both 2015 Juin  All
 
-    where repertory is summary, notes, exam, exercises or all"
+    where repertory is summary, notes, exam, exercises or all
+          sol       is only: only contains the solution
+                       none: only contains the statement
+                       both: contains both"
 
     exit
 fi
@@ -162,9 +170,10 @@ dir="src/q$1/$2-$3$4"
 quadri=$1
 name=$2-$3$4
 ext=$5
-year=$6
-month=$7
-minmaj=$8
+sol=$6
+year=$7
+month=$8
+minmaj=$9
 
 echo Starting:
 echo Create directory...
