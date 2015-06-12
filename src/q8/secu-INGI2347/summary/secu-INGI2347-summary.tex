@@ -4,7 +4,7 @@
 \newcommand{\ack}{\mathsf{ACK}}
 
 \usepackage{tikz}
-\usetikzlibrary{arrows,automata,calc}
+\usetikzlibrary{arrows, fit,automata, shapes,calc}
 \tikzset{
     %Define standard arrow
     >=stealth',
@@ -2840,7 +2840,7 @@ Ne pas utiliser l'option « retenir mon mot de passe ».
 \paragraph{One-Way function (hash function)}
 Une fonction $h:\ A\to B \ $ qui est facile à calculer pour tout les 
 input, mais qui est difficiler à inverser pour une image d'un input 
-aléatoire.\\
+aléatoire.
 
 \begin{itemize}
 \item Recherche en temps réel (online) : recherche ($N = \#(A)$) stockage (0) pré-calcule (0)
@@ -2860,26 +2860,106 @@ revenir à l'ensemble (A) de départ de notre fonction de hashage.
 \end{description}
 Un nombre M de chaine est généré avec comme départ une valeur arbitraire de départ dans A :
 
-\includegraphics[width=15cm]{img/rain2} \\
+\begin{tabular}{m{6cm}m{8cm}}
+\begin{tikzpicture}
+
+    \node[draw, circle] (A1) {S1};
+    \node[draw, circle] (A2) [below=of A1] {};
+    \node[draw, circle] (A3) [below=of A2] {};
+    \node[draw, circle] (A4) [below=of A3] {E1};
+
+    \node[draw, circle] (B1) [below right=0.5cm and 3cm of A1] {};
+    \node[draw, circle] (B2) [below=of B1] {};
+    \node[draw, circle] (B3) [below=of B2] {};
+
+\node [draw, ellipse, fit={(A1) (A2) (A3) (A4)}] (F) {};
+\node [draw, ellipse, fit={(B1) (B2) (B3) }] (FF) {};
+
+\draw[->] (A1) edge node[above] {h} (B1);
+\draw[->] (B1) edge node[above] {R} (A2);
+
+\path[->] (A2) edge (B2)
+(B2) edge (A3)
+(A3) edge (B3)
+(B3) edge (A4);
+
+\end{tikzpicture}
+&
+\begin{itemize}
+\item $h: A \to B$
+\item $R: B \to A$
+
+\item[$\Rightarrow$] R est la reduction function.
+\end{itemize}
+$$$$
+\begin{tikzpicture}
+    \node[draw, circle] (A1) {S1};
+    \node[draw, circle] (A2) [right=of A1] {};
+    \node[draw, circle] (A3) [right=of A2] {};
+    \node[draw, circle] (A4) [right=of A3] {};
+
+    \node[draw, circle] (A5) [right=of A4] {};
+    \node[draw, circle] (A6) [right=of A5] {};
+    \node[draw, circle] (A7) [right=of A6] {E1};
+
+\path[bend left, ->] (A1) edge node[above] {h} (A2)
+(A2) edge node[above] {R} (A3)
+(A3) edge node[above] {h} (A4)
+
+(A5) edge node[above] {h} (A6)
+(A6) edge node[above] {R} (A7);
+
+\end{tikzpicture}
+\\
+\end{tabular}
+
 \includegraphics[width=15cm]{img/rainbow.png}
 
 A la fin du pré-calcule d'une chaine, on ne garde que la première valeur et la dernière valeur de la chaine. Les valeurs intermédiaire sont retrouvables avec la fonction de hashage et de réduction. \\
 
 Il est possible d'obtenir des collisions entre différentes chaines, celle-ci vont alors avoir les même
-valeurs jusqu'au bout de la chaine. \\
-
+valeurs jusqu'au bout de la chaine.
 
 \subsubsection{Recherche dans la table}
-On considère une empreinte $H$ engendrée à partir d'un mot de passe $P$. La première étape consiste à
-prendre $H$, lui appliquer la dernière fonction de réduction utilisée dans la table, et regarder si ce mot
-de passe apparaît dans la dernière colonne de la table. Si cette occurrence n'est pas trouvée alors on
-peut déduire que l'empreinte ne se trouvait pas à la fin de la chaîne considérée. Il faut revenir un cran
-en arrière. On reprend $H$, on lui applique l'avant-dernière fonction de réduction, on obtient un
-nouveau mot de passe. On hache ce mot de passe, on applique la dernière fonction de réduction et on
-regarde si le mot de passe apparaît dans la table. \\
+On considère une empreinte $H$ engendrée à partir d'un mot de passe $P$.
+\begin{enumerate}
+    \item On prend $H$ et on lui applique la dernière fonction de réduction ($R_i$) utilisée dans la table.
 
-Cette procédure itérative se continue jusqu'à ce que le mot de passe calculé en fin de chaîne
+    \item On regarde si ce mot de passe apparaît dans la dernière colonne de la table.
+
+    \begin{enumerate}
+    \item Soit on a trouvé l'occurence
+    \item Soit on peut déduire que l'empreinte ne se trouvait pas à la
+    fin de la chaîne considérée.
+
+    \begin{itemize}
+    \item[$\Rightarrow$] Il faut revenir un cran en arrière :
+    
+    \item[] On retourne au point 1. sauf que cette fois on va utiliser la fonction de réduction précédente
+    ($R_{i-1}$).
+
+    On reprend $H$, on lui applique l'avant-dernière fonction de réduction, on obtient un
+    nouveau mot de passe. On hache ce mot de passe, on applique la dernière fonction de réduction et on
+    regarde si le mot de passe apparaît dans la table. 
+
+
+    Intuitivement, on remonte le chemin petit à petit de $E_k$ jusque $S_1$.
+
+\end{itemize}
+\end{enumerate}
+\item[$\to$]  Cette procédure itérative se continue jusqu'à ce que le mot de passe calculé en fin de chaîne
 apparaisse dans la table (si rien n'est trouvé, l'attaque échoue).
+\end{enumerate}
+
+%On considère une empreinte $H$ engendrée à partir d'un mot de passe $P$. La première étape consiste à
+%prendre $H$, lui appliquer la dernière fonction de réduction utilisée dans la table, et regarder si ce mot
+%de passe apparaît dans la dernière colonne de la table. Si cette occurrence n'est pas trouvée alors on
+%peut déduire que l'empreinte ne se trouvait pas à la fin de la chaîne considérée. Il faut revenir un cran
+%en arrière. On reprend $H$, on lui applique l'avant-dernière fonction de réduction, on obtient un
+%nouveau mot de passe. On hache ce mot de passe, on applique la dernière fonction de réduction et on
+%regarde si le mot de passe apparaît dans la table. \\
+%
+
 Une fois le mot de passe découvert dans la dernière colonne, on récupère le mot de passe qui se
 trouve dans la première colonne de la même ligne. On calcule à nouveau la chaîne tout en comparant
 à chaque itération l'empreinte obtenue à partir du mot de passe courant avec l'empreinte $H$ du mot de
