@@ -1,2 +1,2 @@
 TYPE=summary
-include ../INMA2380.mk
+include ../matrix-INMA2380.mk
