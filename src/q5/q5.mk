@@ -1,2 +1,2 @@
 QUADRI=5
-include ../../lib.mk
+include $(BASE_DIR)../../../root.mk

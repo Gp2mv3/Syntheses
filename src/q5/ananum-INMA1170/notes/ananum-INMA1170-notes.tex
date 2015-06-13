@@ -1,0 +1,835 @@
+\documentclass[fr]{../../../eplnotes}
+
+\newcommand{\Cn}{\C^n}
+\newcommand{\Cnn}{\C^{n\times n}}
+\newcommand{\V}{\mathcal{V}}
+
+\newtheorem{myalgo}[mydef]{Algorithme}
+
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\rang}{rang}
+\DeclareMathOperator{\myspan}{span}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\col}{col}
+\DeclareMathOperator{\myim}{Im}
+
+\hypertitle{Analyse Numérique}{5}{INMA}{1170}
+{Beno\^it Legat}
+{Paul Van Dooren}
+
+\paragraph{Remarque importante}
+Ces notes ont été prises lors des cours magistraux
+où Prof. Van Dooren estime que la partie correspondante du syllabus n'est pas complète.
+
+Ce document est donc à prendre en complément au syllabus,
+pas en remplacement du syllabus, ni en synthèse.
+
+\section{Équations non-linéaires}
+Étant donné $F: \Rn \to \Rn$ trouver $x \in \Rn$ tel que
+\begin{align}
+  \label{eq:Fx}
+  F(x) = 0 \Rightarrow \begin{cases}
+    F_1(x_1,\ldots,x_n) = 0\\
+    F_2(x_1,\ldots,x_n) = 0\\
+    \vdots\\
+    F_n(x_1,\ldots,x_n) = 0
+  \end{cases}
+\end{align}
+
+On va utiliser des méthodes itératives.
+La fonction d'itération $f: \Rn\to\Rn$
+\begin{align}
+  \label{eq:xnfxn}
+  x_{n+1} & = f(x_n) & k & = 0,1,2,\ldots
+\end{align}
+
+On voudrait que
+$$\lim_{k\to\infty} x_n = s$$
+résoud \eqref{eq:Fx}.
+Ex: $f(x) = x - A^{-1}F(x)$ $\det(A) \neq 0$.
+
+Point fixe $s = f(s)$ de \eqref{eq:xnfxn} résoud
+\eqref{eq:Fx} puisque $F(s) = 0$.
+
+\subsection{Condition de convergence}
+On se restreint ici aux points d'attractions c'est à dire un point
+$s$ tel qu'il existe un voisinage $V$ de $s$ tel que
+$$\lim_{k\to\infty} x_k = s$$
+pour tout $x_0 \in V$.
+
+Le bassin d'attraction, c'est le plus grand ouvert d'attraction.
+
+\begin{mydef}
+  Le point fixe $s$ est
+  \begin{enumerate}
+    \item \emph{asymptotiquement} stable si il existe $\delta > 0$ tel que
+      pour tout $\epsilon > 0$, on a
+      \begin{align*}
+        \|x_k - s\| & \leq \epsilon &
+        \forall x_0 \in B_\delta(s) & \forall k \in \mathbb{N}.
+      \end{align*}
+    \item \emph{exponentiellement} stable s'il existe $C > 0$,
+      $\alpha \in (0,1)$ tels que
+      \begin{align*}
+        \|x_k-s\| & \leq C\alpha^k\|x_0-s\| &
+        \forall x_0 \in B_\delta(s) & \forall k \in \mathbb{N}.
+      \end{align*}
+    \item On parle de convergence \emph{globale} quand $V = \Rn$.
+  \end{enumerate}
+\end{mydef}
+
+Comment obtenir ce type de convergence pour
+\begin{equation}
+  \label{eq:f}
+  x_{k+1} = f(x_k).
+\end{equation}
+
+\begin{mydef}[Fonction contractante]
+  $f:\Rn\to\Rn$ est contractante en $\Omega$
+  si elle est Lipschitsienne avec un
+  rapport $L < 1$
+  \begin{align*}
+    \|f(x) - f(y)\| \leq L\|x-y\| & \forall x,y \in \Omega.
+  \end{align*}
+\end{mydef}
+
+\begin{mytheo}[Banach]
+  Si $f$ est contractante dans $\Rn$ alors \ref{eq:f}
+  admet un seul point fixe $s$ unique,
+  avec convergence globale exponentiellement stable.
+  \begin{proof}
+    \begin{align*}
+      \|x_k - s\| & = \|f(x_{k+1}) - f(s)\|\\
+      & \leq L\|x_{k+1}-s\|\\
+      & \leq \vdots\\
+      & \leq L^k\|x_0-s\|.
+    \end{align*}
+  \end{proof}
+\end{mytheo}
+
+Pas souvent contractante dans $\Rn$.
+Relaxons le théorème
+\begin{mytheo}[Théorème relaxé]
+  \label{theo:relax}
+  Si $f$ est lipschitsienne dans $B_\epsilon(s)$,
+  $\epsilon > 0$ et $0 \leq L < 1$ alors pour tout $x_0 \in B_\epsilon(s)$
+  \begin{enumerate}
+    \item les itérés restent dans $B_\epsilon(s)$;
+    \item la suite converge exponentiellement vers $s$;
+    \item $s$ est unique dans $B_\epsilon(s)$.
+  \end{enumerate}
+\end{mytheo}
+
+\paragraph{Expansion de Taylor} et la Jacobienne.
+Soit $f : \Rn \to \Rn$ alors si $D^{p+1}f$ est continu
+$$f(x+k) = f(x) + Df(x) \cdot h + \cdots + \frac{D^pf(x)}{p!} + (h,\ldots,h)
++ R_p(h)$$
+$R_p(h)$ est en $\bigoh\|h\|^{p+1}$.
+$$Df(x) = J_f(x) =
+\begin{pmatrix}
+  \fpart{f_1(x)}{x_1} & \cdots & \fpart{f_1(x)}{x_n}\\
+  \vdots & \ddots & \vdots\\
+  \fpart{f_n(x)}{x_1} & \cdots & \fpart{f_n(x)}{x_n}
+\end{pmatrix}.$$
+
+$Df(x) \cdot h$ est linéaire en $h_1$.
+
+\begin{mytheo}
+  Si $f$ est dérivable dans $B_\epsilon(s)$ et $\|Df(x)\| = m < 1$
+  $\forall x \in B_\epsilon$ alors \eqref{eq:f} satisfait
+  le Théorème~\ref{theo:relax}.
+\end{mytheo}
+
+\begin{mytheo}
+  Si $f$ est dérivable en $s \in \Rn$ et
+  $$\|Df(s)\| = m < 1$$
+  alors $s$ est attractif et exponentiellement stable.
+\end{mytheo}
+
+\begin{myrem}[Ostrowski]
+  On peut remplacer $\|Df(s)\| = m < 1$ par $\rho(Df(s)) = \sigma < 1$.
+\end{myrem}
+
+\paragraph{Vitesse de convergence} (ordre de convergence)
+Si $f:\Rn\to\Rn$ est $p$ fois continument dérivable et si
+$Df(s) = D^2f(s) = \cdots = D^{p-1}f(s) = 0$ et $p \geq 2$
+alors
+$$\lim_{k\to\infty}\frac{\|x_{k+1}-s\|}{\|x_k-s\|^p} = c < \infty.$$
+\begin{proof}
+  $$f(x_k=s+h)
+  = f(s) + \ldots + \frac{1}{p!}D^pf(s) \cdot (h,\ldots,h)+R_p(h)$$
+  $x_{k+1} = f(x_k) = s + \bigoh\|x_k-s\|^p$
+  $\|x_k+1\| - s = \bigoh(\|x_k-s\|^p)$.
+\end{proof}
+
+\begin{mydef}
+  Pour des fonction d'itération avec expenstion de Taylor,
+  \begin{itemize}
+    \item ne permet que $p$ entier,
+    \item la limite peut ne pas exister.
+  \end{itemize}
+\end{mydef}
+
+\begin{mydef}[$p$ non entier]
+  On remplace $\lim_{k\to\infty}$ par $\limsup_{k\to\infty}$.
+  $$ \limsup y_k = \inf_{k} \sup_{l \geq k} y_l. $$
+
+  L'ordre $p$ est défini comme ($p \geq 1$)
+  $$ = \inf\left\{p \geq 1 \left|
+  \limsup_{k\to\infty} \frac{\|x_{k+1}-s\|}{\|x_k-s\|}
+  = \infty\right.\right\}$$
+
+  plus petit $p$ tel que $\limsup$ n'est pas bornée.
+
+  plus grand $p$ tel que $\limsup$ est bornée.
+\end{mydef}
+\begin{myexem}
+  $|e_k| = 2^{-k^k}$ $k > 0$ $k = 1,2,\ldots$
+  $$\limsup_{k\to\infty} \frac{|e_{k+1}|}{|e_k|^p}
+  = \limsup_{k\to\infty} \frac{2^{-k^{k+1}}}{2^{-k^kp}}
+  = \limsup_{k\to\infty} 2^{-k^k(k-p)} =
+  \begin{cases}
+    0 & \text{si } p < k\\
+    1 & \text{si } p = k\\
+    \infty & \text{si } p > k
+  \end{cases}.$$
+\end{myexem}
+
+\begin{mydef}[Convergence superlinéaire]
+  $$\limsup_{k\to\infty} \frac{\|x_{k+1}-s\|}{\|x_k-s\|^1} = 0$$
+\end{mydef}
+
+\begin{mydef}[Critère d'arrêt]
+  On aimerait s'arrêter quand $\|F(x_k)\| \leq \epsilon_1$.
+  Alternative $\|x_{k+1}-x_k\| \leq \epsilon_2$.
+  Idéalement, on veut $\|x_{k+1}-s\| \leq \epsilon_3$.
+
+  Supponsons que la convergence est rapide
+  $$\|x_{k+1}-s\| \ll \|x_k-s\|.$$
+  On a
+  \begin{align*}
+    x_{k+1} - s & = (x_{k+1} - x_k) + (x_k -s)\\
+    \|x_{k+1} - x_k\| & \approx \|x_k - s\|.
+  \end{align*}
+  Quand on a des bornes sur $\|DF(s)=c_1\|$ et $\|DF(s)^{-1}=c_2\|$ alors, par Taylor,
+  \begin{align*}
+    F(x_k) & = DF(s)(x_k-s) + \bigoh(\|x_k-s\|^2)
+  \end{align*}
+  On néglige le $\bigoh(\|x_k-s\|^2)$ et par Cauchy-Schwartz
+  \[ \|x_k-s\| \leq \|DF(s)^{-1}\|\cdot\|F(x_k)\|. \]
+  On a aussi
+  \[ x_k - s \approx (DF(s))^{-1}F(x_k) \]
+  et par Cauchy-Schwartz
+  \[ \|F(x_k)\| \leq \|DF(s)\|\cdot\|x_k-s\| \]
+  d'où
+  \[ \frac{\|F(x_k)\|}{c_1} \leq \|x_k-s\| \leq c_2\|F(x_k)\|. \]
+\end{mydef}
+
+\subsection{Méthodes du premier ordre}
+$$x_{k+1} = x_k - A^{-1}F(x_k)$$
+où $\det A \neq 0$.
+
+Pour $n = 1$, $\alpha = A \neq 0$.
+$f(x) = x - \alpha^{-1}F(x)$,
+$|f'(s) < 1 \Rightarrow |1 - \alpha^{-1}F(s)| < 1$.
+Il faut prendre $\sign \alpha = \sign F'(s)$, $0 < \alpha^{-1}F'(s) < 2$,
+$\alpha > \frac{2}{F(s)}$.
+
+Cette méthode cherche le zéro de
+$$F(x) = F(x_k) + A(x-x_k).$$
+
+\subsection{Méthode de Newton}
+Chercher le zéro de
+$$F(x) = F(x_k) + DF(x_k)(x-x_k)$$
+On a la fonction d'itération
+$$x_{k+1} = x_k - \frac{F(x_k)}{F'(x_k)}$$
+pour $n = 1$.
+
+On vérifie que la convergence est quadratique parce que $f'(s) = 0$.
+\begin{align*}
+  f(x) & = x - \frac{F(x)}{F'(x)}\\
+  f'(s) & = 1 - \frac{F'(s)}{F'(s)} + \frac{F(s)F''(s)}{F'(s)^2} = 0
+\end{align*}
+pour autant que $F'(s) \neq 0$ (se rappeler que $F(s) = 0$).
+
+\begin{mytheo}[Fourier]
+  \begin{enumerate}
+    \item $F \in C^2[a,b]$,
+    \item $F(a)F(b) < 0$,
+    \item $F'(x) \neq 0$ dans $[a,b]$,
+    \item $F''(x) \geq 0,\leq 0$ dans $[a,b]$ (elle ne change pas de signe),
+    \item $\left|\frac{F(a)}{F(b)}\right| \leq b-a$ $c = a$ ou $b$
+      (à la première étape, je reste dans l'intervalle).
+  \end{enumerate}
+  Spdg, $F''(x) \geq 0$.
+  \begin{itemize}
+    \item Si $x_0 \in [s;b]$, alors $x_1 \in [a,s]$;
+    \item Si $x_0 \in [a,s]$, alors $x_1 \in [x_0,s]$.
+  \end{itemize}
+  Convergence monotone à partir de $x_1$ vers $s$.
+  (Preuve page 70 à savoir faire !)
+\end{mytheo}
+
+\paragraph{Exercice}
+Si
+$F(x) = (x-s)^p G(x)$
+où $G(s) \neq 0$, alors $F'(s) = 0$.
+Ceci montre que
+$$x_{k+1} = x_k + p\frac{F(x_k)}{F'(x_k)}$$
+converge quadratiquement.
+\begin{proof}
+  $f'(s) = 0$.
+\end{proof}
+
+% cours suivant
+Halley
+L'ordre de convergence est 3.
+\begin{proof}
+  Soit $f$ tel que $x_{k+1} = f(x_k)$, on montre que
+  \begin{align*}
+    f'(s) & = 0\\
+    f''(s) & = 0.
+  \end{align*}
+\end{proof}
+
+Why pas linéaire ?
+$|L| < 1$
+\begin{align*}
+  e_{n+1} & = Le_n\\
+  e'_n & = ce_n^2\\
+  e'_{n+1} & = ce_{n+1}^2\\
+  e'_{n+1} & = L^2e'_n
+\end{align*}
+$|L|^2 < 1$
+
+\section{Introduction au chaos}
+7 novembre 2013
+On regardait l'itération
+$$x_{k+1} = f(x_k)$$
+avec $s = f(s)$.
+\begin{align*}
+  x_{k+1} & = f(s + h)\\
+          & = f(s) + f'(s)h + \frac{f''(s)}{2}h^2\\
+          & \approx s + f'(s)h.
+\end{align*}
+
+Point fixe attractif si $|f'(s)| < 1$.
+Point fixe est
+\begin{itemize}
+  \item attractif si $|f'(s)| < 1$;
+  \item répulsif si $|f'(s)| > 1$;
+  \item neutre si $|f'(s)| = 1$.
+\end{itemize}
+
+\begin{myexem}
+  $s = 0$
+
+  \begin{center}
+    \begin{tabular}{llll}
+      $f(x)$ & $f'(x)$ & $f'(s)$ & \\
+      $x + x^3$ & $1 + 3x^2$ & 1 & faiblement répulsif\\
+      $x - x^3$ & $1 - 3x^2$ & 1 & faiblement attractif\\
+      $x - x^2$ & $1 - 2x$ & 1 & faiblement répulsif/attractif
+    \end{tabular}
+  \end{center}
+\end{myexem}
+\begin{myexem}
+  Équation logistique $f(x) = \mu x(1-x)$
+  $0 \leq \mu \leq 4$.
+  L'itération $x_{k+1} = f(x_k)$ $0 \leq x \leq 1$.
+  Dessin dans notes de cours.
+
+  Pour $0 \leq \mu \leq 4$, $f([0,1]) \subseteq [0,1]$.
+
+  Points fixes: $x = \mu x(1-x)$
+  $s_0 = 0$ et $s_\mu = 1 - 1/\mu$.
+
+  \begin{itemize}
+    \item Pour $\mu = 0$, $s_0 = 0$ (point fixe attractif).
+    \item Pour $0 < \mu < 1$,
+      \begin{tabular}{lll}
+        $s_0 = 0$ & $f'(s) = \mu$ & attractif\\
+        $s_\mu = 1 - 1/\mu < 0$.
+      \end{tabular}
+    \item Pour $\mu = 1$
+      \begin{tabular}{lll}
+        $s_0 = 0 = s_\mu$ & $f'(s_0) = 1$ & neutre faiblement attractif
+      \end{tabular}
+    \item $1 < \mu < 3$
+      \begin{tabular}{lll}
+        $s_0 = 0$ & $|f'(s_0)| = \mu$ & répulsif\\
+        $s_\mu = 1 - 1/\mu$ & $|f'(s_\mu)| = |2-\mu| < 1$ & attractif
+      \end{tabular}
+    \item $\mu = 3$
+      \begin{tabular}{ll}
+        $s_0$ & reste répulsif\\
+        $s_\mu$ & reste neutre
+      \end{tabular}
+    \item $3 < \mu < 4$, deux point fixes répulsifs.
+  \end{itemize}
+  \begin{align*}
+    x_{k+2} & = f(f(x_k))\\
+            & = \mu (\mu x(1-x))(1 - \mu x(1-x))\\
+            & = \mu^2 x(1-x)(1 - \mu x(1-x))
+  \end{align*}
+  Les points fixes de ceci sont solutions de
+  $$x = \mu^2 x(1-x)(1 - \mu x(1-x))$$
+\end{myexem}
+
+\begin{mydef}
+  Si $V \subseteq \R$ $f(V) \subseteq V$ alors $f$ est chaotique si
+  \begin{itemize}
+    \item sensible aux conditions initiales
+      \begin{align*}
+        |x-y| & < \epsilon, & \exists n, \delta & > 0 & |f^n(x) - f^n(y)| & > \delta
+      \end{align*}
+    \item Topoliquement transitif
+      \begin{align*}
+        X,Y & \subseteq V & \exists n & : f^n(X) \cap Y \neq \emptyset
+      \end{align*}
+    \item Les points sont périodique sont denses dans $V$.
+  \end{itemize}
+\end{mydef}
+
+\begin{myexem}
+  \begin{align*}
+    g(\theta) & = \left.2\theta\right|_{\pmod{2\pi}} & \theta \in [0,2\pi[\\
+    g(S) & \subseteq S
+  \end{align*}
+  \begin{itemize}
+    \item sensible OK
+    \item topologiquement transitive OK car l'intervale double de taille à chaque fois donc à partir d'un certain
+      $n$, il vaudra tout $[0,2\pi[$.
+    \item $\exists k$ tel que $\theta = 2\theta - 2k\pi$, c'est $\theta = 2k\pi$ $k = 0$.
+      Le seul point fixe de période 1 est $\theta = 0$.
+      Pour ceux de période 2, il faut $\theta = 4\theta - 2k\pi$. Tout cela donne
+      \begin{align*}
+        \theta & = 2\theta - 2k\pi & \theta & = 2k\pi & \theta & = 0 & k & = 0\\
+        \theta & = 4\theta - 2k\pi & 3\theta & = 2k\pi & \theta & = \frac{2\pi}{3},\frac{4\pi}{3}\\
+        \theta & = 8\theta - 2k\pi & 7\theta & = 2k\pi & \theta & = \frac{2\pi}{7},\frac{4\pi}{7},\frac{6\pi}{7}
+      \end{align*}
+  \end{itemize}
+\end{myexem}
+
+\begin{myexem}
+  $$
+  \begin{array}{rcccl}
+    & S & \stackrel{g}{\rightarrow} & S&\\
+    \cos\theta& \downarrow & & \downarrow &\cos\theta\\
+    %[-1,1] & \stackrel{q(t) = 2t^2-1}{\rightarrow} & [-1,1]\\
+              & -1,1 & \stackrel{q(t) = 2t^2-1}{\rightarrow} & -1,1&\\
+    \frac{1}{2}(1-t)& \downarrow & & \downarrow &\frac{1}{2}(1-t)\\
+                    & 0,1 & \stackrel{f(x)=4x(1-x)}{\rightarrow} & 0,1&
+  \end{array}
+  $$
+\end{myexem}
+
+\section{Valeurs propres et vecteurs propres}
+Pour $A \in \Cnn$ on dit que $\lambda \in \Lambda(A)$ si
+\begin{align*}
+  Ar & = \lambda v & v & \neq 0
+\end{align*}
+spécifie une pair $(\lambda,v)$ qui satisfait
+\begin{align*}
+  (A - \lambda I)v & = 0 & v & \in \ker(A - \lambda I)
+\end{align*}
+$\lambda$ satisfait $\det(A - \lambda I) = 0$.
+
+$p(\lambda) = \det(\lambda I - A)$ est le polynôme caractéristique.
+
+$\V = \ker(A - \lambda I)$ est un espace de dimension $n - k$ où $k$ est le $\rang(A - \lambda I)$.
+$\V$ est l'``espace'' de vecteurs propres de $\lambda$.
+
+\subsection{Espace invariant}
+L'espace
+$$A\V = \{Ax, x \in \V\}.$$
+
+$\V$ est invariant sous $A$ si
+$$A \V \subseteq \V.$$
+
+\begin{myexem}
+  $\myspan\{v_1,v_2\}$
+  $Av_1 = \lambda_1v_1$
+  $Av_2 = \lambda_2v_2$
+  $A (\alpha v_1 + \beta v_2) = (\alpha\lambda_1 v_1 + \beta \lambda_2 v_2)$
+\end{myexem}
+
+\begin{align*}
+  \V & = \ker(A - \lambda I)\\
+  (A - \lambda I) \V & = 0
+\end{align*}
+
+$(A\V = \lambda \V \subseteq \V)$ (abus de notation).
+
+\begin{mydef}
+  $\lambda_0 \in \Lambda(A)$
+  \begin{description}
+    \item[multiplicité algébrique] multiplicité de $\lambda_0$ dans $p(\lambda)$.
+    \item[multiplicité géométrique] $\dim\ker(A-\lambda_0 I)$
+  \end{description}
+\end{mydef}
+
+\begin{myexem}
+  $$
+  A = \begin{pmatrix}
+    0 & 1\\
+      & 0 & 1\\
+      &   & 0\\
+      &   &   & 0 & 1\\
+      &   &   &   & 0
+  \end{pmatrix}
+  $$
+  $\lambda_0 = 0$ $p(\lambda) = \lambda^5$
+  $$
+  \V = \myspan(
+  \begin{pmatrix}
+    1\\0\\0\\0\\0
+  \end{pmatrix},
+  \begin{pmatrix}
+    0\\0\\0\\1\\0
+  \end{pmatrix}
+  )
+  $$
+\end{myexem}
+
+\begin{mytheo}[Jordan]
+  Soit $A \in \Cnn$ $\Lambda(A) = \{\lambda_1,\ldots,\lambda_n\}$
+  il existe $X$ tel que $\det(X) \neq 0$ tel que
+  $$X^{-1}AX = J = \diag\{J_1,\ldots,J_k\}$$
+  avec
+  $$J_i = \diag\{J_{m_{i_1}}(\lambda_i),\ldots,J_{m{i_{l_i}}}(\lambda_i)\}$$
+\end{mytheo}
+
+\begin{myexem}
+  \begin{itemize}
+    \item multiplicité algébrique de $\lambda_i = \sum m_{ij}$
+    \item multiplicité géométrique de $\lambda_i = l_i$
+  \end{itemize}
+\end{myexem}
+
+\begin{myalgo}
+  Pour $\lambda_1$ (dominante)
+  \begin{algorithm}
+    \caption{Méthode de la puissance $\|x_0\| = 1$ ($x_0$ donné)}
+    \label{algo:puissance}
+    \begin{algorithmic}
+      \FOR{k = 0,1,\ldots}
+      \STATE $z_{k+1} = Ax_k$
+      \STATE $x_{k+1} = z_{k+1}/\|z_{k+1}\|$
+      \ENDFOR
+    \end{algorithmic}
+  \end{algorithm}
+  Ceci génère $x_0, Ax_0, A^2x_0, \ldots$ normalisé.
+
+  Pour analyser al convergence, on regarde l'angle
+  $$\angle(x,v) = \arccos\frac{|x^*v|}{\|v\|\|v\|} = \theta$$
+  $0 \leq \theta < \pi$.
+\end{myalgo}
+
+\begin{mytheo}
+  Supposons $A \in \Cnn$ diagonalisable ($A = T^{-1} \Lambda T$) et $|\lambda_1| > |\lambda_2|$
+  alors la méthode de la puissance converge
+  vers $v_1$ de façon linéaire our presque tout $x_0$.
+  $$\lim_{k \to 0} \angle(x_k,v_1) = 0$$
+  où $Av_1 = \lambda_1v_1$.
+  \begin{proof}
+    $$x_0 = \sum_{i=1}^n a_iv_i.$$
+    car $A$ est diagonalisable donc les vecteurs propres engendrent $\Cn$.
+    $$A^kx_0 = a_1\lambda_1^k\left[v_1 + \sum_{j=2}^n\frac{a_j}{a_i}\frac{\lambda_j^k}{\lambda_i^k}v_j\right]$$
+    $\frac{\lambda_j}{\lambda_i}< 1$ donc $(\lambda_j/\lambda_i)^k$ tend vers 0 par rapport à $v_1$.
+    $$A^kx_0 = a_1\lambda_1^k\left[v_1 + \bigoh(\left|\frac{\lambda_2}{\lambda_1}\right|)^k\right]$$
+    $$\angle(v_1,x_k) = \bigoh\left(\left|\frac{\lambda_2}{\lambda_1}\right|\right)^k$$
+    convergence linéaire
+    On obtient $\lambda$ par le quotient de Rayleigl
+    $$f_a(x_k) = \frac{x_k^*Ax_k}{x_k^*x_k} \rightarrow \lambda_1$$
+    si $x_k \to v_1$ $f_A(x)$ est $C^1$ et $f(v_1) = \lambda_1$.
+
+    Par l'expansion de Taylor
+    $$\rho(v + \delta v) = \rho(v) + \bigoh(\|\delta v\|)$$
+    la convergence de $\rho(x_k)$ vers $\lambda_1$ est aussi linéaire.
+  \end{proof}
+\end{mytheo}
+
+\begin{myrem}
+  \begin{itemize}
+    \item $A$ pas $\diag$ $|\lambda_1| > |\lambda_2|$
+    \item $x_0$ est ok si $a_1 \neq 0$
+    \item Si $A = A^*$, $\rho(v + \delta v) = \rho(v) + \bigoh(\|\delta v\|^2)$
+  \end{itemize}
+\end{myrem}
+
+% 14 nov
+
+Rappel
+\begin{mytheo}
+  Si $A \in \Cnn$ est diagonalisable et $|\lambda_1| > |\lambda_2|$ alors pour presque tout $x_0$
+  $$\lim_{k\to\infty} \angle(x_k,v_1) = 0.$$
+\end{mytheo}
+
+\begin{myalgo}
+  A diagonalisable. On remplace $A$ par $(A-\mu I)^{-1} \in \Cnn$
+
+  Les vecteurs propres de $(A - \mu I)^{-1}$ et $A$ sont les mêmes et les valeurs sont $\frac{1}{\lambda_i-\mu}$.
+  \begin{proof}
+    \begin{align*}
+      Av_i & = \lambda_iv_i & i = 1,\ldots,n\\
+      (A-\mu I)v_i & = (\lambda_i - \mu) v_i\\
+      \frac{1}{\lambda_i - \mu} v_i & = (A - \mu I)^{-1}v_i
+    \end{align*}
+    $$\frac{1}{|\lambda_j - \mu|} > \frac{1}{|\lambda_k - \mu|}$$
+  \end{proof}
+  \begin{algorithm}
+    \caption{INVIT ($x_0$ donné)}
+    \label{algo:invit}
+    \begin{algorithmic}
+      \FOR{k = 0,1,\ldots}
+      \STATE $(A - \mu I)z_{k+1} = x_k$
+      \STATE $x_{k+1} = z_{k+1}/\|z_{k+1}\|$
+      \ENDFOR
+    \end{algorithmic}
+  \end{algorithm}
+  Ceci converge de façon linéaire vers $v_j$ corespondant à $\frac{1}{\lambda_j - \mu}$.
+\end{myalgo}
+\begin{mytheo}
+  Soit $A \in \Cnn$ diagonalisable et $\frac{1}{\lambda_j - \mu}$ dominant.
+  Alors pour presque tout $x_0$
+  $$\lim_{k\to\infty} \angle(x_k,v_j) = 0$$
+  et
+  $$\angle(x_k,v_j) = \bigoh\left(\frac{|\lambda_j - \mu| < 1}{|\lambda_k - \mu|}\right)$$
+\end{mytheo}
+\begin{myrem}
+  Quels $x_0$ ? $x_0 = \sum c_i v_i$ $c_j \neq 0$.
+  \begin{itemize}
+    \item Choix de $\mu$ est crucial.
+    \item L'estimateur de $\lambda_j$ est $R(x_k) = x_k^*(A - \mu I)^{-1}x_k \approx \frac{1}{\lambda_j - \mu}$.
+  \end{itemize}
+\end{myrem}
+
+\begin{myalgo}{Rayleigh quotient Iteration (RQI)}
+  On restraint ici pour $A = A^*$. On utilise le shift $\mu_k = \frac{x_k^*Ax_k}{x_k^*x_k}$.
+  \begin{algorithm}
+    \caption{RQI ($x_0$ donné) et normalisé (pour faire comme le syllabus, on est pas obligé)}
+    \label{algo:rqi}
+    \begin{algorithmic}
+      \FOR{k = 0,1,\ldots}
+      \STATE $\left(A - \frac{x_k^*Ax_k}{x_k^*x_k} I\right)z_{k+1} = x_k$
+      \STATE $x_{k+1} = z_{k+1}/\|z_{k+1}\|$
+      \ENDFOR
+    \end{algorithmic}
+  \end{algorithm}
+\end{myalgo}
+
+\begin{mytheo}{RQI}
+  Soit $A = A^*$. Alors l'itération RQI converge vers une direction propre pour presque tout $x_0$.
+  La convergence ultime est dans ce cas \emph{cubique}.
+\end{mytheo}
+
+Comparer avec algorithme de Newton
+$$F(x) = \left(A - \frac{x^*Ax}{x^*x} I\right) x = 0$$
+aux vecteurs propres de $A$.
+
+Newton appliqué
+$$F(x) = \left(A - \frac{x^*Ax}{x^*x} I\right) x$$
+Convergence requiert que $DF(s)$ non-singulier.
+\emph{Problème}: $DF(s) = 0$ quand $F(s) = 0$.
+\begin{proof}
+  $F(\alpha s) = \alpha F(s)$.
+  \begin{align*}
+    F(s + \delta s) & = F(s) + \delta F(s)\\
+                    & = F(s) + \delta DF(s) s + \bigoh(\delta^2).
+  \end{align*}
+\end{proof}
+
+Une méthode modifiée projette la méthode de Newton sur un espace de dimension plus $n-1$.
+
+\subsection{Itération de sous-espaces}
+Idée $|\lambda_1| \geq |\lambda_2| \geq \ldots \geq |\lambda_p| > |\lambda_{p+1}| \geq \ldots $.
+On va itérer avec $p$ vecteurs à la fois.
+
+Soit $x = [x_1|\ldots|x_p] \in \C^{n \times p}$ alors
+$$\mathcal{X} = \myim(X) = \col(X) = \myspan\{x_1,\ldots,x_p\}$$
+$$A\mathcal{X} = \{y = Ax, x \in \mathcal{X}\} = A(\mathcal{X})$$
+opérateur agissant sur un espace.
+
+Si $\col(X) = \col(Y)$ alors
+$$A \col(X) = A \col(Y)$$
+\begin{proof}
+  \begin{align*}
+    \col(X) & = \col(Y) & \text{si } x = YM\det M\\
+    A \col(X) & =\col(AX)\\
+    A \col(Y) & = \col(AY) = \col(AXM) = \col(AX)
+  \end{align*}
+\end{proof}
+
+La méthode la puissance générait
+$$x_0,Ax_0,A^2x_0,\ldots$$
+vecteurs propres dominants.
+L'extension pour des bases de dimension $p$
+$$\mathcal{X}_0,A\mathcal{X}_0,A^2\mathcal{X_0},\ldots$$
+espace invariants dominants.
+
+\begin{algorithm}
+  \caption{$x_0$ initial (une base $\in \C^{n \times p}$ de $p$ vecteurs)}
+  \label{algo:newton}
+  \begin{algorithmic}
+    \FOR{k = 0,1,\ldots}
+    \STATE $z_{k+1} = Ax_k$
+    \STATE $(x_{k+1},R_{k+1}) = QR(z_{k+1})$
+    \ENDFOR
+  \end{algorithmic}
+\end{algorithm}
+
+$$z_{k+1} = x_{k+1}R_{k+1}$$
+donc
+$$\col z_{k+1} = \col x_{k+1}$$
+où $x_{k+1}$ est orthonormé.
+
+$$Ax_k = x_{k+1} R_{k+1}$$
+$\col(x_k+1) = A(\col(x_k))$.
+Cet algorithme génère l'extension logique de la méthode de la puissance.
+
+\begin{mytheo}
+  Soit $A \in \Cnn$ diagonalisable et $|\lambda_p| > |\lambda_{p+1}|$ (val propres ordonnées) (gap entre $p$ et $p+1$).
+  Pour tout $x_0$ tel que $\col(x_0) \cap \myspan\{v_{p+1},\ldots,v_n\} = \emptyset$ on a que
+  $$\angle(A^k\mathcal{X}_0,\myspan\{v_1,\ldots,v_p\}) \leq c \left|\frac{\lambda_{p+1}}{\lambda_p}\right|^k$$
+  convergence linéaire.
+\end{mytheo}
+
+\begin{myrem}
+  $\angle(\mathcal{X},\mathcal{Y}) = \max_{x \in \mathcal{X},y\in \mathcal{Y}} \angle (x, y)$.
+\end{myrem}
+
+Si $Q = [\underbrace{Q_1}_{p}|\underbrace{Q_2}_{n-p}]\}n$ est unitaire $Q^*Q = I$ alors si $A\col(Q_1) \subseteq \col(Q_1)$ on a que
+$$Q^* A Q =
+\begin{pmatrix}
+  A_{11} & A_{12}\\
+  0 & A_{22}
+\end{pmatrix}$$
+$A_{11}$ a $\lambda_1,\ldots,\lambda_p$ et $A_{22}$ a $\lambda_{p+1},\ldots,\lambda_n$.
+
+On peut réduire en deux sous-problèmes $A_{11}$ est $A_{22}$.
+
+\subsection{Calculer toutes les valeurs propres (Francis (59))}
+
+\begin{algorithm}
+  \caption{QR}
+  \label{algo:qr}
+  \begin{algorithmic}
+    \STATE $A := A$ (ou $Q_0^* A Q_0$)
+    \FOR{k = 0,1,\ldots}
+    \STATE $Q_{k+1}R_{k+1} = A_k$
+    \STATE $A_{k+1} = R_{k+1}Q_{k+1}$
+    \ENDFOR
+  \end{algorithmic}
+\end{algorithm}
+
+Il découle que
+$$A_{k+1} = Q_{k+1}^*A_kQ_{k+1}$$
+similitude orthogonale (préserve les valeurs propres).
+Si on définit
+\begin{align*}
+  \tilde{Q}_k & = (Q_0)Q_1Q_2\cdots Q_k\\
+  \tilde{R}_k & = R_kR_{k-1}\cdots R_2R_1
+\end{align*}
+on a
+\begin{align*}
+  A_k & = \tilde{Q}_k^* A \tilde{Q}_k\\
+  A\tilde{Q}_k & = \tilde{Q}_{k+1} \tilde{R}_{k+1} & \text{puisque } A_k = Q_{k+1}R_{k+1} (\text{induction})
+\end{align*}
+
+Il suit que pour tout $p$
+\begin{align*}
+  A\tilde{Q}_k
+  \begin{pmatrix}
+    I_p\\
+    0
+  \end{pmatrix}
+ & = \tilde{Q}_{k+1}\tilde{R}_{k+1}
+ \begin{pmatrix}
+   I_p\\
+   0
+ \end{pmatrix}\\
+ & = \tilde{Q}_{k+1}
+ \begin{pmatrix}
+   \tilde{R}_{11(k+1)}\\
+   0
+ \end{pmatrix}\\
+ & = \tilde{Q}_{k+1}
+ \begin{pmatrix}
+   I_p\\
+   0
+ \end{pmatrix}
+  \tilde{R}_{11(k+1)} & \tilde{R}_{11(k+1)} \text{ inversible}\\
+ \col\left(A \tilde{Q}_k
+   \begin{pmatrix}
+     I_p\\
+     0
+   \end{pmatrix}
+ \right) & =
+   \col  \left(
+     \tilde{Q}_{k+1}
+     \begin{pmatrix}
+       I_p\\
+       0
+     \end{pmatrix}
+   \right)\\
+   A\col\tilde{Q}_k
+   \begin{pmatrix}
+     I_p\\
+     0
+   \end{pmatrix} & =
+     \col
+     \tilde{Q}_{k+1}
+     \begin{pmatrix}
+       I_p\\
+       0
+     \end{pmatrix}
+\end{align*}
+
+Puisque ceci c'est l'itération des espaces sur les $p$ premières dolonnes de $\tilde{Q}_k$ elles convergeront vers un espace invariant
+$$\tilde{Q}_k^*A\tilde{Q}_k = \text{matrice diagonale supérieure}.$$
+
+\begin{algorithm}
+  \caption{Accélération par shift}
+  \label{algo:qrshift}
+  \begin{algorithmic}
+    \STATE $A = Q_0^*AQ_0$
+    \FOR{k = 0,1,\ldots}
+    \STATE $\sigma_k \in \C$
+    \STATE $Q_{k+1}R_{k+1} = (A_k - \sigma_k I)$
+    \STATE $A_{k+1} = R_{k+1}Q_{k+1} + \sigma_k I$
+    \ENDFOR
+  \end{algorithmic}
+\end{algorithm}
+
+Vérifier que $A_k = Q_{k+1}^* A_k Q_{k+1}$ mais la convergence dépendra maintenant de
+$\left|\frac{\lambda_p-\sigma_k}{\lambda_{p+1}-\sigma_k}\right|$, convergera vers
+$\begin{pmatrix}
+  A_{11} & \vdots\\
+  0 & \lambda_n
+\end{pmatrix}$
+et on recommence avec $A_{11}$.
+On démontre que la convergence de $\lambda_n$ est quadratique si les $\sigma_k$ sont bien
+choisis.
+
+La transformation $Q_0$ peut être choisie telle que
+$$A_0 = Q_0^*AQ_0 =
+\begin{pmatrix}
+  x & \cdots & \cdots & \cdots & x\\
+  x & \ddots & \ddots & \ddots & \vdots\\
+    & \ddots & \ddots & \ddots & \vdots\\
+    &        & \ddots & x      & x\\
+    &        &        & x      & x
+\end{pmatrix}.$$
+(forme de Heisenberg cfr. Arnoldi) $\bigoh(n^3)$ flops.
+
+Cette forme est préservée par l'algorithme~\ref{algo:qrshift}.
+On choisit $\sigma_k$ sur base de la matrice des 4 valeurs en bas à droite de $A_0$.
+
+4.6 et suite pas à connaire pour l'examen mais à connaitre pour la culture générale.
+
+
+\end{document}
