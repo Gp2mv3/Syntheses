@@ -27,7 +27,7 @@ endif
 ifdef SOL
 ifeq ($(SOL),only)
   SETSOL=-s sol=-Sol
-else
+else ifeq ($(SOL),none)
   SETSOL=-s sol=
 endif
 endif
