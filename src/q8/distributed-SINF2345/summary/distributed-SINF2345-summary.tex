@@ -1247,8 +1247,8 @@ Indication: <cDecice | v>
 
     \item Use perfect P and BEB
 
-    \item Each nodes stores its proposal and the identifier of the  last adopted 
-        proposal.
+    \item Each nodes stores its \texttt{proposal} and the identifier of the  last adopted 
+        proposer in \texttt{lastprop}.
     
     \item Loop throug round 1 to N
 
@@ -1332,7 +1332,11 @@ upon delivered[round] or round $\in$ detected do
 		\item If leader correct, validity of BeB ensures delivery. 
 	\end{itemize}
 	\item Agreement? $\to$ take correct leader with minimum id i.
-        TODO
+        \begin{itemize}
+            \item By termination it will decide v and v will be BEB
+            \item[$\to$] Every correct node adopts v no older proposal 
+                can override the adoption
+        \end{itemize}
 \end{itemize}
 
 \textbf{Failute-torerant up to N-1} 
@@ -1366,13 +1370,18 @@ end
 decide x i
 \end{lstlisting}
 
+\subsubsection{With inaccurate FD}
 
 \begin{figure}[h]
-    \begin{tabular}{cc}
+    \centering
+    \begin{tabular}{m{8cm}m{8cm}}
         \includegraphics[width=8cm]{img/hc_fd.png} &
-        \includegraphics[width=8cm]{img/uhc_fd.png}
+        \includegraphics[width=8cm]{img/uhc_fd.png} \\
+        p2 suspect p1, p3 suspect p2 (nonuniform consensus) &
+        p2 suspect p1, p3 suspect p2, p1 suspect p3 (uniform consensus)\\
+        \multicolumn{2}{c}{$\Rightarrow$ Does'nt work with innacurrate FD}
     \end{tabular}
-        \caption{lnaccuracy with failure detector}
+        \caption{Inaccuracy with failure detector}
 \end{figure}
 
 \textbf{The algorithm doesn't work with innaccurate FD}
@@ -1393,8 +1402,11 @@ accuracy w.r.t one node.
 		\item If some leader fails, completeness of S ensure progress.
 		\item If leader correct, validity of BeB ensures delivery. 
 	\end{itemize}
-	\item Agreement? $\to$ take an accurate correct leader with id i.
-        TODO
+	\item Uniform agreement? $\to$ take an accurate correct leader with id i.
+        \begin{itemize}
+            \item By weak accuracy (S) and termination such a node exists
+                and it will BEB v
+        \end{itemize}
 \end{itemize}
 
 
@@ -1502,7 +1514,15 @@ Src RB broadcast m (deliver <SF> if src is suspected by P)
 	\item Deliver consensus decision
 \end{itemize}
 
-%TODO correctness and Hardness of TRB
+
+\subsubsection{Hardness}
+\begin{itemize}
+    \item $consensus \prec TRB$ $\Rightarrow$ can't have a asynchronous networks for TRB.
+    \item $ P \prec TRB \Rightarrow$ can't have a eventually synchonous systems
+\end{itemize}
+
+\subsubsection{Correctness}
+TODO
 
 \section{Shared Memory}
 
@@ -1539,6 +1559,7 @@ precedes invocation of $op_2$. Otherwise they are concurrent.
 	\item (N,N)-algorithm : Multiple writers, multiple readers
 \end{itemize}
 
+
 \subsection{Regular Register (1,N)}
 \begin{itemize}
 	\item Termination : Each read and write operation of a correct node 
@@ -1553,7 +1574,7 @@ precedes invocation of $op_2$. Otherwise they are concurrent.
 \end{itemize}
 
 
-\paragraph{Centralized Algorithm}
+\subsubsection{Centralized Algorithm}
 
 
 One process is designated as leader. For reading, the latest value must
@@ -1561,49 +1582,76 @@ be ask to the leader. For writing, leader value is updated.
 
 $\Rightarrow$ does not work if leader crashes.
 
-\paragraph{Bogus Algorithm}
+\subsubsection{Bogus Algorithm}
+\begin{itemize}
+    \item[read] : return local value
+    \item[write] : overwrite local value and broadcast change
+\end{itemize}
+
 \begin{figure}[h]
-    \begin{tabular}{cc}
-        \includegraphics[width=8cm]{img/bogus_1.png} &
-        \includegraphics[width=8cm]{img/bogus_2.png}
-    \end{tabular}
+    \centering
+        \includegraphics[width=6cm]{img/bogus_1.png}
         \caption{Bogus algorithm}
 \end{figure}
 
 
-\paragraph{Majority Voting Algorithm}
+\paragraph{Read-one write all (1, N)}
+Bogus algorithm modified can be use with a \textbf{perfect FD}
+and fail-stop model.
+
+\begin{itemize}
+    \item[$\to$] Write need to wait ``ACK'' when he broadcast new overwrite
+        value
+\end{itemize}
+
+\subsubsection{Majority Voting Algorithm}
 Main idea is based on a quorum principle,
 \begin{itemize}
 	\item Always write to and read from a majority of nodes
 	\item At least one node knows most recent value
 \end{itemize}
 
-\subparagraph{Quorum Principle}
+\paragraph{Quorum Principle}
 Divide the system into quorums, any two quorums should intersect.
 There are different type of quorum
 \begin{itemize}
 	\item Majority Quorum
 		\begin{itemize}
-			\item Pro : tolerate up to $\lceil N/2 \rceil$ -1 crashes
-			\item Con: Have to read/write $\lfloor N/2 \rfloor$ + 1values
+            \item[Pro]: tolerate up to $\lceil N/2 \rceil$ -1 crashes
+            \item[Con]: Have to read/write $\lfloor N/2 \rfloor$ + 1values
 		\end{itemize}
 	\item Maekawa Quorum
 		\begin{itemize}
 			\item Arrange nodes in MxM grid (M=sqrt(N))
 			\item Write to rows, read to columns (always overlap)
-			\item Pro : Only need to read/write sqrt(N) nodes
-			\item Tolerate at most sqrt(N)-1 crashes
+            \item[Pro]: Only need to read/write sqrt(N) nodes
+            \item[Con]: Tolerate at most sqrt(N)-1 crashes
 		\end{itemize}
 \end{itemize}
-\begin{figure}[h]
-	\begin{tabular}{cc}
-		\includegraphics[width=8cm]{img/maj_voting.png}
-		\includegraphics[width=8cm]{img/maj_voting_2.png}
-	\end{tabular}
-		\caption{Majority Voting Algorithm}
-\end{figure}
+
+\paragraph{Implementation}
+\begin{itemize}
+    \item[Read]: \begin{enumerate}
+            \item Broadcast read request
+                \begin{itemize}
+                    \item[$\to$] receiver response with local value and seq\#
+                \end{itemize}
+            \item Save value from majority of nodes
+            \item Return value with highest seq\#
+        \end{enumerate}
+
+    \item[Write]:
+        \begin{enumerate}
+            \item Broadcast v and seq\# 
+                \begin{itemize}
+                    \item[$\to$] receiver update to v \textcolor{red}{if newer seq\#}
+                \end{itemize}
+            \item Wait for ACK from majority of node
+        \end{enumerate}
+\end{itemize}
+
 The problem with the first algorithm is that old write can override
-new write.
+new write. (resolve by \textcolor{red}{red})
 
 \subsection{Single Storage}
 
@@ -1698,6 +1746,7 @@ Every execution consists of:
 	\end{itemize}
 \end{itemize}
 %TODO basic assumptions + rest formalism
+
 
 \section{Consensus With Total order}
 
