@@ -148,7 +148,7 @@ if valid_section $5 ; then
     error=true
 fi
 
-if ! contains "${minmajs}" $8; then
+if ! contains "${minmajs}" $9; then
     echo "Please choose Mineure, Majeure or All"
     error=true
 fi
