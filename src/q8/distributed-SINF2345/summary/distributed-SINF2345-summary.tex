@@ -2074,7 +2074,7 @@ Chord is a special case where $k=2$.
                 atomic action)
         \end{enumerate}
 
-        \begin{tabular}{m{6cm}m{4cm}}
+        \begin{tabular}{m{10cm}m{4cm}}
 
             \begin{itemize}
                 \item Node 14 join
@@ -2087,31 +2087,77 @@ Chord is a special case where $k=2$.
 
     \item \textbf{Correction-on-use}:
 
-        \begin{tabular}{m{6cm}m{4cm}}
+        \begin{tabular}{m{10cm}m{4cm}}
+            Add i (interval) and l (level) with the message 
+            $\Rightarrow$ $n'$ can comppute $x_i^l(n)$
 
             \begin{itemize}
-                \item[a)]
+                \item[a)] lookup(Key:13, level:1, Interval:3)
+                \item[b)] badPointer(Key:13, Candidate:14)
+                \item[c)] lookup(Key:13, level:1, Interval:3)
             \end{itemize}
 
             & \includegraphics[width=4cm]{img/design3.png}
         \end{tabular}
-
-
 \end{enumerate}
-
-
-
 
 
 \subsection{Broadcast in DHTs}
 
+\begin{itemize}
+    \item \textbf{DHT as distributed k-ary search} : construct a spanning tree
+        derived from the decision tree of the distributed k-ary search after removal 
+        of the virtual hops
+
+        \paragraph{Invariant}:
+        \begin{itemize}
+            \item Any node sends to distinct routing entries
+            \item Any sender informs receiver about a \textbf{forwarding limit}
+            \item[$\to$] Construct disjoint interval and node receives a message once
+        \end{itemize}
+
+        \begin{figure}[!h]
+            \centering
+            \begin{tabular}{m{4cm}m{4cm}m{4cm}}
+                \includegraphics[width=4cm]{img/DHT1.png}
+                & \includegraphics[width=4cm]{img/DHT2.png}
+                & \includegraphics[width=4cm]{img/DHT3.png}\\
+            \end{tabular}
+            \caption{DHD spanning tree}
+        \end{figure}
 
 
+    \item[Alternative]
 
+    \item \textbf{Gnutella-like flooding in DHT} : 
+        \begin{itemize}
+            \item[Pro] know diameter $\to$ correct TTL $\to$ High guarantees
+            \item[Con] High traffic with redundant messages
+        \end{itemize}
+
+    \item \textbf{Traversing the ring in Chord or Pastry} : 
+        \begin{itemize}
+            \item[Pro] No redundant message
+            \item[Con] Sequential execution time
+            \item[Con] Highly sensitive to failure
+        \end{itemize}
+\end{itemize}
+
+
+\subsection{Application infrastructure in DHT}
+%TODO
 
 \section{Gossip}
+
 Gossip is the process by which an information will spread among 
-entities. Two operations, push (Telling to)  and pull (asking to).
+entities. Important technique to solve proble in dynamic large scale system
+(scalable, simple, robust)
+
+\begin{lstlisting}
+push (Telling to)
+pull (asking to)
+\end{lstlisting}
+
 \subsection{Protocol Characterisitc}
 \begin{itemize}
 	\item Cyclic/periodic, pair-wise interaction between peers
@@ -2124,86 +2170,134 @@ entities. Two operations, push (Telling to)  and pull (asking to).
 	\item Reliable communication is not assumed
 	\item Protocol cost is negligible
 \end{itemize}
+
 \subsection{Protocol Usage}
 \begin{itemize}
-	\item Dissemenitation : Spread information in a manner that produces
+	\item \textbf{Dissemenitation} : Spread information in a manner that produces
 	bounded worst-case loads.
-	\item Repairing : Anti-entropy  protocols for reparing replicated data
+	\item \textbf{Repairing} : Anti-entropy  protocols for reparing replicated data
 	, which operate by comparing replicas and reconciling differences.
-	\item Membership : Track processes 
+	\item \textbf{Membership} : Track processes 
+	\item \textbf{Aggregates} : Compute a network-wide aggregate. (Ex: number of node or 
+	computing average/max/min )
 	\item ...
 \end{itemize}
+
 \subsection{Information dissemination}
-Dissemination begins with one peer that wants to 
-disseminate some message. Then every peer
-does the following:
+
 \begin{itemize}
+\item Start with one peer that wants to disseminate some message. 
+\item Then every peer does the following:
+
+\begin{enumerate}
 	\item Buffers every message (information unit) it receives up to a 
 	certain buffer capacity $b$
 	\item Forwards that message a limited number of hops or  time steps $t$
 	\item  Forwards the message each time to frandomly selected set of 
 	processes 
+\end{enumerate}
 \end{itemize}
+
 \subsubsection{Infect-forever Model}
 \begin{itemize}
 	\item Fixed population of size n (at round 1, one is infected)
 	\item If infected, stays infected forever
 	\item $Y_r$ is the number of individuals infected at round r
-	\item f is the number of individuals that infected ones try to infect
+	\item $f$ is the number of individuals that infected ones try to infect
+\item $R$ is the number of round to infect all population
 \end{itemize}
-$Y_r \approx \frac{1}{1+n.e^{-f.r}}$ (ratio of \# infected to \# 
-uninfected increases exponentially).
-Number of round $R$ to infect all population:
-$$R = log_{f+1}(n)+\frac{1}{f}log(n)+O(1)$$
+
+\begin{eqnarray*}
+Y_r &\approx& \frac{1}{1+n.e^{-f.r}}\\
+R &=& log_{f+1}(n)+\frac{1}{f}log(n)+O(1)\\
+\end{eqnarray*}
+
 \subsubsection{Infect-die Model}
-In this model, infectious process ''remains infectious'' for just one round\\
-proportion $\pi$ of process eventually contaminated satisfies the
-following fixpoint equation : $\pi = 1-e^{-\pi.f}$ where
-$\pi$ is the proportion of processes eventually contaminated.\\
-Number of round $R$ to infect all population:
-$$R = \frac{log(n)}{log(log(n))}+O(1)$$
+
+\begin{itemize}
+\item Infectious process ''remains infectious'' for just one round
+\item $p_i$ is the proportion of processes eventually contaminated
+\item $R$ the number of round to infect all population:
+\end{itemize}
+
+\begin{eqnarray*}
+\pi &=& 1-e^{-\pi.f}\\
+R &=& \frac{log(n)}{log(log(n))}+O(1)\\
+\end{eqnarray*}
+
 \subsubsection{Membership}
-To ensure scalability, each process has a partial view (random sample 
-of node).
+
+To ensure scalability, each process has a partial view (random sample of
+node).
+
 \begin{itemize}
 	\item When a process forwards a message, it 
 	includes in this message a set of processess it knows.
 	\item Hence, the process that receives the message can enhance the 
 	list of processes it knows by adding new processes.
 \end{itemize}
-%%TODO Requirements?
+
+\paragraph{Protocols requirement}
+\begin{itemize}
+\item Uniformity : all nodes play the same role
+\item Adaptivity under churn : the parameter have to be tuned (t/f)
+\item Bootstrapping : how do nodes enter and leave, how to start
+\end{itemize}
+
+
 \subsubsection{Buffer Management}
-Depending on broadcast rate , buffer capacity if processes may be 
-insufficient to ensure that every message is buffered long enough.\\
-To counter that, message are classiied according to their
+
+Depending on broadcast rate , buffer capacity if processes may be
+insufficient to ensure that every message is buffered long enough.
+
+\paragraph{To conter that}
+message are classiied according to their
 age (the number of processes the message went through) $\to$
 Old message are replaced.
+
 \subsection{Small-world network}
+
 There are different way at which a process choose its infection target
+
 \begin{description}
 	\item[Nearest-neighbor network] Target is a neighbors (number of
-	round is O($n^{1/D}$) for a D-dimensional grid)
+	round is $\bigoh(n^{1/D})$ for a D-dimensional grid)
 	\item[Random network] Target is random (number of rounds is
-	O(log(n)))
+	$\bigoh(log(n))$)
 	\item[Small world network] In between case (number of rounds
-	is as random network)
+	is $\bigoh(log(n))$)
 \end{description}
-\paragraph{Note:}Real world social network tends to be small-world networks.
+
+\paragraph{Note:} Real world social network tends to be small-world networks.
+
+
 \subsubsection{Properties}
+
 Small-world network has both nearest neighbor connection as well as 
 long range connections.(Node reachable with a small number of hops).
-Defined by two properties
+
+\paragraph{Properties}
 \begin{itemize}
 	\item Small average shortest path length (opposed to large path length
 	in Neighbor graphs)
 	\item A high clustering coefficient (opposed to low CC in Random graphs)
+	\begin{description}
+	\item[Clustering coefficient] = Average of 
+
+        $$\forall_{p_i \in nodes} \frac{\sum { edge | \quad edge.start \in
+            p_i.neighbors \quad AND \quad edge.end \in p_i.neighbors }}
+            {p_i.nbrNeighbors (p_i.nbrNeighbors-1) /2)}$$
+
+\end{description}
 \end{itemize}
+
 The clustering coefficient CC measures degree of clustering. Count the 
 number of edges between neighboring nodes and divide by the maximum
 possible for every node. The average of this number is the CC.
+
 \subsection{Gossip Framework}
-%TODO mettre en deux colonnes
-\begin{lstlisting}[frame=single]
+\begin{tabular}{m{0.5\linewidth}m{0.5\linewidth}}
+\begin{lstlisting}
 // active thread 
 do forever 
     wait(T time units) 
@@ -2211,31 +2305,175 @@ do forever
     push S to q 
     pull Sq from q 
     S = Update(S,Sq) 
-    
+\end{lstlisting}
+&
+\begin{lstlisting}
 // passive thread 
 do forever 
     (p,Sp) = pull * from * 
     push S to p 
     S = Update(S,Sp) 
 \end{lstlisting}
+\end{tabular}
+
 To instantiate the framework, define 
 \begin{itemize}
-	\item Local state S,
-	\item Method SelectPeer() and Update()
-	\item Style of interaction : push,pull,push-pull
+	\item Local state \texttt{S},
+	\item Method \texttt{SelectPeer()} and \texttt{Update()}
+	\item Style of interaction : \texttt{push, pull, push-pull}
 \end{itemize}
+
 \subsubsection{Aggregation}
+The style of interaction is push-pull
 \begin{itemize}
-	\item The style of interaction is push-pull
-	\item S  is the current estimate of global aggregate
-	\item SelectPeer(): Single random neighbor
-	\item Update(): Numerical function defined according to desired global
+	\item S is the current estimate of global aggregate
+	\item \texttt{SelectPeer()}: Single random neighbor
+	\item \texttt{Update()}: Numerical function defined according to desired global
 	aggregate(arihtmetic/geometric mean,max,\ldots)
 \end{itemize}
-%TODO properties and Network-size
+$$ p = \frac{E(\phi^2_{i+1})}{E(\phi^2_i)} \approx \frac{1}{2 \sqrt{e}} \approx 0.303 $$
+
+%TODO Network-size
 
 \subsubsection{Topology Management}
+Topology gradually appears as a result of a ranking function
+
+
+\begin{itemize}
+\item Given a set of N node (each node has a \texttt{view} of size c, \texttt{profile} is used
+to calculate ranking)
+\item Given a ranking function R : $R(x, {y_1,...,y_m}) = {all ordering of {y_1,...,y_m}}$
+\begin{itemize}
+\item[$\to$] R can be defined by a distance function
+\end{itemize}
+\end{itemize}
+
+\paragraph{T-Man algorithm}
+\begin{itemize}
+    \item \texttt{InitialView()} : random sample of nodes
+    \item \texttt{Merge($v_1, v_2$)} : $v_1 \cup v_2$
+    \item \texttt{SelectPeer(v)} : rank current view v with R and return
+    random sample from first half
+    \item \texttt{SelectView(b)} : rand b with R and return first c element
+\end{itemize}
+
+\paragraph{Convergenge}
+Rapide convergence phase followed by endgame phase.
+\begin{itemize}
+\item After 1 cycle, view is closest c out of $2c$
+\item After i cycle, view is closest c out of $2^i c$
+\end{itemize}
+
+\subparagraph{Handling the endgame}
+\begin{itemize}
+\item Balancing : during rapid convergence, receiving node refuses
+contact if there are already too many
+\item Routing : ing endgame, instead of random selection of a
+peer node, select closest one on the topology (with
+exponentially decreasing probabilities)
+\end{itemize}
+
 \subsubsection{Heartbeat Synchronization}
+
+
+\section{Bit torrent}
+
+\paragraph{Problem}
+\begin{itemize}
+\item Large number of user $\bigoh(10^3)$
+\item Fast as possible
+\end{itemize}
+
+\subsection{Naïve solution}
+All client download from the server with the maximum
+number of parallel client (depend of the available bandwith).
+
+\paragraph{Problem}
+It's really slow and to sequential ordering.
+In addition, we don't use upload resources of clients.
+
+\subsection{Pieces}
+
+A file is sliced into a number of smaller transfer units called pieces of a
+small predefined size.
+
+\begin{itemize}
+\item \textbf{Selecting the right peers} : From the point of view of one peer, selecting the
+right peer to connect to can make a difference in the speed of downloading a file
+\item \textbf{Selecting the right pieces} : Not only peer selection is important, piece
+selection can affect the download time
+\item[$\Rightarrow$] maximize the utilization of network resource of everybody
+\end{itemize}
+
+\subsubsection{Select peers and pieces}
+
+\begin{itemize}
+\item Global knowledge OR no global knowledge
+\item[$\to$] In real P2P, the bandwith changes over time, peers come and go,
+peers are selfish (Download file and run away)
+
+\item[Solution] : random decision s.t 
+\begin{itemize}
+\item Make sur that all peers have roughly the same number of links
+\item A peer choose random piece from the peers he is connected
+\end{itemize}
+\end{itemize}
+
+\subsection{Bittorent}
+
+\subsubsection{Terminology}
+\begin{description}
+\item[Seeds] : machines that have a complete copy of the file. They are usually selfish and do not want to
+wait after they get the file.
+
+At least the first seed has to stay to serve
+one complete copy of the file.
+
+\item[Leechers] : Any peer who does not have a complete file
+is called a leecher
+\item[Tracker] : A peer that keeps track of who are the seeds and the leechers.
+\item[Tracker.getPeers] : Give a subset of peers
+\item[.torrent file/Meta-info File] : \includegraphics[width=6cm]{img/torrent.png}
+\item[Handshaking] : Once a peer list is received, a handshake message
+is sent to the all peers
+\item[Exchanging bitfields] after handshaking with peers
+
+\end{description}
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=8cm]{img/after.png}
+\caption{After exchange}
+\end{figure}
+
+%TODO Choking
+
+\subsubsection{Piece selection}
+\begin{itemize}
+\item Rarest-first amoung your peers
+\item Random-first piece to get first piece as fast as possible (only first few piece)
+\item EndGame mode 
+\end{itemize}
+
+\subsubsection{Peer selection}
+\begin{enumerate}
+\item Construction of the peer list by using the tracker
+\item Unchoking (=Choice based on which peer can give me pieces faster)
+
+\begin{itemize}
+    \item A peer has a total of 80 connections, 40 initiated by
+    him and 40 by others
+    \item A peer unchokes only 4 peers simultaneously
+    \item Decision about unchoking is reconsidered every ten
+    seconds
+    \begin{itemize}
+        \item 3 peers are unchoked (given that they are interested)
+        based on their upload rate to me
+        \item Optimistically look for a fast guy randomly in the 40
+        remaining connections
+    \end{itemize}
+\end{itemize}
+
 
 \begin{thebibliography}{1} 
 \bibitem{icampus} http://www.icampus.uclouvain.be, {\em Icampus}
