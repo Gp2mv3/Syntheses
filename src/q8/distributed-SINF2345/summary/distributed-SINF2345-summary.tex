@@ -1524,6 +1524,76 @@ Src RB broadcast m (deliver <SF> if src is suspected by P)
 \subsubsection{Correctness}
 TODO
 
+\section{Total order broadcast (consensus)}
+
+The order imposed by causal broadcast is partial. Some message might 
+be delivered in different order by different process.
+
+With \textbf{total order} broadcast, process must deliver all
+messages according to the same order.
+
+\paragraph{\textbf{Total order broadcast} $\equiv$ \textbf{consensus}}
+
+\subsection{Specification}
+The specification of the total order broadcast are roughly the same as the reliable broadcast
+there only a little modification
+
+\begin{description}
+	\item[Uniform agreement] For any message m: if any process delivers
+	m, then every correct process delivers m.
+\end{description}
+\
+\subsection{Type of total order}
+
+\begin{lstlisting}
+Request: <toBroadcast, m>
+Indication: <toDeliver, src, m>
+\end{lstlisting}
+
+\subsubsection{Total order}
+\begin{itemize}
+	\item Let m1 and m2 be any two messages and let pi and pj be any two 
+	correct processes that deliver m1 and m2
+	\item If pi delivers m1 before m2, then pj delivers m1 before m2
+\end{itemize}
+
+\subsubsection{Uniform total order}
+\begin{itemize}
+	\item Let m1 and m2 be any two messages and let pi and pj be any two
+	processess that deliver m2 (only m2!).
+	\item If pi delivers m1 before m2, then pj delivers m1 before m2
+\end{itemize}
+
+\subsection{Consensus based algorithm}
+\begin{lstlisting}[caption=Total order implementation, mathescape]
+upon event <Init> do
+    unordered = delivered = $\empty$
+    wait := false
+    sn := 1
+
+upon event <toBroadcast, m> do
+    trigger <rbBroadcast, m>
+
+upon event <rbDeliver, sm, m> AND (m $\notin$ delivered) do
+    unordered += {(sm, m)}
+
+upon (unordored != $\empty$) AND not(wait) do
+    wait := true
+    trigger <Propose sn, unordered>
+
+upon event <Decide sn, decided> do
+    unordered := unordered \ decided
+    ordered = deterministicSort(decided)
+
+    for all (sm, m) $\in$ ordered:
+        trigger <toDeliver, sm, m>
+        delivered += {m}
+
+    sn++
+    wait := false
+\end{lstlisting}
+
+
 \section{Shared Memory}
 
 In real shared memory there is no message-passing, node access one
@@ -1778,60 +1848,27 @@ Every execution consists of:
 
 %TODO End 7-share 
 
-
-\section{Consensus With Total order}
-
-The order imposed by causal broadcast is partial. Some message might 
-be delivered in different order by different process.
-
-With \textbf{total order} broadcast, process must deliver all
-messages according to the same order.
-
-\subsection{Specification}
-The specification of the total order broadcast are roughly the same as the reliable broadcast
-there only a little modification
-
-\begin{description}
-	\item[Uniform agreement] For any message m: if any process delivers
-	m, then every correct process delivers m.
-\end{description}
-\
-\subsection{Type of total order}
-
-\subsubsection{Total order}
-\begin{itemize}
-	\item Let m1 and m2 be any two messages and let pi and pj be any two 
-	correct processes that deliver m1 and m2
-	\item If pi delivers m1 before m2, then pj delivers m1 before m2
-\end{itemize}
-
-\begin{lstlisting}
-Request: <toBroadcast, m>
-Indication: <toDeliver, src, m>
-\end{lstlisting}
-
-\subsubsection{Uniform total order}
-\begin{itemize}
-	\item Let m1 and m2 be any two messages and let pi and pj be any two
-	processess that deliver m2 (only m2!).
-	\item If pi delivers m1 before m2, then pj delivers m1 before m2
-\end{itemize}
-\subsection{Algorithm}
-\begin{figure}[h]
-	\begin{tabular}{cc}
-		\includegraphics[width=8cm]{img/tob_1.png}
-		\includegraphics[width=8cm]{img/tob_2.png}
-	\end{tabular}
-		\begin{center}
-		\includegraphics[scale=0.6]{img/tob_3.png}
-		\end{center}
-		\caption{Total-order broadcast}
-\end{figure}
 \section{Group Membership}
-Sometimes, process need to know which processes are participating in the 
-computation and which are not. Failure detectors provide such 
-information however it's not coordinated. (Crash detected at different
-time for different processes)
+
+\begin{itemize}
+    \item process need to know which processes are participating in the 
+        computation and which are not. 
+
+    \item Failure detectors provide such information however it's not       
+        coordinated even if failure detector is perfect.                        
+
+        (Crash detected at different time for different processes)
+\end{itemize}
+
+\begin{figure}[!h]
+    \centering
+    \begin{tabular}{cc}
+        \includegraphics[width=7cm]{img/gm1.png}&
+        \includegraphics[width=7cm]{img/gm1.png}\\
+    \end{tabular}
+    \caption{Group membership}
+\end{figure}
+
 \begin{itemize}
 	\item Like FD, processes are informed about failures; we say that
 	the processes install \textbf{views}.
@@ -1839,10 +1876,11 @@ time for different processes)
 	\item Unlike a PFD, the information about failures are 
 	coordinated, the processes install the same sequence of view.
 \end{itemize}
+
 \subsection{Properties}
 \begin{description}
 	\item[Local Monotonicity] If a process install view (j,M) after 
-	installing (k,N), then j > k and M $\subset$ N %TODO join pas compris
+        installing (k,N), then j > k and M $\subset$ N
 	\item[Agreement] No two processes install views (j,M) and (j,M') such that
 	M $\neq$ M'
 	\item[Completeness] If a process p crashes, then there is an integer
@@ -1851,19 +1889,47 @@ time for different processes)
 	\item[Accuracy] If some process install a view (i,M) and p is not in M
 	,then p has crash (might not be true in general case)
 \end{description}
+
 \subsection{Algorithm}
+\begin{lstlisting}[caption=Group membership, mathescape]
+upon event <Init> do
+    view := (id:0, memb:$\pi$)
+    correct := $\pi$
+    wait := false
+
+upon event <crash $p_i$> do
+    correct := correct \ {$p_i$}
+
+upon event (correct $\subset$ view.memb) AND (wait == false) do
+    wait := true
+    trigger <ucPropose ( view.id + 1, correct)>
+
+upon event <ucDecided (i, m)> do
+    view := (id:i, memb:m)
+    wait := false
+    trigger <membView view>
+\end{lstlisting}
+
 \begin{figure}[h]
-	\begin{tabular}{cc}
 		\includegraphics[width=8cm]{img/gmp_1.png}
-		\includegraphics[width=8cm]{img/gmp_2.png}
-	\end{tabular}
-	\begin{center}
-		\includegraphics[scale=0.5]{img/gmp_3.png}
-	\end{center}
 	\caption{Group membership}
 \end{figure}
-%TODO Non-Blocking Atomic Commit
-%%FROM here on I'm not sure of what to study for the exam
+
+\subsection{Non-blocking atomic commit}
+\begin{lstlisting}
+Request: <nbacPropose | v>      // propose value for the commit (0 or 1)
+Indication: <nbacDecide | v>    // indique decided value
+\end{lstlisting}
+
+\begin{itemize}
+    \item[NBAC1] : \textbf{Uniform agreement} : not two processes decide different values
+    \item[NBAC2] : \textbf{Integrity} : no process decide two value
+    \item[NBAC3] : \textbf{abort-validity} : 0 can only be decided if some process propose 0 or crashes
+    \item[NBAC4] : \textbf{commit-validity} : 1 can only be decided if no process propose 0 
+    \item[NBAC5] : \textbf{Termination} : every correct process eventually decide
+\end{itemize}
+
+
 \section{Peer-to-Peer}
 \subsection{Overview P2P systems}
 P2P computing is distributed computing with the following desirable properties:
