@@ -72,6 +72,7 @@ d'une valeur absente.
 
 \section{Création, modification et suppression de tables}
 On crée une table avec le mot clef \lstinline|CREATE TABLE|
+suivi du nom de la table.
 Pour chaque colonne, il faut donner sont nom, son type
 et des options supplémentaires
 \begin{itemize}
@@ -79,8 +80,8 @@ et des options supplémentaires
     cette colonne;
   \item \lstinline|UNIQUE| indique qu'on ne peut pas avoir plusieurs
     entrées qui ont la même valeur pour cette colonne;
-  \item \lstinline|PRIMARY KEY| indique ce c'est la clef primaire qu'on
-    utiliser pour référencer les entrées.
+  \item \lstinline|PRIMARY KEY| indique que c'est la clef primaire qu'on
+    utilisera pour référencer les entrées.
     \lstinline|NOT NULL| et \lstinline|UNIQUE| sont implicite lorsqu'on a
     \lstinline|PRIMARY KEY|;
   \item \lstinline|REFERENCES| indique que les éléments de cette colonne
@@ -101,7 +102,7 @@ CREATE TABLE jedis (
   name TEXT NOT NULL,
   blade_id INTEGER,
   PRIMARY KEY (name),
-  FOREIGN KEY (blade_id) REFERENCES blade);
+  FOREIGN KEY (blade_id) REFERENCES blades);
 \end{lstlisting}
 qui peut aussi être écrit
 \begin{lstlisting}
@@ -164,7 +165,7 @@ Dans cette requête \lstinline|DESC| indique qu'on
 ordonne en ordre décroissant. L'ordre par défaut est
 croissant (mot clé \lstinline|ASC|).
 
-\subsection{Examples de requêtes}
+\subsection{Exemples de requêtes}
 L'aspect le plus intéressant de SQL sont les références.
 On peut par exemple obtenir les jedis sans sabre laser
 \begin{lstlisting}
@@ -241,7 +242,7 @@ avec \lstinline|ESCAPE|
 \begin{lstlisting}
 SELECT name
 FROM jedis
-WHERE name like '%!_% 100!% !!' ESCAPE '!';
+WHERE name LIKE '%!_% 100!% !!' ESCAPE '!';
 /* 'super_jedi 100% cool !' */
 \end{lstlisting}
 
@@ -267,13 +268,13 @@ INSERT INTO table_name (column1, column2, column3,...) VALUES (value1, value2, v
 On peut complèter les colonnes dans l'ordre
 \begin{lstlisting}
 INSERT INTO jedis
-values ('Anakin Skywalker',42,1);
+VALUES ('Anakin Skywalker',42,1);
 \end{lstlisting}
 mais ce n'est pas très lisible.
 On peut donc être plus explicite et les remplir dans l'ordre que l'on veut
 \begin{lstlisting}
 INSERT INTO jedis (name,blade_id,height)
-values ('Anakin Skywalker',1,42);
+VALUES ('Anakin Skywalker',1,42);
 \end{lstlisting}
 
 On peut aussi insérer dans une tables
@@ -333,7 +334,7 @@ il est important de bien penser son application avant de se
 pencher sur l'implémentation de son code source.
 Ainsi diverses étapes d'analyse du problème sont requises.
 La modélisation de données selon l'approche
-ORM (Object-Role Modeling) est en la première.
+ORM (Object-Role Modeling) en est la première.
 
 Dans un premier temps,
 il est important de définir \strong{l'univers de discours} (UoD).
@@ -443,6 +444,8 @@ l'extension pour le cas ternaire est immédiate.
 Dans ce cas,
 il est évident qu'il n'y aura jamais de contrainte ``simple''
 auquel cas on pourrait diviser la relation en deux autres binaires.
+% FIX : la figure contient une erreur, il faut inverser "1 à plusieurs"
+% et plusieurs à 1.
 \begin{figure}[h]
   \centering
   \includegraphics[scale=0.8]{contraintes.jpg}
@@ -453,7 +456,7 @@ La figure~\ref{fig:schema_conceptuel_complet} illustre un usage où on
 stipule qu'un étudiant a au plus un nom et au plus une classe.
 
 Il faut également ajouter les contraintes de \strong{rôles obligatoires}.
-En effet il se peut que l'on veille stipuler que la relation
+En effet il se peut que l'on veuille stipuler que la relation
 liant deux objets doit être obligatoire.
 Pour ce faire, on place un point sur la ligne de relation du côté
 de l'entité qui doit apparaitre au moins une fois dans les exemples.
@@ -464,7 +467,7 @@ au moins un nom et au moins une classe.
 Une autre contrainte à ajouter sur le schéma conceptuel est celle
 d'\strong{unicité externe}.
 En effet, il se peut qu'un objet ayant plusieurs relations soit déterminé
-de manière uniquement par la combinaison de plusieurs objets avec lesquels
+de manière unique par la combinaison de plusieurs objets avec lesquels
 il est en relation.
 Par exemple un fichier qui serait en relation avec un dossier et un nom de
 fichier est déterminé
@@ -491,7 +494,7 @@ Elle se dessine comme une flèche en pointillé d'une boite
 Après avoir transformé les relations $n$-aires du modèle relationnel
 en schéma conceptuel ORM,
 il est maintenant temps de transformer le schéma conceptuel
-ORM et \strong{schéma relationnel}.
+ORM en \strong{schéma relationnel}.
 
 Le principe consiste à choisir un objet clé du schéma conceptuel
 et de le transcrire sous forme de tableau.
@@ -501,7 +504,7 @@ Ainsi,
   \item les colonnes sont soulignées si elles sont uniques;
   \item les colonnes sont soulignées par la même lignes quand elles
     font partie d'une unicité externe commune;
-  \item les colonnes sont mises entre crochet si elles ne sont optionnelles;
+  \item les colonnes sont mises entre crochet si elles sont optionnelles;
   \item les deux clés primaires de tableaux différents
     (si toutefois les données sont dans deux tableaux différents)
     sont reliés par une flèche pour une
@@ -782,7 +785,9 @@ Pour exprimer une \strong{association binaire},
 on relie simplement les deux classes concernées.
 On utilise en fait les associations lorsqu'un attribut n'est pas de type primitif.
 Ainsi si on veut exprimer le fait qu'un client a des commandes (objet),
-on le relie à la classe Commande.
+on le relie à la classe Commande. On pourrait aussi directement ajouter
+un attribut qui serait une liste de commandes dans la classe Client.
+Néanmoins, pour les relations importantes, on préfére l'association.
 
 Sur la ligne d'association,
 on retrouve diverses informations tel qu'un nom (plus sens de lecture),
@@ -852,7 +857,7 @@ Pour savoir si c'est un composition, on regarde si lorsqu'on supprime
 un élément d'une base de donnée, l'autre doit être supprimé également.
 Par exemple, si on supprime un restaurant, il faut aussi supprimer
 ses plages horaires.
-Mais si on supprime un utilisateurs, il ne faut pas supprimer ses amis.
+Mais si on supprime un utilisateur, il ne faut pas supprimer ses amis.
 
 L'\strong{association $n$-aire} relie plus de deux classes entre elles.
 Généralement le lieu de rencontre peut être remplacé par une nouvelle
@@ -900,7 +905,7 @@ partent de cette ligne de vie et ont la syntaxe suivante
 retour = message(paramètre : typeParamètre) : typeRetour
 \end{verbatim}
 Le message est essentiel et les autres informations peuvent être omises.
-Un message particulier est celui qui initiale le diagramme:
+Un message particulier est celui qui initialise le diagramme:
 le message trouvé; il est représenté par un cercle noir.
 Une ligne de vie possède une ou plusieurs barre d'activation
 indiquant quand un participant est actif dans une interaction.
@@ -940,7 +945,7 @@ Les trois opérateurs usuels sont les suivants
   \item[alt] représente la condition if-else où le else est
     une garde séparé du if par des pointillé.
   \item[loop] représente la boucle for
-  \item[opt] représente le condition if
+  \item[opt] représente la condition if
 \end{description}
 
 \end{document}
