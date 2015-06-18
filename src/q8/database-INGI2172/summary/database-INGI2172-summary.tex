@@ -458,8 +458,8 @@ variable on the same time to respect some constraint.
 
 \subsection{Implicit constraint}
 
-A single relvars describe by (ID\#, Name, Field1,
-Field2) have an implicit constraint to the effect that every ``A'' has a
+A single relvars describe by \{ID\#, Name, Field1,
+Field2\} have an implicit constraint to the effect that every ``A'' has a
 ID, a Name, a Field1 and a Field2\ldots
 
 To avoid this implicit constaint, we need to decomposed the design in
@@ -513,16 +513,21 @@ des attributs de la relation.
 On parle de \textit{join dependency triviale} si une des tables du join
 à tous les attributs de la relation initiale: bref que l'on ne peut
 plus faire de join dependency (voir exemple en section \vref{6NF}).
+
+
 \paragraph{Notation:}
-Si on a la relvar \texttt{WIFE\_OF\_HENRY\_VIII}  = \{Wife\#,FName,LName,Fate\}
-, une JD se note : * \{ \{ Wife\#,FName \}, \{Wife\#, LName , Fate \}\}
+Si on a la relvar \texttt{WIFE\_OF\_HENRY\_VIII}  = \{Wife\#,FName,LName,Fate\},
+
+$\to$ une JD se note : * \{ \{ Wife\#,FName \}, \{Wife\#, LName , Fate \}\}
 
 
 \subsection{Normalisation}
 Normalisation is the act of decomposing a relvar that fails
 to satisfy a given normal form scuh that the result is an
 equivalent set of two or more ''smaller'' relvars that do satisfy
-that normal form. The goal of the normalisation are:
+that normal form. 
+
+\paragraph{Goals}
 \begin{itemize}
 	\item Remove redundancy
 	\item No update anomalies
@@ -1345,6 +1350,337 @@ There are four basic type of database:
 
 \subsection{Data Distribution}
 %TODO
+
+\section{Annexe I - Tutoriel D}
+
+\subsection{Operators}
+
+\begin{figure}[H]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Logic} & \textbf{Tutorial D}\\
+\hline
+AND & JOIN \\
+& WHERE (restriction, aka selection or $\sigma$)\\
+& EXTEND (extension)\\
+& SUMMARIZE\\
+& and some more\\
+\hline
+EXISTS & \{...\} (projection aka $\pi$)\\
+\hline
+OR & UNION\\
+\hline
+(AND) NOT & MINUS (difference)\\
+& NOT MATCHING (semi-difference)\\
+\hline
+& RENAME\\
+\hline
+\end{tabular}
+\caption{Tutoriel D Operators}
+\end{figure}
+
+\subsubsection{JOIN}
+
+Let $s = r_1\ JOIN\ r_2$, then the body of s consists of those tuples having heading H that can be formed by taking the union of $t_1$ and $t_2$, where $t_i$ is a tuple of $r_i$.
+
+\begin{itemize}
+\item It is cummutation: $r_1\ JOIN\ r_2 \equiv r_2\ JOIN r_2$
+\item It is associative: ($r_1\ JOIN\ r_2)\ JOIN\ r_3\equiv r_1\ JOIN\ (r_2\ JOIN\ r_3)$
+\end{itemize}
+
+\subsubsection{RENAME}
+
+Let $s = r\ RENAME\ \{A_1\ AS\ B_1, ..., A_n\ AS\ B_n\}$, then the heading of $s$ is the heading of $r$ except that attribute $A_i$ is renamed to $B_i$.
+
+\subsubsection{EXISTS}
+
+Let $s = r\{A_1, ..., A_n\} = r\{ALL\ BUT\ B_1, ..., B_m\}$, then the heading of $s$ is the subset of the heading of $r$ given by $\{A_1, ..., A_n\}$. The body of $s$ consists of each tuple that can be formed from a tuple of $r$ by removing from it the attributes named $B_1, ..., B_m$.
+
+\subsubsection{WHERE}
+
+Let $s = r\ WHERE\ c$, where $c$ is a conditional expression on attributes of r. The heading of $s$ is the heading of $r$ and the body of $s$ consists of those tuples of $r$ for which the condition $c$ evaluates to TRUE. It is a subset of $r$.
+
+\subsubsection{EXTEND}
+
+Let $s = EXTEND\ r:\{formula_1\ AS\ A_1, ..., formula_n\ AS\ A_n\}$, then the heading of $s$ consists of the attributes of the heading of $r$ plus the attributes $A_1, ..., A_n$. The declared type of attribute $A_k$ is that of formula-k. 
+
+The body of $s$ consists of tuples formed from each tuple of $r$ by adding $n$ additional attributes $A_1$ to $A_n$. The value of attribute $A_k$ is the result of evaluating $formula_k$ on the corresponding tuple of $r$.
+
+\subsubsection{UNION}
+
+Let $s = r_1\ UNION r_2$, then $r_1$ and $r_2$ must have the same heading. The heading of $s$ is the common heading of $r_1$ and $r_2$. The body of $s$ consists of each tuple that is either a tuple of $r_1$ or a tuple of $r_2$.
+
+\subsubsection{NOT MATCHING}
+
+Let $s = r_1\ NOT\ MATCHING\ r_2$, then the heading of $s$ is the heading of $r_1$. The body of $s$ consists of each tuple of $r_1$ that matches no tuple of $r_2$ on their common attributes.
+
+$MINUS$ is like $NOT\ MATCHING$.
+
+\subsubsection{Other useful operators}
+
+\begin{itemize}
+\item MATCHING
+\item COMPOSE
+\item GROUP/UNGROUP
+\item UPDATE
+\end{itemize}
+
+\subsection{Examples}
+
+\subsubsection{Create and destroy variables}
+
+\begin{lstlisting}
+VAR ENROLMENT BASE RELATION
+    {StudentId SID,
+     Name CHAR}
+    KEY {StudentID};
+
+DROP VAR ENROLMENT;
+\end{lstlisting}
+
+\subsubsection{Integrity Rules}
+
+\begin{lstlisting}
+CONSTRAINT MAX_ENROLMENTS
+    COUNT(ENROLMENT) <= 20000;
+
+DROP CONSTRAINT MAX_ENROLMENTS;
+\end{lstlisting}
+
+\subsubsection{Update variables}
+
+\begin{lstlisting}
+DELETE ENROLMENT WHERE StudentId = SID('S4');
+
+UPDATE ENROLMENT WHERE StudentId = SID('S1')
+    Name := 'Jean';
+
+INSERT ENROLMENT
+    RELATION{
+        TUPLE{StudentId SID('S4'),
+                    Name 'Devinder',
+                    CourseId CID('C1')
+        }
+    };
+\end{lstlisting}
+
+\subsubsection{Query}
+
+\begin{lstlisting}
+(ENROLMENT WHERE CourseId = CID('C1'))
+    {StudentId, Name}
+\end{lstlisting}
+
+\subsubsection{Operator definition}
+
+\begin{lstlisting}
+OPERATOR HIGHER_OF(A INTEGER, B INTEGER)
+        RETURNS INTEGER;
+    IF A > B 
+            THEN RETURN A;
+            ELSE RETURN B;
+    END IF;
+END OPERATOR;
+\end{lstlisting}
+
+\subsubsection{A Relation Literal}
+
+\begin{lstlisting}
+RELATION {
+    TUPLE{ StudentId SID('S1'), CourseId CID('C1'), Name NAME('Anne')    },
+    TUPLE{ StudentId SID('S1'), CourseId CID('C2'), Name NAME('Anne')    },
+    TUPLE{ StudentId SID('S2'), CourseId CID('C1'), Name NAME('Boris')   },
+    TUPLE{ StudentId SID('S3'), CourseId CID('C3'), Name NAME('Cindy')   },
+    TUPLE{ StudentId SID('S4'), CourseId CID('C1'), Name NAME('Devinder')}
+}
+\end{lstlisting}
+
+\subsubsection{Aggregate Operators}
+
+\begin{lstlisting}
+SUM(EXAM_MARK, Mark) = 342
+AVG(EXAM_MARK, Mark) = 68.4
+MAX(EXAM_MARK, Mark) = 93
+MIN(EXAM_MARK, Mark) = 49
+\end{lstlisting}
+
+\subsubsection{Summarize}
+
+\begin{lstlisting}
+SUMMARIZE EXAM_MARK BY{CourseID}:{
+    TopScore := MAX(Mark)
+}
+SUMMARIZE EXAM_MARK PER(COURSE{CourseID}):{
+    Takers: COUNT()
+}
+\end{lstlisting}
+
+\subsubsection{Primary and Foreign Key}
+
+\begin{lstlisting}
+VAR EXAM_MARK BASE RELATION {
+    StudentId SID,
+    CourseId CID,
+    Mark INTEGER
+}
+KEY{StudentId, CourseId};
+
+
+VAR IS_CALLED BASE RELATION {
+    StudentId SID,
+    Name CHAR
+}
+VAR IS_ENROLLED_ON BASE RELATION {
+    StudentId SID,
+    CourseId CID
+}
+FOREIGN KEY{CourseId} REFERENCING IS_CALLED;
+\end{lstlisting}
+
+
+\subsubsection{Constraint declaration}
+
+\begin{lstlisting}
+CONSTRAINT Marks_out_of_100 IS_EMPTY
+(EXAM_MARK WHERE Mark < 0 OR Mark > 100);
+
+DROP CONSTRAINT Marks_out_of_100 ;
+\end{lstlisting}
+
+
+\section{Annexe II - Postgresql}
+
+We are going to compare operators with Postgresql
+
+\subsection{Operators}
+
+
+\subsubsection{JOIN}
+\begin{lstlisting}[title=Tutoriel D]
+IS_CALLED JOIN IS_ENROLLED_ON
+\end{lstlisting}
+
+\begin{lstlisting}[title=SQL]
+SELECT C.student_id, C.name, I.course_id
+FROM is_called AS C,
+    is_enrolled_on AS I
+WHERE C.student_id = I.student_id
+\end{lstlisting}
+
+\subsubsection{RENAME}
+\begin{lstlisting}[title=Tutoriel D]
+IS_CALLED RENAME {StudentId as Sid1}
+\end{lstlisting}
+
+\begin{lstlisting}[title=SQL]
+SELECT C.student_id AS sid1, C.name
+FROM is_called AS C
+\end{lstlisting}
+
+\subsubsection{EXISTS}
+\begin{lstlisting}[title=Tutoriel D]
+IS_ENROLLED_ON{StudentId}
+\end{lstlisting}
+
+\begin{lstlisting}[title=SQL, language=sql]
+SELECT S.student_id FROM students AS S
+WHERE EXISTS (
+    SELECT * FROM is_enrolled_on AS I
+    WHERE I.student_id = S.student_id
+)   
+
+-- Alternative
+
+SELECT S.student_id FROM students AS S
+WHERE S.student_id IN (
+    SELECT I.student_id FROM is_enrolled_on AS I
+)
+\end{lstlisting}
+
+\subsubsection{WHERE}
+\begin{lstlisting}[title=Tutoriel D]
+IS_CALLED WHERE Name=NAME('Boris')
+\end{lstlisting}
+
+\begin{lstlisting}[title=SQL]
+SELECT C.student_id, C.name
+FROM is_called AS C
+WHERE C.name = 'Boris'
+\end{lstlisting}
+
+\subsubsection{EXTEND}
+\begin{lstlisting}[title=Tutoriel D]
+EXTEND IS_CALLED : {
+    Initial := SUBSTRING (THE_NAME(Name),0,1)
+}
+\end{lstlisting}
+
+\begin{lstlisting}[title=SQL]
+SELECT C.student_id, C.name, substring(C.name, 1, 1) AS initial
+FROM is_called AS C
+\end{lstlisting}
+
+\subsubsection{SUMMARIZE}
+\begin{lstlisting}[title=Tutoriel D]
+SUMMARIZE EXAM_MARK BY { CourseId } : {
+TopScore := MAX(Mark)
+}
+\end{lstlisting}
+
+\begin{lstlisting}[title=SQL]
+SELECT M.course_id, max(M.mark) AS top_score
+FROM exam_mark AS M
+GROUP BY M.course_id
+\end{lstlisting}
+
+\begin{lstlisting}[title=Tutoriel D]
+SUMMARIZE EXAM_MARK PER (COURSE{CourseId}) : {
+    Takers := COUNT()
+}
+\end{lstlisting}
+
+\begin{lstlisting}[title=SQL]
+SELECT C.course_id,
+    count(*) AS takers
+FROM course AS C
+JOIN exam_mark AS M ON M.course_id = C.course_id
+GROUP BY C.course_id
+\end{lstlisting}
+
+\subsubsection{UNION}
+\begin{lstlisting}[title=Tutoriel D]
+(IS_CALLED WHERE Name=NAME('Devinder')){StudentId} 
+UNION 
+(IS_ENROLLED_ON WHERE CourseId=CID('C1')){StudentId}
+\end{lstlisting}
+
+\begin{lstlisting}[title=SQL]
+SELECT C.student_id FROM is_called AS C
+WHERE C.name='Devinder'
+UNION SELECT I.student_id FROM is_enrolled_on AS I
+WHERE I.course_id='C1'
+\end{lstlisting}
+
+\subsubsection{NOT MATCHING}
+\begin{lstlisting}[title=Tutoriel D]
+IS_CALLED NOT MATCHING IS_ENROLLED_ON
+\end{lstlisting}
+
+\begin{lstlisting}[title=SQL]
+SELECT C.student_id, C.name
+FROM is_called AS C
+WHERE NOT EXISTS (
+    SELECT * FROM is_enrolled_on AS I
+    WHERE I.student_id=C.student_id 
+)
+\end{lstlisting}
+
+\subsubsection{Other useful operators}
+
+\begin{itemize}
+\item DISTINCT
+\end{itemize}
 
 \section{Other Material}
 \subsection{S3}
