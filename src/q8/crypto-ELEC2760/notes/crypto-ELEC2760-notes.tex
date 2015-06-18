@@ -14,6 +14,8 @@
 \DeclareMathOperator{\EDP}{EDP}
 \DeclareMathOperator{\MC}{MC}
 
+\DeclareMathOperator{\E}{\mathbb{E}}
+
 \newcommand{\Tph}{T_\mathrm{ph}}
 \newcommand{\Top}{T_\mathrm{op}}
 \newcommand{\fop}{f_\mathrm{op}}
@@ -737,9 +739,119 @@ We see that BitSlicing is interesting from a bus size of \SI{32}{bits}.
 
 \section{Side-Channel Attacks}
 \paragraph{Discussion link}
+\url{www.forum-epl.be/viewtopic.php?t=12017},
 \url{http://www.forum-epl.be/viewtopic.php?t=12119}
 
-TODO
+\subsection{Exemplary attack against DES}
+Kocher's DPA is a divide and conquer attack.
+Increasing the number of rounds doesn't help since it targets the first round.
+For perfect security against DPA, the power should be independent with the key.
+
+In Kocher's DPA, we model the noise simply by the value of one bit
+and the statistical test is a difference of mean.
+
+To recover the whole keys we do the same attack on other bits (divide and conquer).
+
+We only focus on 1 bit considering the others as noise.
+In general it is better to use the 4 bits us have a better SNR.
+With parallel computation it is harder to attack
+because there is more noise.
+
+There are several peak because the S-box is not perfect
+so if we have good correlation at the input, it's the same at the output.
+The higher peak is the correct candidate,
+other hight peaks are other values with very close hamming weight.
+
+\subsection{Improved attacks}
+To improve the attack we can:
+\begin{itemize}
+  \item Improve the measurement setup;
+  \item Do an adaptative selection of the inputs;
+  \item Do a preprocessing of the traces;
+  \item Improve leakage model with profiling, characterization;
+  \item Exploit multiple samples, multivariate statistics (e.g. choose $y$ and $z$);
+    \begin{itemize}
+      \item Higher order attacks;
+      \item Template attacks;
+    \end{itemize}
+  \item Do different statistical tests:
+    \begin{itemize}
+      \item Difference of mean;
+      \item Correlation analyser;
+      \item Bayesian classification.
+    \end{itemize}
+  \item Try to remove the noise, filtering;
+  \item Improve the model (Hamming weight) with Proviling, Supervised Machine Learning.
+\end{itemize}
+
+For Template Attacks we can use probability and the correct key tends to 1.
+Note that for the CPA with Pearson's correlation coefficient we can also have probability with confidence intervals.
+
+\subsection{Countermeasures}
+\begin{itemize}
+  \item Use a huge table so there is no computation so no dependence on hamming weigth;
+  \item Huge variance so we need much more samples (SNR).
+    Signal is variance over the mean
+    and noise is mean of the variance.
+  \item Encoding the data so that they have the same hamming weigth.
+\end{itemize}
+Note the following about countermeasures
+\begin{itemize}
+  \item They are never perfect (they only make the attack harder);
+  \item They can be implemented at different abstraction levels
+    \begin{itemize}
+      \item Physical (noise addition),
+      \item Technological,
+      \item HW/SW design (time/data randomization),
+      \item Algorithmic/protocol (key updates).
+    \end{itemize}
+  \item To balance with implementation cost.
+\end{itemize}
+Masking and dual-rails are two typical examples of countermeasures.
+
+\subsection{Key independence}
+Under the assumption that:
+\begin{itemize}
+  \item Plaintext are uniformly distributed,
+  \item $L_t(x_i,k) = f(x_i \xor k) \neq f(x_i;k)$,
+\end{itemize}
+
+\subsection{Asymptotic equivalences}
+Under the additional assumption that:
+\begin{itemize}
+  \item $L_t(x_i,k) = \delta(x_i,k) + n$;
+  \item $n \sim \mathcal{N}(\mu,\sigma^2)$,
+    identical for all $t$
+    and independent of manipulated data;
+  \item The same models are used by all dinstinguishers.
+\end{itemize}
+
+Supose we normalize the leakage, i.e. $\E[L] = 0$ and $\sigma_L = 1$.
+For the Pearson's Correlation coefficient, we have
+\begin{align*}
+  \tilde{k}
+  & = \argmax_{k^*} \frac{\E[(L - \E[L])(M^{k^*} - \E[M^{k^*}])]}{\sigma_L\sigma_{M^{k^*}}}\\
+  & = \argmax_{k^*} \frac{\E[LM^{k^*} - \E[L\E[M^{k^*}]] - \E[\E[L]M^{k^*}] + \E[L]\E[M^{k^*}]}{\sigma_L\sigma_{M^{k^*}}}\\
+  & = \argmax_{k^*} \frac{\E[LM^{k^*} - \E[L]\E[M^{k^*}] - \E[L]\E[M^{k^*}] + \E[L]\E[M^{k^*}]}{\sigma_L\sigma_{M^{k^*}}}\\
+  & = \argmax_{k^*} \frac{\E[LM^{k^*}] - \E[L]\E[M^{k^*}]}{\sigma_L\sigma_{M^{k^*}}}\\
+  & = \argmax_{k^*} \frac{\E[LM^{k^*}]}{\sigma_{M^{k^*}}}\\
+  & = \argmax_{k^*} \frac{\E[LM^{k^*}]}{\sqrt{\E[(M^{k^*})^2] - \E[M^{k^*}]^2}}.
+\end{align*}
+and for the template attack:
+\begin{align*}
+  \bar{k}  & = \argmax_{k^*} \prod_{i=1}^q \frac{1}{2\pi\sqrt{\sigma_L}} \exp\Big(-\frac{1}{2}\Big(\frac{l-m_i^{k^*}}{\sigma_L}\Big)^2\Big)\\
+           & = \argmin_{k^*} \sum_{i=1}^q \Big(\frac{l-m_i^{k^*}}{\sigma_L}\Big)^2\\
+           & = \argmin_{k^*} \sum_{i=1}^q l_i^2 - 2l_im_i^{k^*} + (m_i^{k^*})^2\\
+           & = \argmin_{k^*} \E[L^2] - 2\E[LM^{k^*}] + \E[M^{k^*}]^2\\
+           & = \argmax_{k^*} 2\E[LM^{k^*}] - \E[M^{k^*}]^2\\
+           & = \argmax_{k^*} 2\frac{\E[LM^{k^*}]}{\E[M^{k^*}]^2} - 1\\
+           & = \argmax_{k^*} \frac{\E[LM^{k^*}]}{\E[M^{k^*}]^2}.
+\end{align*}
+
+Asymptotically, $\E[M^{k^*}]$ and $\sigma(M^{k^*})$ are independent of $k^*$.
+In the simple case of univariate model, they are asymptotically equivalent.
+
+The model is more important that the comparison.
 
 \section{Fault Attacks}
 \paragraph{Discussion link}
@@ -827,8 +939,6 @@ but now we only need $2 \cdot 4$ faulty ciphertext instead of $2 \cdot 16$.
 Also the probability that 2 keys works for both ciphertext is smaller since
 $1020/2^{32} < 8/2^8$.
 
-On the contrary to slide channels attacks, here we like diffusion.
-
 If we do the random byte error before ShiftRows of round 9, SubBytes of round 9 or ARK of round 8 it does not change anything
 it it still a random byte error on a single byte before MixColumns of round 9.
 
@@ -866,6 +976,8 @@ This is explained by the \figuref{fault}.
   \caption{A random byte fault before MixColumns of round 8.}
   \label{fig:fault}
 \end{figure}
+
+We see that on the contrary to slide channels attacks, here we like diffusion.
 
 %
 % Sequential logic becomes difficult to do with very small circuits, asynchronious logic is being considered.
