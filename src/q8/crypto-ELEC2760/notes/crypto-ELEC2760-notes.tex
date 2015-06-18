@@ -12,6 +12,7 @@
 \DeclareMathOperator{\ALH}{ALH}
 \DeclareMathOperator{\DP}{DP}
 \DeclareMathOperator{\EDP}{EDP}
+\DeclareMathOperator{\MC}{MC}
 
 \newcommand{\Tph}{T_\mathrm{ph}}
 \newcommand{\Top}{T_\mathrm{op}}
@@ -713,9 +714,9 @@ the power is $P = \SI{2}{\volt} \times \SI{3}{\milli\ampere} = \SI{6}{\milli\wat
 The load instruction takes 2 cycles for the RAM and 3 for the ROM.
 But it is initially in the ROM so for the RAM we must first load it from the ROM to the RAM.
 The size of the S-boxes is $256$ bytes so to load it to the RAM we need $256 \cdot (3+2) = 1280$ cycles ($3$ to read the ROM, $2$ to write the RAM).
-For an encryption, there are 16 S-boxes per round and 11 rounds so 176 encryptions in total.
+For an encryption, there are 16 S-boxes per round and 10 rounds so 160 encryptions in total.
 Let $N_e$ be the number of encryptions,
-with the RAM it takes $1280 + 2 \cdot 176 \cdot N_e$ and with the ROM it takes $3 \cdot 176 \cdot N_e$ so it is interesting to do the transfer to the RAM is there is 8 encryptions in a row or more.
+with the RAM it takes $1280 + 2 \cdot 160 \cdot N_e$ and with the ROM it takes $3 \cdot 160 \cdot N_e$ so it is interesting to do the transfer to the RAM is there is more than 8 encryptions in a row.
 
 However the implementations on microcontrolers are essentially useful for authentication which rarely requries more than one encryption in arow so the ROM is better for this case.
 
@@ -735,11 +736,136 @@ so for \( n > 27.2 \).
 We see that BitSlicing is interesting from a bus size of \SI{32}{bits}.
 
 \section{Side-Channel Attacks}
+\paragraph{Discussion link}
+\url{http://www.forum-epl.be/viewtopic.php?t=12119}
+
 TODO
 
 \section{Fault Attacks}
-TODO
+\paragraph{Discussion link}
+\url{http://www.forum-epl.be/viewtopic.php?t=12120}
 
+\subsection{How to introduce a fault}
+There are different ways to introduce a fault:
+\begin{itemize}
+  \item Reduce supply voltage;
+  \item Increase clock frequency;
+  \item Glitch (IO, clock supply) (useful because localized in time, we see the error propagate);
+  \item Increase temperature.
+\end{itemize}
+
+Note that with Glitch we can do it at a certain time
+but with laser we can do it with a certain time \emph{and} at a certain coordinate.
+
+Focused Ion Beam (FIB)
+can cut the circuit layer by layer.
+Reverse engineers often have access to it.
+
+What is efficient agains fault attacks is rekeying when a fault is detected.
+
+\subsection{Generic fault attacks}
+If we can change each bit of the key separately,
+we can set all the bits of the key to 0 except one.
+Then we look at the ciphertext/plaintext pair
+and check with 2 encryption what is the value of the bit we have left unchanged.
+It is divide and conquer,
+once we have found it we do the same for the other bits.
+
+It is the most precise fault.
+Its drawbacks are that
+\begin{itemize}
+  \item for an $n$-bit key, we need $n$ faults;
+  \item It is a very precise fault.
+    We a glitch, we can easily toggle a bit
+    but setting a bit to 0 is not easy.
+\end{itemize}
+
+\subsection{Attacks against the AES}
+If we change the ciphertext, we learn nothing of course.
+
+If we introduce an error before ARK of the last round,
+\begin{itemize}
+  \item with a random byte error we learn nothing,
+    it is like a one-time pad;
+  \item with a bit toggle it is like toggling it after xoring the plaintext so we learn nothing;
+  \item if we can set bits, we can simply set all bits to 0 and the ciphertext will be the last subkey.
+\end{itemize}
+
+Introduction an error before ShiftRows, is the same than before ARK since ShiftRows is just routing.
+
+If we introduce an error before SubBytes, if it is a random byte error the output of SubByte will be a random byte
+so it will be like a random byte error before ShiftRows, we learn nothing.
+If we introduce an error of only one bit, we know in which byte it is but we do not know which bit,
+we can find a byte of the subkey with 2 Ciphertext pairs in error and one Ciphertext without error (same Plaintext).
+For each pair, we look at the output byte of the SubByte for which the input byte has a bit in error,
+trace the bits after the ShiftRows and find which 8 bits of the key are xored with those 8 bits output of the SubByte.
+For each values of those 8 bits (256 possibilities), we xor them with the ciphertext, undo the ShiftRows and SubByte.
+We do that both with the Ciphertext in error and for the Ciphertext without error and check if the different between the input
+of SubBytes is only one bit. There are exactly 8 values of the 8-bits of the key such that it is the case.
+
+We do that for the other Ciphertext in error, we have again 8 values of the 8-bits of the key that works.
+Normally (if we are not very unlucky), only one key is appears in both, we have found 8-bits of the first key !
+We can do that for the 16 others bytes of the subkey.
+We need $16 \cdot 2 = 32$ faulty ciphertexts.
+
+Introducing an error before the ARK of the round 9 is the same than before SubByte of round 10.
+
+Suppose we do a random byte fault on one byte before MixColumn of round 9.
+Let $\delta$ be the random byte fault that is xored.
+The column for which appear the fault is $(a,b,c,d)$.
+Note that since MixColumn is linear,
+\[ \MC(a \xor \delta,b,c,d) = \MC(a,b,c,d) \xor \MC(\delta,0,0,0). \]
+
+Suppose we do not know in which of the four byte of the column it is.
+There is $255 \times 4 = 1020$ possible patterns:
+$(\delta,0,0,0), (0,\delta,0,0), (0,0,\delta,0), (0,0,0,\delta)$.
+It affects 32 bytes at the output so we need to try $2^{32}$ keys.
+
+The time complexity has increased from $2^8 \cdot 16$ to $2^{32} \cdot 4$
+but now we only need $2 \cdot 4$ faulty ciphertext instead of $2 \cdot 16$.
+
+Also the probability that 2 keys works for both ciphertext is smaller since
+$1020/2^{32} < 8/2^8$.
+
+On the contrary to slide channels attacks, here we like diffusion.
+
+If we do the random byte error before ShiftRows of round 9, SubBytes of round 9 or ARK of round 8 it does not change anything
+it it still a random byte error on a single byte before MixColumns of round 9.
+
+If the fault is before MixColumns of round 8, ShiftRows of round 8,
+SubBytes of round 8 or ARK of round 7, the situation is even better,
+the time complexity is still $2^{32}$ but we now only need 2 faulty ciphertexts.
+This is explained by the \figuref{fault}.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{subfigure}[b]{0.3\textwidth}
+    \begin{tikzpicture}
+      \fill [gray] (3,3) rectangle (4,4);
+      \draw[step=1.0,black,very thick] (0,0) grid (4,4);
+    \end{tikzpicture}
+    \caption{Before MixColumns of round 8.}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\textwidth}
+    \begin{tikzpicture}
+      \fill [gray] (3,0) rectangle (4,4);
+      \draw[step=1.0,black,very thick] (0,0) grid (4,4);
+    \end{tikzpicture}
+    \caption{After MixColumns of round 8.}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.3\textwidth}
+    \begin{tikzpicture}
+      \fill [gray] (3,3) rectangle (4,4);
+      \fill [gray] (2,2) rectangle (3,3);
+      \fill [gray] (1,1) rectangle (2,2);
+      \fill [gray] (0,0) rectangle (1,1);
+      \draw[step=1.0,black,very thick] (0,0) grid (4,4);
+    \end{tikzpicture}
+    \caption{After ShiftRows of round 9. One in each column.}
+  \end{subfigure}
+  \caption{A random byte fault before MixColumns of round 8.}
+  \label{fig:fault}
+\end{figure}
 
 %
 % Sequential logic becomes difficult to do with very small circuits, asynchronious logic is being considered.
