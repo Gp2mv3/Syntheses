@@ -1093,7 +1093,7 @@ Three solution to make the transaction log :
 
     \item For each $T_i \in S$ 
 
-    $\Rightarrow$ write $<T_i, abort>$ to log then output it
+    $\Rightarrow$ write $<T_i, end>$ to log then output it
     \end{enumerate}
 
     \item[Drawback] : Need to keep all modified block in memory until commit.
@@ -1150,8 +1150,10 @@ scedule.
 
 $\Rightarrow$ Serial and serializable schedule are correct (consistency of database).
 
-\subsection{Equivalences} %TODO ameliorer explication
+\subsection{Equivalences} 
 \begin{description}
+\item[Conflict operation] Any pair of operations from two different transactions
+on the same data item where at least on is a write
 	\item[Result equivalent ] They produce the same final state of the
 	database
 	\item[Conflict equivalent] The order of any two conflicting operations
@@ -1159,8 +1161,22 @@ $\Rightarrow$ Serial and serializable schedule are correct (consistency of datab
 	\item[Conflict serializable] Conflict equivalent to some serial schedule.
 	(It can be tested throug a directed graph (slide 15 in 11a))
 \end{description}
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=10cm]{img/conflict.png}
+\caption{Conflict example}
+\end{figure}
+
 \subsubsection{Lock}
-Lock and unlock need to be atomic operation.
+Lock and unlock need to be atomic operation. And all transaction need 
+to be well-formed:
+
+\begin{itemize}
+\item lock before making an opreation
+\item don't lock what has already been lock
+\item don't unlock what is not unlock
+\end{itemize}
 
 \begin{itemize}
     \item[\textbf{Mode}]
@@ -1231,24 +1247,31 @@ conflicting operation occuring in incorrect order.
 	 optical disk,tape... Cannot be processed by the CPU must first copied 
 	 in primary storage (slower access).
 \end{description}
-\url{http://mathcomp.uokufa.edu.iq/staff/kbs/file/2/Fundamentals\%20of\%20Database\%20Systems\%20-\%20Ramez\%20Elmasri\%20&\%20Navathe.pdf}
+%\url{http://mathcomp.uokufa.edu.iq/staff/kbs/file/2/Fundamentals\%20of\%20Database\%20Systems\%20-\%20Ramez\%20Elmasri\%20&\%20Navathe.pdf}
+
 \subsection{Disk}
+
 \paragraph{Terminology}
-Information is stored on a disk surface in concenctric circles of small
-widith, each having a distinct diameter. Each circle is called a \textbf{track}.\\
-In disk packn the tracks with the same diameter on the various surfaces
-are called \textbf{cylinder}.\\
-A \textbf{sector} is a part of a track, it is hard-coded on the disk surface and cannot be
-changed. The operating system also divides the track into equal-sized disk 
-\textbf{blocks}. The size is fixed at initialization and cannot be changed dynamically.\\
-Blocks are separated by fixed-size \textbf{gap} which contains information to 
-determine which block on the track follows each gap.\\ %Ease the search?
-The \textbf{head} is used to read/write on the disk and its attached to 
-a mechanical arm. Each arms are connected to an \textbf{actuator} which
-moves the heads over cylinder of tracks.\\
+Information is stored on a disk surface s.t.
+\begin{itemize}
+\item \textbf{Track} : Concenctric circles of small widith, each having a distinct diameter
+\item \textbf{Cylinder}: Packs the tracks with the same diameter on the various surfaces.
+\item \textbf{Sector} : Part of a track with fixed-size (it is hard-coded on the disk surface and cannot be
+        changed)
+
+\item \textbf{Blocks} : The operating system also divides the track into equal-sized disk.
+(The size is fixed at initialization and cannot be changed dynamically)
+
+    \item \textbf{Gap} : Blocks are separated by fixed-size which contains information to 
+    determine which block on the track follows each gap.
+    \item \textbf{Head} : used to read/write on the disk and its attached to 
+    a mechanical arm. 
+    \item Each arms are connected to an \textbf{actuator} which
+    moves the heads over cylinder of tracks.
+    \end{itemize}
 
 
-Access time 
+    Access time 
 \begin{tabular}{p{6cm}|cc}
      & DDR & SSD \\
  = Seek time (moving the head) & 4ms $\to$ 15 ms& 0.08ms $\to$ 0.16ms \\
@@ -1265,7 +1288,27 @@ other buffer.
 
 \paragraph{Note :} Only possible if there is a an I/O processor 
 independent of the CPU
+
+
+
 \subsection{Disk organisation}
+
+\begin{figure}[!h]
+    \centering
+\begin{tikzpicture}
+	\node[text width=2.5cm,align=center, draw, rectangle] (A) {Data item};
+	\node[text width=2.5cm,align=center, draw, rectangle] (B) [right= of A] {Records};
+	\node[text width=2.5cm,align=center, draw, rectangle] (C) [right= of B] {Blocks};
+	\node[text width=2.5cm,align=center, draw, rectangle] (D) [right= of C] {Files};
+	\path[->] (A) edge (B)
+                (B) edge (C)
+                (C) edge (D);
+
+\end{tikzpicture}
+\caption{Disk organisation}
+\end{figure}
+
+
 
 \subsubsection{Data items} 
 The data item is its value (fixed/variable length) and has a type that
@@ -1305,7 +1348,7 @@ this record.
             \item Overflow area : It is used to store new records
             without rewriting the sequential file. References to the new
             records are placed in the header of the file.
-            \item Indirection %TODO
+            \item Indirection 
         \end{enumerate}
 \end{itemize}
 
@@ -1340,34 +1383,37 @@ as OPEN,READ,DELETE,...
 \subsection{Indexing}
 An index is an auxiliary file that makes it more
 efficient to search for records in the data file. 
-( index file size <<< data )
+(index file size $<<<$ data)
 \begin{center}<field value, pointer>\end{center}
 
 %%TODO : example no index vs with index
-%\begin{tabular}{|c|c|}
-%\hline
-%With index & without index\\
-%\hline
-%\begin{itemize}
-%	\item r = 30.000 records
-%	\item R = 100 bytes (record size)
-%	\item B(lock) = 1024 bytes
-%	\item Blocking factor = B/100 =~10 records per block
-%	\item Binary search = $log_2(3000)$ = 12
-%\end{itemize}
-%&
-%\begin{itemize}
-%	\item V = 9 bytes (ordering key size)
-%	\item  P = 6 bytes(logical pointer size)
-%	\item B(lock) = 1024 bytes
-%	\item Blocking factor = B/15 =~67
-%	\item Binary search = $log_2(45) $+1 =7
-%\end{itemize}
-%\\
-%\hline
-%number of access 12 & number of access 7\\
-%\end{tabular}
+\begin{tabular}{|p{8cm}|p{8cm}|}
+\hline
+\multicolumn{1}{|c|}{\textbf{Without index}} & \multicolumn{1}{c|}{\textbf{With index}}\\
+\hline
+\multicolumn{2}{|c|}{r = 30 000 records}\\
+\multicolumn{2}{|c|}{R = 100 bytes (record size)}\\
+\hline
+\begin{itemize}
+	\item B(lock) = 1024 bytes
+	\item Blocking factor = B/100 =~10 records per block
+	\item Binary search = $log_2(3000)$ = 12
+\end{itemize}
+&
+\begin{itemize}
+	\item V = 9 bytes (ordering key size)
+	\item P = 6 bytes(logical pointer size)
+	\item B(lock) = 1024 bytes
+	\item Blocking factor = B/15 =~67
+	\item Binary search = $log_2(45) $+1 =7
+\end{itemize}
+\\
+\hline
+$\Rightarrow$ number of access 12 &$\Rightarrow$  number of access 7\\
+\hline
+\end{tabular}
 
+\paragraph{Type}
 \begin{itemize}
     \item Dense index : index for \textbf{every key value} in the data file
     \begin{itemize}\item[$\to$] can tell if record exist without accessing file \end{itemize}
