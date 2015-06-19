@@ -74,11 +74,6 @@ can be stored and have an implicit meaning. Key point are:
 	(because of the ACID property).
 	\item Information aims at being queried.
 \end{itemize}
-According to the book:
-\begin{description}
-	\item[A database] is an organized machine readable collection of symbols
-	 (we can see the value of the database) and machine-updatable.
-\end{description}
 \section{Lexique}
 \begin{itemize}
 	\item Variable : C'est une représentation à un temps t de la fonction. La ``table''
@@ -88,8 +83,7 @@ According to the book:
 	\item[Notes:] Une table $\neq$ relation puisque la relation est indépendante
 	    de l'ordre des rows/columns.
 
-    \item Relation : Fonction qui lie les attributs entre eux. 
-    C'est elle qui leurs donne un sens.
+    \item Relation : Fonction qui lie les attributs entre eux. C'est elle qui leurs donne un sens.
     \item Attribut : Un champ de la variable.
     \item Cardinalité :  Nombre de n-tuple.
     \item N-Tuple : une ligne, un ensemble d'attribute value.
@@ -98,6 +92,14 @@ According to the book:
     \item Orthogonalité : %TODO
 \end{itemize}
 
+
+\subsection{Definitions}
+\begin{itemize}
+\item Relation : A relation represents the extension of some n-adic predicate P by having
+a body consisting of every n-tuple that satisfies P
+	\item A database : is an organized machine readable collection of symbols
+	 (we can see the value of the database) and machine-updatable.
+	 \end{itemize}
 
 \section{DBMS}
 The DBMS is a piece of software for managing databases and providing
@@ -487,6 +489,12 @@ $y$. Note that a FD denotes a function.
 
 For example, in the relation $a+b=c$ we have $\{a,b\} \rightarrow \{c\}$.
 
+\paragraph{Definition}: If we have $\{A_1,...,A_n\} \to \{B_1,...,B_m\} \in R$ then
+\begin{center}
+for any two tuple $S$ and $T$ s.t $S.\{A_1,...,A_n\} = T.\{A_1,...,A_n\}$ $\Rightarrow$
+    $S.\{B_1,...,A_m\} = T.\{B_1,...,A_m\}$
+\end{center}
+
 \paragraph{Theorem about FD: }
 \begin{itemize}
     \item Left augmentation : if A' is a superset of A, then A' $\to$ B 
@@ -577,11 +585,92 @@ GOOD & Non atomic value (tuple) & No simple value \\
 Pour toutes dépendances fonctionnelles $X \rightarrow A$ (voir section \vref{fd}) , il doit y avoir au-moins une de ces 2 conditions respectées:
 \begin{itemize}
 	\item $X$ contient $A$ ($A\subseteq X$)  (FD triviale, voir section \vref{fd})
-    \item $X$ est une superkey (voir section \vref{key})
+    \item $X$ est une key (voir section \vref{key})
 \end{itemize}
 
 \paragraph{$\Rightarrow$} BCNF allows to deal with the redundancy and the lack of orthogonality 
 through splitting.
+
+\paragraph{Tradeoff} between keep FD and remove redondancy/improve orthogonality.
+
+\begin{figure}[!h]
+\centering
+\begin{tabular}{cccc}
+\begin{tabular}{|ccc|}
+\hline
+\underline{SID} & NAME & \underline{CID} \\
+\hline
+S1 & Anne & C1\\
+... & ... & ... \\
+S1 & Anne & C2 \\
+\hline
+\end{tabular}
+& $\Rightarrow$ &
+\begin{tabular}{|cc|}
+\hline
+\underline{SID} & NAME \\
+\hline
+S1 & Anne \\
+\hline
+\end{tabular}
+&
+\begin{tabular}{|cc|}
+\hline
+\underline{SID} & \underline{CID} \\
+\hline
+S1 & C1\\
+S1 & C2 \\
+\hline
+\end{tabular}
+\end{tabular}
+\caption{}
+    \captionsetup{singlelinecheck=off}
+    \caption[level]{ Remove redondancy and improve orthogonality
+\begin{enumerate}
+\item FD : \{SID \} $\to$ NAME
+\end{enumerate}}
+\end{figure}
+
+
+\begin{figure}[!h]
+\centering
+\begin{tabular}{cccc}
+\begin{tabular}{|ccc|}
+\hline
+\underline{SID} & TUTORID & \underline{CID} \\
+\hline
+S1 & T1 & C1 \\
+... & ... & ... \\
+S1 & T2 & C2 \\
+\hline
+\end{tabular}
+& $\Rightarrow$ &
+\begin{tabular}{|cc|}
+\hline
+\underline{SID} & \underline{TUTORID} \\
+\hline
+S1 & T1 \\
+S1 & T2 \\
+\hline
+\end{tabular}
+&
+\begin{tabular}{|cc|}
+\hline
+\underline{TUTORID} & \underline{CID} \\
+\hline
+T1 & C1\\
+T2 & C2 \\
+\hline
+\end{tabular}
+\end{tabular}
+    \captionsetup{singlelinecheck=off}
+    \caption[level]{ Loss of FD
+\begin{enumerate}
+\item FD : \{SID, CID \} $\to$ TUTORID
+\item FD : \{TUTORID \} $\to$ CID
+\end{enumerate}}
+\end{figure}
+
 
 \subsection{5 NF}
 
@@ -870,6 +959,17 @@ this may improve performance in practice.
 \paragraph{ } Use COMMIT to complete the transaction or ROLLBACK to abort
 the transaction.
 
+\paragraph{Correctness}
+\begin{tabular}{|c|cc|}
+\hline
+& Commit & Rollback \\
+\hline
+A & Applies all transaction update & No effect on DB \\
+C & Succeed only if no constraint violated & Back to least consistent state \\
+I & Effect become visible & No partial visible state \\
+D & Modification are permanent & No partial change \\
+\hline
+\end{tabular}
 
 \subsection{Isolation levels}
 
@@ -915,7 +1015,6 @@ The key problem is the \textbf{unfinished transaction} ! The solution
 is to use a transaction log and on failure recovery unfinished transaction 
 have start but no commit nor abort record.
 
-\paragraph{Log}
 Three solution to make the transaction log :
 \begin{enumerate}
     \item \textbf{Undo logging} (immediate changes) :
@@ -934,8 +1033,7 @@ Three solution to make the transaction log :
         \end{itemize}
     \end{tabular}
 
-
-        \begin{tabular}{m{2cm}m{14cm}}
+        \begin{tabular}{m{3cm}m{14cm}}
             order OUTPUT &
         \begin{enumerate}
             \item $<T_i, X, old>$ record first
@@ -943,6 +1041,19 @@ Three solution to make the transaction log :
             \item $<T_i, commit>$ 
         \end{enumerate}
     \end{tabular}
+
+    \paragraph{Recovery}
+    \begin{enumerate}
+    \item S = set of transaction with $<T_i, start>$ in log but no $<T_i, commit>$
+    (or $<T_i, abort>$)
+    \item For each $<T_i, X, v>$ in log, in reverse order (latest $\to$ earliest) :
+    
+    $\Rightarrow$ if $T_i \in S$ then write(X, v) then output(X)
+
+    \item For each $T_i \in S$ 
+
+    $\Rightarrow$ write $<T_i, abort>$ to log then output if
+    \end{enumerate}
 
 
     \item[Drawback] : Cannot commit transaction without lots of I/O and
@@ -954,11 +1065,41 @@ Three solution to make the transaction log :
             \item Because update are not done on the disk,
                 opetation can be redo on failure recovery thanks to the log.
         \end{itemize}
+
+        \begin{tabular}{m{2cm}m{14cm}}
+            Invariant &
+        \begin{itemize}
+            \item X new value flushed $\Rightarrow$ $<T_i, commit>$ flushed
+            \item $<T_i, end>$ in log $\Rightarrow$ changed items flushed
+        \end{itemize}
+    \end{tabular}
+
+        \begin{tabular}{m{3cm}m{14cm}}
+            order OUTPUT &
+        \begin{enumerate}
+            \item $<T_i, X, new>$ record first
+            \item $<T_i, commit>$ 
+            \item change database items themselves
+            \item $<T_i, end>$
+        \end{enumerate}
+    \end{tabular}
+
+\paragraph{Recovery}
+    \begin{enumerate}
+    \item S = set of transaction with $<T_i, commit>$ in log but no $<T_i, end>$
+    \item For each $<T_i, X, v>$ in log, in forward order (earliest $\to$ latest) :
+    
+    $\Rightarrow$ if $T_i \in S$ then write(X, v) then output(X)
+
+    \item For each $T_i \in S$ 
+
+    $\Rightarrow$ write $<T_i, abort>$ to log then output it
+    \end{enumerate}
+
     \item[Drawback] : Need to keep all modified block in memory until commit.
     \item \textbf{Both of them}
-\end{enumerate}
 
-%TODO explain undo and redo and undo/redo
+\end{enumerate}
 
 \subsubsection{Checkpointing the log} To avoid very long transaction logs, periodically :
 \begin{enumerate}
@@ -1046,11 +1187,10 @@ an already locked data item and not try to unlock an unlocked data item.
 
 \subsubsection{Two-phase locking}
 \begin{enumerate}
-    \item Growing phase : Transaction applies locks on desired data item
+    \item Growing phase : Transaction applies locks on desired data item one at a time
         \begin{itemize}
-            \item lock data one at a time
-            \item incrementally lock during execution (but may cause deadlock)
-            \item All-or-nothing locks before transactions begins execution
+            \item \textbf{Basic} : incrementally lock during execution (but may cause deadlock)
+            \item \textbf{Conservative} : All-or-nothing locks before transactions begins execution
         \end{itemize}
     \item Shrinkin phase : Transaction unlock ressource
 \end{enumerate}
