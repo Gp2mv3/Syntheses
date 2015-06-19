@@ -1653,6 +1653,203 @@ There are four basic type of database:
 \subsection{Data Distribution}
 %TODO
 
+\section{Puzzles}
+\subsection{E1}
+Get supplier numbers for suppliers who supply part P1.
+\begin{lstlisting}
+(SHIPMENTS WHERE PID=P#("P1")) {SID}
+
+SELECT sid FROM SHIPMENTS WHERE shipments.pid = 'P1';
+\end{lstlisting}
+
+\subsection{E2}
+Get how many shipments there are.
+\begin{lstlisting}
+RELATION { TUPLE { C COUNT(SHIPMENTS)}}
+
+SELECT count(*) AS c FROM SHIPMENTS;
+\end{lstlisting}
+
+\subsection{E3}
+Get how many parts are supplied by supplier S1.
+\begin{lstlisting}
+RELATION { TUPLE { C COUNT(SHIPMENTS WHERE SID=S#("S1")) }}
+
+SELECT count(*) AS c FROM SHIPMENTS WHERE shipments.sid='S1';
+\end{lstlisting}
+
+\subsection{E4}
+Get suppliers who supply at least one part.
+\begin{lstlisting}
+(SUPPLIERS  JOIN SHIPMENTS) {SID, NAME, STATUS, CITY}
+
+SELECT * 
+FROM suppliers AS s 
+WHERE s.sid IN (SELECT sh.sid FROM shipments AS sh);
+\end{lstlisting}
+
+\subsection{E5}
+Get suppliers who supply no part at all.
+\begin{lstlisting}
+(SUPPLIERS NOT MATCHING SHIPMENTS)
+
+SELECT DISTINCT s.sid, s.name, s.status, s.city 
+FROM suppliers AS s 
+WHERE s.sid NOT IN (SELECT sid FROM shipments);
+\end{lstlisting}
+
+\subsection{E6}
+Get shipments together with the name of the supplier
+(sname) and the name of the part (pname)
+\begin{lstlisting}
+( SUPPLIERS{SID, NAME}  RENAME {NAME AS SNAME} JOIN SHIPMENTS JOIN PARTS{PID, NAME} RENAME {NAME AS PNAME}) 
+
+SELECT s.name AS sname, s.sid, p.name AS pname , p.pid, sh.qty
+FROM suppliers AS s, shipments AS sh, parts AS p 
+WHERE (s.sid=sh.sid AND sh.pid=p.pid);
+\end{lstlisting}
+
+\subsection{M1}
+Get the 'total' quantity of parts supplied by supplier S1.
+\begin{lstlisting}
+RELATION { TUPLE { total SUM( (SHIPMENTS WHERE SID=S#('S1')), QTY) }}
+
+SELECT SUM(sh.qty) AS total 
+FROM shipments AS sh 
+WHERE sh.sid = 'S1';
+\end{lstlisting}
+
+\subsection{M2}
+Get part numbers for parts supplied by at least one
+supplier in Paris.
+\begin{lstlisting}
+(SHIPMENTS JOIN (SUPPLIERS WHERE CITY = 'Paris')) {PID}
+
+SELECT DISTINCT p.pid 
+FROM suppliers AS s, shipments AS sh, parts AS p 
+WHERE (s.city='Paris' AND s.sid=sh.sid AND p.pid = sh.pid );
+\end{lstlisting}
+
+\subsection{M3}
+Get city names for cities in which at least two suppliers
+are located.
+\begin{lstlisting}
+( (SUPPLIERS{SID, CITY} GROUP{SID} AS C)  WHERE COUNT(C) >= 2 ) {CITY}
+
+SELECT DISTINCT s.city 
+FROM suppliers AS s 
+WHERE ( SELECT count(*) 
+    FROM suppliers As s2 
+    WHERE s.city=s2.city ) > 1 ;
+\end{lstlisting}
+
+
+\subsection{M4}
+Get supplier numbers for suppliers whose city is first in
+the alphabetic list of such cities.
+\begin{lstlisting}
+( SUPPLIERS WHERE CITY=MIN(SUPPLIERS{CITY}, CITY) ) {SID, CITY}
+
+SELECT s.sid, s.city
+FROM suppliers AS s 
+WHERE s.city IN ( SELECT city 
+    FROM suppliers AS s2 
+    ORDER BY city ASC LIMIT 1);
+\end{lstlisting}
+
+
+\subsection{M5}
+Get the supplier numbers and the 'total' quantity of
+supplied parts for each of them.
+\begin{lstlisting}
+SUMMARIZE  SHIPMENTS PER (SUPPLIERS{SID}) : { total := SUM(QTY)}
+
+SELECT DISTINCT s.sid, (SELECT COALESCE(SUM(sh.qty), 0) AS total 
+      FROM shipments AS sh 
+      WHERE sh.sid = s.sid) 
+FROM suppliers AS s;
+\end{lstlisting}
+
+
+\subsection{M6}
+Get the number(s) of lightest part(s). In case of ex-
+aequo, get all parts with that smallest weight.
+\begin{lstlisting}
+( PARTS WHERE WEIGHT=MIN(PARTS{WEIGHT}, WEIGHT) ) {PID} 
+
+SELECT p.pid 
+FROM parts AS p 
+WHERE p.weight IN (SELECT min(p2.weight) 
+     FROM parts AS p2);
+\end{lstlisting}
+
+\subsection{D1}
+Get part numbers for parts not supplied by any supplier in Paris.
+\begin{lstlisting}
+(SUMMARIZE SHIPMENTS JOIN SUPPLIERS WHERE (CITY = 'Paris') PER (PARTS{PID}) : {supparis  := COUNT()} WHERE supparis=0) {PID}
+
+SELECT p.pid 
+FROM parts AS p 
+WHERE p.pid NOT IN (    SELECT sh.pid 
+    FROM shipments AS sh, suppliers AS s 
+    WHERE sh.pid = p.pid AND s.sid = sh.sid AND s.city='Paris');
+\end{lstlisting}
+
+
+\subsection{D2}
+Get numbers of suppliers who supply all parts.
+\begin{lstlisting}
+(SUMMARIZE SHIPMENTS JOIN PARTS PER (SUPPLIERS{SID}) : {supall  := COUNT()} WHERE supall= (COUNT(PARTS))) {SID}
+
+SELECT s.sid FROM suppliers AS s WHERE (SELECT DISTINCT count(p.pid) FROM parts AS p) = (SELECT DISTINCT count(sh.pid) FROM shipments AS sh WHERE sh.sid = s.sid);
+\end{lstlisting}
+
+
+\subsection{D3}
+Get supplier for suppliers with a status strictly lower
+than of supplier S1.
+\begin{lstlisting}
+SUPPLIERS WHERE STATUS < (MIN((SUPPLIERS WHERE SID=S#("S1")), STATUS))
+
+SELECT * FROM suppliers AS s WHERE s.status < ( SELECT s2.status FROM suppliers AS s2 WHERE s2.sid='S1'); 
+\end{lstlisting}
+
+
+\subsection{D4}
+Get supplier-number/part-number pairs such that the
+indicated supplier does not supply the indicated part.
+\begin{lstlisting}
+(SUMMARIZE SHIPMENTS  PER (SUPPLIERS{SID} JOIN PARTS{PID}) : {supall  := COUNT()} WHERE supall=0 ){SID, PID}
+
+SELECT DISTINCT s.sid,p.pid FROM suppliers AS s, parts AS p WHERE p.pid NOT IN (SELECT sh.pid FROM shipments AS sh WHERE sh.sid=s.sid);
+
+\end{lstlisting}
+
+
+\subsection{D5}
+Get every known city together with the count of parts
+located in that city ('ps'), the count of suppliers located
+there ('ss'), and the total shipped quantity by the latter
+('total').
+\begin{lstlisting}
+SELECT c.city, 
+    (SELECT count(p.pid) AS ps FROM parts AS p WHERE p.city = c.city), 
+    (SELECT count(s.sid) AS ss FROM suppliers AS s WHERE s.city = c.city), 
+    (SELECT COALESCE(SUM(sh.qty), 0) AS total FROM shipments AS sh, suppliers AS s WHERE s.city = c.city AND s.sid=sh.sid) 
+FROM ((SELECT s.city FROM suppliers AS s) UNION (SELECT p.city FROM parts AS p)) AS c GROUP BY c.city; 
+\end{lstlisting}
+
+\subsection{D6}
+Get the heaviest part. In case of ex-aequo, select the
+one with the smallest part number.
+\begin{lstlisting}
+(PARTS WHERE PID=MIN(PARTS WHERE WEIGHT=MAX(PARTS{WEIGHT}, WEIGHT), PID) ) {PID} 
+
+SELECT MIN(p.pid) AS pid FROM parts AS p WHERE p.weight IN (SELECT MAX(p.weight) FROM parts AS p);
+\end{lstlisting}
+
+
+
 \section{Annexe I - Tutoriel D}
 
 \subsection{Operators}
