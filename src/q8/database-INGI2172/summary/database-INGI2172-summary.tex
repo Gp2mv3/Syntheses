@@ -74,11 +74,6 @@ can be stored and have an implicit meaning. Key point are:
 	(because of the ACID property).
 	\item Information aims at being queried.
 \end{itemize}
-According to the book:
-\begin{description}
-	\item[A database] is an organized machine readable collection of symbols
-	 (we can see the value of the database) and machine-updatable.
-\end{description}
 \section{Lexique}
 \begin{itemize}
 	\item Variable : C'est une représentation à un temps t de la fonction. La ``table''
@@ -88,8 +83,7 @@ According to the book:
 	\item[Notes:] Une table $\neq$ relation puisque la relation est indépendante
 	    de l'ordre des rows/columns.
 
-    \item Relation : Fonction qui lie les attributs entre eux. 
-    C'est elle qui leurs donne un sens.
+    \item Relation : Fonction qui lie les attributs entre eux. C'est elle qui leurs donne un sens.
     \item Attribut : Un champ de la variable.
     \item Cardinalité :  Nombre de n-tuple.
     \item N-Tuple : une ligne, un ensemble d'attribute value.
@@ -98,6 +92,14 @@ According to the book:
     \item Orthogonalité : %TODO
 \end{itemize}
 
+
+\subsection{Definitions}
+\begin{itemize}
+\item Relation : A relation represents the extension of some n-adic predicate P by having
+a body consisting of every n-tuple that satisfies P
+	\item A database : is an organized machine readable collection of symbols
+	 (we can see the value of the database) and machine-updatable.
+	 \end{itemize}
 
 \section{DBMS}
 The DBMS is a piece of software for managing databases and providing
@@ -487,6 +489,12 @@ $y$. Note that a FD denotes a function.
 
 For example, in the relation $a+b=c$ we have $\{a,b\} \rightarrow \{c\}$.
 
+\paragraph{Definition}: If we have $\{A_1,...,A_n\} \to \{B_1,...,B_m\} \in R$ then
+\begin{center}
+for any two tuple $S$ and $T$ s.t $S.\{A_1,...,A_n\} = T.\{A_1,...,A_n\}$ $\Rightarrow$
+    $S.\{B_1,...,A_m\} = T.\{B_1,...,A_m\}$
+\end{center}
+
 \paragraph{Theorem about FD: }
 \begin{itemize}
     \item Left augmentation : if A' is a superset of A, then A' $\to$ B 
@@ -577,11 +585,92 @@ GOOD & Non atomic value (tuple) & No simple value \\
 Pour toutes dépendances fonctionnelles $X \rightarrow A$ (voir section \vref{fd}) , il doit y avoir au-moins une de ces 2 conditions respectées:
 \begin{itemize}
 	\item $X$ contient $A$ ($A\subseteq X$)  (FD triviale, voir section \vref{fd})
-    \item $X$ est une superkey (voir section \vref{key})
+    \item $X$ est une key (voir section \vref{key})
 \end{itemize}
 
 \paragraph{$\Rightarrow$} BCNF allows to deal with the redundancy and the lack of orthogonality 
 through splitting.
+
+\paragraph{Tradeoff} between keep FD and remove redondancy/improve orthogonality.
+
+\begin{figure}[!h]
+\centering
+\begin{tabular}{cccc}
+\begin{tabular}{|ccc|}
+\hline
+\underline{SID} & NAME & \underline{CID} \\
+\hline
+S1 & Anne & C1\\
+... & ... & ... \\
+S1 & Anne & C2 \\
+\hline
+\end{tabular}
+& $\Rightarrow$ &
+\begin{tabular}{|cc|}
+\hline
+\underline{SID} & NAME \\
+\hline
+S1 & Anne \\
+\hline
+\end{tabular}
+&
+\begin{tabular}{|cc|}
+\hline
+\underline{SID} & \underline{CID} \\
+\hline
+S1 & C1\\
+S1 & C2 \\
+\hline
+\end{tabular}
+\end{tabular}
+\caption{}
+    \captionsetup{singlelinecheck=off}
+    \caption[level]{ Remove redondancy and improve orthogonality
+\begin{enumerate}
+\item FD : \{SID \} $\to$ NAME
+\end{enumerate}}
+\end{figure}
+
+
+\begin{figure}[!h]
+\centering
+\begin{tabular}{cccc}
+\begin{tabular}{|ccc|}
+\hline
+\underline{SID} & TUTORID & \underline{CID} \\
+\hline
+S1 & T1 & C1 \\
+... & ... & ... \\
+S1 & T2 & C2 \\
+\hline
+\end{tabular}
+& $\Rightarrow$ &
+\begin{tabular}{|cc|}
+\hline
+\underline{SID} & \underline{TUTORID} \\
+\hline
+S1 & T1 \\
+S1 & T2 \\
+\hline
+\end{tabular}
+&
+\begin{tabular}{|cc|}
+\hline
+\underline{TUTORID} & \underline{CID} \\
+\hline
+T1 & C1\\
+T2 & C2 \\
+\hline
+\end{tabular}
+\end{tabular}
+    \captionsetup{singlelinecheck=off}
+    \caption[level]{ Loss of FD
+\begin{enumerate}
+\item FD : \{SID, CID \} $\to$ TUTORID
+\item FD : \{TUTORID \} $\to$ CID
+\end{enumerate}}
+\end{figure}
+
 
 \subsection{5 NF}
 
@@ -870,6 +959,17 @@ this may improve performance in practice.
 \paragraph{ } Use COMMIT to complete the transaction or ROLLBACK to abort
 the transaction.
 
+\paragraph{Correctness}
+\begin{tabular}{|c|cc|}
+\hline
+& Commit & Rollback \\
+\hline
+A & Applies all transaction update & No effect on DB \\
+C & Succeed only if no constraint violated & Back to least consistent state \\
+I & Effect become visible & No partial visible state \\
+D & Modification are permanent & No partial change \\
+\hline
+\end{tabular}
 
 \subsection{Isolation levels}
 
@@ -915,7 +1015,6 @@ The key problem is the \textbf{unfinished transaction} ! The solution
 is to use a transaction log and on failure recovery unfinished transaction 
 have start but no commit nor abort record.
 
-\paragraph{Log}
 Three solution to make the transaction log :
 \begin{enumerate}
     \item \textbf{Undo logging} (immediate changes) :
@@ -934,8 +1033,7 @@ Three solution to make the transaction log :
         \end{itemize}
     \end{tabular}
 
-
-        \begin{tabular}{m{2cm}m{14cm}}
+        \begin{tabular}{m{3cm}m{14cm}}
             order OUTPUT &
         \begin{enumerate}
             \item $<T_i, X, old>$ record first
@@ -943,6 +1041,19 @@ Three solution to make the transaction log :
             \item $<T_i, commit>$ 
         \end{enumerate}
     \end{tabular}
+
+    \paragraph{Recovery}
+    \begin{enumerate}
+    \item S = set of transaction with $<T_i, start>$ in log but no $<T_i, commit>$
+    (or $<T_i, abort>$)
+    \item For each $<T_i, X, v>$ in log, in reverse order (latest $\to$ earliest) :
+    
+    $\Rightarrow$ if $T_i \in S$ then write(X, v) then output(X)
+
+    \item For each $T_i \in S$ 
+
+    $\Rightarrow$ write $<T_i, abort>$ to log then output if
+    \end{enumerate}
 
 
     \item[Drawback] : Cannot commit transaction without lots of I/O and
@@ -954,11 +1065,41 @@ Three solution to make the transaction log :
             \item Because update are not done on the disk,
                 opetation can be redo on failure recovery thanks to the log.
         \end{itemize}
+
+        \begin{tabular}{m{2cm}m{14cm}}
+            Invariant &
+        \begin{itemize}
+            \item X new value flushed $\Rightarrow$ $<T_i, commit>$ flushed
+            \item $<T_i, end>$ in log $\Rightarrow$ changed items flushed
+        \end{itemize}
+    \end{tabular}
+
+        \begin{tabular}{m{3cm}m{14cm}}
+            order OUTPUT &
+        \begin{enumerate}
+            \item $<T_i, X, new>$ record first
+            \item $<T_i, commit>$ 
+            \item change database items themselves
+            \item $<T_i, end>$
+        \end{enumerate}
+    \end{tabular}
+
+\paragraph{Recovery}
+    \begin{enumerate}
+    \item S = set of transaction with $<T_i, commit>$ in log but no $<T_i, end>$
+    \item For each $<T_i, X, v>$ in log, in forward order (earliest $\to$ latest) :
+    
+    $\Rightarrow$ if $T_i \in S$ then write(X, v) then output(X)
+
+    \item For each $T_i \in S$ 
+
+    $\Rightarrow$ write $<T_i, end>$ to log then output it
+    \end{enumerate}
+
     \item[Drawback] : Need to keep all modified block in memory until commit.
     \item \textbf{Both of them}
-\end{enumerate}
 
-%TODO explain undo and redo and undo/redo
+\end{enumerate}
 
 \subsubsection{Checkpointing the log} To avoid very long transaction logs, periodically :
 \begin{enumerate}
@@ -1009,8 +1150,10 @@ scedule.
 
 $\Rightarrow$ Serial and serializable schedule are correct (consistency of database).
 
-\subsection{Equivalences} %TODO ameliorer explication
+\subsection{Equivalences} 
 \begin{description}
+\item[Conflict operation] Any pair of operations from two different transactions
+on the same data item where at least on is a write
 	\item[Result equivalent ] They produce the same final state of the
 	database
 	\item[Conflict equivalent] The order of any two conflicting operations
@@ -1018,8 +1161,69 @@ $\Rightarrow$ Serial and serializable schedule are correct (consistency of datab
 	\item[Conflict serializable] Conflict equivalent to some serial schedule.
 	(It can be tested throug a directed graph (slide 15 in 11a))
 \end{description}
+
+\begin{figure}[!h]
+\centering
+\begin{tikzpicture}
+\node (A1) {$S_A$:};
+\node (B1) [right=1pt of A1] {$r_1(X),$};
+\node (C1) [right=1pt of B1] {$w_1(X),$};
+\node (D1) [right=1pt of C1] {$r_1(Y),$};
+\node (E1) [right=1pt of D1] {$w_1(Y),$};
+\node (F1) [right=1pt of E1] {$w_2(X),$};
+\node (G1) [right=1pt of F1] {$w_2(X),$};
+
+\node (M1) [right=2cm of G1, draw, circle] {$T_1$};
+\node (N1) [right=of M1, draw, circle] {$T_2$};
+
+\draw (M1) edge[->, bend left] node[above] {x}(N1);
+\draw (B1.north) edge[color=red, bend left=10] (G1.north);
+\draw (C1.north) edge[color=red, bend left=10] (F1.north);
+
+\node (A2) [below=of A1] {$S_B$:};
+\node (B2) [right=1pt of A2] {$r_1(X),$};
+\node (C2) [right=1pt of B2] {$r_2(X),$};
+\node (D2) [right=1pt of C2] {$w_1(X),$};
+\node (E2) [right=1pt of D2] {$r_1(Y),$};
+\node (F2) [right=1pt of E2] {$w_2(X),$};
+\node (G2) [right=1pt of F2] {$w_1(Y),$};
+
+\node (M2) [right=2cm of G2, draw, circle] {$T_1$};
+\node (N2) [right=of M2, draw, circle] {$T_2$};
+
+\draw (M2) edge[->, bend left] node[above] {x}(N2);
+\draw (N2) edge[->, bend left] node[above] {x}(M2);
+\draw (B2.north) edge[color=red, bend left=10] (F2.north);
+\draw (C2.north) edge[color=red, bend left=10] (D2.north);
+
+\node (A3) [below=of A2] {$S_B$:};
+\node (B3) [right=1pt of A3] {$r_1(X),$};
+\node (C3) [right=1pt of B3] {$w_1(X),$};
+\node (D3) [right=1pt of C3] {$r_2(X),$};
+\node (E3) [right=1pt of D3] {$w_2(X),$};
+\node (F3) [right=1pt of E3] {$r_1(Y),$};
+\node (G3) [right=1pt of F3] {$w_1(Y),$};
+
+\node (M3) [right=2cm of G3, draw, circle] {$T_1$};
+\node (N3) [right=of M3, draw, circle] {$T_2$};
+
+\draw (M3) edge[->, bend left] node[above] {x} (N3);
+\draw (B3.north) edge[color=red, bend left=10] (E3.north);
+\draw (C3.north) edge[color=red, bend left=10] (D3.north);
+
+\end{tikzpicture}
+\caption{Conflict example}
+\end{figure}
+
 \subsubsection{Lock}
-Lock and unlock need to be atomic operation.
+Lock and unlock need to be atomic operation. And all transaction need 
+to be well-formed:
+
+\begin{itemize}
+\item lock before making an opreation
+\item don't lock what has already been lock
+\item don't unlock what is not unlock
+\end{itemize}
 
 \begin{itemize}
     \item[\textbf{Mode}]
@@ -1046,11 +1250,10 @@ an already locked data item and not try to unlock an unlocked data item.
 
 \subsubsection{Two-phase locking}
 \begin{enumerate}
-    \item Growing phase : Transaction applies locks on desired data item
+    \item Growing phase : Transaction applies locks on desired data item one at a time
         \begin{itemize}
-            \item lock data one at a time
-            \item incrementally lock during execution (but may cause deadlock)
-            \item All-or-nothing locks before transactions begins execution
+            \item \textbf{Basic} : incrementally lock during execution (but may cause deadlock)
+            \item \textbf{Conservative} : All-or-nothing locks before transactions begins execution
         \end{itemize}
     \item Shrinkin phase : Transaction unlock ressource
 \end{enumerate}
@@ -1091,24 +1294,31 @@ conflicting operation occuring in incorrect order.
 	 optical disk,tape... Cannot be processed by the CPU must first copied 
 	 in primary storage (slower access).
 \end{description}
-\url{http://mathcomp.uokufa.edu.iq/staff/kbs/file/2/Fundamentals\%20of\%20Database\%20Systems\%20-\%20Ramez\%20Elmasri\%20&\%20Navathe.pdf}
+%\url{http://mathcomp.uokufa.edu.iq/staff/kbs/file/2/Fundamentals\%20of\%20Database\%20Systems\%20-\%20Ramez\%20Elmasri\%20&\%20Navathe.pdf}
+
 \subsection{Disk}
+
 \paragraph{Terminology}
-Information is stored on a disk surface in concenctric circles of small
-widith, each having a distinct diameter. Each circle is called a \textbf{track}.\\
-In disk packn the tracks with the same diameter on the various surfaces
-are called \textbf{cylinder}.\\
-A \textbf{sector} is a part of a track, it is hard-coded on the disk surface and cannot be
-changed. The operating system also divides the track into equal-sized disk 
-\textbf{blocks}. The size is fixed at initialization and cannot be changed dynamically.\\
-Blocks are separated by fixed-size \textbf{gap} which contains information to 
-determine which block on the track follows each gap.\\ %Ease the search?
-The \textbf{head} is used to read/write on the disk and its attached to 
-a mechanical arm. Each arms are connected to an \textbf{actuator} which
-moves the heads over cylinder of tracks.\\
+Information is stored on a disk surface s.t.
+\begin{itemize}
+\item \textbf{Track} : Concenctric circles of small widith, each having a distinct diameter
+\item \textbf{Cylinder}: Packs the tracks with the same diameter on the various surfaces.
+\item \textbf{Sector} : Part of a track with fixed-size (it is hard-coded on the disk surface and cannot be
+        changed)
+
+\item \textbf{Blocks} : The operating system also divides the track into equal-sized disk.
+(The size is fixed at initialization and cannot be changed dynamically)
+
+    \item \textbf{Gap} : Blocks are separated by fixed-size which contains information to 
+    determine which block on the track follows each gap.
+    \item \textbf{Head} : used to read/write on the disk and its attached to 
+    a mechanical arm. 
+    \item Each arms are connected to an \textbf{actuator} which
+    moves the heads over cylinder of tracks.
+    \end{itemize}
 
 
-Access time 
+    Access time 
 \begin{tabular}{p{6cm}|cc}
      & DDR & SSD \\
  = Seek time (moving the head) & 4ms $\to$ 15 ms& 0.08ms $\to$ 0.16ms \\
@@ -1125,7 +1335,27 @@ other buffer.
 
 \paragraph{Note :} Only possible if there is a an I/O processor 
 independent of the CPU
+
+
+
 \subsection{Disk organisation}
+
+\begin{figure}[!h]
+    \centering
+\begin{tikzpicture}
+	\node[text width=2.5cm,align=center, draw, rectangle] (A) {Data item};
+	\node[text width=2.5cm,align=center, draw, rectangle] (B) [right= of A] {Records};
+	\node[text width=2.5cm,align=center, draw, rectangle] (C) [right= of B] {Blocks};
+	\node[text width=2.5cm,align=center, draw, rectangle] (D) [right= of C] {Files};
+	\path[->] (A) edge (B)
+                (B) edge (C)
+                (C) edge (D);
+
+\end{tikzpicture}
+\caption{Disk organisation}
+\end{figure}
+
+
 
 \subsubsection{Data items} 
 The data item is its value (fixed/variable length) and has a type that
@@ -1165,69 +1395,70 @@ this record.
             \item Overflow area : It is used to store new records
             without rewriting the sequential file. References to the new
             records are placed in the header of the file.
-            \item Indirection %TODO
+            \item Indirection 
         \end{enumerate}
 \end{itemize}
 
 \subsubsection{Files} 
 \begin{enumerate}
     \item Heap files : Not sorted, insertion at the end
+        \begin{itemize}
+            \item Searching for a record is done in a linear search.
+            \item May lead to wasted storage space (when deleting a record
+            it leaves a ''hole''.)
+            \item Require periodic reorganization.
+        \end{itemize}
     \item Sorted files : Record are contained in a certain order.
+        \begin{itemize}
+            \item Sorting based on a ordering field. (If this field is the key 
+            then it's a called an ordering fields).
+            \item Search more efficient. (logharitmic)
+        \end{itemize}
     \item Hash files : Similar to hashtables 
+        \begin{itemize}
+            \item Hashing based on hash field (if key field then it is called
+            an hash key).
+            \item Very fast acces to records.
+        \end{itemize}
 \end{enumerate}
+
 There are many operations that can be done on the files such 
 as OPEN,READ,DELETE,...
-\paragraph{Heap files}
-\begin{itemize}
-	\item Searching for a record is done in a linear search.
-	\item May lead to wasted storage space (when deleting a record
-	it leaves a ''hole''.)
-	\item Require periodic reorganization.
-\end{itemize}
-\paragraph{Sorted files}
-\begin{itemize}
-	\item Sorting based on a ordering field. (If this field is the key 
-	then it's a called an ordering fields).
-	\item Search more efficient. (logharitmic)
-\end{itemize}
-\paragraph{Hash files}
-\begin{itemize}
-	\item Hashing based on hash field (if key field then it is called
-	an hash key).
-	\item Very fast acces to records.
-\end{itemize}
 
 \subsection{Indexing}
 An index is an auxiliary file that makes it more
 efficient to search for records in the data file. 
-( index file size <<< data )
+(index file size $<<<$ data)
 \begin{center}<field value, pointer>\end{center}
 
 %%TODO : example no index vs with index
-%\begin{tabular}{|c|c|}
-%\hline
-%With index & without index\\
-%\hline
-%\begin{itemize}
-%	\item r = 30.000 records
-%	\item R = 100 bytes (record size)
-%	\item B(lock) = 1024 bytes
-%	\item Blocking factor = B/100 =~10 records per block
-%	\item Binary search = $log_2(3000)$ = 12
-%\end{itemize}
-%&
-%\begin{itemize}
-%	\item V = 9 bytes (ordering key size)
-%	\item  P = 6 bytes(logical pointer size)
-%	\item B(lock) = 1024 bytes
-%	\item Blocking factor = B/15 =~67
-%	\item Binary search = $log_2(45) $+1 =7
-%\end{itemize}
-%\\
-%\hline
-%number of access 12 & number of access 7\\
-%\end{tabular}
+\begin{tabular}{|p{8cm}|p{8cm}|}
+\hline
+\multicolumn{1}{|c|}{\textbf{Without index}} & \multicolumn{1}{c|}{\textbf{With index}}\\
+\hline
+\multicolumn{2}{|c|}{r = 30 000 records}\\
+\multicolumn{2}{|c|}{R = 100 bytes (record size)}\\
+\hline
+\begin{itemize}
+	\item B(lock) = 1024 bytes
+	\item Blocking factor = B/100 =~10 records per block
+	\item Binary search = $log_2(3000)$ = 12
+\end{itemize}
+&
+\begin{itemize}
+	\item V = 9 bytes (ordering key size)
+	\item P = 6 bytes(logical pointer size)
+	\item B(lock) = 1024 bytes
+	\item Blocking factor = B/15 =~67
+	\item Binary search = $log_2(45) $+1 =7
+\end{itemize}
+\\
+\hline
+$\Rightarrow$ number of access 12 &$\Rightarrow$  number of access 7\\
+\hline
+\end{tabular}
 
+\paragraph{Type}
 \begin{itemize}
     \item Dense index : index for \textbf{every key value} in the data file
     \begin{itemize}\item[$\to$] can tell if record exist without accessing file \end{itemize}
@@ -1298,6 +1529,7 @@ efficient to search for records in the data file.
 %TODO quick explanation on how B tree work
 
 \begin{figure}[!h]
+\centering
 \includegraphics[width=6cm]{img/btree.png}
 \caption{B-tree}
 \end{figure}
@@ -1329,7 +1561,9 @@ where B+-Tree are pointer only at the \textbf{leaf level}
 \end{description}
 Two internal representations of a query : Tree or Graph.
 
+\begin{center}
 \includegraphics[width=9cm]{img/query.png}
+\end{center}
 
 \subsection{SQL $\to$ Relationnal algebra}
 
@@ -1416,6 +1650,203 @@ There are four basic type of database:
 
 \subsection{Data Distribution}
 %TODO
+
+\section{Puzzles}
+\subsection{E1}
+Get supplier numbers for suppliers who supply part P1.
+\begin{lstlisting}
+(SHIPMENTS WHERE PID=P#("P1")) {SID}
+
+SELECT sid FROM SHIPMENTS WHERE shipments.pid = 'P1';
+\end{lstlisting}
+
+\subsection{E2}
+Get how many shipments there are.
+\begin{lstlisting}
+RELATION { TUPLE { C COUNT(SHIPMENTS)}}
+
+SELECT count(*) AS c FROM SHIPMENTS;
+\end{lstlisting}
+
+\subsection{E3}
+Get how many parts are supplied by supplier S1.
+\begin{lstlisting}
+RELATION { TUPLE { C COUNT(SHIPMENTS WHERE SID=S#("S1")) }}
+
+SELECT count(*) AS c FROM SHIPMENTS WHERE shipments.sid='S1';
+\end{lstlisting}
+
+\subsection{E4}
+Get suppliers who supply at least one part.
+\begin{lstlisting}
+(SUPPLIERS  JOIN SHIPMENTS) {SID, NAME, STATUS, CITY}
+
+SELECT * 
+FROM suppliers AS s 
+WHERE s.sid IN (SELECT sh.sid FROM shipments AS sh);
+\end{lstlisting}
+
+\subsection{E5}
+Get suppliers who supply no part at all.
+\begin{lstlisting}
+(SUPPLIERS NOT MATCHING SHIPMENTS)
+
+SELECT DISTINCT s.sid, s.name, s.status, s.city 
+FROM suppliers AS s 
+WHERE s.sid NOT IN (SELECT sid FROM shipments);
+\end{lstlisting}
+
+\subsection{E6}
+Get shipments together with the name of the supplier
+(sname) and the name of the part (pname)
+\begin{lstlisting}
+( SUPPLIERS{SID, NAME}  RENAME {NAME AS SNAME} JOIN SHIPMENTS JOIN PARTS{PID, NAME} RENAME {NAME AS PNAME}) 
+
+SELECT s.name AS sname, s.sid, p.name AS pname , p.pid, sh.qty
+FROM suppliers AS s, shipments AS sh, parts AS p 
+WHERE (s.sid=sh.sid AND sh.pid=p.pid);
+\end{lstlisting}
+
+\subsection{M1}
+Get the 'total' quantity of parts supplied by supplier S1.
+\begin{lstlisting}
+RELATION { TUPLE { total SUM( (SHIPMENTS WHERE SID=S#('S1')), QTY) }}
+
+SELECT SUM(sh.qty) AS total 
+FROM shipments AS sh 
+WHERE sh.sid = 'S1';
+\end{lstlisting}
+
+\subsection{M2}
+Get part numbers for parts supplied by at least one
+supplier in Paris.
+\begin{lstlisting}
+(SHIPMENTS JOIN (SUPPLIERS WHERE CITY = 'Paris')) {PID}
+
+SELECT DISTINCT p.pid 
+FROM suppliers AS s, shipments AS sh, parts AS p 
+WHERE (s.city='Paris' AND s.sid=sh.sid AND p.pid = sh.pid );
+\end{lstlisting}
+
+\subsection{M3}
+Get city names for cities in which at least two suppliers
+are located.
+\begin{lstlisting}
+( (SUPPLIERS{SID, CITY} GROUP{SID} AS C)  WHERE COUNT(C) >= 2 ) {CITY}
+
+SELECT DISTINCT s.city 
+FROM suppliers AS s 
+WHERE ( SELECT count(*) 
+    FROM suppliers As s2 
+    WHERE s.city=s2.city ) > 1 ;
+\end{lstlisting}
+
+
+\subsection{M4}
+Get supplier numbers for suppliers whose city is first in
+the alphabetic list of such cities.
+\begin{lstlisting}
+( SUPPLIERS WHERE CITY=MIN(SUPPLIERS{CITY}, CITY) ) {SID, CITY}
+
+SELECT s.sid, s.city
+FROM suppliers AS s 
+WHERE s.city IN ( SELECT city 
+    FROM suppliers AS s2 
+    ORDER BY city ASC LIMIT 1);
+\end{lstlisting}
+
+
+\subsection{M5}
+Get the supplier numbers and the 'total' quantity of
+supplied parts for each of them.
+\begin{lstlisting}
+SUMMARIZE  SHIPMENTS PER (SUPPLIERS{SID}) : { total := SUM(QTY)}
+
+SELECT DISTINCT s.sid, (SELECT COALESCE(SUM(sh.qty), 0) AS total 
+      FROM shipments AS sh 
+      WHERE sh.sid = s.sid) 
+FROM suppliers AS s;
+\end{lstlisting}
+
+
+\subsection{M6}
+Get the number(s) of lightest part(s). In case of ex-
+aequo, get all parts with that smallest weight.
+\begin{lstlisting}
+( PARTS WHERE WEIGHT=MIN(PARTS{WEIGHT}, WEIGHT) ) {PID} 
+
+SELECT p.pid 
+FROM parts AS p 
+WHERE p.weight IN (SELECT min(p2.weight) 
+     FROM parts AS p2);
+\end{lstlisting}
+
+\subsection{D1}
+Get part numbers for parts not supplied by any supplier in Paris.
+\begin{lstlisting}
+(SUMMARIZE SHIPMENTS JOIN SUPPLIERS WHERE (CITY = 'Paris') PER (PARTS{PID}) : {supparis  := COUNT()} WHERE supparis=0) {PID}
+
+SELECT p.pid 
+FROM parts AS p 
+WHERE p.pid NOT IN (    SELECT sh.pid 
+    FROM shipments AS sh, suppliers AS s 
+    WHERE sh.pid = p.pid AND s.sid = sh.sid AND s.city='Paris');
+\end{lstlisting}
+
+
+\subsection{D2}
+Get numbers of suppliers who supply all parts.
+\begin{lstlisting}
+(SUMMARIZE SHIPMENTS JOIN PARTS PER (SUPPLIERS{SID}) : {supall  := COUNT()} WHERE supall= (COUNT(PARTS))) {SID}
+
+SELECT s.sid FROM suppliers AS s WHERE (SELECT DISTINCT count(p.pid) FROM parts AS p) = (SELECT DISTINCT count(sh.pid) FROM shipments AS sh WHERE sh.sid = s.sid);
+\end{lstlisting}
+
+
+\subsection{D3}
+Get supplier for suppliers with a status strictly lower
+than of supplier S1.
+\begin{lstlisting}
+SUPPLIERS WHERE STATUS < (MIN((SUPPLIERS WHERE SID=S#("S1")), STATUS))
+
+SELECT * FROM suppliers AS s WHERE s.status < ( SELECT s2.status FROM suppliers AS s2 WHERE s2.sid='S1'); 
+\end{lstlisting}
+
+
+\subsection{D4}
+Get supplier-number/part-number pairs such that the
+indicated supplier does not supply the indicated part.
+\begin{lstlisting}
+(SUMMARIZE SHIPMENTS  PER (SUPPLIERS{SID} JOIN PARTS{PID}) : {supall  := COUNT()} WHERE supall=0 ){SID, PID}
+
+SELECT DISTINCT s.sid,p.pid FROM suppliers AS s, parts AS p WHERE p.pid NOT IN (SELECT sh.pid FROM shipments AS sh WHERE sh.sid=s.sid);
+
+\end{lstlisting}
+
+
+\subsection{D5}
+Get every known city together with the count of parts
+located in that city ('ps'), the count of suppliers located
+there ('ss'), and the total shipped quantity by the latter
+('total').
+\begin{lstlisting}
+SELECT c.city, 
+    (SELECT count(p.pid) AS ps FROM parts AS p WHERE p.city = c.city), 
+    (SELECT count(s.sid) AS ss FROM suppliers AS s WHERE s.city = c.city), 
+    (SELECT COALESCE(SUM(sh.qty), 0) AS total FROM shipments AS sh, suppliers AS s WHERE s.city = c.city AND s.sid=sh.sid) 
+FROM ((SELECT s.city FROM suppliers AS s) UNION (SELECT p.city FROM parts AS p)) AS c GROUP BY c.city; 
+\end{lstlisting}
+
+\subsection{D6}
+Get the heaviest part. In case of ex-aequo, select the
+one with the smallest part number.
+\begin{lstlisting}
+(PARTS WHERE PID=MIN(PARTS WHERE WEIGHT=MAX(PARTS{WEIGHT}, WEIGHT), PID) ) {PID} 
+
+SELECT MIN(p.pid) AS pid FROM parts AS p WHERE p.weight IN (SELECT MAX(p.weight) FROM parts AS p);
+\end{lstlisting}
+
+
 
 \section{Annexe I - Tutoriel D}
 

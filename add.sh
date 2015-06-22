@@ -9,6 +9,8 @@
 args=("$@")
 nbr_arg=5
 section=( "summary" "notes" "exam" "exercises" )
+sols="only none both"
+months="Janvier Mars Juin Août Novembre"
 minmajs="Mineure Majeure All"
 size_titre=20
 
@@ -148,8 +150,18 @@ if valid_section $5 ; then
     error=true
 fi
 
+if ! contains "${sols}" $6; then
+    echo "Please choose sol among \`\`${sols}''. You chose \`\`$6''."
+    error=true
+fi
+
+if ! contains "${months}" $8; then
+    echo "Please choose the month among \`\`${months}''. If you feel one is missing let us know. You chose \`\`$8''."
+    error=true
+fi
+
 if ! contains "${minmajs}" $9; then
-    echo "Please choose Mineure, Majeure or All"
+    echo "Please choose \`\`${minmajs}\'\'. You chose \`\`$9''."
     error=true
 fi
 
