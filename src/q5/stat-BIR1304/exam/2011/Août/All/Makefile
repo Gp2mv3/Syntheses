@@ -1,3 +1,3 @@
 SOL=both
 MINMAJ=All
-include ../aout.mk
+include ../Août.mk
