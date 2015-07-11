@@ -13,7 +13,9 @@ Vous pourriez aussi être intéressés par
 Ce README donne quelques premières indications
 quant à l'utilisation de ce repository.
 Pour de plus amples informations,
-voir le [wiki](https://github.com/Gp2mv3/Syntheses/wiki).
+voir le
+le document `How_to_Contribute.pdf` sur la Dropbox (voir plus haut pour le lien).
+[wiki](https://github.com/Gp2mv3/Syntheses/wiki).
 
 ## Comment contribuer
 La façon la plus simple de contribuer est de suggérer des améliorations
@@ -25,7 +27,9 @@ en utilisant `git`,
 plus d'infos sur `git`,
 lisez la partie *Utilisation linéaire de Git* de
 [ce tutoriel](http://sites.uclouvain.be/SystInfo/notes/Outils/html/git.html)
-écrit par Benoît Legat, jetez aussi un oeil dans le
+écrit par Benoît Legat, jetez aussi un oeil dans
+le document `How_to_Contribute.pdf` sur la Dropbox (voir plus haut pour le lien)
+ou dans le wiki
 [wiki](https://github.com/Gp2mv3/Syntheses/wiki).
 
 Vous pouvez visualiser le statut des différentes synthèses
