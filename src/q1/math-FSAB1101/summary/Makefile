@@ -1,2 +1,2 @@
 TYPE=summary
-include ../math.mk
+include ../math-FSAB1101.mk
