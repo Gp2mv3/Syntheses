@@ -1,2 +1,2 @@
 TYPE=summary
-include ../chimie.mk
+include ../chimie-FSAB1301.mk
