@@ -38,7 +38,7 @@ Vous pouvez visualiser le statut des différentes synthèses
 
 ### Contribuer à une synthèse existante
 Pour contribuer à une synthèse existante,
-allez dans le dossier correspondant et modifier le `.tex` à l'aide
+allez dans le dossier correspondent et modifier le `.tex` à l'aide
 de votre IDE LaTeX favoris.
 Pour le compiler,
 faites le soit avec votre IDE, soit en console à l'aide du Makefile
