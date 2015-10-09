@@ -1,2 +1,2 @@
 COURSE=circ-LELEC1530
-inclyde ../../q5.mk
+include ../../q5.mk
