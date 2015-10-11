@@ -1,2 +1,2 @@
 TYPE=summary
-include ../circ-LELEC1530.mk
+include ../circ-ELEC1530.mk
