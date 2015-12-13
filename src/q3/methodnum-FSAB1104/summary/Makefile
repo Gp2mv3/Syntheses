@@ -1,2 +1,2 @@
 TYPE=summary
-include ../methodnum.mk
+include ../methodnum-FSAB1104.mk
