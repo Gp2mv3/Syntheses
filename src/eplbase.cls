@@ -63,7 +63,10 @@
 \RequirePackage{multicol}
 
 \RequirePackage{tikz}
-\usetikzlibrary{positioning, calc, babel}
+\usetikzlibrary{positioning, calc}
+\ifthenelse{\lengthtest{\pgfversion cm < 3.0 cm}}
+{\typeout{You have an old version of Tikz: \pgfversion, try to update some time ;)}}
+{\usetikzlibrary{babel}}
 
 \RequirePackage{pdfpages}
 %\usepackage{subfig}
