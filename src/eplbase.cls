@@ -63,7 +63,7 @@
 \RequirePackage{multicol}
 
 \RequirePackage{tikz}
-\usetikzlibrary{positioning, calc}
+\usetikzlibrary{positioning, calc, babel}
 
 \RequirePackage{pdfpages}
 %\usepackage{subfig}
