@@ -6,8 +6,9 @@ mis à disposition pour les étudiants de l'EPL.
 Les `.pdf` des synthèses et correctifs dans leur dernière version sont disponibles
 [ici](https://www.dropbox.com/sh/mglnckwio1ug5x0/BgESQh2X2a).
 
-Vous pourriez aussi être intéressés par
-[EPL-Backup](https://www.dropbox.com/sh/5a1dfg8e17bbgkw/bgVWq1icjf).
+Ces derniers sont aussi dans
+[EPL-Backup](https://www.dropbox.com/sh/5a1dfg8e17bbgkw/bgVWq1icjf)
+ainsi que d'autre documents utiles qui ne viennent pas de ce repository.
 
 ## Documentation
 Ce README donne quelques premières indications
