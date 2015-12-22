@@ -97,6 +97,8 @@
 \ifthenelse{\isundefined{\skiptitlepage}}{
 \begin{titlepage}
 \maketitle
+% Remove duplicate page number on title page
+\thispagestyle{empty}
 
   \paragraph{\IfLanguageName{english}{Important Information}{Informations importantes}}
    \IfLanguageName{english}{This document is largely inspired from the excellent course given by}{Ce document est grandement inspiré de l'excellent cours donné par}
