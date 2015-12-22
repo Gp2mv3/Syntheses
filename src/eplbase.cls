@@ -64,9 +64,22 @@
 
 \RequirePackage{tikz}
 \usetikzlibrary{positioning, calc}
-\ifthenelse{\lengthtest{\pgfversion cm < 3.0 cm}}
-{\typeout{You have an old version of Tikz: \pgfversion, try to update some time ;)}}
-{\usetikzlibrary{babel}}
+
+% For tikz v3 or higher we should use the babel tikz library
+% but for tikz v2 or lower it does not exists
+\newif\iftikzthree
+\begingroup
+\def\getmainversion#1.#2\getmainversion{#1}
+\ifnum\expandafter\getmainversion\pgfversion\getmainversion=3
+  \global\tikzthreetrue
+\fi
+\endgroup
+
+\iftikzthree
+\usetikzlibrary{babel}
+\else
+\typeout{You have an old version of Tikz: \pgfversion, try to update some time ;)}
+\fi
 
 \RequirePackage{pdfpages}
 %\usepackage{subfig}
