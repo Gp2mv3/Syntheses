@@ -64,9 +64,10 @@
 
 \RequirePackage{tikz}
 \usetikzlibrary{positioning, calc}
-\ifthenelse{\lengthtest{\pgfversion cm < 3.0 cm}}
-{\typeout{You have an old version of Tikz: \pgfversion, try to update some time ;)}}
-{\usetikzlibrary{babel}}
+
+\tikzset{every picture/.style={execute at begin picture={
+   \shorthandoff{:;!?};}
+}}
 
 \RequirePackage{pdfpages}
 %\usepackage{subfig}
