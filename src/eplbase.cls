@@ -65,6 +65,22 @@
 \RequirePackage{tikz}
 \usetikzlibrary{positioning, calc}
 
+% For tikz v3 or higher we should use the babel tikz library
+% but for tikz v2 or lower it does not exists
+\newif\iftikzthree
+\begingroup
+\def\getmainversion#1.#2\getmainversion{#1}
+\ifnum\expandafter\getmainversion\pgfversion\getmainversion=3
+  \global\tikzthreetrue
+\fi
+\endgroup
+
+\iftikzthree
+\usetikzlibrary{babel}
+\else
+\typeout{You have an old version of Tikz: \pgfversion, try to update some time ;)}
+\fi
+
 \RequirePackage{pdfpages}
 %\usepackage{subfig}
 % subfig is deprecated see
@@ -94,6 +110,8 @@
 \ifthenelse{\isundefined{\skiptitlepage}}{
 \begin{titlepage}
 \maketitle
+% Remove duplicate page number on title page
+\thispagestyle{empty}
 
   \paragraph{\IfLanguageName{english}{Important Information}{Informations importantes}}
    \IfLanguageName{english}{This document is largely inspired from the excellent course given by}{Ce document est grandement inspiré de l'excellent cours donné par}
