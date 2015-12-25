@@ -4,22 +4,9 @@
 {Houtain Nicolas}
 {Canini Marco}
 
-\section{Introduction}
+\section{Cloud computing}
 
-\subsection{Computing at scale}
-
-Cloud need for scalability because modern application require
-huge amounts of processing and data. Cluster (room-sized) and datacenter 
-(building-sized) can provide the resources needed.
-They are composed of \textbf{rack} which is a aggregation of storage devices, many
-nodes and switch to connect nodes together. Unfortunately, they are not perfect.
-\begin{enumerate}
-  \item Difficult to dimension because they must be provisioning for the peak load
-  \item Expensive in hardware invest, expertise (ex: special software) and maintenance
-  \item Difficult to scale because adding new machines is not easy
-\end{enumerate}
-
-\subsection{Cloud computing}
+\subsection{Introduction}
 
 \begin{center}
 \textit{Cloud computing is a model for enabling convenient, 
@@ -30,7 +17,40 @@ and released with minimal management effort or
 service provider interaction.}
 \end{center}
 
-$\rightarrow$ On-demand self service, Broad network access, Resource pooling, Rapid elasticity, Measured service.
+\paragraph{Cloud commandments}
+\begin{enumerate}
+    \item Partition everything
+    \item Use asynchony everywhere
+    \item Automate everything
+    \item Remember that everything fails
+    \item Embrace inconsistency
+\end{enumerate}
+
+\paragraph{Cloud benefit}:
+\begin{itemize}
+    \item Elastic,  just-­in-­time  infrastructure
+    \item More  efficient  resource  utilization
+    \item Pay  for  what  you  use
+    \item Potential  to  reduce  processing  time (parallelization)
+    \item Leverage  multiple  data  centers (high availability)
+\end{itemize}
+
+
+
+
+\subsubsection{Hardware scalability}
+
+Cloud need for \textbf{scalability} because modern application require
+huge amounts of processing and data. Cluster (\textit{room-sized}) and datacenter 
+(\textit{building-sized}) can provide the resources needed.
+They are composed of \textbf{rack} which is a aggregation of storage devices, many
+nodes and switch to connect nodes together. Unfortunately, they are not perfect.
+\begin{enumerate}
+  \item Difficult to dimension because they must be provisioning for the peak load
+  \item Expensive in hardware invest, expertise (ex: special software) and maintenance
+  \item Difficult to scale because adding new machines is not easy
+\end{enumerate}
+
 
 \subsubsection{Model}
 Cloud computing is a business models where everything is a service:
@@ -54,6 +74,17 @@ In this course we focus on public cloud.
 Typically, applications that involve large amounts of computation, storage,
 bandwidth Especially when lots of resources are needed quickly or load varies
 rapidly.
+
+\begin{itemize}
+  \item Web app: Near the edge of the application focus is on vast 
+    numbers of clients and rapid response
+  \item Processing pipelines: Inside we find data-­intensive services that 
+    operate in a pipelined manner, asynchronously
+  \item Batch processing: Deep inside the application we see a world of 
+    virtual computer clusters that are scheduled to 
+    share resources and on which applications like 
+    MapReduce (Hadoop) are very popular
+\end{itemize}
 
 
 \subsubsection{Virtualization}
@@ -80,6 +111,7 @@ the same physical machine.
   \item Software licensing
 \end{itemize}
 \end{tabular}
+
 
 \section{Design for scale}
 
@@ -271,7 +303,7 @@ than eventual consistency.
 \end{enumerate}
 
 
-\subsection{CAP theorem}
+\subsubsection{CAP theorem}
 %TODO tikz
 \includegraphics[width=5cm]{img/CAP}
 
@@ -285,6 +317,162 @@ between C and A. \textbf{ACID} (atomicity, consistency, isolation, durability)
 become \textbf{BASE} (basically available, soft-state, eventually consistent).
 
 
+
+\subsection{Structure}
+\includegraphics[width=5cm]{img/structApp}
+Caching  is  central  to  responsiveness
+
+\begin{itemize}
+    \item Stateless server: Views  a  client  request  as  an  independent  
+        transaction  and  responds  to  it
+
+
+        Easy to scale and more robuste because instance failure does not require
+        overheas restoring state
+
+    \item Statefull server: Scaling is challenging 
+        
+        \paragraph{Traditionnal approach is replication}
+        \begin{itemize}
+            \item Data  is  written  to  a  master  server  and  then  replicated  to  one  
+        or  more  slave  servers  (synchronously  or  asynchronously))
+            \item Read  operations  can  be  handled  by  the  slaves
+        \end{itemize}
+
+        But in this case, master becomes the write bottleneck and single point of failure.
+\includegraphics[width=5cm]{img/MasterSlave}
+
+        \paragraph{Sharding with partitionning}
+        Split  data  between  multiple  
+        machines  and  have  a  way  to  make  sure  you  
+        always  access  data  from  the  right  place. 
+        Typically, define  a  sharding key  and  create  a  shard  mapping.
+
+        Really high availability, incread read and write throughput and possibility 
+        of doing more work in parallel within the application server.
+        But the challenge is to find a good partitionning scheme.
+
+
+        \subparagraph{} Sharging is  not  only  for  partitioning  data  
+        within  a  database, but can be use to  partition  data  across  caching  
+        servers (memcached, redis).
+\end{itemize}
+
+\paragraph{First-tier parallelism}
+Parallelism  is  vital  for  fast  interactive  services, and 
+parallel actions must focus on the critical path (it means delay that
+contribute to the response delay and not asynchronous that are shortly)
+
+\includegraphics[width=5cm]{img/critical}
+
+
+Note that update for replicas are typically done in asynchronous way, so we
+might  not  experience  much  delay  on  the  critical  path.
+
+Asynchronous  operations  decouple  systems  and  
+enable  quicker  responses  at  the  expense  strong  
+consistency.
+Indeed, this can rise some issues which result in inconsistency:
+\begin{itemize}
+    \item We don't know in which order replicas applying the update
+    \item The leader can crash before replicas change and lose some
+        update
+\end{itemize}
+
+
+\section{Cloud storage}
+
+\includegraphics[width=5cm]{img/storage}
+Many  cloud  services  have  a  similar  structure, 
+But  the  actual  storage  service  is  very  simple (Read/write  'blocks',
+similar  to  a  giant  hard  disk) and the translation  done  by  the  web  service.
+
+\paragraph{ideal store}
+\begin{itemize}
+\item Perfect  durability – nothing  would  ever  disappear  in  a  crash
+\item 100\%  availability – we  could  always  get  to  the  service
+\item Zero  latency from  anywhere  on  earth  – no  delays!
+\item Minimal  bandwidth  utilization  – we  only  send  across  the  network  what  we  absolutely  need
+\item Isolation under  concurrent  updates  – make  sure  data  stays   consistent
+\end{itemize}
+
+BUT he  “cloud”  exists  over  a  physical  network (communication take time + limited bandwith)
+and The  “cloud”  has  imperfect  hardware (failures)
+
+\paragraph{Observation}
+\begin{itemize}
+    \item Read-­only  (or  read-­mostly)  data  is  easiest  to  support
+    \item Granularity  matters:  “Few  large-­object”  tasks  generally  
+        tolerate  longer  latencies  than  “many  small-­object”  tasks
+
+
+        But  it’s  much  more  expensive to  replicate  or  to  update!
+
+    \item[->] Maybe  it  makes  sense  to  develop  separate  solutions  for  large  
+        read-­mostly  objects  vs.  small  read-­write  objects!
+        Different  requirements  → different  technical  solutions
+\end{itemize}
+
+
+\subsection{Key-value stores (KVS)}
+The  key-­value  store  (KVS)  is  a  simple  
+abstraction  for  managing  persistent  state where data is 
+organized  as  (key,value)  pairs with three basic operation:
+\begin{enumerate}
+    \item \texttt{PUT(key, value)}
+    \item \texttt{value = GET(key)}
+    \item \texttt{DEL(key)}
+\end{enumerate}
+
+\paragraph{Concurrency control}
+Most  systems  use  locks on  individual  items.
+
+
+
+\subsubsection{Amazon dynamo}
+\includegraphics[width=5cm]{img/AWSplat}
+
+AWS is AP and follow BASE philosophy. Dynamo is :
+\begin{itemize}
+    \item High performance with low latency
+    \item High scalable
+    \item High available key storage, especially for writes
+    \item Partition/fault-tolerant
+    \item Eventually consistent (sacrify for high availability)
+\end{itemize}
+
+\paragraph{Techniques}
+\begin{itemize}
+    \item \textbf{Consistent hashing}: dynamically partitions a set of  keys
+        over  a  set  of  storage nodes (hash keys and give 
+        a key of m-bits).
+
+        \paragraph{Data partitioning and load balancing}
+        A  key  is  assigned  to  the  closest   successor  node id 
+        ( key  k  is  assigned  to  the  first  node  with  id  ≥ k )
+
+        \includegraphics[width=5cm]{img/consistent}
+        
+        \begin{center}
+            Each node has at most $(1+\epsilon) \frac{K}{N}$ keys with $N$ nodes, $K$ keys
+            and $\epsilon=O(log(N))$
+            %TODO: why epsilon=0 with virtual nodes?
+        \end{center}
+
+        \paragraph{Replication}
+        Replication is done on the successors node because if the node fail, it's the successor
+        which will take failed node keys.
+        
+        \includegraphics[width=5cm]{img/dynamoReplica}
+
+        Replication is may in asynchronous way (eventual consistency), and
+        key data versioning technique is done with vector clocks.
+
+    \item \textbf{Vector clocks}
+    \item \textbf{Sloppy quorums}
+    \item \textbf{Gossip-based group membership protocol}
+    \item \textbf{Anti-entropy protocol using hash/merkle tree}
+\end{itemize}
 
 
 \section{Paper}
