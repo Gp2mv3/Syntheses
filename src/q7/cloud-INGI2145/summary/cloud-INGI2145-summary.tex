@@ -436,53 +436,79 @@ become \textbf{BASE} (basically available, soft-state, eventually consistent).
 \end{figure}
 
 \begin{itemize}
-    \item Stateless server: Views  a  client  request  as  an  independent  
+    \item \textbf{Stateless server}: Views  a  client  request  as  an  independent  
         transaction  and  responds  to  it
 
 
         Easy to scale and more robuste because instance failure does not require
         overheas restoring state
 
-    \item Statefull server: Scaling is challenging 
+    \item \textbf{Statefull server}: Scaling is challenging  because we need to maintains 
+        the state.
         
-        \paragraph{Traditionnal approach is replication}
+        \paragraph{Traditionnal approach is replication}:
+
+        \begin{tabular}{m{12cm}m{5cm}}
         \begin{itemize}
-            \item Data  is  written  to  a  master  server  and  then  replicated  to  one  
-        or  more  slave  servers  (synchronously  or  asynchronously))
+            \item Data  is  written  to  a  \textit{master  server}  and  then
+                replicated  to  one  or  more  \textit{slave  servers}
+                (synchronously  or  asynchronously)
             \item Read  operations  can  be  handled  by  the  slaves
         \end{itemize}
-
         But in this case, master becomes the write bottleneck and single point of failure.
-\includegraphics[width=5cm]{img/MasterSlave}
+        &
+        \centering
+         \begin{tikzpicture}
+             \node[draw, rectangle] (M) {Master};
+             \node[draw, rectangle, below=1cm of M] (S) {Slave};
+             \node (I) [right= of M] {};
+             \node (O) [right= of S] {};
+
+             \draw[->, double] (I) edge node[above] {in/out} (M);
+             \draw[<-, double] (I) edge (M);
+             \draw[<-, double] (O) edge node[below] {out}(S);
+             \draw[->, double] (M) edge (S);
+         \end{tikzpicture}
+     \end{tabular}
+
 
         \paragraph{Sharding with partitionning}
-        Split  data  between  multiple  
-        machines  and  have  a  way  to  make  sure  you  
-        always  access  data  from  the  right  place. 
-        Typically, define  a  sharding key  and  create  a  shard  mapping.
+        The idea is to split  data  between  multiple  
+        machines  and  have  a  way  to  make  sure that
+        the data is available on the right place.
+        Typically, define  a  \textbf{sharding key}  and  create  a  \textbf{shard  mapping}.
 
-        Really high availability, incread read and write throughput and possibility 
-        of doing more work in parallel within the application server.
-        But the challenge is to find a good partitionning scheme.
+        \begin{tabular}{cm{10cm}}
+            This allow to have &
+        \begin{itemize}
+            \item a really high availability
+            \item  increase read and write throughput
+            \item  the possibility 
+                of doing more work in parallel within the application server.
+            \item[But] the challenge is to find a good partitionning scheme.
+        \end{itemize}
+    \end{tabular}
 
-
-        \subparagraph{} Sharging is  not  only  for  partitioning  data  
-        within  a  database, but can be use to  partition  data  across  caching  
+    \textbf{Sharding} is  not  only  for  partitioning  data  
+        within  a  database, but can also be use to  partition  data  across  caching  
         servers (memcached, redis).
 \end{itemize}
 
 \paragraph{First-tier parallelism}
 Parallelism  is  vital  for  fast  interactive  services, and 
-parallel actions must focus on the critical path (it means delay that
-contribute to the response delay and not asynchronous that are shortly)
+parallel actions must focus on the \textbf{critical path}. This is the
+contributor delay for the response delay and do
+not care about asynchronous that are shortly.
 
-\includegraphics[width=5cm]{img/critical}
+\begin{center}
+\includegraphics[width=9cm]{img/critical}
+\end{center}
 
 
 Note that update for replicas are typically done in asynchronous way, so we
 might  not  experience  much  delay  on  the  critical  path.
 
-Asynchronous  operations  decouple  systems  and  
+$\rightarrow$ Asynchronous  operations  decouple  systems  and  
 enable  quicker  responses  at  the  expense  strong  
 consistency.
 Indeed, this can rise some issues which result in inconsistency:
@@ -495,12 +521,15 @@ Indeed, this can rise some issues which result in inconsistency:
 
 \section{Cloud storage}
 
-\includegraphics[width=5cm]{img/storage}
+\begin{center}
+\includegraphics[width=12cm]{img/storage}
+\end{center}
+
 Many  cloud  services  have  a  similar  structure, 
 But  the  actual  storage  service  is  very  simple (Read/write  'blocks',
 similar  to  a  giant  hard  disk) and the translation  done  by  the  web  service.
 
-\paragraph{ideal store}
+\paragraph{Ideal store}
 \begin{itemize}
 \item Perfect  durability – nothing  would  ever  disappear  in  a  crash
 \item 100\%  availability – we  could  always  get  to  the  service
@@ -543,9 +572,16 @@ Most  systems  use  locks on  individual  items.
 
 
 \subsubsection{Amazon dynamo}
-\includegraphics[width=5cm]{img/AWSplat}
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=5cm]{img/AWSplat}
+    \caption{Amazon dynamo. 
+AWS is \textbf{Availability\&Partition-tolerance} and follow 
+\textbf{BASE} philosophy.}
+\end{figure}
 
-AWS is AP and follow BASE philosophy. Dynamo is :
+\begin{tabular}{cm{10cm}}
+    Dynamo is :&
 \begin{itemize}
     \item High performance with low latency
     \item High scalable
@@ -553,7 +589,7 @@ AWS is AP and follow BASE philosophy. Dynamo is :
     \item Partition/fault-tolerant
     \item Eventually consistent (sacrify for high availability)
 \end{itemize}
-
+\end{tabular}
 Very  low  latency  writes,  reconciliation  in  reads.
 
 \paragraph{Techniques}
@@ -564,7 +600,7 @@ Very  low  latency  writes,  reconciliation  in  reads.
 
         \paragraph{Data partitioning and load balancing}
         A  key  is  assigned  to  the  closest   successor  node id 
-        ( key  k  is  assigned  to  the  first  node  with  id  ≥ k )
+        (key  $k$  is  assigned  to  the  first  node  with  $id \geq k$)
 
         \includegraphics[width=5cm]{img/consistent}
         
