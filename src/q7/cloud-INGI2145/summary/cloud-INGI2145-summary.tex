@@ -831,11 +831,13 @@ Very low latency writes, reconciliation in reads.
 
 
 A variety  of  different  tasks  can  be  expressed  
-as  a  single-­pass  MapReduce program (filtering, aggregation, join on shared
-element).
+as  a  single-­pass  MapReduce program (\textbf{filter, collect, aggregate, join on shared
+element}).
 But sorting don't work and algorithms  that  depend  on  shared  global  state  during  
 processing  are  difficult  to  implement.
 
+        Iterative MapReduce can be done if the reduce
+        output is compatible with map input.
 
 \paragraph{On worker crash} we rely on the  file  system  being  shared  
 across  all  the  nodes. 
@@ -918,7 +920,135 @@ are replicated  for  durability  and  availability.
 \end{tabular}
 \caption{HDFS advantage}
 \end{table}
-    
+
+\subsection{Graphs}
+$G = (V, E)$ where $V$ is vertices, $E$ edges of the form $(v_1, v_2, cost, attr)$
+where $v_1, v_2 \in V$.
+
+
+\subsubsection{Algorithm}
+\begin{itemize}
+    \item \textbf{SSSP}: based on dijkstra algorithm idea but parallelized.
+        \begin{description}
+            \item[Init]: for each node $id$, $<\infty, -, \{<succId, cost>\}>$
+            \item[Map]: for each node $id$, $<dst, next, \{<succId, cost>\}>$:
+                \begin{itemize}
+                    \item emit $id$, $<dst, next, \{<succId, cost>\}>$
+                    \item for each successor:
+                        \begin{itemize}
+                            \item emit $succId, <dst+cost, id>$ 
+                        \end{itemize}
+                \end{itemize}
+            \item[Reduce]: emit $id$, $<minDst, nextWithMinDst, \{<succId, cost>\}>$
+        \end{description}
+
+        This algorithm is based on a \textit{wave} which go on at each iteration.
+
+    \item \textbf{k-clustering}: the idea is to assign $k$ random centroid and move them 
+        until be stable.
+        \begin{description}
+            \item[Init]: choose random point
+            \item[Map]: Assign each point to the closest centroid
+                $$S_i^{(t)} = \{ x_j : x_j − m_i^{(t)} ≤ x_j − m_i^{(* t )} , i* = 1,..., k \}$$
+            \item[Reduce]: Recenter with $m_i$ the new centroid for its points
+                $$m_i^{(t+1)} = \frac{1}{|S_i^{(t)}|} \sum_{x_j \in S_i^{(t)}} x_j$$
+        \end{description}
+
+    \item \textbf{Classification with naïve Bayes}: where it's \textit{naïve} because probability
+of events are independent.
+            $$\textrm{Probability messages "XYZ" is SPAM?} = \frac{p(spam) p(containsXYZ | spam)}
+            {p(containsXYZ)}$$ 
+
+         \begin{itemize}
+             \item \texttt{p(spam)} : Nbr spam email / Nbr email
+             \item \texttt{p(containsXYZ)} : Nbr emails with XYZ / Nbr emails
+             \item \texttt{p(containsXYZ|spam)} : Nbr emails with XYZ / Nbr emails with XYZ
+         \end{itemize}
+
+         \begin{tabular}{m{2cm}cm{13cm}}
+             Nbr spam with XYZ &:& \begin{description}
+             \item[map]: for each message $m <class, \{words\}>$, emit $<word, class> \rightarrow 1$
+             \item[reduce]: emit $<word, class> \rightarrow count$
+         \end{description}
+     \end{tabular}
+
+         \begin{tabular}{m{2cm}cm{12cm}}
+             Nbr email with XYZ&:& \begin{description}
+             \item[map]: for each message $m <class, \{words\}>$, emit $<word> \rightarrow 1$
+             \item[reduce]: emit $<word> \rightarrow count$
+         \end{description}
+     \end{tabular}
+
+     \item \textbf{PageRank}: The idea is to allow $\frac{1}{N}$ vote par page
+         at the initialization, and each page vote for all the page it has a
+         link to. To ensure fairness, pages voting for more than one page must
+         split their vote equally between them. Voting proceeds in rounds: in
+         each round, each page has the number of votes it received in the
+         previous round.
+
+
+     \begin{itemize}
+         \item \textsc{Random surfer model}: Imagine  a  random  surfer,  who  starts  on  a  
+             random  page  and,  in  each  step
+             \begin{enumerate}
+                 \item Click on a random link on the page with probability $d$ 
+                 \item Jump to a random page with probability $1-d$ 
+             \end{enumerate}
+             The  PageRank  of  a  page  can  be  interpreted  
+             as  the  fraction  of  steps  the  surfer  spends  on  
+             the  corresponding  page
+
+
+     \item \textsc{Naïve PageRank}
+         $$rank_i = \sum_{j \in B_i} \frac{1}{N_j} rank_j \quad \textrm{where }N_i \textrm{ is
+     the outgoing link of i and} B_i \textrm{ the ingoing link of i}$$ 
+
+            This can't be able to manage vertex which have no outgoing edge.
+
+            \begin{tabular}{m{7cm}m{7cm}}
+                \textbf{Sinks} & \textbf{Hogs}\\
+            \begin{tikzpicture}
+                \node[rectangle, draw] (G) {Google};
+                \node[rectangle, draw, below= of G] (A) {Amazon};
+                \node[rectangle, draw, right= of A] (Y) {Yahoo};
+
+                \draw[->] (G) -| (Y);
+                \draw[->] (G.300) -- (A.60);
+                \draw[<-] (G.240) -- (A.120);
+                \draw[->] (A) -- (Y.180);
+                \draw[->] (A) -- (Y.180);
+            \end{tikzpicture}&
+            \begin{tikzpicture}
+                \node[rectangle, draw] (G) {Google};
+                \node[rectangle, draw, below= of G] (A) {Amazon};
+                \node[rectangle, draw, right= of A] (Y) {Yahoo};
+
+                \draw[->] (G) -| (Y);
+                \draw[->] (G.300) -- (A.60);
+                \draw[<-] (G.240) -- (A.120);
+                \draw[->] (A) -- (Y.180);
+                \draw[->] (A) -- (Y.180);
+                \draw[->, loop right] (Y) edge[loop right] (Y);
+            \end{tikzpicture}\\
+            PageRank is lost after each round and $\forall_i rank_i = 0$ & 
+            PageRank is accumulates on Yahoo and $\forall_i rank_i = 0$ behalf 
+            $rank_{yahoo} = 1$
+        \end{tabular}
+
+    \item \textsc{Improved PageRank}
+         $$rank_i = 1-d + d \sum_{j \in B_i} \frac{1}{N_j} rank_j \quad \textrm{where }N_i \textrm{ is
+     the outgoing link of i and} B_i \textrm{ the ingoing link of i}$$ 
+     \end{itemize}
+
+     \begin{description}
+         \item[Init]: page $p <1/Nn, \{outgoingLink\}>$
+         \item[Map]: page $p$ propagate $\frac{1}{N_p} * d * weigth_p$
+         \item[Reduce]: page $p$ = $1-d + \sum_{incomingWeight}$
+     \end{description}
+
+\end{itemize}
+
+
 
 
 \section{Paper}
