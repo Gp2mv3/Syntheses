@@ -831,15 +831,24 @@ Very low latency writes, reconciliation in reads.
 
 
 A variety  of  different  tasks  can  be  expressed  
-as  a  single-­pass  MapReduce program (\textbf{filter, collect, aggregate, join on shared
-element}).
-But sorting don't work and algorithms  that  depend  on  shared  global  state  during  
+as  a  single-­pass  MapReduce program  which are specifically designed
+for \textbf{batch operation} over large amounts of data:
+\begin{itemize}
+    \item filter, collect, aggregate, join on shared element
+\end{itemize}
+
+\paragraph{Not for MapReduce}
+\begin{itemize}
+    \item sorting don't work 
+    \item algorithms  that  depend  on  shared  global  state  during  
 processing  are  difficult  to  implement.
+    \item Process live data at high throughput and low latency
 
-        Iterative MapReduce can be done if the reduce
-        output is compatible with map input.
+\end{itemize}
 
-\paragraph{On worker crash} we rely on the  file  system  being  shared  
+
+\subsection{Failure}
+On worker crash we rely on the  file  system  being  shared  
 across  all  the  nodes. 
 \begin{itemize}
     \item If the node wrote its  output  and  then  crashed, 
@@ -849,7 +858,7 @@ across  all  the  nodes.
         job  elsewhere  on  the  system
 \end{itemize}
 
-\paragraph{Optimization}
+\subsection{Optimization}
 
 \begin{enumerate}
     \item \textit{locality}:  Master tries to do work on nodes that 
@@ -862,7 +871,7 @@ across  all  the  nodes.
 
 %TODO intersection/join WTF?
 
-\paragraph{Shuffle}
+\subsection{Shuffle}
 
 \begin{itemize}
     \item \textbf{Sorting on key}
@@ -874,61 +883,41 @@ across  all  the  nodes.
         %TODO slide 45 for 04
 \end{itemize}
 
+\subsection{Iterative}
+\begin{tikzpicture}
+    \node[rectangle, draw] (IM) {Map};
+    \node[rectangle, draw, right= of IM] (IR) {Reduce};
 
-\subsection{Hadoop}
+    \node[rectangle, draw, above right= of IR] (CM) {Map};
+    \node[rectangle, draw, right= of CM] (MR) {Reduce};
 
-\subsubsection{HDFS}
-Hadoop use a distributed file system (HDFS) specialized for particular
-types of applications. Files are stored as sets of blocks (64MB) which
-are replicated  for  durability  and  availability.
+    \node[rectangle, draw, right= of MR] (TM) {Map};
+    \node[rectangle, draw, right= of TM] (TR) {Reduce};
 
-\begin{center}
-\includegraphics[width=11cm]{img/hdfs}
-\end{center}
+    \node[rectangle, draw, below right= of TR] (OM) {Map};
+    \node[rectangle, draw, right= of OM] (OR) {Reduce};
 
-\begin{itemize}
-    \item Namespace is managed by a single name node and transfert
-        is done directly between client and data node
-    \item State stored in two files:
+    \draw (IM) edge[->] node[below=1cm, text width=2cm] {Init state} (IR);
+    \draw (CM) edge[->] node[above=0.5cm, text width=2cm] {Iterative} (MR);
+    \draw (TM) edge[->] node[above=0.5cm, text width=2cm] {Test} (TR);
+    \draw (OM) edge[->] node[below=1cm, text width=2cm] {Output result} (OR);
 
-        \begin{tabular}{m{7cm}m{9cm}}
-        \begin{itemize}
-            \item fsimages: snapshot of file system metadata
-            \item edits: change since last snapshot
-        \end{itemize} &
-        \includegraphics[width=9cm]{img/namenode}
-    \end{tabular}
-\end{itemize}
-%TODO slide 65 for 04
+    \draw (IR) edge[->, bend left] (CM);
+    \draw (MR) edge[->, ] (TM);
+    \draw (TR) edge[->, bend left] (OM);
+\end{tikzpicture}
 
+Iterative MapReduce can be done if the reduce
+output is compatible with map input but this require to passing the
+entire state and doing a lot of network and disk I/O.
+    
 
-\begin{table}[!h]
-\begin{tabular}{m{8cm}m{8cm}}
-    \textbf{Does well} & \textbf{Does not well} \\
-\begin{itemize}
-    \item very large read-only or append-only file (Terabytes EASY)
-      \item Sequential access parten
-      \item High throughput and high capacity
-\end{itemize} &
-\begin{itemize}
-    \item Low-latency access
-       \item Multiple writers
-       \item Not append-only file
-       \item Storing small files
-\end{itemize}  \\
-& $\rightarrow $ This is well done by Network File System (NFS)
-\end{tabular}
-\caption{HDFS advantage}
-\end{table}
-
-\subsection{Graphs}
+\subsection{Graphs algorithm}
 $G = (V, E)$ where $V$ is vertices, $E$ edges of the form $(v_1, v_2, cost, attr)$
 where $v_1, v_2 \in V$.
 
-
-\subsubsection{Algorithm}
 \begin{itemize}
-    \item \textbf{SSSP}: based on dijkstra algorithm idea but parallelized.
+    \item \textbf{Single Source Shortst Path (SSSP)}: based on dijkstra algorithm idea but parallelized.
         \begin{description}
             \item[Init]: for each node $id$, $<\infty, -, \{<succId, cost>\}>$
             \item[Map]: for each node $id$, $<dst, next, \{<succId, cost>\}>$:
@@ -1047,6 +1036,67 @@ of events are independent.
      \end{description}
 
 \end{itemize}
+
+
+\section{Hadoop}
+
+\subsection{HDFS}
+Hadoop use a distributed file system (HDFS) specialized for particular
+types of applications. Files are stored as sets of blocks (64MB) which
+are replicated  for  durability  and  availability.
+
+\begin{center}
+\includegraphics[width=11cm]{img/hdfs}
+\end{center}
+
+\begin{itemize}
+    \item Namespace is managed by a single name node and transfert
+        is done directly between client and data node
+    \item State stored in two files:
+
+        \begin{tabular}{m{7cm}m{9cm}}
+        \begin{itemize}
+            \item fsimages: snapshot of file system metadata
+            \item edits: change since last snapshot
+        \end{itemize} &
+        \includegraphics[width=9cm]{img/namenode}
+    \end{tabular}
+\end{itemize}
+%TODO slide 65 for 04
+
+
+\begin{table}[!h]
+\begin{tabular}{m{8cm}m{8cm}}
+    \textbf{Does well} & \textbf{Does not well} \\
+\begin{itemize}
+    \item very large read-only or append-only file (Terabytes EASY)
+      \item Sequential access parten
+      \item High throughput and high capacity
+\end{itemize} &
+\begin{itemize}
+    \item Low-latency access
+       \item Multiple writers
+       \item Not append-only file
+       \item Storing small files
+\end{itemize}  \\
+& $\rightarrow $ This is well done by Network File System (NFS)
+\end{tabular}
+\caption{HDFS advantage}
+\end{table}
+
+
+\subsection{Pig and Pig latin}
+
+
+\section{Batch processing}
+\subsection{Pregel}
+\subsection{Spark}
+
+\section{Stream processing}
+\subsection{Storm}
+\subsection{Spark}
+
+
 
 
 
