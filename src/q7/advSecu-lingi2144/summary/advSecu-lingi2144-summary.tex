@@ -557,7 +557,7 @@ of how hard a value is to guess.
     space $ \Omega_n = \{\omega_1,\omega_2,\ldots,\omega_n\} $ with the
     probability distribution $P=\{ p_i,1 \leq i \leq n \}$. The entropy $H(X)$
     of X is defined by:
-    $$ H(X)= - \sum{i=1}{n} p_i \log{2}{p_i} $$
+    $$ H(X)= - \sum_{i=1}^{n} p_i \log_{2}p_i $$
 \end{description}
 
 \paragraph{Common Uses} Randomness is needed for key generation, nonces,salt,
@@ -607,10 +607,13 @@ To generate a sequence of n-digit pseudorandom numbers:
 Example wiht n = 6
 \begin{tikzpicture}
     \node (firstseed){847209};
-    \node (textseed)[below=of firstseed] {seed};
+    \node (textseed)[below=of firstseed,yshift=1cm] {seed};
     \node (result)[below=of textseed]{717\textcolor{red}{763089}681};
-    \node (seedsquare) [below=of result]{$seed^2$};
+    \node (seedsquare) [below=of result,yshift=1cm]{$seed^2$};
     \node (result2)[below=of seedsquare]{763089};
+
+    \draw[->] (textseed) -- (result);
+    \draw[->] (seedsquare) -- (result2);
 \end{tikzpicture}
 
 \begin{itemize}
@@ -656,24 +659,27 @@ Example wiht n = 6
 \end{itemize}
 
 \subsubsection{LFSR}
-\begin{tikzpicture}
-    \node [shape = rectangle](b3) {b3};
-    \node [shape = rectangle, right=of b3] (b2) {b2};
-    \node [shape = rectangle, right=of b2] (b1) {b1};
-    \node [shape = rectangle, above=of b1] (xor) {xor};
-    \node [shape = rectangle, right=of b1] (b0) {b0};
-    \node [above of=b0](xoranchorr){};
-    \node [above of=b3](xoranchorl){};
+\begin{figure}[ht!]
+    \centering
+    \begin{tikzpicture}
+        \node [shape = rectangle](b3) {b3};
+        \node [shape = rectangle, right=of b3] (b2) {b2};
+        \node [shape = rectangle, right=of b2] (b1) {b1};
+        \node [shape = rectangle, above=of b1] (xor) {$\oplus$};
+        \node [shape = rectangle, right=of b1] (b0) {b0};
+        \node [above of=b0](xoranchorr){};
+        \node [above of=b3](xoranchorl){};
 
-    \draw [->] (b3) -- (b2);
-    \draw [->] (b2) -- (b1);
-    \draw [->] (b1) -- (b0);
-    \draw [->] (b1) -- (xor);
-    \draw (b0) -- (xoranchorr);
-    \draw [->] (xoranchorr) -- (xor);
-    \draw (xor) -- (xoranchorl);
-    \draw [->] (xoranchorl) -- (b3);
-\end{tikzpicture}
+        \draw [->] (b3) -- (b2);
+        \draw [->] (b2) -- (b1);
+        \draw [->] (b1) -- (b0);
+        \draw [->] (b1) -- (xor);
+        \draw (b0) -- (xoranchorr);
+        \draw [->] (xoranchorr) -- (xor);
+        \draw (xor) -- (xoranchorl);
+        \draw [->] (xoranchorl) -- (b3);
+    \end{tikzpicture}
+\end{figure}
 
 \section{Implementation of Hash Functions}
 \subsection{Common Hash Functions}
@@ -698,20 +704,23 @@ Example wiht n = 6
 
 \subsection{An insider view}
 %%TODO complete
-\begin{tikzpicture}
-    \node (input){arbitrary length input};
-    \node [shape=rectangle,below =of input](preprocessing){data preprocessing};
-    \node [shape=rectangle,below =of preprocessing](compression)
-    {compression function};
-    \node [shape=rectangle,below =of compression](transformation)
-    {optional transformation};
-    \node [below =of transformation](output){fixed length output};
+\begin{figure}[ht!]
+    \centering
+    \begin{tikzpicture}
+        \node (input){arbitrary length input};
+        \node [shape=rectangle,below =of input](preprocessing){data preprocessing};
+        \node [shape=rectangle,below =of preprocessing](compression)
+        {compression function};
+        \node [shape=rectangle,below =of compression](transformation)
+        {optional transformation};
+        \node [below =of transformation](output){fixed length output};
 
-    \draw [->] (input) -- (preprocessing);
-    \draw [->] (preprocessing) -- (compression);
-    \draw [->] (compression) -- (transformation);
-    \draw [->] (transformation) -- (output);
-\end{tikzpicture}
+        \draw [->] (input) -- (preprocessing);
+        \draw [->] (preprocessing) -- (compression);
+        \draw [->] (compression) -- (transformation);
+        \draw [->] (transformation) -- (output);
+    \end{tikzpicture}
+\end{figure}
 
 \subsection{Conclusion}
 \begin{table}
@@ -916,4 +925,358 @@ and commutativity)
         \item IV non-secret but changing initial vector
     \end{itemize}
 \end{itemize}
+
+\subsubsection{Linear Feedback Shift Registers}
+\paragraph{Linear feedback shift register} LFSR\footnote{see section random}
+of length L consists of L
+stages numbered 0,1,\ldots,L-1, each capable of storing one bit and having one
+input and one output; and a clock which controls the ovements of data.
+
+During each init of time the following operations are performed:
+\begin{itemize}
+    \item The content of stage 0 is outputed and forms part of the output
+    sequence.
+    \item The content of stage i is moved to stage i-1 for each i,
+    $1\leq i\leq L-1$
+    \item The new content of stage L-1 is the feedback bit $s_j$ which is
+    calculated by adding together modulo 2 the previous contents of a fixed
+    subsets of stages 0,1,\ldots,L-1.
+\end{itemize}
+LFSR should never be used by itself as keystreamn generator but they have the
+advantage of having low implementation costs. To destroy the linearity:
+\begin{itemize}
+    \item A nonlinear combining function on the outputs of several LFSRs
+    \item A nonlinear filtering function on the contents of a single LFSR
+    \item The output of one (or more) LFSRs to control the clock of one
+    (or more) other LFSRs.
+\end{itemize}
+
+\subsection{RC4}
+Use a secret key of length from 1 to 256 bytes.
+
+\subsection{Conclusion}
+Using a stream cipher is tricky as the security of stream ciphers is not
+well-established, therefore it should be used carefully.
+
+\section{Implementation of Message Authentication Code}
+\subsection{Basics}
+The goal of MAC is to prevents tampering with a message. MAC require a secret
+key otherwise modification of the message cannot be done. MAC ensures integrity,
+authentication but not confidentiality.
+
+\subsection{Constructions}
+Let h be a hash function, k a key, m the message to be MACed, and M the
+computed MAC\@.
+\begin{itemize}
+    \item Prefix method: $ M = h(k||m) $
+    \item Suffix method: $ M = h(m||k) $
+    \item Envelop method:$ M = h(k||p||m||k) $
+\end{itemize}
+MAC uses hash function rather than block cipher because hash function are
+generally faster.
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[scale=0.5]{img/hmac}
+\end{figure}
+
+\subsubsection{Built upon a cipher}
+Based on the CBC mode of operation
+\begin{itemize}
+    \item The message is encrypted in CBC mode
+    \item Final block is the MAC
+    \item Intermediary blocks are thrown out
+    \item IV consists of zeros
+\end{itemize}
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[scale=0.5]{img/cbc-mac}
+\end{figure}
+
+\begin{itemize}
+    \item CBC-MAC is secure for messages of a fixed number of blocks assuming
+    the block cipher is secure.
+    \item Not secure with variable lengths
+    \item CBC-MAC $(length(M)||M)$ to avoid truncation attacks
+    \item Encrypt $length(M)$ with K, yielding K' and use it as key for the
+    MAC function
+\end{itemize}
+\paragraph{Note:} There is a improvement of CBC-MAC known as Retail-MAC where
+the last block is decrypted with key k' then re-encrypted with k. This reduces
+the threat of exhaustive key search
+\begin{itemize}
+    \item The IV should not be random
+    \item Slower than HMAC
+    \item The MAC can be truncated to enforce security but this also reduces the
+    key search space
+\end{itemize}
+
+\subsection{Encrypt and MAC}
+Encryption does not ensure integrity but MAC does, so they must be combined.
+From the \textbf{LESS} to the \textbf{STRONGER} security:
+\begin{itemize}
+    \item $ E_K(M) $
+    \item Redundancy-then-Encrypt: $ E_K(M,R(M)) $
+    \item Hash-then-Encrypt: $ E_K(M,h(M)) $
+    \item Hash and Encrypt: $ E_K(M),h(M) $
+    \item MAC and Encrypt: $ E_{h1(K)},MAC_{h2(K)}(M) $ (SSH)
+    \item MAC-then-Encrypt: $ E_{h1(K)}(M,MAC_{h2(K)}(M)) $ (SSL)
+    \item Encrypt-then-MAC\@: $ E_{h1(K)}(M),MAC_{h2(K)}(E_{h1(k)}(M)) $ (IPSec)
+\end{itemize}
+\paragraph{Note:} Do not hash concatenation of key and message to get a MAC\@.
+Never use the same key for both encryption and MAC\@.
+
+\section{Relay attack and Countermeasures}
+\subsection{Relay attacks}
+\begin{description}
+    \item[Relay Attack] A relay attack is a form of man-in-the-middle where the
+    adversary manipulates the communication by only relaying the verbatim
+    messages between two parties.
+    \item[Man-In-The-Middle Attack] A man-in-the-middle (MITM) us a form of
+    attack, where the adversary provokes or manipulates the communication
+    between two parties. Manipulating the communication means relay, withold, or
+    insert messages.
+\end{description}
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics{img/relay-attack}
+\end{figure}
+\paragraph{Note:} The do-ability of the Relay attack depends on the timer
+between the prover and the verifier. Usually the timer is not tight, by default
+its 5ms but it can be extend by the prover.
+
+
+\begin{description}
+    \item[Distance Bounding] A distance bounding is a process whereby one party
+    assured:
+    \begin{itemize}
+        \item Of the identity of a second party,
+        \item That the latter is present in the neighborhood of the verifying
+        party, at some point in the protocol
+    \end{itemize}
+\end{description}
+\paragraph{Note:} Distance bounding protocol does not avoid relay attacks, if
+adversary inside the area of coverage.
+
+Measurement of the distance can be done in different ways:
+\begin{itemize}
+    \item With the GPS
+    \item The strength of the received signal  (RSS)
+    \item Round Trip Time (RTT)
+\end{itemize}
+
+\subsection{Protocol Analysis}
+\begin{description}
+    \item[Mafia Fraud] A mafia fraud is an attack where an adversary defeats a
+    distance bounding protocol using a man-in-the-middle (MITM) between the
+    reader and an honest tag located outside the neighborhood.
+    \item[Terrorist Fraud] A terrorist fraud is an attack where an adversart
+    defeats a distance bounding protocol using a man-in-the-middle (MITM)
+    between the reader and dishonest tag located outside of the neighborhood,
+    such that the latter actively helps the adversary to maximize her attack
+    success probability, without giving to her any advantage for future attacks
+    \item[Distance Fraud] Given a distance bounding protocol, a distance fraud
+    is an attack where a dishonest and lonely prover purports to be in the
+    neighborhood of the verifier.
+\end{description}
+
+%%TODO Hancke and Kuhn's Protocol
+
+\subsection{Comparison with Decision Theory}
+%%NOT sure if we have seen this
+
+\section{Privacy}
+\subsection{Impact}
+Compared to other technologies (video,GSM,\ldots), RFID has several issue
+concerning privacy:
+\begin{itemize}
+    \item Tags cannot be switched-off
+    \item Passive tags answer without the agreement of their bearers
+    \item Easy to analyze the logs of the readers
+    \item Increasing of the communication range
+    \item Tags can be almost invisible
+\end{itemize}
+Privacy issues concerning RFID is being seriously considered by authorites.
+
+\subsection{Information Meaningful by Itself}
+Privacy issues appear when the data sent by the tag reveals information
+intrinsic to the marked object or the holder of the object
+\footnote{With MOBIB card, personal data are stored in the clear in the card}.
+
+\subsection{Mitigating the Problem}
+\begin{itemize}
+    \item Kill command to destroy the tag
+    \item Use a faraday cages or a blocker tags to
+    avoid clandestine query.
+    \item \ldots
+\end{itemize}
+The problem with these solutions is that they are not convenient.
+\paragraph{Note:} Nowadays more and more data are collected, it is called
+logphilia. But with all these data, information may eventually leak.
+
+The consequence of these information's leakage must be evalutated:
+\begin{itemize}
+    \item Does all these data need to be store?
+    \item Encryption of the sensitive data on the tag in the dtabases
+    \item Authentication for accessing the data
+    \item Establishing policies to define who can access the data
+\end{itemize}
+
+\section{Biometric Passport}
+\subsection{Description}
+\begin{itemize}
+    \item An Machine Readable Zone is composed of two lines of 44 characters
+    \item Numbers and punctuations not authorized in the name field
+    \item Hyphens are replaced by a filler character ('<')
+    \item Apostrophes and commas are omitted
+    \item First and last names are separated by 2 filler characters
+    \item White characters are replaced by filler characters
+\end{itemize}
+
+\paragraph{Check Digits Calculation}
+Check digits are computed for each protecfields. They are calculated modulo 10
+with continous repetitive weihting of 731
+\begin{itemize}
+    \item Letters are mapped to their corresponding numerical value:
+    A=10, B=11, \ldots,Z=35, '<' = 0.
+    \item From left to right, each numerical value is multiplied by the weight
+    appearing in the same sequential position.
+    \item The product of each multiplication is added modulo 10
+\end{itemize}
+Ex: Calculate the check digit of the document number "EH123456<".
+\begin{table}[ht!]
+    \centering
+    \begin{tabular}{c|c|c|c|c|c|c|c|c|c|}
+        Number & E & H & 1 & 2 & 3 & 4 & 5 & 6 & < \\
+        & 14 & 17 & 1 & 2 & 3 & 4 & 5 & 6 & 0 \\
+        \hline
+        Weight & 7 & 3 & 1 & 7 & 3 & 1 & 7 & 3 & 1\\
+        \hline
+        $N\times W \mod{10}$ & 98 & 51 & 1 & 14 & 9 & 4 & 35 & 18 & 0\\
+    \end{tabular}
+\end{table}
+$$ 98+51+1+14+9+4+35+18 = 230 $$
+$$ 230 \mod 10 = 0 $$
+The remainder of the division is the check digit 0.
+
+\subsubsection{Technical facts about the passport}
+\begin{itemize}
+    \item Tag is passive, i.e no internal battery
+    \item Tag has a microprocessor (public-key crypto)
+    \item Official distance 10cm
+    \item EEPROM capacity: 32KB (minimum)
+\end{itemize}
+
+\subsubsection{Passport Content}
+\begin{itemize}
+    \item UID is publicly available
+    \item Publicly available data, possibly after authentication
+    \begin{itemize}
+        \item Some data groups (DG)
+        \item List of data groups on the considered passport (COM)
+        \item Cryptographic material signature and hashes (SOD)
+    \end{itemize}
+    \item Data never supplied by the tag
+    \begin{itemize}
+        \item Two symmetric key $K_{ENC},K_{MAC}$ (can be retrieved from MRZ)
+        \item One private key $K_{pr}$ (protected memory)
+    \end{itemize}
+\end{itemize}
+
+\subsection{Protection Mechanisms}
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[scale=0.5]{img/e-passport}
+\end{figure}
+
+\subsubsection{Passive Authentication}
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[scale=0.5]{img/passive-authentication}
+\end{figure}
+
+\begin{itemize}
+    \item Passive authentication is a mandatory security mechanism, it proves
+    that the file EF.SOD and LDS are authentic and not modified.
+    \item EF.SOD contains the hash value of each present DG, and signature
+    calculated by the issuing State over values.
+    \item The signature can be checked using the Document Signer (DS) X.509
+    certificate. (available from EF.SOD)
+    \item The DS certificate can be checked using the Country Signing CA (CSCA)
+    X.509 cerficate.
+    \begin{itemize}
+        \item The ICAO PKD does not publish the CSCA certificates
+        \item CSCA certificates and revocation lists should be exchanged
+        according to bilateral agreements
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Recommandations} According to DOC 9303:
+\begin{itemize}
+    \item The passive authentication should use RSA,DSA or ECDSA for the
+    signature schemes
+    \item SHA-1,SHA-2 for the hash algorithm
+    \item CSCA keys should be renewed every three to five years and the DS
+    keys every three months
+\end{itemize}
+
+\subsubsection{Active Authentication}
+%%TODO add skecth
+\begin{itemize}
+    \item The active authentication is an optional security mechanism
+    \item Aim is to prove the EF.SOD belongs to the authentic ePassport, i.e
+    it is not a cloned one
+    \item Two-pass CR protocol ISO 9796i\text{-}2 Digital Signature Scheme 1
+    \item ePassport's public key is stored in DG15
+\end{itemize}
+
+The active authentication should rely on RSA,DSA or ECDSA and minimum sizes for
+the security parameters should be 1024 bits, 1024 and 160 bits, and 160 bits,
+respectively.
+%%TODO example wih RSA/SHA1
+
+\subsubsection{Access Control and Secure Messaging}
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[scale=0.5]{img/access-control}
+\end{figure}
+\begin{itemize}
+    \item Three-pass CR protocol according to ISO 11770\text{-}2 Key Establishment
+    Mechanism 6, 2-key 3DES as block cipher
+    \item Nonces should be 8-byte long
+    \item Encryption done using 3DES in CBC mode with zero-IV according to
+    ISO 11568\text{-}2
+    \item A cryptographic checksum is calculated over: ISO 9797\text{-}1 MAC
+    Algorithm 3 (i.e Retail-MAC), based on DES, zero-IV, ISO 9797\text{-}1 Padding
+    Method 2
+    \item Encryption and MAC keys derived from the MRZ using SHA-1
+\end{itemize}
+
+\paragraph{Key Derivation}
+\begin{enumerate}
+    \item Set $ K_{seed} = trunc_{16}(SHA-1(MRZ\_info))\quad or\ (K_r \oplus K_p)$
+    \item Set $ D = K_{seed}||00000001 $
+    \item Compute $ H = SHA-1(D) $
+    \item First 16 bytes of H are set to the 2-key 3DES $ K_{ENC} $
+    \item Set $ D = K_{seed}||00000002 $
+    \item Compute $ H = SHA-1(D) $
+    \item First 16 bytes of H are set to the 2 DES keys $K_{MAC} $
+    \item Adjust the parity bits of the DES keys
+\end{enumerate}
+
+\subsection{Weaknesses}
+BAC keys are derived from the MRZ, especially date of birth, date of expiry,
+passport number. But passport numbers are usually not random. DOB and DOE are
+neither random.
+
+\begin{itemize}
+    \item Relay Attacks: Passport is based on ISO 14443, so it can require to
+    increase the timeouts.
+    \item Evidence of Presence: Abuse the active authentication which can be
+    doable without passing the BAC
+    \item Chain og Trust: If the root certificate cannot be verified, making a
+    fake passport is quite easy
+\end{itemize}
+
 \end{document}
