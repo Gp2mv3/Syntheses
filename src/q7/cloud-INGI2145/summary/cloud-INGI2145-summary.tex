@@ -1,4 +1,5 @@
 \documentclass[en]{../../../eplsummary}
+\usepackage{listings}
 
 \usetikzlibrary{calc, trees, positioning, arrows, shapes, shapes.multipart, shadows, matrix, decorations.pathreplacing, decorations.pathmorphing}
 \usetikzlibrary{arrows,shapes,snakes,automata,backgrounds,petri}
@@ -1213,17 +1214,187 @@ $\rightarrow $ Algorithm terminates when all vertices are simultaneously inactiv
 \subsection{Spark: Resilient Distributed Dataset}
 
 Basically, Spark is a distributed  memory  abstraction  that  is  both  fault-­tolerant  
-and  efficient.
+and  efficient. Note that there is some restriction form of distributed shared memory
+in order to be called \textit{Resilient Distributed Datasets (RDDs)}
+\begin{itemize}
+        \item Immutable, partitioned collections of records
+        \item Can  only  be  built  through  coarse-­grained deterministic  
+            transformations  (map,  filter,  join,  ...)
+\end{itemize}
 
+Despite their restrictions,  RDDs can express many parallel algorithms (These
+naturally  apply the same operation to many items). RDDs also unify many
+programming models.
 
+\begin{tabular}{m{7cm}cm{7cm}}
+\begin{itemize}
+    \item MapReduce,  DryadLINQ
+    \item Pregel graph  processing
+    \item Iterative  MapReduce
+    \item SQL:  Hive  on  Spark  (Shark)
+    \end{itemize}
+    & $\Rightarrow$  &
+    All are based on coarse-­grained  
+    operations
+\end{tabular}
+
+\begin{center}
+    \includegraphics[width=11cm]{img/databaseComp}
+\end{center}
+
+\subsubsection{Efficient fault recovery}
+Spark use \textbf{lineage}:
+
+\begin{tabular}{m{9cm}m{7cm}}
+    \begin{itemize}
+        \item Log  one  operation  to  apply  to  many  elements
+        \item Recompute lost  partitions  on  failure
+        \item No  cost  if  nothing  fails
+    \end{itemize}
+    &
+    \includegraphics[width=7cm]{img/sparkFault}
+\end{tabular}
+
+\subsubsection{Spark operation}
+\begin{itemize}
+    \item Transformations (define a new RDD) : \begin{tabular}{ccc}
+            map & flatMap & union \\ join & cogroup & cross \\ mapValues & filter & sample\\
+            groupByKey & reduceByKey& sortByKey\\
+        \end{tabular}
+
+    \item Action (return a result to driver program) : \begin{tabular}{ccc}
+            collect& reduce& count\\ save& lookupKey& take\\
+        \end{tabular}
+\end{itemize}
+
+\subsubsection{Spark scheduler}
+
+\begin{tabular}{m{7cm}m{8cm}}
+    \begin{itemize}
+        \item Pipelines  functions within  a  stage
+        \item Locality  \&  data  reuse aware
+        \item Partitioning-­aware to  avoid  shuffles
+    \end{itemize}
+    &
+    \includegraphics[width=8cm]{img/sparkScheduler}
+\end{tabular}
+
+\subsubsection{Algorithm}
+\begin{itemize}
+    \item \textbf{PageRank}:
+        $$rank_i = 1-d + d \sum_{j \in B_i} \frac{1}{N_j} rank_j \quad \textrm{where }N_i \textrm{ is
+        the outgoing link of i and} B_i \textrm{ the ingoing link of i}$$ 
+
+        \begin{lstlisting}[mathescape]
+        var links   =  //  RDD  of  (url,   neighbors)   pairs
+        var ranks   =  //  RDD  of  (url,   rank)   pairs
+        for  (i $\leftarrow$ 1 to ITERATIONS)   {
+            contribs =  links.join(ranks).flatMap {
+                (url,   (links,   rank))   =>
+                links.map(dest =>  (dest,   rank/links.size))
+            }
+            ranks   =  contribs.reduceByKey((x,   y)  =>  x  +  y)
+            .mapValues(sum   =>  0.85*sum   +  0.15/N)
+        }
+        \end{lstlisting}
+        Note that as RDDs are  immutable, contribs and  ranks  are  new  RDDs!
+
+        %TODO optimizing placement slide 20 for 07
+\end{itemize}
 
 
 \section{Stream processing}
+Many important applications must process large streams of live data
+and provide results in near-­real-­time.
+Distributed  stream  processing  framework  is  required  to  scale  large
+clusters  (100s  of  machines) and achieve  low  latency  (few  seconds).
+
+
+\begin{tabular}{m{10cm}m{6cm}}
+Streaming  systems  have  a  record-at-a-time processing  model
+\begin{itemize}
+    \item Each node has mutable state
+    \item For  each  record,  update  state   and  
+        send  new  records
+    \end{itemize}
+    &
+    \includegraphics[width=5cm]{img/stream}
+\end{tabular}
+
+Note that state  is  lost  if  node  dies, so make a stateful stream
+processing  be  fault-­tolerant  is  challenging.
+
 \subsection{Storm}
 
-\subsection{Spark}
+Framework  for  distributed  stream  processing which provides:  
+(1) stream  Partitioning, (2) fault  tolerance  and (3)  parallel  execution.
+\begin{center}
+    \includegraphics[width=10cm]{img/storm}
+\end{center}
+
+\begin{itemize}
+    \item \textbf{Spout} is the source of stream where \textbf{bolt} process the stream
+        and output new streams
+    \item Nimbus  node  (master  node): 
+        \begin{enumerate}
+            \item Distributes  code,  launches  workers  across  the  cluster
+            \item Monitors  computation  and  reallocates  workers  as  needed
+        \end{enumerate}
+    \item ZooKeeper nodes (coordinate  the  cluster)
+    \item Supervisor  nodes: Start  and  stop  workers  according  to  signals
+        from  Nimbus
+\end{itemize}
+
+\subsubsection{Fault tolerance}
+torm  can  guarantee  that  every  tuple  will  be  process  at  least  once or
+at  most  once,  but  not  exactly  once. (Exactly  once  guarantee  requires
+a  durable  data  source  that  can  replay  any  message  or  set  of
+messages  given  the  necessary  selection  criteria)
+%TODO really see slide 29 for 07 why this
 
 
+If  a  supervisor  node  fails,  Nimbus  reassigns  that  node’s  task  to
+other  nodes  in  the  cluster. Any  tuples  sent  to  a  failed  node  will
+time  out  and  be  replayed. (Delivery  guarantee  dependent  on  a  reliable
+data  source)
+
+\subsection{Spark streaming}
+Run  a  streaming  computation  as  a  series  of  
+very  small,  deterministic  batch  jobs. This 
+combine  the  efficiency  of  in-­memory  
+distributed   processing  of  Spark  with  stream  
+processing  mode.
+
+
+\subsubsection{Work}
+
+\begin{tabular}{m{10cm}m{6cm}}
+\begin{itemize}
+    \item Chop  up  the  live  stream  into  batches  of  X  seconds  
+    \item Spark  treats  each  batch  of  data  as  RDDs  and  processes  them
+        using  RDD  operations
+    \item Finally,  the  processed  results  of  the  RDD  operations  are
+        returned  in  batches
+    \end{itemize}
+    &
+    \includegraphics[width=4cm]{img/sparkStream}
+\end{tabular}
+
+At the end, a new RDDs are created for every batch
+
+\subsubsection{Fault tolerance}
+
+\begin{tabular}{m{10cm}m{6cm}}
+\begin{itemize}
+    \item RDDs  remember  the  operations  that  created  them.
+    \item Batches  of  input  data  are  replicated  in  memory  for
+        fault-­tolerance.
+    \item Data  lost  due  to  worker  failure,  can  be  recomputed  from
+        replicated  input  data.
+    \end{itemize}
+    &
+    \includegraphics[width=6cm]{img/faultSpark}
+\end{tabular}
 
 
 
