@@ -439,6 +439,7 @@ is $\mathcal{O}(n\log(n))$. Unfortunately, insertion is still
 to slow : $\mathcal{O}(n)$.
 
 \subsection{Binary search tree}
+\label{sec:tree}
 Here we'll combine the flexibility of insertion in a linked-list
 with the efficiency of search in an ordered array.
 
@@ -1683,5 +1684,188 @@ $\log N$.
 \end{table}
 
 \subsection{Priority queues}
+A priority queue is an abstract data type with the API given
+in figure \ref{fig:pq-api}. In this subsection, we will
+consider a \lstinline|MaxPQ|. \lstinline|MinPQ| is easily
+obtained from \lstinline|MaxPQ| (you only need to use
+min-heap instead of a max-heap, continue to read to understand).
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/pq-api.png}
+	\caption{API of a priority queue.}
+	\label{fig:pq-api}
+\end{figure}
+
+\subsubsection{Basic implementations}
+Basic implementations using (un)ordered arrays or linked
+list have the property that either the insert of the remove
+maximum operation takes linear time in the worst case.
+
+\subsubsection{Heap}
+The binary heap is a data structure that can efficiently support
+the basic priority queues operations. In a binary heap, the keys
+are stored in an array such that each key is guaranteed to be
+larger than (or equal to) the keys at two
+other specific positions.
+
+\begin{mydef}
+A binary tree is \textit{heap-ordered} if the key in each
+node is larger than or equal to the keys in that node's
+two children (if any).
+\end{mydef}
+
+\begin{myprop}
+The largest key in a heap-ordered binary tree is found at
+the root.
+\end{myprop}
+
+\begin{mydef}[Complete binary tree]
+In a complete binary tree every level, except possibly the
+last, is completely filled, and all nodes in the last level
+are as far left as possible.
+\end{mydef}
+
+A heap-ordered complete binary tree is illustrated in figure
+\ref{fig:heap}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/heap.png}
+	\caption{A heap-ordered complete binary tree.}
+	\label{fig:heap}
+\end{figure} 
+
+Complete trees provide the opportunity to use a compact
+array representation (instead of explicit links as
+for trees of section \ref{sec:tree}).
+
+\begin{mydef}
+A binary heap is a collection of keys arranged in a complete
+heap-ordered binary tree, represented in level order in an
+array (not using the first entry).
+\end{mydef}
+
+In a heap, the parent of the node in position $k$ is in
+position $\lfloor \frac{k}{2} \rfloor$ and, conversely,
+the two children of the node in position $k$ are in
+position $2k$ and $2k+1$. This allows us to travel
+up and down the tree simply by doing arithmetic on
+on array indices.
+
+\begin{myprop}
+The height of a complete binary tree of size $N$ is
+$\lfloor \log N \rfloor$
+\end{myprop}
+
+\paragraph{Heap algorithms}
+Operations on heap could violate the heap condition.
+The process of restoring the heap order is called
+\textit{reheapifying}. There is two types of violation
+and thus two algorithms ro reheapify.
+
+\subparagraph{Bottom-up reheapify (swim)}
+If the heap order is violated because a node's key become
+larger than that node's parent's key, then we can make
+progress toward fixing the violation by exchanging the node
+with its parent (and so forth, moving up until we reach a
+node with a larger key, or the root).
+
+\begin{lstlisting}
+private void swim(int k) {
+	while(k > 1 && less(k/2, k)) {
+		exch(k/2, k);
+		k = k/2;	
+	}
+}
+\end{lstlisting}
+
+\subparagraph{Top-down reheapify (sink)}
+If the heap order is violated because a node's key
+becomes smaller than one or both of that children's
+key, then we can make progress toward fixing the
+violation by exchanging the node with the larger
+of its two children (and so forth, moving down until
+we reach a node with both children smaller (or equal),
+or the bottom).
+
+\begin{lstlisting}
+private void sink(int k) {
+	while(2*k <= N) {
+		int j = 2*k;
+		// Make j point to the larger of the two children
+		if(j < N && less(j, j+1)) j++;	
+		if(!less(k, j)) break;
+		exch(k, j);
+		k = j;	
+	}
+}
+\end{lstlisting}
+
+
+\begin{figure}[ht]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+  		\includegraphics[width=.85\linewidth]{img/swim.png}
+ 		\caption{Swim.}
+  		\label{fig:siwm}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+  		\centering
+  		\includegraphics[width=0.73\linewidth]{img/sink.png}
+  		\caption{Sink.}
+  		\label{fig:sink}
+	\end{subfigure}
+	\caption{}
+	\label{fig:reheap}
+\end{figure}
+
+\paragraph{Implementations}
+Now that we can reheapify, implementing \lstinline|MaxPQ|
+is quite straightforward.
+
+\begin{lstlisting}
+public class MaxPQ<Key extends Comparable<Key>> {
+	private Key[] pq;
+	private int N = 0;
+	
+	public MaxPQ(int maxN) {
+		pq = (Key[]) new Comparable[maxN+1];	
+	}
+	
+	public boolean isEmpty() { return N == 0; }
+	public int size() { return N; }
+	
+	public void insert(Key v) {
+		pq[++N] = v;
+		swim(N);
+	}
+	
+	public Key delMax() {
+		Key max = pq[1];
+		exch(1, N--);
+		pq[N+1] = null;
+		sink(1);
+		return max;	
+	}
+}
+\end{lstlisting}
+
+Heap operations are illustrated in figure \ref{fig:heap-ops}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/heap-ops.png}
+	\caption{Heap operations.}
+	\label{fig:heap-ops}
+\end{figure} 
+
+\begin{myprop}
+In a $N$-key priority queue, the heap algorithms
+require no more than $1 + \log N$ compares for
+insert and no more than $2\log N$ compares
+for remove the maximum.
+\end{myprop}
 
 \end{document}
