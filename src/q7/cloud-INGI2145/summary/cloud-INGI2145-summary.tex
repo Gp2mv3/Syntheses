@@ -796,7 +796,7 @@ relatively small (typically <1MB)
         \end{enumerate}
         If there s no client requests to drive traffic between two nodes,
         nodes are unaware whether the other has crashed or note
-        \footnote{http://www.allthingsdistributed.com/2007/10/amazons_dynamo.html}.
+        \footnote{http://www.allthingsdistributed.com/2007/10/amazons\_dynamo.html}.
 \end{itemize}
 
 
@@ -1932,10 +1932,81 @@ locally.
 \subsubsection{Examples}
 %TODO slides 51 to 59 for 11
 
+\section{Raft}
+Raft is a consensus algorithm for replicated logs which correspond to
+replicated the state machine (all servers execute same commands in same order).
+
+\begin{center}
+    \includegraphics[width=9cm]{img/raft}
+\end{center}
 
 
 
+\subsection{Overview}
+\begin{itemize}
+    \item Leader election
+    \item Normal operation (basic log replication)
+    \item Safety and consistency after leader changes
+    \item Neutralizing old leaders
+    \item Clients interactions (implementing linearizeable semantics)
+    \item Configuration changes (add/remove servers)
+\end{itemize}
 
+\subsubsection{Consensus}
+Consensus is leader-based which is more efficient thant leader-less approach
+and allow to simplifies normal operation because there is no conflict.
+
+\subsubsection{Server states}
+
+\begin{itemize}
+    \item At any given time, each servier is EITHER :
+        \begin{enumerate}
+            \item Follower : completely passive 
+            \item Candidate : used to elect a new leader
+            \item Leader: handles all client interactions, log replication
+        \end{enumerate}
+    \item Time divided into term (maintains current term value)
+\end{itemize}
+
+\begin{center}
+    \includegraphics[width=9cm]{img/rleader}
+\end{center}
+
+\subsubsection{Terms}
+\begin{tabular}{m{8cm}m{6cm}}
+    Time divvied into term
+    \begin{itemize}
+        \item at most one leader per term
+        \item If no leader on term then failed election
+    \end{itemize}
+    Term is used to identify obsolete information
+    &
+    \includegraphics[width=9cm]{img/term}
+\end{tabular}
+
+\subsubsection{Heartbeats}
+\begin{itemize}
+    \item Leader must send heartbeats (empty
+        AppendEntries RPCs) to maintain authority.
+\end{itemize}
+
+
+\subsection{Leader election}
+
+\begin{enumerate}
+    \item Increment current term
+    \item Change to candidate state
+    \item Vote for self
+    \item Send request vote RPC to all other server
+        \begin{itemize}
+            \item Receive vote from majority $\Rightarrow$ leader
+            \item Receive RPC from valid leader $\Rightarrow$ follower state
+            \item Election timeout elapse $\Rightarrow$ new election
+        \end{itemize}
+\end{enumerate}
+
+\subsection{Log replication}
+Leader take commands from clients and replicates its log to other server.
 
 
 
