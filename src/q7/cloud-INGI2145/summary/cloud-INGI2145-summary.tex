@@ -665,7 +665,8 @@ Most systems use locks on individual items.
         \item Eventually consistent (sacrify for high availability)
     \end{itemize}
 \end{tabular}
-Very low latency writes, reconciliation in reads.
+Very low latency writes, reconciliation in reads (last write wins). Object stored are 
+relatively small (typically <1MB)
 
 \paragraph{Key Techniques}
 \begin{itemize}
@@ -681,7 +682,7 @@ Very low latency writes, reconciliation in reads.
 
         \begin{center}
             Each node has at most $(1+\epsilon) \frac{K}{N}$ keys with $N$ nodes, $K$ keys
-            and $\epsilon=O(log(N))$
+            and $\epsilon=O(log(N))$ 
             %TODO: why epsilon=0 with virtual nodes?
         \end{center}
 
@@ -735,9 +736,17 @@ Very low latency writes, reconciliation in reads.
             \item[Note]
                 \begin{enumerate}
                     \item Note that each node has routing info to all other node
-                        to reduce latency (but this is lower scalable)
-                        %TODO: slide 99 for 03
+                        to reduce latency (but this is less scalable)
                 \end{enumerate}
+                To handle puts and gets, 3 differents ways:
+                \begin{itemize}
+				\item \textbf{Extended preference list} N nodes from preference list +
+				some additional nodes (following the circle) to account for failure.
+				\item \textbf{Failure-free case} Node from preference list are involved
+				in get/put
+				\item \textbf{Failures} First N alive nodes from extended preference list
+				are involved.
+			\end{itemize}
         \end{itemize}
 
         \textbf{Sloppy} allow availability under a much wider range of 
@@ -763,7 +772,6 @@ Very low latency writes, reconciliation in reads.
         \end{itemize}
 
     \item \textbf{Gossip-based group membership protocol}: 
-        %TODO slides 106 for 03
 
 
         Membership info are also eventually 
@@ -778,10 +786,17 @@ Very low latency writes, reconciliation in reads.
 
         \paragraph{Unreliable failure detection (FD)}
         Used to refresh the healthy node info in the extended 
-        preference list.
-
-        %TODO 107 for 04
-
+        preference list. In the presence of steady rate of client request
+        \begin{enumerate}
+        	\item Node A may consider node B failed if node B
+        		  does not respond to A's message
+		\item Node A then uses an alternates nodes to services 
+		requests that maps to B partitions
+		\item A periodically checks on B
+        \end{enumerate}
+        If there s no client requests to drive traffic between two nodes,
+        nodes are unaware whether the other has crashed or note
+        \footnote{http://www.allthingsdistributed.com/2007/10/amazons_dynamo.html}.
 \end{itemize}
 
 
@@ -892,7 +907,16 @@ across all the nodes.
         Typically, it's job is to pass $(xyz, k)$ instead of $k$ copies of $(xyz, 1)$.
 \end{enumerate}
 
-%TODO intersection/join WTF?
+\subsection{Single-Pass algorithm}
+
+\begin{itemize}
+	%% Should not the Intersection check the size of the values?
+	\item \textbf{Aggreation} Compute 
+	\item \textbf{Filtering} Remove item that does not sastifies a property
+	\item \textbf{Intersection} Return the intersection bewteen two set (
+	remove duplicated value that appears in the two set).
+	\item \textbf{Join} Combine two set according to a common properties
+\end{itemize}
 
 \subsection{Shuffle}
 
@@ -902,8 +926,9 @@ across all the nodes.
         presented to reduce in sorted order. Shuffle really
         consists of two parts: (1) Partition and (2) Sort.
 
-    \item \textbf{Sorting on value}
-        %TODO slide 45 for 04
+    \item \textbf{Sorting on value} To sort by value, a composite key containing 
+    the value to sort must be used. In that case, the key comparator must take
+    into account that the key is composed. 
 \end{itemize}
 
 \subsection{Iterative}
@@ -1091,7 +1116,18 @@ are replicated for durability and availability.
             \includegraphics[width=9cm]{img/namenode}
         \end{tabular}
 \end{itemize}
-%TODO slide 65 for 04
+If the state of the namenode is lost, there are two possible solutions:
+\begin{itemize}
+	\item \textbf{Metadata backups} Namenode can write its metadata to a local disk
+	and/or to a remote NFS
+	\item \textbf{Secondary Namenode} (1) Periodically merge the edit log with fsimage 
+	to prevent from growing to large, (2) Copy of the metadata
+\end{itemize}
+\paragraph{Note} Secondary namenode is more of a checkpoint
+\footnote{http://blog.madhukaraphatak.com/secondary-namenode---what-it-really-do/} 
+than a backup node, if it fails
+$\to$ data loss.
+
 
 
 \begin{table}[!h]
@@ -1138,10 +1174,13 @@ query and analysis.
     \item Create a table structure on top of HDFS
     \item Queries are compiled in to MapReduce jobs
 \end{itemize}
+\paragraph{Note} Hive is not designed fot OnLine Transaction Processing which 
+consist mostly of updates. Indeed updating record or transaction are not 
+supported
 
 \subsection{Pig and Pig latin}
-%TODO: slide 29-30 for 06 what say ?
-%TODO: really understand
+Relational data model does no allow nested table (attribute which is collection).
+That's a part of what Pig Latin brings.
 
 Somewhere between a programming language and a DBMSa which allows
 distributed  programming with explicit parallel dataflow operators.
@@ -1162,7 +1201,15 @@ distributed  programming with explicit parallel dataflow operators.
 
 \subsubsection{Basic SQL-like operation}
 Operations are \textbf{explicitly} specified.
-%TODO
+\begin{itemize}
+    \item \texttt{load\ldots as}: Projection and renaming 
+    \item \texttt{foreach \ldots generate}: remapping 
+    \item \texttt{filter by}: Filtering 
+    \item \texttt{join}: intersection 
+    \item \texttt{group by}: Aggregation 
+    \item \texttt{order}: Sorting 
+    \item \texttt{store}: save result
+\end{itemize}
 
 \subsubsection{Implementation}
 \begin{center}
@@ -1369,10 +1416,12 @@ Framework  for  distributed  stream  processing which provides:
 \end{itemize}
 
 \subsubsection{Fault tolerance}
-torm  can  guarantee  that  every  tuple  will  be  process  at  least  once or
+Storm  can  guarantee  that  every  tuple  will  be  process  at  least  once or
 at  most  once,  but  not  exactly  once. (Exactly  once  guarantee  requires
 a  durable  data  source  that  can  replay  any  message  or  set  of
 messages  given  the  necessary  selection  criteria)
+%Suppose you want to update a counter in a database, if a worker fails, you 
+% don't know if it has failed before updating the value or after 
 %TODO really see slide 29 for 07 why this
 
 
