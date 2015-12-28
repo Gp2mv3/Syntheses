@@ -1459,6 +1459,229 @@ reduce the risk of collision, and thus reduce the probability
 of the Monte Carlo algorithm to fail. The alternative method
 of checking for a match could be slow but is guaranteed correct.
 
+\section{Graphs}
 
+% Need a better title for this section
+\section{Various algorithms}
+\subsection{Union-find}
+\begin{mydef}
+A \textit{union-find} data structure is a data structure
+that keeps track of a set of elements partitionned into
+a number of disjoint subsets (equivalence classes).
+\end{mydef}
+
+The API is given in figure \ref{fig:uf-api}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{img/uf-api.png}
+	\caption{API of union-find data structure.}
+	\label{fig:uf-api}
+\end{figure}
+
+This data structure helps to solve \textit{dynamic
+connectivity} problem. This problem arises for example
+in networks. We will use networking terminology here.
+We refer to the objects as \textit{sites}, the paires
+as \textit{connections} et equivalence classes as
+\textit{connected components} or \textit{components}.
+
+When studying algorithms to implement the union-find API,
+we count array accesses (the number of times an array entry
+is accessed, for read or write).
+
+We will consider three different implementations, all based
+on using a site-indexed \lstinline|id[]| array.
+
+\subsubsection{Quick-find}
+Here we maintain the invariant that \lstinline|p| and
+\lstinline|q| are connected if and only if \lstinline|id[p]|
+is equal to \lstinline|id[q]|. Implementation is quite
+straightforward. An overview of quick-find is given
+in figure \ref{fig:quick-find-overview}.
+
+\begin{lstlisting}
+public class UF {
+	private int[] id;	// access to component id (site indexed)
+	private int count;	// number of components
+	
+	public UF(int N) {
+		count = N;
+		id = new int[N];
+		for(int i = 0; i < N; i++) {
+			id[i] = i;		
+		}	
+	}
+	
+	public int count() { return count; }
+	public boolean connected(int p, int q) { return find(p) == find(q);	}
+	public int find(int p) {return id[p];}
+	
+	public void union(int p, int q) {
+		int pID = find(p);
+		int qID = find(q);
+		
+		if(pID == qID) return;
+		
+		for(int i = 0; i < id.length; i++)
+			if(id[i] == pID) id[i] = qID;		
+		
+		count--;
+	}
+}
+\end{lstlisting}
+
+\begin{myrem}
+Note that here we made the arbitrary choice of
+renaming the component containing \lstinline|p|.
+\end{myrem}
+
+\begin{myprop}
+The quick-find algorithm uses one array access for
+each call to \lstinline|find()|, two array accesses
+for each call to \lstinline|connected()| and
+between $N+3$ and $2N+1$ array accesses for
+each call to \lstinline|union()| that combines
+two components.
+\end{myprop}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{img/quick-find-overview.png}
+	\caption{Quick-find overview.}
+	\label{fig:quick-find-overview}
+\end{figure}
+
+\subsubsection{Quick-union}
+Here, the \lstinline|id[i]| entry for each site
+is the name of another site in the same component
+(possibly itself, in this case we call it a
+\textit{root}) - we refer to this connection as a
+\textit{link} To implement \lstinline|find()|,
+we start at the given site, follow its link to
+another site, follow that site's link to yet
+another site and so forth until reaching a root.
+An overview of quick-union is given
+in figure \ref{fig:quick-union-overview}.
+
+\begin{lstlisting}
+public int find(int p) {
+	while (p != id[p]) p = id[p];
+	return p;
+}
+\end{lstlisting}
+
+Two sites are in the same component if and
+only if this process leads them to the same
+root.
+
+\begin{lstlisting}
+public void union(int p, int q) {
+	int i = find(p);
+	int i = find(q);
+	if (i == j) return;
+	
+	// Make root of the first tree point to the second
+	id[i] = j;
+	count--;
+}
+\end{lstlisting}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/quick-union-overview.png}
+	\caption{Quick-union overview}
+	\label{fig:quick-union-overview}
+\end{figure}
+
+On figure \ref{fig:quick-union-overview}, we use the
+\textit{forest-of-trees} representation. With this
+representation, we can define some terminology.
+
+\begin{mydef}
+The \textit{size} of a tree is its number of notes. The
+\textit{depth} of a node in a tree is the number of links on the
+path from it to the root. The \textit{height} of a tree is
+the maximum depth among its nodes.
+\end{mydef}
+
+\begin{myprop}
+The number of array accesses used by \lstinline|find()| in
+quick-union is 1 plus twice the depth of the node corresponding
+to the given site. The number of array accessed used by
+\lstinline|union()| and \lstinline|connected()| is the cost
+of the two \lstinline|find()| operations (plus 1 for \lstinline|union()|
+if the given sites are in different trees).
+\end{myprop}
+
+\subsubsection{Weighted-quick-union}
+Weighted-quick-union is an improvement to quick-union algorithms
+that allow us to reduce the tree height, and thus to reduce
+complexity of \lstinline|find()|.
+
+\begin{lstlisting}
+public class WeigthedQuickUnionUF {
+	private int[] id;	// access to component id (site indexed)
+	private int[] sz;	// size of component for roots (site indexed)
+	private int count;	// number of components
+	
+	public WeightedQuickUnionUF(int N) {
+		count = N;
+		id = new int[N];
+		for(int i = 0; i < N; i++)	id[i] = i;
+		sz = new int[N];		
+		for(int i = 	0; i < N; i++) 	sz[i} = 1;	
+	}
+	
+	public int count() { return count; }
+	public boolean connected(int p, int q) { return find(p) == find(q);	}
+	
+	public int find(int p) {
+		while(p != id[p]) p = id[p];
+		return p;
+	}
+	
+	public void union(int p, int q) {
+		int i = find(p);
+		int j = find(q);
+		if(i == j) return;
+		
+		// Make smaller root point to the larger one
+		if		(sz[i] < sz[j]) 	{ id[i] = j; sz[j] += sz[i]; }
+		else						{ id[j] = i; sz[i] += sz[j]; }
+		
+		count--;
+	}
+}
+\end{lstlisting}
+
+\begin{myprop}
+The depth of any node in a forest built by weighted
+quick-union for $N$ sites is at most $\log N$.
+\end{myprop}
+
+\begin{mycorr}
+For weighted quick-union with $N$ sites, the worst
+case order of growth of the cost of \lstinline|find()|,
+\lstinline|connected()| and \lstinline|union()| is
+$\log N$.
+\end{mycorr}
+
+\subsubsection{Summary}
+
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{c|ccc}
+		\textbf{algorithm} & \textbf{constructor} & \textbf{union} & \textbf{find} \\
+		\hline
+		quick-find & $N$ & $N$ & 1 \\
+		quick-union & $N$ & tree height & tree height \\
+		weigthed quick-union & $N$ & $\log N$ & $\log N$
+	\end{tabular}
+	\caption{Performance characteristics of union-find algorithms.}
+	\label{tab:perf-uf}
+\end{table}
+
+\subsection{Priority queues}
 
 \end{document}
