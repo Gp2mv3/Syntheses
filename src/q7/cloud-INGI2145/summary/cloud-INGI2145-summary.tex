@@ -796,7 +796,7 @@ relatively small (typically <1MB)
         \end{enumerate}
         If there s no client requests to drive traffic between two nodes,
         nodes are unaware whether the other has crashed or note
-        \footnote{http://www.allthingsdistributed.com/2007/10/amazons_dynamo.html}.
+        \footnote{http://www.allthingsdistributed.com/2007/10/amazons\_dynamo.html}.
 \end{itemize}
 
 
@@ -1605,6 +1605,16 @@ low RRTs within DC approache $1µs$) and high throughput.
 \paragraph{Flow Completion time (FCT)}: is
 the time from when flow started at the sender, to when all
 packets in the flow were received at the receiver.
+\paragraph{Pfabric} With DCTCP, small flow are delayed by big ones. To
+handel that:
+\begin{itemize}
+	\item Packets carry a single priority number representing the remaining flow size.
+	\item Switches send the packet with highest priority and drop the lowest
+	priority packet
+	\item Servers transmit/retransmit at full link rate and decrease transmission
+	rate only under extreme loss (typically timeouts)
+\end{itemize}
+assigning priority number to packet. 
 \begin{center}
     \includegraphics[width=8cm]{img/fct}
 \end{center}
@@ -1650,12 +1660,63 @@ router which is one element of SDN.
     \includegraphics[width=9cm]{img/openflow}
 \end{tabular}
 
-\paragraph{Flow table entries}
-%TODO slide 81-82 for 08
+\begin{table}[ht!]
+	\centering
+	\begin{tabular}{|c|l|}
+	\hline
+	Match field & To match against packet. These consist of the ingress port 
+	and packet headers\\
+	\hline
+	Priority & Matching precedence of the flow entry\\
+	\hline
+	Counters & e.g. packet and byte counters\\
+	\hline
+	Instructions & Determine action set or pipeline processing\\
+	\hline
+	Timeouts & Maximum amount of time or idle time before flow is expired by
+	the switch\\
+	\hline
+	Cookies & Opaque data value chosen by the controller. Not used when
+	processing packets.\\
+	\hline
+	\end{tabular}
+	\caption{Flow table entries}
+\end{table}
 
-\paragraph{Messages}
-%TODO slide 87 for 08
-
+\begin{table}[ht!]
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|}
+	\hline
+	Switch&VLAN&VLAN&MAC&MAC&Eth&IP&IP&IP&IP&L4&L4\\
+	Port&ID&pcp&src&dst&type&src&dst&Tos&Prot&sport&dport\\
+	\hline
+\end{tabular}
+\caption{match fields}
+\end{table}
+\begin{table}[ht!]
+	\centering
+	\begin{tabular}{|c|c|l|}
+	\hline
+	Message&Direction&Description\\
+	\hline
+	Packet-In & Switch$\to$Controller & Transfer the control of the packet to the 
+	controller.\\
+	&& Packet-in events can be configured to buffer packets.\\
+	\hline
+	Packet-Out & Controller $\to$ Switch & Instruct switch to send a packet out 
+	of a specified port.\\
+	&& Send in response to Packet-in messages.\\
+	\hline
+	Modify-State & Controller$\to$ Switch & Add,delete and modify flow/group entries
+	in the flow tables\\
+	&& and to set switch port properties.\\
+	\hline
+	Flow-Removed & Switch $\to$ Controller & Inform the controller about the removal
+	of a flow entry \\
+	&&from a flow table.\\
+	\hline
+	\end{tabular}
+	\caption{messages exchanged in openFlow}
+\end{table}
 
 %TODO improvement from 89 for 08
 
@@ -1676,7 +1737,8 @@ router which is one element of SDN.
                 Note that state must be maintain when request are related. 
                 \begin{itemize}
                     \item Client side: It's better to keep state on client side to avoid DoS.
-                    \item Server: %TODO
+                    \item Server: If state is on the server and multiple server are used,
+                    they must be able to exchange state information.
                 \end{itemize}
 
                 \paragraph{Concurrency}
