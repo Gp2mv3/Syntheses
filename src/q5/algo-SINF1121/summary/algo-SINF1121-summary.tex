@@ -1074,11 +1074,19 @@ This algorithm is called the \textit{Horner's method}.
 The use of a small primer integer such as 31 ensures
 that the bits of all the characters play a role.
 
+\begin{myrem}
+\label{rem:mod-prop}
+Note that applying \lstinline|% M| at the end (i.e. outside
+the loop) gives the same result (it's a property of the
+modulus operation). But by doing so, we may encounter
+\lstinline|int| overflow for long strings.
+\end{myrem}
+
 \paragraph{Java conventions}
 In Java, every data type inherits a method called
 \lstinline$hashCode()$ that returns a 32-bit integer.
 The implementation of \lstinline$hashCode()$ for a data
-type muste be \textbf{consistent with equals}, if
+type must be \textbf{consistent with equals}, if
 \lstinline$a.equals(b)$, then \lstinline$a.hashCode()$
 must have the same numerical value as
 \lstinline$b.hashCode()$. Conversely, if
@@ -1114,6 +1122,193 @@ in the key type that contains the value of
 this technique for \lstinline$String$ objects.
 
 \subsubsection{Hashing with separate chaining}
+Now that we know how to hash, we need a collision resolution
+process. The first collision resolution process is illustrated
+in figure \ref{fig:separate-chaining}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{img/separate-chaining.png}
+	\caption{For each of the $M$ array indices, we build a 
+	linked list of the key-value pairs  whose key hash to that
+	index. To search in those linked lists, we use sequential
+	search in an unordered linked list.}
+	\label{fig:separate-chaining}
+\end{figure}
+
+\paragraph{Implementation}
+Implementation of separate chaining is very easy
+(\lstinline|SequentialSearchST| is the implementation
+of the sequential search in an unordered linked list).
+
+\begin{lstlisting}
+public class SeparateChainingHashST<Key, Value> 
+{
+	private int M;
+	private SequentielSearchST<Key, Value>[] st;
+	
+	public SeparateChainingHashST() {
+		this(997);	
+	}
+	
+	public SeparateChainingHashST(int M) {
+		this.M = M;
+		st = (SequentielSearchST<Key, Value>[]) new SequentialSearchST[M];
+		for(int i = 0; i < M; i++) {
+			st[i] = new SequentialSearchST();		
+		}	
+	}
+	
+	private int hash(Key key) {
+		return (key.hashCode() & 0x7fffffff) % M;	
+	}
+	
+	public Value get(Key key) {
+		return (Value) st.[hash(key)].get(key);	
+	}
+	
+	public void put(Key key, Value val) {
+		st[hash(key)].put(key, val);	
+	}
+}
+\end{lstlisting}
+
+\paragraph{Analysis}
+\begin{myprop}
+In a separate-chaining hash table with $M$ lists and $N$
+keys, the probability that the number of keys in a list
+is within a small constant factor of $N/M$ is extremely
+close ton 1.
+\end{myprop}
+
+This last property makes the assumption that we use
+a uniform hashing function.
+
+\begin{myprop}
+As a consequence of the last property, the number of
+compares for search miss and insert is $\sim N/M$.
+\end{myprop}
+
+\subsubsection{Hashing with linear probing}
+Another approach to implementing hashing is to store
+$N$ key-value pairs in a hash table of size $M > N$,
+relying on empty entries in the table to help with
+collision resolution. Such methods are called
+\textit{open-addressing} hashing methods. The simplest
+one is called linear probing : when there is a collision,
+then we just check the next entry in the table.
+
+\paragraph{Implementation}
+As with separate chaining, implementation is quite
+straightforward.
+
+\begin{lstlisting}
+public class LinearProbingHashST<Key, Value>
+{
+	private int N; // number of key-value pairs in the table
+	private int M; // size of linear-probing table
+	private Key[] keys;
+	private Values[] vals;
+	
+	public LinearProbingHashST() {
+		this(4); // Initializes with an initial capacity of 4	
+	}	
+	
+	public LinearProbingHashST(int capacity) {
+		M = capacity;		
+		keys = (Key[]) new Object[M];
+		vals = (Value[]) new Object[M];	
+	}
+	
+	private int hash(Key key) {
+		return (key.hashCode() &0x7fffffff) % M;	
+	}
+	
+	public void put(Key key, Value val) {
+		if(N >= M/2) resize(2*M);
+		
+		int i;
+		for(i = hash(key); keys[i] != null; i = (i + 1) % M) {
+			if(keys[i].equals(key)) {
+				vals[i] = val;
+				return;
+			}		
+		}	
+		
+		keys[i] = key;
+		vals[i] = val;
+		N++;
+	}
+	
+	public Value get(Key key) {
+		for(int i = hash(key); keys[i] != null; i = (i + 1) % M) {
+			if(keys[i].equals(key)) {
+				return vals[i];			
+			}
+		}
+		
+		return null;	
+	}
+	
+	public void delete(Key key) {
+		if(!contains(key)) return;
+		int i = hash(key);
+		while(!key.equals(keys[i]))
+			i = (i + 1) % M;
+		keys[i] = null;
+		vals[i] = null;
+		i = (i + 1) % M;
+		while(keys[i] != null) {
+			Key keyToRedo = keys[i];
+			Value valtoRedo = vals[i];
+			keys[i] = null;
+			vals[i] = null;
+			N--;
+			put(keyToRedo, valToRedo);
+			i = (i + 1) % M;		
+		}
+		
+		N--;
+		if(N > 0 && M <= M/8)
+			resize(M/2);
+	}
+\end{lstlisting}
+
+\begin{mydef}
+We define $\alpha = N/M$ as the \textit{load factor}
+of a hash table. For separate chaining, $\alpha$ is
+the average number of keys per list and is often
+larger than 1. For linear probing, $\alpha$ is the
+percentage of table entries that are occupied : it
+cannot be greater than 1\footnote{If the load
+factor reach 1, search miss would go into an
+infinite loop.}.
+\end{mydef}
+
+The average cost of linear probing depends on \textit{clusters}
+(entries which clump together into contiguous groups).
+For the sake of good performance, we use array resizing
+to guarantee that the load factor is between $\frac{1}{8}$
+and $\frac{1}{2}$ : this allows us to avoid too long clusters.
+The \lstinline|resize| method is given below.
+
+\begin{lstlisting}
+	private void resize(int cap) {
+		LinearProbingHashST<Key, Value> t;
+		t = new LinearProbingHashST<Key, Value>(cap);
+		for(int i = 0; i < M; i++) {
+			if(keys[i] != null) {
+				t.put(keys[i], vals[i]);			
+			}		
+		}
+		
+		keys = t.keys;
+		vals = t.vals;
+		M = t.M;	
+	}
+}
+\end{lstlisting}
+
 
 \subsection{Summary}
 The cost-summary for symbol-tables implementations is given
@@ -1127,14 +1322,143 @@ in table \ref{tab:cost-summary-searching}.
 \multicolumn{2}{c}{\begin{tabular}[c]{@{}c@{}}worst-case cost\\ (after N inserts)\end{tabular}} &
 \multicolumn{2}{c}{\begin{tabular}[c]{@{}c@{}}average-case cost\\ (after N random inserts)\end{tabular}} &
 \multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}efficiently support\\ordered operations?\end{tabular}} \\
-                                                                                      & search                                         & insert                                         & search hit                                          & insert                                             &                                                                                                      \\ \hline
-\begin{tabular}[c]{@{}c@{}}sequential search\\ (unordered linked list)\end{tabular}   & $N$                                            & $N$                                            & $N/2$                                               & $N$                                                & no                                                                                                   \\
-\begin{tabular}[c]{@{}c@{}}binary search\\ (ordered array)\end{tabular}               & $\log N$                                      & $N$                                            & $\log N$                                            & $N/2$                                              & yes                                                                                                  \\
-\begin{tabular}[c]{@{}c@{}}binary tree search\\ (BST)\end{tabular}                    & $N$                                            & $N$                                            & $1.39 \log N$                                       & $1.39 \log N$                                      & yes                                                                                                  \\
-\begin{tabular}[c]{@{}c@{}}2-3 tree search\\ (red-black BST)\end{tabular}             & $2 \log N$                                     & $2 \log N$                                     & $1.00 \log N$                                       & $1.00 \log N$                                      & yes                                                                                                 
+& search & insert & search hit & insert &  \\ \hline
+\begin{tabular}[c]{@{}c@{}}sequential search\\
+(unordered linked list)\end{tabular} & $N$ & $N$ & $N/2$ & $N$ & no  \\
+\begin{tabular}[c]{@{}c@{}}binary search\\ 
+(ordered array)\end{tabular} & $\log N$ & $N$ & $\log N$ & $N/2$ & yes \\
+\begin{tabular}[c]{@{}c@{}}binary tree search\\ 
+(BST)\end{tabular} & $N$ & $N$ & $1.39 \log N$ & $1.39 \log N$ & yes \\
+\begin{tabular}[c]{@{}c@{}}2-3 tree search\\
+(red-black BST)\end{tabular} & $2 \log N$ & $2 \log N$ & $1.00 \log N$ & $1.00 \log N$ & yes \\                                                                                                 
+\begin{tabular}[c]{@{}c@{}}separate chaining\\
+(array of lists)\end{tabular} & $N$ & $N$ & $\frac{N}{2M}$ & $N/M$ & no \\
+\begin{tabular}[c]{@{}c@{}}linear probing\\
+(parallel arrays)\end{tabular} & $N$ & $N$ & $< 1.50$ & $< 2.50$ & no                                                                                                 
 \end{tabular}
 \caption{Cost summary for symbol-table implementations.}
 \label{tab:cost-summary-searching}
 \end{table}
+
+\section{Strings}
+\subsection{Substring search}
+\begin{myprob}[Substring search]
+Given a \textit{text} string of length $N$ and
+a pattern string of length $M$, find an occurence
+of the pattern within the text.
+\end{myprob}
+
+\subsubsection{Rabin-Karp finger print search}
+The Rabin-Karp algorithm uses hashing to solve this problem.
+It's almost as simple as the brute-force algorithm but
+runs in time proportional to $M+N$ with very high probability.
+Furthermore, this algorithm extends to two-dimensional patterns,
+which makes it more useful than the others for image processing.
+
+\paragraph{Basic idea}
+The basic idea behind this algorithm is the following : we compute
+a hash function for the pattern an then look for a match by using
+the same hash function for each possible $M$ character substring
+of the text. If we find a text substring with the same hash value
+as the pattern, we can check for a match. 
+
+\paragraph{Key idea}
+A straightforward implementation based on this description would be much
+slower than a brute-force search (since computing a hash function that involves
+every character is likely to be much more expensive than just
+comparing characters). But Rabin and Karp showed that it is easy
+to compute hash functions for $M$-characters substrings in
+constant time, which leads to a linear-time substring search.
+
+Using the notation $t_i$ for \lstinline|txt.charAt(i)|, the number
+corresponding to the $M$-character substring of \lstinline|txt| that
+starts at position \lstinline|i| using Horner's method is
+
+\[ x_i = t_iR^{M-1} + t_{i+1}R^{M-2} + \dots + t_{i+M-1}R^0 \]
+
+and we can assume that we know the value of $h(x_i) = x_i\mod Q$.
+Shifting one position right in the text corresponds to replacing
+$x_i$ by
+
+\[ x_{i+1} = (x_i - t_iR^{M-1})R + t_{i+M}. \]
+
+We substract off the leading digit, multiply it by $R$, then add
+the trailing digit. Now, the crucial point is that we do not have
+to maintain the values of the numbers (i.e. $x_i$), just the
+values of theirs reminders when divided by $Q$ (i.e. $h(x_i)$).
+Remember the property of modulus operation discussed in remark
+\ref{rem:mod-prop}.
+
+\paragraph{Implementation}
+Here is the implementation of the \textit{Monter Carlo}
+version of the Rabin-Karp fingerprint substring search.
+
+\begin{mydef}
+A \textit{Monte Carlo} algorithm is a randomized algorithm
+whose running time is deterministic, but whose output may be
+incorrect with a certain probability. On the other side, a
+\textit{Las Vegas} algorithm is a randomized algorithm that
+always gives correct results.
+\end{mydef}
+
+\begin{lstlisting}
+public class RabinKarp
+{
+	private long patHash; // pattern hash value
+	private int M; // pattern length
+	private long Q; // a large prime
+	private int R = 256; // alphabet size
+	private long RM; // R^(M-1) % Q for use in removing leading digit
+	
+	public RabinKarp(String pat) {
+		M = pat.length();
+		Q = longRandomPrime();
+		RM = 1;
+		for (int i = 1; i <= M-1; i++) {
+			RM = (R * RM) % Q;		
+		}
+		
+		patHash = hash(pat, M);
+	}
+	
+	private long hash(String key, int M) {
+		long h = 0;
+		for(int j = 0; j < M; j++) {
+			h = (R * h + key.charAt(j)) % Q;		
+		}
+		
+		return h;
+	}
+	
+	private int search(String txt) {
+		int N = txt.length();
+		long txtHash = hash(txt, M);
+		
+		if(patHash == txtHash)	return 0; // match
+		
+		for(int i = M; i < N; i++) {
+			txtHash = (textHash + Q - RM*txt.charAt(i-M) % Q) % Q;
+			txtHash = (textHash*R + txt.charAt(i)) % Q;
+			if(patHash == txtHash)
+				return (i - M + 1);		
+		}
+		
+		return N; // no match
+	}
+}
+\end{lstlisting}
+
+\begin{myrem}
+An extra \lstinline|Q| is added on line 36 to make sure that
+everything is positive so that the remainder operation works as
+it should.
+\end{myrem}
+
+By choosing a value of \lstinline|Q| greater than $10^{20}$, we
+reduce the risk of collision, and thus reduce the probability
+of the Monte Carlo algorithm to fail. The alternative method
+of checking for a match could be slow but is guaranteed correct.
+
+
 
 \end{document}
