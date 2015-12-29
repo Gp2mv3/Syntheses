@@ -1878,7 +1878,101 @@ router which is one element of SDN.
 \end{itemize}
 
 \section{Behavioural tracking}
-%TODO
+
+The idea is to make the client load a blank pixel so that it reportes its activity to the server. Motivations are :
+\begin{description}
+\item[Operational] logging, payment reports
+\item[Product] create analytics, recommendation
+\item[Insight] analytics, research
+\end{description}
+
+\subsection{Production}
+Client side implementation. Javascripts that will schedule and plan for HTTP Calls. Will have to handle failure. Send status of the client to the server. The platform matters as mobile can have battery drain issue. So, need for keep alive, scheduling, batching. All of these can be achieve via the device ID and the local storage of the browser.
+
+\subsection{Collection}
+The collection is the front door of the pipeline. It is servers that needs high availability (HA). This can be done via round-robin DNS and HA proxy that will redirect the HTTP flow to collectors.
+
+\subsection{Transmission}
+All the collectors need to send the collected data to a big queue that will process them. For this task, we need guarantee on delivery, high availibility and queuing behavior.
+
+For the guarantee on delivery, this problem is complex. In an ideal case, you send the message, get an acknowledgment. But as the queue service is distributed, it gets more complicated. If the ack is lost, you're going to send the message a second time. So you will have a de-duplication. But it ensures that you have ``at least once'' the message. To tackle this problem and get ``exactly Once'' the message, you can put a filter behind the queue. But this will cost in performance.
+
+Two solutions proposed by the paper : kafka and RabbitMQ.
+\begin{tabular}{l|r}
+RabbitMQ & Kafka \\
+\hline
+\hline
+Master/slave & Masterless\\ 
+Complex topology & Zookeeper\\
+Short lived queues & long lived logs\\
+At least once & At least once\\
+\end{tabular}
+
+\subsection{Augmentation}
+The augmentation is the transformation of the data to produce your analytics of whatever you want to compute. The fan-in is going to split a message to multiple message. The fan-out is going to aggregate multiple message to one.
+
+Results can be then store.
+
+\subsection{Storage}
+Storage have to be scalable, replicated, available.
+
+Two solutions proposed by the paper :
+\begin{tabular}{l|r}
+HDFS & S3 \\
+\hline
+\hline
+self hosted & Managed \\
+Cost effective at scale & Cost prohibitive at scale \\
+Can run multi tenant & Network to Map Reduce \\
+Non trivial operational cost & EMR cost \\
+\end{tabular}
+
+\subsection{Query}
+Database, low vs high latency, common vs custom operations.
+
+\begin{tabular}{l|c|r}
+Hadoop based & Columnar Store & Key Value \\
+\hline
+\hline
+Pig/hive/Spark & Redshift/Vertica & Cassandra/Riak \\
+Shared tenancy & SQL & simple queries \\
+HA & Expensive & complex \\
+\end{tabular}
+
+\subsection{Example at SoundCloud : Stitch}
+Stitch provides counts and time-series of counts in real-time.
+It uses webclient (js) -> RoR (ruby on rails) -> RabbitMQ -> Aggregation -> HDFS -> Cassandra
+
+\subsection{Event sourcing}
+Share data, not state.
+Decouple producers/consumers.
+Materialize State with data given.
+=> Scale with volume / complexity.
+
+\includegraphics[width=\linewidth]{img/matstate.png}
+
+\subsection{Lambda architecture}
+Nathan Marz came up with the term Lambda Architecture (LA) for a generic, scalable and fault-tolerant data processing architecture, based on his experience working on distributed data processing systems at Backtype and Twitter.
+
+The LA aims to satisfy the needs for a robust system that is fault-tolerant, both against hardware failures and human mistakes, being able to serve a wide range of workloads and use cases, and in which low-latency reads and updates are required. The resulting system should be linearly scalable, and it should scale out rather than up.
+
+Here’s how it looks like, from a high-level perspective:
+
+\includegraphics[width=\linewidth]{img/la-arch.png}
+
+\begin{itemize}
+\item 1. All data entering the system is dispatched to both the batch layer and the speed layer for processing.
+\item 2. The batch layer has two functions: (i) managing the master dataset (an immutable, append-only set of raw data), and (ii) to pre-compute the batch views.
+\item 3. The serving layer indexes the batch views so that they can be queried in low-latency, ad-hoc way.
+\item 4. The speed layer compensates for the high latency of updates to the serving layer and deals with recent data only.
+\item 5. Any incoming query can be answered by merging results from batch views and real-time views.
+\end{itemize}
+
+\includegraphics[width=\linewidth]{img/la-2.png}
+
+\subsection{Cloud Computing}
+Commodity Computation, outsourced infrastructure and ability of scaling down and up on demand.
+
 
 \section{Distributed Systems Coordination}
 $$Agreement \Leftrightarrow Consensus \Leftrightarrow Consistency$$
@@ -2008,17 +2102,16 @@ replicated the state machine (all servers execute same commands in same order).
     \includegraphics[width=9cm]{img/raft}
 \end{center}
 
+\subsection{Client protocol}
+Client send command to leader (or other server that will redirect
+to leader) and the leader does not respond until command as been
+(1) logged, (2) commited and (3) executed by leader's state machine.
 
+\paragraph{Unique ID} has use to identify a client command and has store in
+log. This allow to not execute a command twice if leader crashes after
+executing command, but before responding.
 
 \subsection{Overview}
-\begin{itemize}
-    \item Leader election
-    \item Normal operation (basic log replication)
-    \item Safety and consistency after leader changes
-    \item Neutralizing old leaders
-    \item Clients interactions (implementing linearizeable semantics)
-    \item Configuration changes (add/remove servers)
-\end{itemize}
 
 \subsubsection{Consensus}
 Consensus is leader-based which is more efficient thant leader-less approach
@@ -2042,7 +2135,7 @@ and allow to simplifies normal operation because there is no conflict.
 
 \subsubsection{Terms}
 \begin{tabular}{m{8cm}m{6cm}}
-    Time divvied into term
+    Time divided into term
     \begin{itemize}
         \item at most one leader per term
         \item If no leader on term then failed election
@@ -2052,20 +2145,35 @@ and allow to simplifies normal operation because there is no conflict.
     \includegraphics[width=9cm]{img/term}
 \end{tabular}
 
+As every RPC contain term of send, \textbf{terms} are used to detect stale
+leaders (and candidates) because each election increment the term counter.
+\begin{itemize}
+    \item If sender’s term is older, RPC is rejected, sender reverts to
+        follower and updates its term
+    \item if receiver’s term is older, it reverts to follower, updates its term,
+        then processes RPC normally
+\end{itemize}
+
 \subsubsection{Heartbeats}
 \begin{itemize}
+    \item Servers start up as followers
+    \item Followers expect to receive RPCs from leader or candidates
     \item Leader must send heartbeats (empty
         AppendEntries RPCs) to maintain authority.
+
+        \texttt{ElectionTimeout} without receive RPCs $\rightarrow$ assume that
+        leader has crashed.
 \end{itemize}
 
 
-\subsection{Leader election}
+\subsubsection{Leader election}
 
 \begin{enumerate}
     \item Increment current term
     \item Change to candidate state
     \item Vote for self
-    \item Send request vote RPC to all other server
+    \item Send \texttt{Request Vote RPC} (which include
+        index and term of last log entry) to all other server
         \begin{itemize}
             \item Receive vote from majority $\Rightarrow$ leader
             \item Receive RPC from valid leader $\Rightarrow$ follower state
@@ -2073,17 +2181,127 @@ and allow to simplifies normal operation because there is no conflict.
         \end{itemize}
 \end{enumerate}
 
-\subsection{Log replication}
-Leader take commands from clients and replicates its log to other server.
+Note that the candidate is choose in order to have the leader
+with the most complete log.
+
+\begin{itemize}
+    \item \textbf{Safety}: allow at most one winner per term because
+        each server gives only one vote per term and it's impossible two
+        have two different candidates with majorities of vote.
+
+    \item \textbf{Liveness}: some candidate must eventually win.
+
+        $T \leq$ Election timeouts $\leq 2T$, so usually one server
+        timeout and wins elections before other wake up.
+        (Work well if $T >>$ broadcast time)
+\end{itemize}
+
+\subsubsection{Normal operation}
+\begin{enumerate}
+    \item Client sends command to leader
+    \item Leader appends command to its log
+    \item Leader sends AppendEntries RPCs to followers
+    \item Once new entry committed:
+        \begin{enumerate}
+            \item  Leader passes command to its state machine, returns result to
+                client
+            \item  Leader notifies followers of committed entries in subsequent
+                AppendEntries RPCs
+            \item  Followers pass committed commands to their state machines
+        \end{enumerate}
+\end{enumerate}
+
+If there is crashed/slow followers,
+Leader retries RPCs until they succeed.
+
+$\rightarrow$  Performance is optimal if one successful RPC to any majority of
+servers.
+
+\subsection{Log}
+
+\subsubsection{Structure}
+
+\begin{tabular}{m{6cm}m{8cm}}
+    Leader take commands from clients and replicates its log to other server.
+    \begin{itemize}
+        \item Entry \textbf{commited} if know to be stored on majority of servers
+    \end{itemize}
+    Term is used to identify obsolete information
+    &
+    \includegraphics[width=11cm]{img/raftLog}
+\end{tabular}
+
+\subsubsection{Consistency}
+\begin{itemize}
+    \item If log entries on different servers have same index
+        and term then (1) they store the same command and (2) the logs are identical
+        in all preceding entries
+    \item If a given entry is committed, all preceding entries are also committed
+\end{itemize}
+
+\subsubsection{Safety}
+Raft safety property say that if a leader has decided that a log entry is committed, that entry
+will be present in the logs of all future leaders.
+
+To guarantee the safety requirement:
+\begin{itemize}
+    \item Leaders never overwrite entries in their logs
+    \item Only entries in the leader’s log can be committed
+    \item Entries must be committed before applying to state machine
+\end{itemize}
+
+\subsubsection{Append entries}
+Each \texttt{AppendEntries RPC} contains index and term of entry preceding new
+ones. This entry must match before append the new entry.
+
+\subsubsection{Commitment rules}
+If a leader decide to commit an entry:
+\begin{enumerate}
+    \item this entry must be stored on a majority of server
+    \item \textbf{AND} at least one new entry from leader's term must 
+        also be stored on majority of servers
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{m{7cm}cm{7cm}}
+    \includegraphics[width=7cm]{img/commitFault}
+    &
+    $\Rightarrow$
+    &
+    \includegraphics[width=6cm]{img/commitRight}
+    \\
+    Not safe commit for previous term because $s_5$ can
+    be the next leader. (Without 2. commitment rules)
+    & &
+    Safe commit because $s_5$ cannot be the next leader
+    (With 2. commitment rules) \\
+\end{tabular}
+\end{center}
 
 
+\subsubsection{Repairing follower logs}
+Leader must make follower logs consistent with its own
+by (1) delete extraneous entries and (2) fill in missing entries.
+
+\begin{tabular}{m{6cm}m{8cm}}
+    \begin{itemize}
+        \item Leader keep \textbf{nextIndex} for each follower (initialized
+            to $1+leaderIndex$)
+        \item When AppendEntries consistency check fails, decrement
+            nextIndex and try again
+        \item Not that when follower overwrites inconsistent entry, it
+            deletes all next entries
+    \end{itemize}
+    &
+    \includegraphics[width=11cm]{img/repairing}
+\end{tabular}
+
+\subsection{Configuration}
+%TODO slide 27-28-29-30 for 12
 
 
 
 \section{Paper}
-
-
-
 
 
 \section{Summary Pregel: A System for Large-Scale Graph Processing}
