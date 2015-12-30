@@ -1,0 +1,1938 @@
+\documentclass[en]{../../../eplsummary}
+
+\usepackage{../../../eplcommon}
+\usepackage{../../../eplcode}
+\usepackage{wrapfig}
+\lstset{language=Java, basicstyle=\rm\small\ttfamily, tabsize=2}
+
+\hypertitle[']{Algorithms and data structures}{5}{SINF}{1121}
+{Antoine Paris}
+{Pierre Schauss}
+
+% TODO
+% - translate everything to english
+% - improve a lot sections on basic data structures and sorting
+% - add a subsection on trie in "Strings"
+% - complete a bit subsection on data compression
+% - add "Graphs" section
+
+\section{Piles, files et listes chaînées}
+\subsection{Listes chaînées}
+\paragraph{Définition} Une \textit{liste chaînée}
+est une structure de données récursive qui est soit
+vide (\textit{null}) soit une référence vers un
+noeud contenant une donnée générique et une référence
+vers une liste chaînée.
+
+Pour définir un noeud, on utilise une classe imbriquée :
+
+\begin{lstlisting}
+private class Node {
+	private Item item;
+	private Node next;
+}
+\end{lstlisting}
+
+Une liste chaînée permet, si on possède un lien vers
+le premier et le dernier élément de réaliser les
+opérations suivantes en un temps indépendant de la
+taille de la liste :
+
+\begin{itemize}
+	\item Insérer un élément au début ;
+	\item Supprimer un élément au début ;
+	\item Insérer un élément à la fin.
+\end{itemize}
+
+Pour pouvoir effectuer des insertions/suppressions
+arbitraires efficacement, il faut utiliser des listes
+doublement chaînées (chaque noeud possède deux liens,
+un dans chaque direction).
+
+Les implémentations de \lstinline{Stack}, \lstinline{Queue}
+et \lstinline{Bag} reposent sur les listes chaînées. Grâce
+à ces dernières, l'espace mémoire requis est proportionnel
+au nombre d'items dans la collection et le temps requis
+par opération est toujours indépendant de la taille de la
+collection (ce ne serait pas le cas en utilisant des tableaux
+par exemple).
+
+\subsection{Stack}
+Le principe de fonctionnement d'une stack est illustré à la figure
+\ref{fig:stack}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=1.0]{img/stack.png}
+	\caption{Illustration du fonctionnement d'une Stack LIFO.}
+	\label{fig:stack}
+\end{figure}
+
+\lstinputlisting{code/Stack.java}
+
+\subsection{Queue}
+Le principe de fonctionnement d'une queue est illustré à la figure
+\ref{fig:queue}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=1.0]{img/queue.png}
+	\caption{Illustration du fonctionnement d'une Queue FIFO.}
+	\label{fig:queue}
+\end{figure}
+
+\lstinputlisting{code/Queue.java}
+
+\subsection{Bag}
+Un bag est simplement une stack sans méthode \lstinline{pop()}.
+
+\section{Algorithmes de tri}
+Le but du jeu ici est de trier des tableaux d'items contenant
+chacun une clé en suivant un ordre bien particulier (le plus
+souvent numérique ou alphabétique). La notion de clé est inclue
+dans un mécanisme propre à Java, l'interface \lstinline{Comparable}
+(et notamment la méthode \lstinline{compareTo}).
+
+On distingue deux types d'algorithmes de tri, les algorithmes
+\textbf{en place} qui n'utilisent pas (ou quasi pas) de mémoire
+supplémentaire et ceux qui nécessitent assez de mémoire
+supplémentaire pour garder une copie du tableau à trier en
+mémoire.
+
+Dans les algorthimes de tri présentés dans cette section,
+on utilise le template suivant.
+
+\lstinputlisting{code/SortTemplate.java}
+
+\subsection{Selection Sort}
+\subsubsection{Principe}
+Le tri par sélection est un des plus simple. Il fonctionne
+comme suit : premièrement, trouver l'élément le plus petit
+du tableau et l'échanger avec le premier élément, ensuite
+trouver le deuxième élément le plus petit du tableau et
+l'échanger avec le deuxième élément, et ainsi de suite.
+La traduction en Java est immédiate.
+
+\subsubsection{Implémentation}
+\lstinputlisting{code/Selection.java}
+
+\subsubsection{Propriétés}
+\paragraph{Le temps d'éxécution est indépendant de l'entrée}
+L'algorithme mettra autant de temps à trier à tableau déjà
+trié qu'un tableau aléatoirement ordonné.
+
+\paragraph{Mouvement minimal}
+Le nombre d'échange est une fonction linéaire de la taille
+du tableau à trier ($N$ échanges sont effectués). 
+
+\subsubsection{Complexité}
+Dans tous les cas $\frac{N^2}{2}$ comparaisons et $N$ échanges.
+
+\subsection{Insertion Sort}
+\subsubsection{Principe}
+C'est l'algorithme qu'on utilise en général pour trier
+ses cartes. On considère une carte à la fois, et on
+l'insère à sa place parmis les cartes déjà triées. La
+seule différence est qu'ici il faut faire de la place
+pour insérer l'item considéré à sa position, on doit
+donc décaler tout les items plus grand que lui d'une
+position vers la droite.
+
+\subsubsection{Implémentation}
+\lstinputlisting{code/Insertion.java}
+
+\subsubsection{Propriétés}
+Contrairement au tri par sélection, le temps d'éxécution
+du tri par insertion est dépendant de l'entrée, il est par
+exemple \textbf{excellent pour des tableaux presque triés}.
+
+C'est également une méthode correcte pour de très petits
+tableaux.
+
+\subsubsection{Complexité}
+Dans le pire cas, $\frac{N^2}{2}$ comparaisons et
+$\frac{N^2}{2}$ échanges.
+
+\subsection{Shell Sort}
+\subsubsection{Principe}
+Le shellsort est juste une simple extension du tri
+par insertion. Dans le tri par insertion, les échanges
+n'impliquent que des éléments adjacents, les items ne
+peuvent donc se déplacer que d'un élément à la fois.
+Le shellsort gagne en rapidité en autorisant des échanges
+d'éléments éloignés dans le tableau.
+
+\paragraph{Tableau $h$-trié} un tableau $h$-trié ($h$-sorted
+array) est un tableau dont tous les éléments séparés
+de $h$ positions sont triés.
+
+\subsubsection{Implémentation}
+Concrètement, l'algorithme s'implémente en utilisant le
+tri par insertion pour obtenir successivement des 
+tableaux $h$-triés avec $h$ décroissant.
+
+\lstinputlisting{code/Shell.java}
+
+\subsubsection{Propriétés}
+Lorsqu'un tableau $h$-trié est $k$-trié, il reste
+$h$-trié.
+
+\subsubsection{Complexité}
+Un peu moins quadratique, $N^{\frac{4}{3}}$, $N^{\frac{5}{4}}$
+ou $N^{\frac{6}{5}}$ dans le pire cas.
+
+\subsection{Mergesort}
+Le principe du tri par fusion est assez simple : pour trier
+un tableau, diviser le en deux moitiés, trier chaque moitié
+(récursivement) et ensuite fusionner les résultats.
+
+La complexité des algorithmes de tri par fusion est
+logarithmique en $N\log N$. Le tri par fusion est
+un algorithme de tri basé sur des comparaisons
+asymptotiquement optimal (on ne peut pas faire mieux).
+
+Les deux implémentations du tri par fusion vues ici
+se base sur la méthode \lstinline{merge} suivante :
+
+\lstinputlisting{code/mergeMethod.java}
+
+\subsubsection{Top-down mergesort}
+Ici, on divise le problème en sous-problèmes et on les résout
+récursivement. 
+
+\lstinputlisting{code/Merge.java}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.5]{img/mergesortTD.png}
+	\caption{Trace des résultats de merge pour le top-down mergesort.}
+\end{figure}
+
+\subsubsection{Bottom-up mergesort}
+Ici, on construit des petites solutions que l'on rassemble
+pour en former des plus grandes à chaque fois. 
+
+\lstinputlisting{code/MergeBU.java}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.5]{img/mergesortBU.png}
+	\caption{Trace des résultats de merge pour le bottom-up mergesort.}
+\end{figure}
+
+C'est la méthode à privilégier pour trier une liste chaînée.
+
+\subsection{Quicksort}
+\subsubsection{Principes}
+Le tri rapide est probablement le plus utilisé, et ce pour
+les deux raisons suivantes : il est en place et s'éxécute
+en un temps proportionnel à $N \log N$.
+Il fonctionne selon le principe du \textit{diviser pour
+mieux régner}. Il partitionne le tableau en deux parties
+et les trie ensuite indépendemment comme illustré sur
+la figure \ref{fig:quicksort-overview}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.7]{img/quicksort-overview.png}
+	\caption{Quicksort overview.}
+	\label{fig:quicksort-overview}
+\end{figure}
+
+L'algorithme de partionnement doit réarranger le tableau pour que
+les 3 conditions suivantes soient vérifiées :
+
+\begin{itemize}
+	\item L'entrée \lstinline{a[j]} est à sa position finale pour
+	un certain $j$ ;
+	\item Les entrées \lstinline{a[lo..j-1]} sont inférieures ou
+	égales à \lstinline{a[j]} ;
+	\item Les entrées \lstinline{a[j+1..hi]} sont supérieures ou
+	égales à \lstinline{a[j]}.
+\end{itemize}
+
+Ces 3 conditions sont résumées sur la figure \ref{fig:part-overview}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.7]{img/partitioning-overview.png}
+	\caption{Partioning overview.}
+	\label{fig:part-overview}
+\end{figure}
+
+\subsubsection{Implémentation}
+La trace du code suivant se trouve à la figure \ref{fig:part-trace}
+
+\lstinputlisting{code/Quick.java}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.5]{img/partitioning.png}
+	\caption{Partioning trace.}
+	\label{fig:part-trace}
+\end{figure}
+
+\subsubsection{Complexité}
+Dans le pire cas, le tri rapide a une complexité quadratique.
+Il est possible d'éviter ce pire cas en mélangeant aléatoirement
+le tableau avant de le trier (cela fait du tri rapide un
+algorithme \textit{randomisé}).
+
+Dans le cas moyen, le tri rapide a une complexité en $\mathcal{O}(n\log(n))$.
+
+\subsection{3-way quick sort}
+\subsubsection{Principes}
+Si le tableau à trier contient beaucoup d'éléments dupliqués (voir \textit{Dutch
+National Flag problem}), il est possible d'atteindre une complexité
+linéaire en modifiant un peu le tri rapide.
+
+L'idée est d'utiliser 3 partitions plutôt que 2, comme indiqué sur
+la figure \ref{fig:part3-overview}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.7]{img/partitioning3-overview.png}
+	\caption{3-way partioning overview.}
+	\label{fig:part3-overview}
+\end{figure}
+
+Pour cela, une solution est d'effectuer un simple scan de la gauche
+vers la droite dans le tableau en maintenant une variable \lstinline{lt}
+tel que \lstinline{a[lo..lt-1]} sont inférieurs à $v$, une variable
+\lstinline{gt} tel quel \lstinline{a[gt+1..hi]} sont plus grands que $v$,
+une variable $i$ tel que \lstinline{a[lt..i-1]} sont égals à $v$ et
+\lstinline{a[i..gt]} n'ont pas encore été examinés.
+
+% TODO : add summary of complexity for sorting algorithms
+
+\subsubsection{Implémentation}
+La trace du code suivant se trouve à la figure \ref{fig:part3-trace}
+
+\lstinputlisting{code/Quick3way.java}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.7]{img/partitioning3.png}
+	\caption{3-way partioning trace.}
+	\label{fig:part3-trace}
+\end{figure}
+
+\section{Searching}
+\subsection{Symbol tables}
+\begin{mydef}
+A \textit{symbol table} is a data structure for key-value pairs that
+supports two operations: \textit{insert} (put) a new pair into the
+table and \textit{search} for (get) the value associated with a given
+key.
+\end{mydef}
+
+Here we adopt the \textit{associative array abstraction}, where you can
+think of a symbol table as being just like an array where keys are
+indices and values are array entries.
+
+The API for a generic basic symbol table is given in figure \ref{fig:st-api}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.5]{img/symbol-table-api.png}
+	\caption{API for a generic basic symbol table.}
+	\label{fig:st-api}
+\end{figure}
+
+For applications where keys are \lstinline{Comparable}, we usually talk about
+\textit{ordered symbol tables}, where keys are kept in order.
+
+The API for a generic ordered symbol table is given in figure \ref{fig:ost-api}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.5]{img/ordered-symbol-table-api.png}
+	\caption{API for a generic ordered symbol table.}
+	\label{fig:ost-api}
+\end{figure}
+
+\subsubsection{Sequential search in an unordered linked list}
+One straightforward option for the underlying data structure for a
+symbol table is a linked list of nodes that contain keys and values.
+
+Implementations of both \lstinline{get()} and \lstinline{put()} consist
+of scanning through the list. Hence, it is easy to show that the worst
+case is $\mathcal{O}(n)$ for both. In conclusion, a linked-list
+implementation with sequential search is too slow to be used to solve
+huge problems.
+
+\subsubsection{Binary search in an ordered array}
+\begin{lstlisting}
+public class BinarySearchST<Key extends Comparable<Key>, Value>
+{
+\end{lstlisting}
+
+Now, we consider a full implementation of our ordered symbol-table API.
+The underlying data structure is a pair of parallel arrays, one for the
+keys and one for the values.
+
+\begin{lstlisting}
+    public BinarySearchST(int capacity) { 
+        keys = (Key[]) new Comparable[capacity]; 
+        vals = (Value[]) new Object[capacity]; 
+    }
+    
+    public int size() {
+        return N;
+    }
+\end{lstlisting}
+
+The heart of the implementation is the \lstinline{rank()} method, which
+returns the number of keys smaller than a given key. For \lstinline{get()},
+the rank tells us precisely where the key is to be found it is in the table.
+
+\begin{lstlisting}
+	public Value get(Key key) {
+		if (isEmpty()) return null;
+		int i = rank(key); 
+		if (i < N && keys[i].compareTo(key) == 0) return vals[i];
+    		return null;
+	} 
+\end{lstlisting}
+
+For \lstinline{put()}, the rank tells us precisely where to update the value
+when the key is in the table, and precisely where to put the key when the
+key is not in the table. We move all larger keys one position to make room
+and insert the given key and value into the proper positions in their
+respective arrays.
+
+\begin{lstlisting}
+	public void put(Key key, Value val)  {
+		int i = rank(key);
+
+		if (i < N && keys[i].compareTo(key) == 0) {
+			vals[i] = val; return;
+		}
+
+		for (int j = N; j > i; j--)  {
+			keys[j] = keys[j-1]; vals[j] = vals[j-1];
+		}
+        
+		keys[i] = key; vals[i] = val;
+		N++;
+	} 
+\end{lstlisting}
+
+To find the rank of a given key, we take advantage of the fact that keys
+in the array are ordered and use \textit{binary search}. An iterative
+implementation of the \lstinline{rank()} method is given below.
+
+\begin{lstlisting}
+	public int rank(Key key) {
+		int lo = 0, hi = N-1;
+		while(lo <= hi) {
+			int mid = low + (hi - lo)/2;
+			int cmp = key.compareTo(keys[mid]);
+			if		(cmp < 0) hi = mid-1;
+			else if 	(cmp > 0) hi = mid+1;
+			else	 return mid; 		
+		}
+		
+		return lo;	
+	}
+\end{lstlisting}
+
+Here, it is easy to show that the complexity of binary search
+is $\mathcal{O}(n\log(n))$. Unfortunately, insertion is still
+to slow : $\mathcal{O}(n)$.
+
+\subsection{Binary search tree}
+\label{sec:tree}
+Here we'll combine the flexibility of insertion in a linked-list
+with the efficiency of search in an ordered array.
+
+\begin{mydef}
+A \textit{binary search tree} (BST) is a binary tree where each node
+has a \lstinline{Comparable} key (and a associated value) and
+satisfies the restriction that the key in any node is larger than
+the keys in all nodes in that nodes' left subtree and smaller
+than the keys in all nodes in that node's right subtree.
+\end{mydef}
+
+This restriction is illustrated in figure \ref{fig:bst-anatomy}.
+Note that on a binary tree that is not a binary \textit{search}
+tree, we don't have this restriction.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.65]{img/bst-anatomy.png}
+	\caption{BST anatomy.}
+	\label{fig:bst-anatomy}
+\end{figure}
+
+\begin{myrem}
+It's interesting to note that there are many different BSTs that
+represent the same set.
+\end{myrem}
+
+\subsubsection{Basic implementation}
+\begin{lstlisting}
+public class BST<Key extends Comparable<Key>, Value>
+{
+	private Node root;
+\end{lstlisting}
+
+Just as we did for linked lists, we define a private nested class
+to define nodes in BSTs.
+
+\begin{lstlisting}
+	public class Node {
+		private Key key;
+		private Value val;
+		private Node left, right;
+		private int N;
+		
+		public Node(Key key, Value val, int N) {
+			this.key = key; this.val = val; this.N = N;		
+		}	
+	}
+\end{lstlisting}
+
+Each node contains a key, a value, a left and right link and a node
+count. This last field facilitates the implementation of various
+ordered symbol-table operations.
+
+\begin{lstlisting}
+	public int size() {
+		return size(root);	
+	}
+	
+	private int size(Node x) {
+		if (x == null) return 0;
+		else return x.N;	
+	}
+\end{lstlisting}
+
+Thanks to the recursive definition of a tree, we can implement
+the \lstinline{get()} easily in a recursive way.
+
+\begin{lstlisting}
+	public Value get(Key key) {
+		return get(root, key);	
+	}
+	
+	private Value get(Node x, Key key) {
+		if (x == null) return null;
+		
+		int cmp = key.compareTo(x.key);
+		if      (cmp > 0) return get(x.right, key);
+		else if (cmp < 0) return get(x.left, key);
+		else	 return x.val;
+	}
+\end{lstlisting} 
+
+The same holds for the \lstinline{put()} method.
+
+\begin{lstlisting}
+	public void put(Key key, Value val) {
+		root = put(root, key, val);	
+	}
+	
+	private Node put(Node x, Key key, Value val) {
+		if (x == null) return new Node(key, val, 1);
+		
+		int cmp = key.compareTo(x.key);
+		if      (cmp > 0) x.right = put(x.right, key, val);
+		else if (cmp < 0) x.left = put(x.left, key, val);
+		else x.val = val;
+		x.N = size(x.left) + size(x.right) + 1;
+		return x;
+	}
+\end{lstlisting}
+
+To get a better understanding of the dynamics of these
+recursive implementations, you can think of the code
+\textit{before} the recursive calls as happening on the
+way \textit{down} the tree. Then, think of the code \textit{after}
+the recursive calls as happeing on the way \textit{up} the tree.
+
+Now, let's look at how to delete a node in a BST. This is the most
+difficult operation to implement. We choose here to use the
+\textit{Hibbard deletion}. With this method, we delete a node
+$x$ by replacing it with its \textit{successor}. If $x$ has
+a right child, its successor is the node with the smallest
+key in its right subtree. This task is accomplished
+in 4 steps :
+
+\begin{itemize}
+	\item Save a link to the node to be deleted in \lstinline{t} ;
+	\item Set \lstinline{x} to point to its successor
+	\lstinline{min(t.right)} ;
+	\item Set the right link of \lstinline{x} to
+	\lstinline{deleteMin(t.right)} ;
+	\item Set the left link of \lstinline{x} to \lstinline{t.left}.
+\end{itemize}
+
+\begin{lstlisting}
+	public void delete(Key key) {
+		root = delete(root, key);	
+	}
+	
+	private Node delete(Node x, Key key) {
+		if (x == null) return null;
+		int cmp = key.compareTo(x.key);
+		if      (cmp < 0) x.left = delete(x.left, key);
+		else if (cmp > 0) x.right = delete(x.right, key);
+		else {
+			if(x.right == null) return x.left;
+			if(x.left == null) return x.right;
+			/* Choose successor to replace x (Hibbard)
+			if the node to delete has two children */
+			Node t = x;
+			x = min(t.right);
+			x.right = deleteMin(t.right);
+			x.left = t.left;		
+		}	
+		
+		x.N = size(x.left) + size(x.right) +1;
+		return x;
+	}
+\end{lstlisting}
+
+Even though this method does the job, it has a flaw that might
+cause performance problems in some practical situations. The problem
+is that the choice of using the successor is arbitrary and not
+symmetric. This will cause the BST to become skewed toward the
+left on the long term for random deletions and insertions
+\footnote{See the last video on 
+\url{http://algs4.cs.princeton.edu/32bst/}.}.
+
+\begin{myrem}
+Note that deletion in a BST is not commutative. Try for
+example to delete 4 and then 3 and 3 and then 4 in
+the tree given in figure \ref{fig:nc-deletion}.
+
+\begin{figure}[ht]
+	\centering
+	\begin{tikzpicture}
+		\node [circle,draw] {4}
+		child {node [circle,draw] {3}}
+		child {node [circle, draw] {7}
+			child {node [circle,draw] {6}}
+			child {node [] {}}};
+	\end{tikzpicture}
+	\caption{Example of non-commutative deletion.}
+	\label{fig:nc-deletion}
+\end{figure}
+\end{myrem}
+
+\begin{myrem}
+Others methods from the API are in the book.
+\end{myrem}
+
+\subsubsection{Analysis}
+The running times of algorithms on binary search trees depend
+on the shapes of the trees, which in turn, depend on the
+order in which keys are inserted. In the best case, a tree
+with $N$ nodes could be perfectly balanced, with $\log(n)$
+nodes between the root and each null links (we call this the
+\textit{depth} of a tree). In the worst case
+there could be $N$ nodes on the search patch.
+
+% Better to say "proposition" than "property" ? Do I need to change
+% eplcommon.sty to add this?
+\begin{myprop}
+Search hits in BST build from $N$ random keys requires $\sim 2\log N$
+(about $1.39\log(n)$) compares, on the average.
+\end{myprop}
+
+\begin{myprop}
+Insertions and search misses in a BST build from $N$ random
+keys require $\sim 2\log N$ (about $1.39\log(n)$) compares on the
+average.
+\end{myprop}
+
+\begin{myprop}
+In a BST, all operations take time proportional to the height of
+the tree in the worst case.
+\end{myprop}
+
+\subsubsection{Binary tree traversal methods}
+We will use the BST given in figure \ref{fig:bst-anatomy}
+for the following examples and assume that the method
+\lstinline$void visit(Node h)$ print the key of node
+\lstinline$h$.
+
+\paragraph{Preorder (\textit{préfixe)}}
+Visit a node, then its left child and right child.
+\begin{lstlisting}
+public static void preOrder(Node h) {
+	if(t != null) {
+		visit(t);
+		preOrder(t.left);
+		preOrder(t.right);	
+	}
+}
+\end{lstlisting}
+Applied on figure \ref{fig:bst-anatomy} :
+S E A C R H X.
+
+\paragraph{Inorder (\textit{infixe})}
+This method is equivalent to projecting the keys
+of the tree on a line at the bottom of the tree :
+\textbf{keys appear in sorted order}.
+
+\begin{lstlisting}
+public static void inOrder(Node h) {
+	if(t != null) {
+		inOrder(t.left);
+		visit(t);
+		inOrder(t.right);	
+	}
+}
+\end{lstlisting}
+Applied on figure \ref{fig:bst-anatomy} :
+A C E H R S X.
+
+\paragraph{Postorder (\textit{postfixe} ou \textit{suffice})}
+Visit each node after having visited each children.
+\begin{lstlisting}
+public static void postOrder(Node h) {
+	if(t != null) {
+		postOrder(t.left);
+		postOrder(t.right);
+		visit(t);
+	}
+}
+\end{lstlisting}
+Applied on figure \ref{fig:bst-anatomy} :
+C A R H E X S.
+
+\subsection{Balanced search tree}
+The algorithms in the previous subsection have poor worst-case,
+performance. Here we introduce a type of binary search tree where
+costs are \textit{guaranteed} to be logarithmic. Ideally, we would
+like to keep our binary search tree perfectly balanced, i.e. in an
+$N$-node tree, we would like the height to be $\log(N)$. Unfortunately,
+maintaining this property is too expensive. Hence we will consider
+a data structure that slightly relaxes the perfect balance
+requirement to provide guaranteed logarithmic performance.
+
+\begin{mydef}[2-3 search trees]
+A \textit{2-3 search tree} is a tree that is either empty or
+\begin{itemize}
+	\item A \textit{2-node}, with one key (and associated value)
+	and two links, a left link to 2-3 search tree with smaller
+	keys, and a right link to a 2-3 search tree with larger keys ;
+	\item A \textit{3-node}, with two keys (and associated values)
+	and \textit{three} links, a left link to 2-3 search tree with
+	smaller keys, a middle link to a 2-3 search tree with keys
+	between the node's key, and a right link to a 2-3 search tree
+	with larger keys.
+\end{itemize}
+As usual, we refer to a link to an empty tree as a \textit{null link}.
+\end{mydef}
+
+\begin{myprop}
+A \textit{perfectly balanced} 2-3 search tree is one whose null
+links are all the same distance from the root.
+\end{myprop}
+
+Searching in a 2-3 search tree is almost the same as searching
+in a BST. The only difference occurs when we encounter a 3-node,
+instead of just looking if the target key is smaller or lager
+than the keys, we also have to check if the target key is
+between the two keys of the 3-node.
+
+Inserting in a 2-3 search tree is more complicated. The primary reason
+that 2-3 trees are useful is that we can do insertions and still
+maintain perfect balance. To achieve this, we have to take into
+account different cases illustrated below 
+(see figure \ref{fig:23tree-inserta}, \ref{fig:23tree-insertb}
+and \ref{fig:23tree-insertc}).
+
+\begin{myprop}
+Transformations caused by the 2-3 tree insertion algorithms
+are purely \textit{local}: no part of the tree needs to be examined
+or modified other than the specified nodes and links. Moreover, these
+local transformations preserve the global properties that the tree
+is ordered and perfectly balanced.
+\end{myprop}
+
+\begin{myprop}
+Search and insert operations in a 2-3 tree with $N$ keys are
+guaranteed to visit at most $\log N$ nodes. Indeed, the height
+of an $N$-node 2-3 tree is between $\log_3 N$ (if the tree is
+all 3-nodes) and $\log N$ (if the tree is all 2-nodes).
+\end{myprop}
+
+\begin{figure}[ht]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+  		\includegraphics[width=.7\linewidth]{img/23tree-insert2.png}
+ 		\caption{Inserting into a 2-node.}
+  		\label{fig:23tree-insert2}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+  		\centering
+  		\includegraphics[width=0.5\linewidth]{img/23tree-insert3a.png}
+  		\caption{Inserting into a single 3-node}
+  		\label{fig:23tree-insert3a}
+	\end{subfigure}
+	\caption{}
+	\label{fig:23tree-inserta}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/23tree-insert3b.png}
+	\caption{}
+	\label{fig:23tree-insertb}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+  		\includegraphics[width=.7\linewidth]{img/23tree-insert3c.png}
+ 		\caption{Insert intro a 3-node whose parent is a 3-node.}
+  		\label{fig:23tree-insert3c}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+  		\centering
+  		\includegraphics[width=0.6\linewidth]{img/23tree-split.png}
+  		\caption{Splitting the root.}
+  		\label{fig:23tree-split}
+	\end{subfigure}
+	\caption{}
+	\label{fig:23tree-insertc}
+\end{figure}
+
+\subsubsection{Implementation}
+To implement a 2-3 tree, we consider a simple representation
+known as \textit{red-black BST}. The basic idea behind red-black
+BSTs is to encode 2-3 tree by starting with standard BSTs and adding
+extra information to encode 3-nodes. We think of the links as being of
+two different type: \textit{red} links, which bind together two 2-nodes
+to represent a 3-nodes, and \textit{black} links, which bind together
+the 2-3 tree. Specifically, we represent 3-nodes as two 2-nodes connected
+by a single red link that leans left. This is illustrated in figure
+\ref{fig:redblack-encoding}.
+
+One advantage of using such a representation is that it allows us
+to use our \lstinline$get()$ code for standard BST search without
+modification.
+
+\begin{mydef}[Equivalent definition]
+A red-black BST is a BST having red and black links and satisfying
+the following three restrictions :
+\begin{itemize}
+	\item Red links lean left ;
+	\item No node has two red links connected to it ;
+	\item The tree has \textit{perfect black balance}: every path from
+	the root to a null link has the same number of black links - we refer
+	to this number as the tree's \textit{black height}.
+\end{itemize}
+\end{mydef}
+
+\begin{myprop}
+There is a 1-1 correspondence between red-black BSTs and 2-3 trees.
+\end{myprop}
+
+This last property is illustrated in figure \ref{fig:redblack-1-1}.
+
+\begin{figure}[ht]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[scale=0.5]{img/redblack-encoding.png}
+		\caption{Encoding a 3-node with two 2-nodes connected by
+		a left leaning red link.}
+		\label{fig:redblack-encoding}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[scale=0.5]{img/redblack-1-1.png}
+		\caption{1-1 correspondence between red-black BSTs and 2-3 trees.}
+		\label{fig:redblack-1-1}
+	\end{subfigure}
+	\caption{}
+	\label{fig:redblack-principles}
+\end{figure}
+
+\begin{lstlisting}
+public class RedBlackBST<Key extends Comparable<Key>, Value>
+{
+	private Node root;
+\end{lstlisting}
+
+As usual, we define a private nested class to define a node.
+
+\begin{lstlisting}
+	private static final boolean RED = true;
+	private static final boolean BLACK = false;
+	
+	private Class Node {
+		Key key; Value val;
+		Node left, right;
+		int N;
+		boolean color;	
+	
+		Node(Key key, Value val, int N, boolean color) {
+			this.key = key; this.val = val;
+			this.N = N; this.color = color;		
+		}	
+	}
+	
+	private boolean isRed(Node x) {
+		if(x == null) return false;
+		return x.color == RED;	
+	}
+\end{lstlisting}
+
+When we refer to the color of a node, we are referring
+to the color of the link pointing to it. By convention, null
+links are black. Now we consider two methods
+\lstinline$Node rotateLeft(Node h)$ and \lstinline$Node rotateRight(Node h)$.
+These two methods will help us to write other methods later. They
+are illustrated in figure \ref{fig:redblack-left-rotate} and
+\ref{fig:redblack-right-rotate}.
+
+\begin{figure}[ht]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[scale=0.5]{img/redblack-left-rotate.png}
+		\caption{Left rotate.}
+		\label{fig:redblack-left-rotate}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[scale=0.5]{img/redblack-right-rotate.png}
+		\caption{Right rotate.}
+		\label{fig:redblack-right-rotate}
+	\end{subfigure}
+	\caption{}
+	\label{fig:redblack-rotations}
+\end{figure}
+
+\begin{lstlisting}
+	private Node rotateLeft(Node h) {
+		Node x = h.right;
+		h.right = x.left; x.left = h;
+		x.color = h.color; h.color = RED;
+		x.N = h.N;
+		h.N = 1 + size(h.left) + size(h.right);
+		return x;
+	}
+	
+	private Node rotateRight(Node h) {
+		Node x = x.left;
+		h.left = x.right; x.left = h;
+		x.color = h.color; h.color = RED;
+		x.N = h.N;
+		h.N = 1 + size(h.left) + size(h.right);
+		return x;
+	}
+\end{lstlisting}
+
+Next we consider a simple method which allows us to
+split a 4-node.
+
+\begin{lstlisting}
+	private void flipColors(Node h) {
+		h.color = RED;
+		h.left.color = BLACK;
+		h.right.color = BLACK;	
+	}
+\end{lstlisting}
+
+This method is illustrated in figure \ref{fig:color-flip}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/color-flip.png}
+	\caption{Flipping colors to split a 4-node.}
+	\label{fig:color-flip}
+\end{figure}
+
+With the last three methods, we have everything we need to
+implement insertion in red-black BSTs.
+
+\begin{lstlisting}
+	public void put(Key key, Value val) {
+		root = put(root, key, val);
+		root.color = BLACK;	
+	}
+	
+	private Node put(Node h, Key key, Value val) {
+		// Do standard insert, with red link to parent.
+		if(h == null) return new Node(key, val, 1, RED);
+		
+		int cmp = key.compareTo(h.key);
+		if      (cmp > 0) h.right = put(h.right, key, val);
+		else if (cmp < 0) h.left = put(h.left, key, val);
+		else h.val = val;
+		
+		if (isRed(h.left)  && isRed(h.left.left)) h = rotateRight(h);
+		if (!isRed(h.left) && isRed(h.right))     h = rotateLeft(h);
+		if (isRed(h.left)  && isRed(h.right))     flipColors(h);
+		
+		h.N = 1 + size(h.left) + size(h.right);
+		return h:
+	}	
+\end{lstlisting}
+
+A summary of rotations and colors flipping involved in insert is
+given in figure \ref{fig:insert-summary}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/insert-summary.png}
+	\caption{Operations involved in insert.}
+	\label{fig:insert-summary}
+\end{figure}
+
+% TODO : deletion in a red-bl	ack BST
+
+\subsubsection{Analysis}
+\begin{myprop}
+The height\footnote{Here we are not talking about black height!} 
+of a red-black BST with $N$ nodes
+is no more than $2\log N$. Indeed, the worst case
+is a 2-3 tree that is all 2-nodes except that the leftmost
+is made up of 3-nodes. The path taking left links from the
+root is twice as long as the path of length $\sim \log N$
+that involves just 2-nodes.
+\end{myprop}
+
+The worst case of the last property corresponds to the first
+tree of figure \ref{fig:redblack-1-1} with $S$ removed.
+
+\begin{myprop}
+The average length of a path from the root to a node
+in a red-black BST with $N$ nodes is $\sim 1.00\log N$.
+\end{myprop}
+
+\begin{myprop}
+In a red-black BST, the following operations take logarithmic time
+in the worst case: search, insertion, finding the minimum/maximum,
+floor, ceiling, rank, select, delete the minimum/maximum, delete
+and range count.
+\end{myprop}
+
+\subsection{Hash tables}
+
+If keys are small integers, we can use an array to implement
+an unordered symbol table, by interpreting the key as an array
+index so that we can store the value associated with the key
+\lstinline$i$ in array entry \lstinline$i$, ready for
+\textbf{immediate access}. Thanks to \textit{hashing}, we can
+transform any type of key to array indexes. Ideally, different
+keys would map to different indices. However, this ideal
+is generally beyond our reach, so we have to face the possibility
+that two or more different keys may hash to the same array index :
+we need a \textit{collision resolution} process. We'll consider
+two different approaches to collision resolution : \textit{separate
+chaining} and \textit{linear probing}.
+
+\subsubsection{Hash functions}
+
+\begin{wrapfigure}{R}{0.3\textwidth}
+  \begin{center}
+    \includegraphics[width=0.15\textwidth]{img/modular-hashing.png}
+  \end{center}
+  \caption{Modular hashing.}
+  \label{fig:modular-hashing}
+\end{wrapfigure}
+
+If we have an array that can hold $M$ key-value pairs, then we
+need a hash function that can transform any given key into an
+integer in the range $[0, M-1]$. We seek a hash function that both
+is \textbf{efficient to compute} and \textbf{uniformly distributes}
+the keys.
+
+\paragraph{Hashing positive integers}
+The most commonly used method for hashing integers is called
+\textit{modular hashing}: we choose the array size $M$ to be prime
+and, for any positive integer key $k$, compute the remainder
+when dividing $k$ by $M$ : \lstinline$k % M$.
+
+If $M$ is not prime, it may be the case that not all the bits
+of the key play a role, which amounts to missing an opportunity
+to disperse the values evenly. For example, if the keys are
+base 10 numbers and $M$ is $10^k$, then only the $k$ least
+significant digits are used (see figure \ref{fig:modular-hashing}).
+
+\paragraph{Hashing floating-point numbers}
+One way to do this is to use modular hashing on the binary
+representation of the key (this is what Java does).
+
+\paragraph{Hashing strings}
+Again, we can apply modular hashing on each character of
+the string :
+
+\begin{lstlisting}
+int hash = 0;
+for(int i = 0; i < s.length(); i++)
+	hash = (R * hash + s.charAt(i)) % M;
+\end{lstlisting}
+
+This algorithm is called the \textit{Horner's method}.
+The use of a small primer integer such as 31 ensures
+that the bits of all the characters play a role.
+
+\begin{myrem}
+\label{rem:mod-prop}
+Note that applying \lstinline|% M| at the end (i.e. outside
+the loop) gives the same result (it's a property of the
+modulus operation). But by doing so, we may encounter
+\lstinline|int| overflow for long strings.
+\end{myrem}
+
+\paragraph{Java conventions}
+In Java, every data type inherits a method called
+\lstinline$hashCode()$ that returns a 32-bit integer.
+The implementation of \lstinline$hashCode()$ for a data
+type must be \textbf{consistent with equals}, if
+\lstinline$a.equals(b)$, then \lstinline$a.hashCode()$
+must have the same numerical value as
+\lstinline$b.hashCode()$. Conversely, if
+\lstinline$hashCode()$ values
+are different, then objects are different. \textbf{But},
+if \lstinline$hashCode()$ values are the same, we still
+have to use \lstinline$equals()$ to check whether or not
+objects are equal (as collisions may occur).
+
+\paragraph{Converting a hashcode to an array index}
+Since our goal is an array index, not a 32-bit integer, we
+combine \lstinline$hashCode()$ with modular hashing
+to produce integers between 0 and $M-1$ :
+
+\begin{lstlisting}
+private int hash(Key x) {
+	return (x.hashCode() && 0x04fffffff) % M);
+}
+\end{lstlisting}
+
+This code also masks off the sign bit (to turn the
+32-bit number into a 31-bit non-negative integer).
+We usually use a prime number for the hash table
+size $M$ to attempt to make use of all the bits of
+the hash code.
+
+\paragraph{Software caching}
+If computing the hash code is expensive, it may be
+worthwhile to \textit{cache the hash} for each key.
+That is, we maintain an instance variable \lstinline$hash$
+in the key type that contains the value of
+\lstinline$hashCode()$ for each key object. Java uses
+this technique for \lstinline$String$ objects.
+
+\subsubsection{Hashing with separate chaining}
+Now that we know how to hash, we need a collision resolution
+process. The first collision resolution process is illustrated
+in figure \ref{fig:separate-chaining}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{img/separate-chaining.png}
+	\caption{For each of the $M$ array indices, we build a 
+	linked list of the key-value pairs  whose key hash to that
+	index. To search in those linked lists, we use sequential
+	search in an unordered linked list.}
+	\label{fig:separate-chaining}
+\end{figure}
+
+\paragraph{Implementation}
+Implementation of separate chaining is very easy
+(\lstinline|SequentialSearchST| is the implementation
+of the sequential search in an unordered linked list).
+
+\begin{lstlisting}
+public class SeparateChainingHashST<Key, Value> 
+{
+	private int M;
+	private SequentielSearchST<Key, Value>[] st;
+	
+	public SeparateChainingHashST() {
+		this(997);	
+	}
+	
+	public SeparateChainingHashST(int M) {
+		this.M = M;
+		st = (SequentielSearchST<Key, Value>[]) new SequentialSearchST[M];
+		for(int i = 0; i < M; i++) {
+			st[i] = new SequentialSearchST();		
+		}	
+	}
+	
+	private int hash(Key key) {
+		return (key.hashCode() & 0x7fffffff) % M;	
+	}
+	
+	public Value get(Key key) {
+		return (Value) st.[hash(key)].get(key);	
+	}
+	
+	public void put(Key key, Value val) {
+		st[hash(key)].put(key, val);	
+	}
+}
+\end{lstlisting}
+
+\paragraph{Analysis}
+\begin{myprop}
+In a separate-chaining hash table with $M$ lists and $N$
+keys, the probability that the number of keys in a list
+is within a small constant factor of $N/M$ is extremely
+close ton 1.
+\end{myprop}
+
+This last property makes the assumption that we use
+a uniform hashing function.
+
+\begin{myprop}
+As a consequence of the last property, the number of
+compares for search miss and insert is $\sim N/M$.
+\end{myprop}
+
+\subsubsection{Hashing with linear probing}
+Another approach to implementing hashing is to store
+$N$ key-value pairs in a hash table of size $M > N$,
+relying on empty entries in the table to help with
+collision resolution. Such methods are called
+\textit{open-addressing} hashing methods. The simplest
+one is called linear probing : when there is a collision,
+then we just check the next entry in the table.
+
+\paragraph{Implementation}
+As with separate chaining, implementation is quite
+straightforward.
+
+\begin{lstlisting}
+public class LinearProbingHashST<Key, Value>
+{
+	private int N; // number of key-value pairs in the table
+	private int M; // size of linear-probing table
+	private Key[] keys;
+	private Values[] vals;
+	
+	public LinearProbingHashST() {
+		this(4); // Initializes with an initial capacity of 4	
+	}	
+	
+	public LinearProbingHashST(int capacity) {
+		M = capacity;		
+		keys = (Key[]) new Object[M];
+		vals = (Value[]) new Object[M];	
+	}
+	
+	private int hash(Key key) {
+		return (key.hashCode() &0x7fffffff) % M;	
+	}
+	
+	public void put(Key key, Value val) {
+		if(N >= M/2) resize(2*M);
+		
+		int i;
+		for(i = hash(key); keys[i] != null; i = (i + 1) % M) {
+			if(keys[i].equals(key)) {
+				vals[i] = val;
+				return;
+			}		
+		}	
+		
+		keys[i] = key;
+		vals[i] = val;
+		N++;
+	}
+	
+	public Value get(Key key) {
+		for(int i = hash(key); keys[i] != null; i = (i + 1) % M) {
+			if(keys[i].equals(key)) {
+				return vals[i];			
+			}
+		}
+		
+		return null;	
+	}
+	
+	public void delete(Key key) {
+		if(!contains(key)) return;
+		int i = hash(key);
+		while(!key.equals(keys[i]))
+			i = (i + 1) % M;
+		keys[i] = null;
+		vals[i] = null;
+		i = (i + 1) % M;
+		while(keys[i] != null) {
+			Key keyToRedo = keys[i];
+			Value valtoRedo = vals[i];
+			keys[i] = null;
+			vals[i] = null;
+			N--;
+			put(keyToRedo, valToRedo);
+			i = (i + 1) % M;		
+		}
+		
+		N--;
+		if(N > 0 && M <= M/8)
+			resize(M/2);
+	}
+\end{lstlisting}
+
+\begin{mydef}
+We define $\alpha = N/M$ as the \textit{load factor}
+of a hash table. For separate chaining, $\alpha$ is
+the average number of keys per list and is often
+larger than 1. For linear probing, $\alpha$ is the
+percentage of table entries that are occupied : it
+cannot be greater than 1\footnote{If the load
+factor reach 1, search miss would go into an
+infinite loop.}.
+\end{mydef}
+
+The average cost of linear probing depends on \textit{clusters}
+(entries which clump together into contiguous groups).
+For the sake of good performance, we use array resizing
+to guarantee that the load factor is between $\frac{1}{8}$
+and $\frac{1}{2}$ : this allows us to avoid too long clusters.
+The \lstinline|resize| method is given below.
+
+\begin{lstlisting}
+	private void resize(int cap) {
+		LinearProbingHashST<Key, Value> t;
+		t = new LinearProbingHashST<Key, Value>(cap);
+		for(int i = 0; i < M; i++) {
+			if(keys[i] != null) {
+				t.put(keys[i], vals[i]);			
+			}		
+		}
+		
+		keys = t.keys;
+		vals = t.vals;
+		M = t.M;	
+	}
+}
+\end{lstlisting}
+
+
+\subsection{Summary}
+The cost-summary for symbol-tables implementations is given
+in table \ref{tab:cost-summary-searching}.
+
+% auto-generated from here http://www.tablesgenerator.com/ #flemme
+\begin{table}[ht]
+\centering
+\begin{tabular}{c|ccccc}
+\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}algorithm \\(data structure)\end{tabular}} &
+\multicolumn{2}{c}{\begin{tabular}[c]{@{}c@{}}worst-case cost\\ (after N inserts)\end{tabular}} &
+\multicolumn{2}{c}{\begin{tabular}[c]{@{}c@{}}average-case cost\\ (after N random inserts)\end{tabular}} &
+\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}efficiently support\\ordered operations?\end{tabular}} \\
+& search & insert & search hit & insert &  \\ \hline
+\begin{tabular}[c]{@{}c@{}}sequential search\\
+(unordered linked list)\end{tabular} & $N$ & $N$ & $N/2$ & $N$ & no  \\
+\begin{tabular}[c]{@{}c@{}}binary search\\ 
+(ordered array)\end{tabular} & $\log N$ & $N$ & $\log N$ & $N/2$ & yes \\
+\begin{tabular}[c]{@{}c@{}}binary tree search\\ 
+(BST)\end{tabular} & $N$ & $N$ & $1.39 \log N$ & $1.39 \log N$ & yes \\
+\begin{tabular}[c]{@{}c@{}}2-3 tree search\\
+(red-black BST)\end{tabular} & $2 \log N$ & $2 \log N$ & $1.00 \log N$ & $1.00 \log N$ & yes \\                                                                                                 
+\begin{tabular}[c]{@{}c@{}}separate chaining\\
+(array of lists)\end{tabular} & $N$ & $N$ & $\frac{N}{2M}$ & $N/M$ & no \\
+\begin{tabular}[c]{@{}c@{}}linear probing\\
+(parallel arrays)\end{tabular} & $N$ & $N$ & $< 1.50$ & $< 2.50$ & no                                                                                                 
+\end{tabular}
+\caption{Cost summary for symbol-table implementations.}
+\label{tab:cost-summary-searching}
+\end{table}
+
+\section{Strings}
+\subsection{Tries}
+% TO DO
+
+\subsection{Substring search}
+\begin{myprob}[Substring search]
+Given a \textit{text} string of length $N$ and
+a pattern string of length $M$, find an occurence
+of the pattern within the text.
+\end{myprob}
+
+\subsubsection{Rabin-Karp finger print search}
+The Rabin-Karp algorithm uses hashing to solve this problem.
+It's almost as simple as the brute-force algorithm but
+runs in time proportional to $M+N$ with very high probability.
+Furthermore, this algorithm extends to two-dimensional patterns,
+which makes it more useful than the others for image processing.
+
+\paragraph{Basic idea}
+The basic idea behind this algorithm is the following : we compute
+a hash function for the pattern an then look for a match by using
+the same hash function for each possible $M$ character substring
+of the text. If we find a text substring with the same hash value
+as the pattern, we can check for a match. 
+
+\paragraph{Key idea}
+A straightforward implementation based on this description would be much
+slower than a brute-force search (since computing a hash function that involves
+every character is likely to be much more expensive than just
+comparing characters). But Rabin and Karp showed that it is easy
+to compute hash functions for $M$-characters substrings in
+constant time, which leads to a linear-time substring search.
+
+Using the notation $t_i$ for \lstinline|txt.charAt(i)|, the number
+corresponding to the $M$-character substring of \lstinline|txt| that
+starts at position \lstinline|i| using Horner's method is
+
+\[ x_i = t_iR^{M-1} + t_{i+1}R^{M-2} + \dots + t_{i+M-1}R^0 \]
+
+and we can assume that we know the value of $h(x_i) = x_i\mod Q$.
+Shifting one position right in the text corresponds to replacing
+$x_i$ by
+
+\[ x_{i+1} = (x_i - t_iR^{M-1})R + t_{i+M}. \]
+
+We substract off the leading digit, multiply it by $R$, then add
+the trailing digit. Now, the crucial point is that we do not have
+to maintain the values of the numbers (i.e. $x_i$), just the
+values of theirs reminders when divided by $Q$ (i.e. $h(x_i)$).
+Remember the property of modulus operation discussed in remark
+\ref{rem:mod-prop}.
+
+\paragraph{Implementation}
+Here is the implementation of the \textit{Monter Carlo}
+version of the Rabin-Karp fingerprint substring search.
+
+\begin{mydef}
+A \textit{Monte Carlo} algorithm is a randomized algorithm
+whose running time is deterministic, but whose output may be
+incorrect with a certain probability. On the other side, a
+\textit{Las Vegas} algorithm is a randomized algorithm that
+always gives correct results.
+\end{mydef}
+
+\begin{lstlisting}
+public class RabinKarp
+{
+	private long patHash; // pattern hash value
+	private int M; // pattern length
+	private long Q; // a large prime
+	private int R = 256; // alphabet size
+	private long RM; // R^(M-1) % Q for use in removing leading digit
+	
+	public RabinKarp(String pat) {
+		M = pat.length();
+		Q = longRandomPrime();
+		RM = 1;
+		for (int i = 1; i <= M-1; i++) {
+			RM = (R * RM) % Q;		
+		}
+		
+		patHash = hash(pat, M);
+	}
+	
+	private long hash(String key, int M) {
+		long h = 0;
+		for(int j = 0; j < M; j++) {
+			h = (R * h + key.charAt(j)) % Q;		
+		}
+		
+		return h;
+	}
+	
+	private int search(String txt) {
+		int N = txt.length();
+		long txtHash = hash(txt, M);
+		
+		if(patHash == txtHash)	return 0; // match
+		
+		for(int i = M; i < N; i++) {
+			txtHash = (textHash + Q - RM*txt.charAt(i-M) % Q) % Q;
+			txtHash = (textHash*R + txt.charAt(i)) % Q;
+			if(patHash == txtHash)
+				return (i - M + 1);		
+		}
+		
+		return N; // no match
+	}
+}
+\end{lstlisting}
+
+\begin{myrem}
+An extra \lstinline|Q| is added on line 36 to make sure that
+everything is positive so that the remainder operation works as
+it should.
+\end{myrem}
+
+By choosing a value of \lstinline|Q| greater than $10^{20}$, we
+reduce the risk of collision, and thus reduce the probability
+of the Monte Carlo algorithm to fail. The alternative method
+of checking for a match could be slow but is guaranteed correct.
+
+\subsection{Data compression}
+\begin{myprob}[Lossless compression]
+The objectives of data compression is to obtain two black boxes :
+\begin{itemize}
+	\item A \textit{compress} box that transforms a bitstream $B$
+	into a compressed version $C(B)$ ;
+	\item An \textit{expand} box that transforms $C(B)$ back into $B$.
+\end{itemize}
+Using the notation $|B|$ to denote the number of bits in bitstream,
+we are interested in minimizing the quantity $|C(B)|/|B|$, which is
+known as the compression ratio.
+\end{myprob}
+
+\begin{myprop}
+Universal data compression is impossible, that is, no algorithm
+can compress every bitstream.
+\end{myprop}
+
+\subsubsection{Huffman compression}
+The idea is to abandon the way in which text files are
+usually stored: instead of using the usual 7 or 8 bits
+for each character, we use fewer bits for characters that
+appear often than for those that appear rarely.
+
+A \textit{code} associates each character with a bitstring:
+a symbol table with characters as keys and bitstrings as values.
+
+Then, we take advantage of the fact that \textit{delimiters
+are not needed if no character code is is the prefix of
+another}. A code with this property is known as \textit{prefix
+-free code}. All prefix-free codes are \textit{uniquely decodable}
+(without needing any delimiters).
+
+One convenient way to represent a prefix-free code is with
+a trie. The general method for finding the optimal prefix-free
+code is the hearth of Huffman compression.
+
+\paragraph{Overview}
+To compress a bitstream :
+\begin{itemize}
+	\item Read the input ;
+	\item Tabulate the frequency of occurrence of each
+	char value in the input ;
+	\item Build the Huffman encoding trie corresponding to
+	those frequencies ;
+	\item Build the corresponding codeword table to associate
+	a bitstring with each \lstinline|char| value in the input ;
+	\item Write the trie, encoded as bitstring ;
+	\item Write the count of characters in the input, encoded
+	as a bitstring ;
+	\item Use the codeword table to write the codeword for each
+	input character.
+\end{itemize}
+
+To expand a bitstream :
+\begin{itemize}
+	\item Read the trie (encoded at the beginning of the bistream ;
+	\item Read the count of characters to be decoded ;
+	\item Use the trie to decode the bitstream.
+\end{itemize}
+
+\section{Graphs}
+
+% Need a better title for this section
+\section{Various algorithms}
+\subsection{Union-find}
+\begin{mydef}
+A \textit{union-find} data structure is a data structure
+that keeps track of a set of elements partitionned into
+a number of disjoint subsets (equivalence classes).
+\end{mydef}
+
+The API is given in figure \ref{fig:uf-api}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{img/uf-api.png}
+	\caption{API of union-find data structure.}
+	\label{fig:uf-api}
+\end{figure}
+
+This data structure helps to solve \textit{dynamic
+connectivity} problem. This problem arises for example
+in networks. We will use networking terminology here.
+We refer to the objects as \textit{sites}, the paires
+as \textit{connections} et equivalence classes as
+\textit{connected components} or \textit{components}.
+
+When studying algorithms to implement the union-find API,
+we count array accesses (the number of times an array entry
+is accessed, for read or write).
+
+We will consider three different implementations, all based
+on using a site-indexed \lstinline|id[]| array.
+
+\subsubsection{Quick-find}
+Here we maintain the invariant that \lstinline|p| and
+\lstinline|q| are connected if and only if \lstinline|id[p]|
+is equal to \lstinline|id[q]|. Implementation is quite
+straightforward. An overview of quick-find is given
+in figure \ref{fig:quick-find-overview}.
+
+\begin{lstlisting}
+public class UF {
+	private int[] id;	// access to component id (site indexed)
+	private int count;	// number of components
+	
+	public UF(int N) {
+		count = N;
+		id = new int[N];
+		for(int i = 0; i < N; i++) {
+			id[i] = i;		
+		}	
+	}
+	
+	public int count() { return count; }
+	public boolean connected(int p, int q) { return find(p) == find(q);	}
+	public int find(int p) {return id[p];}
+	
+	public void union(int p, int q) {
+		int pID = find(p);
+		int qID = find(q);
+		
+		if(pID == qID) return;
+		
+		for(int i = 0; i < id.length; i++)
+			if(id[i] == pID) id[i] = qID;		
+		
+		count--;
+	}
+}
+\end{lstlisting}
+
+\begin{myrem}
+Note that here we made the arbitrary choice of
+renaming the component containing \lstinline|p|.
+\end{myrem}
+
+\begin{myprop}
+The quick-find algorithm uses one array access for
+each call to \lstinline|find()|, two array accesses
+for each call to \lstinline|connected()| and
+between $N+3$ and $2N+1$ array accesses for
+each call to \lstinline|union()| that combines
+two components.
+\end{myprop}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.6]{img/quick-find-overview.png}
+	\caption{Quick-find overview.}
+	\label{fig:quick-find-overview}
+\end{figure}
+
+\subsubsection{Quick-union}
+Here, the \lstinline|id[i]| entry for each site
+is the name of another site in the same component
+(possibly itself, in this case we call it a
+\textit{root}) - we refer to this connection as a
+\textit{link} To implement \lstinline|find()|,
+we start at the given site, follow its link to
+another site, follow that site's link to yet
+another site and so forth until reaching a root.
+An overview of quick-union is given
+in figure \ref{fig:quick-union-overview}.
+
+\begin{lstlisting}
+public int find(int p) {
+	while (p != id[p]) p = id[p];
+	return p;
+}
+\end{lstlisting}
+
+Two sites are in the same component if and
+only if this process leads them to the same
+root.
+
+\begin{lstlisting}
+public void union(int p, int q) {
+	int i = find(p);
+	int i = find(q);
+	if (i == j) return;
+	
+	// Make root of the first tree point to the second
+	id[i] = j;
+	count--;
+}
+\end{lstlisting}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/quick-union-overview.png}
+	\caption{Quick-union overview}
+	\label{fig:quick-union-overview}
+\end{figure}
+
+On figure \ref{fig:quick-union-overview}, we use the
+\textit{forest-of-trees} representation. With this
+representation, we can define some terminology.
+
+\begin{mydef}
+The \textit{size} of a tree is its number of notes. The
+\textit{depth} of a node in a tree is the number of links on the
+path from it to the root. The \textit{height} of a tree is
+the maximum depth among its nodes.
+\end{mydef}
+
+\begin{myprop}
+The number of array accesses used by \lstinline|find()| in
+quick-union is 1 plus twice the depth of the node corresponding
+to the given site. The number of array accessed used by
+\lstinline|union()| and \lstinline|connected()| is the cost
+of the two \lstinline|find()| operations (plus 1 for \lstinline|union()|
+if the given sites are in different trees).
+\end{myprop}
+
+\subsubsection{Weighted-quick-union}
+Weighted-quick-union is an improvement to quick-union algorithms
+that allow us to reduce the tree height, and thus to reduce
+complexity of \lstinline|find()|.
+
+\begin{lstlisting}
+public class WeigthedQuickUnionUF {
+	private int[] id;	// access to component id (site indexed)
+	private int[] sz;	// size of component for roots (site indexed)
+	private int count;	// number of components
+	
+	public WeightedQuickUnionUF(int N) {
+		count = N;
+		id = new int[N];
+		for(int i = 0; i < N; i++)	id[i] = i;
+		sz = new int[N];		
+		for(int i = 	0; i < N; i++) 	sz[i} = 1;	
+	}
+	
+	public int count() { return count; }
+	public boolean connected(int p, int q) { return find(p) == find(q);	}
+	
+	public int find(int p) {
+		while(p != id[p]) p = id[p];
+		return p;
+	}
+	
+	public void union(int p, int q) {
+		int i = find(p);
+		int j = find(q);
+		if(i == j) return;
+		
+		// Make smaller root point to the larger one
+		if		(sz[i] < sz[j]) 	{ id[i] = j; sz[j] += sz[i]; }
+		else						{ id[j] = i; sz[i] += sz[j]; }
+		
+		count--;
+	}
+}
+\end{lstlisting}
+
+\begin{myprop}
+The depth of any node in a forest built by weighted
+quick-union for $N$ sites is at most $\log N$.
+\end{myprop}
+
+\begin{mycorr}
+For weighted quick-union with $N$ sites, the worst
+case order of growth of the cost of \lstinline|find()|,
+\lstinline|connected()| and \lstinline|union()| is
+$\log N$.
+\end{mycorr}
+
+\subsubsection{Summary}
+
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{c|ccc}
+		\textbf{algorithm} & \textbf{constructor} & \textbf{union} & \textbf{find} \\
+		\hline
+		quick-find & $N$ & $N$ & 1 \\
+		quick-union & $N$ & tree height & tree height \\
+		weigthed quick-union & $N$ & $\log N$ & $\log N$
+	\end{tabular}
+	\caption{Performance characteristics of union-find algorithms.}
+	\label{tab:perf-uf}
+\end{table}
+
+\subsection{Priority queues}
+A priority queue is an abstract data type with the API given
+in figure \ref{fig:pq-api}. In this subsection, we will
+consider a \lstinline|MaxPQ|. \lstinline|MinPQ| is easily
+obtained from \lstinline|MaxPQ| (you only need to use
+min-heap instead of a max-heap, continue to read to understand).
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/pq-api.png}
+	\caption{API of a priority queue.}
+	\label{fig:pq-api}
+\end{figure}
+
+\subsubsection{Basic implementations}
+Basic implementations using (un)ordered arrays or linked
+list have the property that either the insert of the remove
+maximum operation takes linear time in the worst case.
+
+\subsubsection{Heap}
+The binary heap is a data structure that can efficiently support
+the basic priority queues operations. In a binary heap, the keys
+are stored in an array such that each key is guaranteed to be
+larger than (or equal to) the keys at two
+other specific positions.
+
+\begin{mydef}
+A binary tree is \textit{heap-ordered} if the key in each
+node is larger than or equal to the keys in that node's
+two children (if any).
+\end{mydef}
+
+\begin{myprop}
+The largest key in a heap-ordered binary tree is found at
+the root.
+\end{myprop}
+
+\begin{mydef}[Complete binary tree]
+In a complete binary tree every level, except possibly the
+last, is completely filled, and all nodes in the last level
+are as far left as possible.
+\end{mydef}
+
+A heap-ordered complete binary tree is illustrated in figure
+\ref{fig:heap}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/heap.png}
+	\caption{A heap-ordered complete binary tree.}
+	\label{fig:heap}
+\end{figure} 
+
+Complete trees provide the opportunity to use a compact
+array representation (instead of explicit links as
+for trees of section \ref{sec:tree}).
+
+\begin{mydef}
+A binary heap is a collection of keys arranged in a complete
+heap-ordered binary tree, represented in level order in an
+array (not using the first entry).
+\end{mydef}
+
+In a heap, the parent of the node in position $k$ is in
+position $\lfloor \frac{k}{2} \rfloor$ and, conversely,
+the two children of the node in position $k$ are in
+position $2k$ and $2k+1$. This allows us to travel
+up and down the tree simply by doing arithmetic on
+on array indices.
+
+\begin{myprop}
+The height of a complete binary tree of size $N$ is
+$\lfloor \log N \rfloor$
+\end{myprop}
+
+\paragraph{Heap algorithms}
+Operations on heap could violate the heap condition.
+The process of restoring the heap order is called
+\textit{reheapifying}. There is two types of violation
+and thus two algorithms ro reheapify.
+
+\subparagraph{Bottom-up reheapify (swim)}
+If the heap order is violated because a node's key become
+larger than that node's parent's key, then we can make
+progress toward fixing the violation by exchanging the node
+with its parent (and so forth, moving up until we reach a
+node with a larger key, or the root).
+
+\begin{lstlisting}
+private void swim(int k) {
+	while(k > 1 && less(k/2, k)) {
+		exch(k/2, k);
+		k = k/2;	
+	}
+}
+\end{lstlisting}
+
+\subparagraph{Top-down reheapify (sink)}
+If the heap order is violated because a node's key
+becomes smaller than one or both of that children's
+key, then we can make progress toward fixing the
+violation by exchanging the node with the larger
+of its two children (and so forth, moving down until
+we reach a node with both children smaller (or equal),
+or the bottom).
+
+\begin{lstlisting}
+private void sink(int k) {
+	while(2*k <= N) {
+		int j = 2*k;
+		// Make j point to the larger of the two children
+		if(j < N && less(j, j+1)) j++;	
+		if(!less(k, j)) break;
+		exch(k, j);
+		k = j;	
+	}
+}
+\end{lstlisting}
+
+
+\begin{figure}[ht]
+	\centering
+	\begin{subfigure}{.5\textwidth}
+		\centering
+  		\includegraphics[width=.85\linewidth]{img/swim.png}
+ 		\caption{Swim.}
+  		\label{fig:siwm}
+	\end{subfigure}%
+	\begin{subfigure}{.5\textwidth}
+  		\centering
+  		\includegraphics[width=0.73\linewidth]{img/sink.png}
+  		\caption{Sink.}
+  		\label{fig:sink}
+	\end{subfigure}
+	\caption{}
+	\label{fig:reheap}
+\end{figure}
+
+\paragraph{Implementations}
+Now that we can reheapify, implementing \lstinline|MaxPQ|
+is quite straightforward.
+
+\begin{lstlisting}
+public class MaxPQ<Key extends Comparable<Key>> {
+	private Key[] pq;
+	private int N = 0;
+	
+	public MaxPQ(int maxN) {
+		pq = (Key[]) new Comparable[maxN+1];	
+	}
+	
+	public boolean isEmpty() { return N == 0; }
+	public int size() { return N; }
+	
+	public void insert(Key v) {
+		pq[++N] = v;
+		swim(N);
+	}
+	
+	public Key delMax() {
+		Key max = pq[1];
+		exch(1, N--);
+		pq[N+1] = null;
+		sink(1);
+		return max;	
+	}
+}
+\end{lstlisting}
+
+Heap operations are illustrated in figure \ref{fig:heap-ops}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[scale=0.55]{img/heap-ops.png}
+	\caption{Heap operations.}
+	\label{fig:heap-ops}
+\end{figure} 
+
+\begin{myprop}
+In a $N$-key priority queue, the heap algorithms
+require no more than $1 + \log N$ compares for
+insert and no more than $2\log N$ compares
+for remove the maximum.
+\end{myprop}
+
+\end{document}
