@@ -1,77 +1,69 @@
 
 \subsection{Definition}
 
-A \textbf{branch-and-bound} algorithm consists of a systematic enumeration of candidate solutions by means of state space search: the set of candidate solutions is thought of as forming a rooted tree with the full set at the root. The algorithm explores branches of this tree, which represent subsets of the solution set. Before enumerating the candidate solutions of a branch, the branch is checked against upper and lower estimated bounds on the optimal solution, and is discarded if it cannot produce a better solution than the best one found so far by the algorithm.
+A \textbf{branch-and-bound} algorithm consists of a systematic enumeration of
+candidate solutions by means of state space search: the set of candidate
+solutions is thought of as forming a rooted tree with the full set at the root.
+
+\begin{itemize}
+    \item Explores branches of this tree, which represent subsets of the
+solution set. 
+    \item Note that before enumerating the candidate solutions of a branch, the
+branch is checked against upper and lower estimated bounds on the optimal
+solution, and is discarded if it cannot produce a better solution than the best
+one found so far by the algorithm.
+\end{itemize}
 
 \subsection{Solving the knapsack problem with B\&B}
 
 Given the following knapsack problem :
+    \begin{tabular}{cl}
+        maximize & $28x_1+30x_2 +20x_3$\\
+        subject to & $4x_1+6x_2 +4x_3 \leq 9$\\
+                   & $x_i \in \{0, 1\} \forall i$
+    \end{tabular}
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.4\linewidth]{KnapsackBBProblem.png}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
+\subsubsection{Relaxation}
+We can choose to relax in order to reduce the search space as much as possible.
 
-We can choose to relax either of the constraint during the branch and bound procedure 
-as to obtain a solution. The goal being to reduce the search space as much as possible
-by calculating an upper bound as precise as possible.
-Let us thus compare both options in the following sections.
+\begin{enumerate}
+    \item \textbf{Capacity relaxation}: Relax on the constraint by don't
+        explore branch which already violated the constraint.
 
-\subsubsection{Capacity relaxation}
+        $\Rightarrow$ Cut at tree branch when 
+        we have surpassed the capacity.
+        \begin{center}
+        \includegraphics[width=12cm]{KnapsackBBCapaRelaxation.png}
+        \end{center}
+        It is far from optimal as our upper bound are not close enough to their real
+        value.
 
-The first constraint that we can relax is the capacity constraint. The B\&B
-calculation becomes fairly simple to implement as we only cut at tree branch when 
-we have surpassed the capacity. The search space is thus reduced as such :
+    \item \textbf{Linear relaxation}: Relax on the value to maximize by
+        calculating an upper bound and don't explore if the upper bound <
+        actual best value.
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=\linewidth]{KnapsackBBCapaRelaxation.png}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
+        \paragraph{Upper bound computation}
+        Given a set sorted by ratio $v_i/w_i$,
+        \begin{eqnarray*}
+            j &= min\{i \in I: \sum_{k \in 1,...,i} w_k > C\}\\
+            UB &= \sum_{i<j} v_i + \frac{(C - \sum_{i \in 1..j-1} w_i)}{w_j} v_j
+        \end{eqnarray*}
 
-Which, as you can see, is far from optimal as our upper bound are not close enough to their
-real value.
+        $j$ is called the critical item which is in fact the first item (sorted by better ratio)
+        which cannot be add entirely, so we just add the ratio of the item according to 
+        the free space.
 
-\subsubsection{Linear relaxation}
+        \begin{center}
+            \includegraphics[width=12cm]{KnapsackBBLinearRelaxation.png}
+        \end{center}
 
-This second relaxation is slightly harder to implement but yields better result, as 
-the upper bound approximation is far better. Given a set sorted by ratio $v_i/w_i$,
-the upper bound calculation procedure become as search for the first critical item j.
-\newline
+        Improving the precision of the upper-bound yields far better
+        result. Take care however not to over/under estimate it (depending if you are
+        on a maximisation or minimisation process) as it might prevent you to find the
+        optimal solution.
 
-The first critical item j being the first item which cannot be fully added in our selection
-due to capacity constraint. 
+\end{enumerate}
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.4\linewidth]{KnapsackBBCriticalItem.png}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
-
-The upper bound can then be calculated as the sum of all item i < j plus as much of j
-as we can squeeze in while respecting the capacity constraint.
-
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.5\linewidth]{KnapsackBBLinearRelaxationUB.png}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
-
-The search space is thus reduced as such :
-
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=\linewidth]{KnapsackBBLinearRelaxation.png}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
-
-As you can see, improving the precision of the upper-bound yields far better result. Take care however not to over/under estimate it (depending if you are on a maximisation or minimisation process) as it might prevent you to find the optimal solution.
 
 \subsection{B\&B pseudo-code}
 
