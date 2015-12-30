@@ -1,6 +1,50 @@
 
 \documentclass[en]{../../../eplsummary}
 \usepackage{listings}
+
+\usepackage{caption}
+\renewcommand{\familydefault}{\sfdefault}
+\lstdefinelanguage{diff}{
+  morecomment=[f][\color{blue}]{@@},     % group identifier
+  morecomment=[f][\color{red}]-,         % deleted lines 
+  morecomment=[f][\color{green}]+,       % added lines
+  morecomment=[f][\color{magenta}]{---}, % Diff header lines (must appear after +,-)
+  morecomment=[f][\color{magenta}]{+++},
+}
+\lstdefinelanguage{scala}{
+  morekeywords={abstract,case,catch,class,def,%
+    do,else,extends,false,final,finally,%
+    for,if,implicit,import,match,mixin,%
+    new,null,object,override,package,%
+    private,protected,requires,return,sealed,%
+    super,this,throw,trait,true,try,%
+    type,val,var,while,with,yield},
+  otherkeywords={=>,<-,<\%,<:,>:,\#,@},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[n]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]',
+  morestring=[b]"""
+}
+\lstset{
+	  language=scala,
+	  frame=single,
+	  flexiblecolumns=true,
+	  numbers=none, % left
+	  stepnumber=1,
+	  numberstyle=\ttfamily\tiny,
+	  keywordstyle=\ttfamily\textcolor{blue},
+	  stringstyle=\ttfamily\textcolor{red},
+	  commentstyle=\ttfamily\textcolor{green},
+	  breaklines=true,
+	  extendedchars=true,
+	  basicstyle=\ttfamily\footnotesize,
+	  showstringspaces=false
+	}
+
+
+
 \hypertitle{Distributed}{8}{INGI}{2345}
 {Nicolas Houtain \and Gorby Nicolas Kabasele Ndonda}
 {Peter Van Roy}
@@ -393,11 +437,11 @@ Each program consists of a set of \textbf{modules or component
 specifications}
 
 \subsubsection{Event}
-\begin{itemize}
-    \item upon event $<RequestEvent, attr_1, attr_2,\cdots>$ do
-            // local computation
-            trigger $<ResponseEvent, attr_3, attr_4,\cdots>$
-\end{itemize}
+\begin{lstlisting}[mathescape]
+upon event <RequestEvent, attr$_1$, attr$_2$,\cdots> do
+// local computation
+trigger <ResponseEvent, attr$_3$, attr$_4$,\cdots>
+\end{lstlisting}
 
 
 There is three man type of event : \textbf{request, indications,
@@ -413,10 +457,10 @@ confirmation}
 \end{figure}
 
 \begin{itemize}
-    \item receive instruction :  upon event $<delBcaast | src, [data_1,
-        data_2,\cdots] >$ do
+    \item receive instruction :  upon event <delBcaast | src, [$data_1$,
+        $data_2$,...] > do
     \item send instruction :
-        trigger $<sendBcast | dest, [data_1, data_2,\cdots]>$
+        trigger <sendBcast | dest, [data$_1$, data$_2$,...]>
 \end{itemize}
 
 \begin{figure}[h]
@@ -530,7 +574,7 @@ correct. There are different way of failure :
 \end{itemize}
 
 \begin{figure}[h]
-    \begin{tabular}{m{8cm}m{7cm}}
+    \begin{tabular}{m{8cm}m{8cm}}
         \includegraphics[width=8cm]{img/fault-tolerance.png}
         &
         \begin{itemize}
@@ -549,11 +593,10 @@ correct. There are different way of failure :
     \item \textbf{Fair-loss links} : Channel delivers any message sent
         with non-zero probability
 
-        \begin{figure}[h]
-            \centering
-            \includegraphics[width=10cm]{img/fairloss.png}
-            \caption{Fair-loss links interface}
-        \end{figure}
+        \begin{lstlisting}[caption= Fair loss link interface]
+Request: <flp2pSend | dest, m>
+Indication: <flp2pDeliver | src, m>
+        \end{lstlisting}
 
         \begin{enumerate}
             \item FL1. \textbf{Fair-loss} : If m is sent infinitely
@@ -572,19 +615,32 @@ correct. There are different way of failure :
         a list of all previously sent msg is kept, after a timeout all 
         the message will be resent)
 
-        \begin{figure}[h]
-            \centering
-            \includegraphics[width=10cm]{img/subborn.png}
-            \caption{Stubborn links interface}
-        \end{figure}
+        \begin{lstlisting}[caption= Stubborn link interface, mathescape]
+upon event <Init> do
+    sent := $\empty$
+    startTimer(delay)
+
+upon event <Timedout> do
+    forall (dst, m) $\in$ sent do
+        trigger <flp2pSend | dst, m>
+    startTimer(delay)
+
+// Request
+upon event <sp2pSend | dest, m> do 
+    send := sent $\cup$ { (dest, m) }
+
+// Indication
+upon evetn <sp2pDeliver src, m> do
+    trigger <sp2pDeliver src, m>
+        \end{lstlisting}
 
         \begin{enumerate}
-            \item SL1. \textbf{Stubborn delivery} : if a node $p_i$ sends a
+            \item[SL1] \textbf{Stubborn delivery} : if a node $p_i$ sends a
                 message m to a correct node $p_j$ , and $p_i$ does not
                 crash, then $p_j$ delivers m an infinite number of
                 times
 
-            \item SL2. \textbf{No creation} : if a message m is delivered by
+            \item[SL2] \textbf{No creation} : if a message m is delivered by
                 some node $p_j$ , then m was previously sent by
                 some node $p_i$
         \end{enumerate}
@@ -592,39 +648,31 @@ correct. There are different way of failure :
     \item \textbf{Perfect links} : Channel that delivers any message
         sent exactly once (keep a set of delivered msg)
 
-        \begin{figure}[h]
-            \centering
-            \includegraphics[width=10cm]{img/perfect.png}
-            \caption{Perfect links interface}
-        \end{figure}
+        \begin{lstlisting}[caption=Perfect links, mathescape]
+upon event <Init> do delivered := $\empty$
+
+upon event <pp2pDeliver | dst, m> do 
+    trigger <sp2pSend dst, m>
+
+upon event <sp2pDeliver | src, m> do
+    if m $\notin$ delivered then
+        delivered := delivered $\cup$ {m}
+        trigger <pp2pDeliver | src, m>
+        \end{lstlisting}
 
         \begin{enumerate}
-            \item PL1. \textbf{Reliable delivery} (liveness) : 
+            \item[PL1] \textbf{Reliable delivery} (liveness) : 
                 If neither $p_i$ nor $p_j$ crashes, then every message sent
                 by $p_i$ to $p_j$ is eventually delivered by $p_j$
 
-            \item PL2. \textbf{No duplication} (safety) : Every message is delivered
+            \item[PL2] \textbf{No duplication} (safety) : Every message is delivered
                 at most once
 
-            \item PL3. \textbf{No creation} (safety) : No message is delivered unless it was
+            \item[PL3] \textbf{No creation} (safety) : No message is delivered unless it was
                 sent
         \end{enumerate}
 
 \end{itemize}
-
-\paragraph{Algorithm}
-
-
-\begin{figure}[h]
-    \begin{tabular}{cc}
-    \includegraphics[width=8cm]{img/algo_stubborn.png} &
-    \includegraphics[width=8cm]{img/algo_perfect.png} \\
-
-    \includegraphics[width=8cm]{img/algo_stubborn2.png}
-\end{tabular}
-    
-    \caption{Implemenation stubborn and perfect}
-\end{figure}
 
 \subsection{Timing assumptions}
 
@@ -758,25 +806,36 @@ equivalence is trivial. L'inverse est effectué gràce à un broadcast des
 suspect node)
 
 
-\paragraph{Perfect detector}
+\paragraph{Perfect detector}:
 
-\begin{figure}[h]
-    \begin{tabular}{cc}
-        \includegraphics[width=8cm]{img/PDF_int.png} &
-        \includegraphics[width=8cm]{img/PDF.png}
-    \end{tabular}
-        \caption{Implementation perfect detector}
-\end{figure}
+\begin{lstlisting}[caption = Perfect detector, mathescape]
+indication <crash | $p_i$>
+\end{lstlisting}
 
-\paragraph{Eventually perfect detector}
-\begin{figure}[h]
-    \begin{tabular}{cc}
-        \includegraphics[width=8cm]{img/EPFD_int.png} &
-        \includegraphics[width=8cm]{img/EPFD.png}
-    \end{tabular}
-    \caption{Implementation eventually perfect detector}
-\end{figure}
+\begin{enumerate}
+    \item Each node every $\gamma$ time : \texttt{Send <heardbeat>} to all nodes
+    \item If don't receive \texttt{<heartbeat>} from node $p_i$ after $\phi + \gamma$ time :
+    \texttt{Detect <crash | $p_i$}
+\end{enumerate}
 
+$\Rightarrow$ Synchronous system
+
+\paragraph{Eventually perfect detector}:
+
+\begin{lstlisting}[caption = Perfect detector, mathescape]
+indication <suspect | $p_i$>
+indication <restore | $p_i$>
+\end{lstlisting}
+
+\begin{enumerate}
+    \item Each node every $\gamma$ time : \texttt{Send <heardbeat>} to all nodes
+    \item If don't receive \texttt{<heartbeat>} from node $p_i$ after $T$ time :
+    \texttt{Send <suspect | $p_i$} and add $p_i$ in suspected set
+    \item If receive \texttt{<heartbeat>} from node $\in$ suspected :
+    \texttt{<restore | $p_i$>} and remove from suspected
+\end{enumerate}
+
+$\Rightarrow$ Partially synchronous system
 
 \subsection{Leader election}
 
@@ -812,22 +871,57 @@ Thi lower ID or better the lowest number of crash.
 \end{itemize}
 
 \subsubsection{Leader election}
-\begin{figure}[h]
-    \begin{tabular}{cc}
-        \includegraphics[width=8cm]{img/leader_election_int.png} &
-        \includegraphics[width=8cm]{img/leader_election.png}
-    \end{tabular}
-        \caption{Implementation leader election}
-\end{figure}
+\begin{lstlisting}[caption = leader election with perfect failure detector, mathescape]
+Indication: <leLeader : $p_i$>
+
+upon event <Init> do 
+    suspected = $\empty$
+    leader := highest(r)
+    trigger <leLeader | leader>
+
+upon event <crash | $p_i$> do
+    suspected := suspected $\cup$ {$p_i$}
+
+upon exists $p_i$ s.t. r($p_i$) $\subseteq$ suspected $\wedge$ $p_i \notin$ suspected do
+    leader := $p_i$
+    trigger <leLeader | $p_i$>
+\end{lstlisting}
+
+\begin{enumerate}
+    \item[LE1] \textbf{eventual completenesse} : Eventually every correct node
+    trusts some correct node
+    \item[LE2] \textbf{agreement} : not two correct nodes trust different correct
+    nodes
+    \item[LE3] \textbf{local accuracy} : is a node is elected leader by $p_i$,
+    all previosly elected leaders by $p_i$ have crashed
+    \end{enumerate}
 
 \subsubsection{Eventual leader election}
-\begin{figure}[h]
-    \begin{tabular}{cc}
-        \includegraphics[width=8cm]{img/even_leader_election_int.png} &
-        \includegraphics[width=8cm]{img/even_leader_election.png}
-    \end{tabular}
-        \caption{Implementation eventually leader election}
-\end{figure}
+\begin{lstlisting}[caption = eventually leader election, mathescape]
+Indication: <leLeader : $p_i$>
+
+upon event <Init> do 
+    suspected = $\empty$
+    leader := $p_n$
+    trigger <leLeader | leader>
+
+upon event <suspect | $p_i$> do
+    suspected := suspected $\cup$ {$p_i$}
+
+upon event <restore | $p_i$> do
+    suspected := suspected \\ {$p_i$}
+
+upon exists $p_i$ s.t. r($p_i$) $\subseteq$ suspected $\wedge$ $p_i \notin$ suspected do
+    leader := $p_i$
+    trigger <leLeader | $p_i$>
+\end{lstlisting}
+
+\begin{enumerate}
+    \item[LE1] \textbf{eventual completenesse} : Eventually every correct node
+    trusts some correct node
+    \item[LE2] \textbf{eventual agreement} : Eventually not two correct nodes trust different correct
+    nodes
+\end{enumerate}
 
 
 \subsection{Reductions}
@@ -845,15 +939,26 @@ It is not antisymmetric, thus it's not a partial order.
 Preorder + antisymmetric
 
 \section{Reliable broadcast}
+
 \subsection{Best-effort broadcast}
+
 \begin{itemize}
 	\item Best-effort-Validity : if $p_i$ and $p_j$ are correct,
 	then any broadcast by $p_i$ is eventually delivered by $p_j$
 	\item No duplication : No message delivered  more than once
 	\item No creation : No message delivered unless broadcast.
 \end{itemize}
-BeB gives no guarantee if the sender crash. Implementation
-is straightforward , simple loop on all nodes.
+
+BeB gives no guarantee if the sender crash. 
+
+\begin{lstlisting}[caption=Beb, mathescape]
+upon event <BebBroadcast | m> do
+    for all $p \in dst$
+        trigger <BebDeliver | src, m>
+\end{lstlisting}
+
+Implementation is straightforward , simple loop on all nodes.
+
 \subsection{Reliable Broadcast}
 \begin{itemize}
 	\item Validity: same as BeB
@@ -866,14 +971,33 @@ is straightforward , simple loop on all nodes.
 If a failed node delivers, everyone must delivers.
 It add the Uniform agreement: For any message m, 
 if a process delivers m, then every correct process delivers m.
+
 \subsubsection{Implementation}
-\begin{figure}[h]
-    \begin{tabular}{cc}
-        \includegraphics[width=8cm]{img/lrb_1.png} &
-        \includegraphics[width=8cm]{img/lrb_2.png}
-    \end{tabular}
-        \caption{Lazy broadcast}
-\end{figure}
+\textbf{Using Beb and P}
+
+\begin{lstlisting}[mathescape, caption= Lazy reliable broadcast]
+upon event <Init> do 
+    delivered = $\empty$
+    correct := $\pi$
+    forall $p_i \in \pi$ do from[$p_i$] := $\empty$
+
+upon event <rbBroadcast | m> do
+    trigger <bebBroadcast | (DATA, self, m)>
+
+upon event <crash | $p_i$> do
+    correct := correct \ {$p_i$}
+    forall ($s_m$, m) $\in$ from[$p_i$] do
+        trigger <bebBroadcast | (DATA, $s_m$, m)>
+
+upon event <bebDeliver | $p_i$, (DATA, $s_m$, m)> do
+    if m $\notin$ delivered then
+        delivered += {m}
+        from[$p_i$] += ($s_m, m$) 
+        trigger <rbDeliver | $s_m$, m>
+        if $p_i \notin$ correct then
+            trigger <bebBroadcast | (DATA, $s_m$, m)>
+\end{lstlisting}
+
 \paragraph{Proof correctness}
 If correct $p_j$ delivers msg broadcast by $p_i$
 \begin{itemize}
@@ -886,116 +1010,222 @@ If correct $p_j$ delivers msg broadcast by $p_i$
 \end{itemize}
 If we use a eventually perfect detector, it only affects 
 performance, not correctness.
-\paragraph{Eager RB}
+
+
+\subsection{Eager RB}
 The exists a eager version of reliable broadcast that does not use a 
 perfect detector. It simply use a BeB broadcast upon receive of a 
 message.
-\subparagraph{Correctness of Eager RB}
+
+
+\begin{lstlisting}[mathescape, caption= Eager reliable broadcast]
+upon event <Init> do 
+    delivered = $\empty$
+
+upon event <rbBroadcast | m> do
+    delivered += {m}
+    trigger <rbDelivered  | self, m>
+    trigger <bebBroadcast | (DATA, self, m)>
+
+upon event <bebDeliver | $p_i$, (DATA, $s_m$, m)> do
+    if m $\notin$ delivered then
+        delivered += {m}
+        trigger <rbDeliver | $s_m$, m>
+        trigger <bebBroadcast | (DATA, $s_m$, m)>
+\end{lstlisting}
+
+
+\subsubsection{Correctness of Eager RB}
 if correct $p_j$ delivers message bcast by $p_i$,
 $p_j$ uses BeB to ensure every correct node gets it. 
-\subsubsection{Uniformity RB}
+
+
+\subsection{Uniformity RB}
 In the above version, uniformity is not respected. If a sender
 p immediately RB delivers and crashes, only p will have delivered 
-the message.\\
+the message.
+
+\begin{lstlisting}[mathescape, caption= Uniformity reliable broadcast]
+upon event <urbBroadcast | m> do
+    pending += {(self, m)}
+    trigger <bebBroadcast | (DATA, self, m)>
+
+upon event <bebDeliver | $p_i$, (DATA, $s_m$, m)> do
+    ack[m] += {$p_i$}
+    if ($s_m$, m) $\notin$ pending then
+        pending += {($s_m$, m)}
+        trigger <bebBroadcast | (DATA, $s_m$, m)>
+
+upon exist ($s_m$, m) $\in$ pending s.t canDeliverd(m) AND m $\notin$ delivered do
+    delivered += {m}
+    trigger <urbDeliver | $s_m$, m>
+\end{lstlisting}
+
+
 The idea is the following, message are pending until all correct
 nodes get it. Node that gets the message exchange ack. The 
 message is deliver once all the nodes acked.
-\begin{figure}[h]
-	\centering
-	\includegraphics[scale=0.7]{img/urb.png}
-\end{figure}
+
 %TODO CORRECTNESS AND MAJORITY ACK
+\subsubsection{Correctness}
+\begin{itemize}
+    \item No creation from BEB
+    \item No duplication by using delivered set
+    \item TODO
+\end{itemize}
+
 \section{Causal-Order Broadcast}
 Uniform reliable broadcast doesn't deal with the order in which the
 message are deliver. The causal-order broadcast remedy to this 
-problem.\\
+problem.
+\paragraph{}
 We that $m_1 \to m_2$ ($m_1$ causally precedes $m_2$) if
 \begin{itemize}
-	\item FIFO order: Some process $p_i$ broadcasts $m_1$ before
-	broadcasting $m_2$
-	\item Network order: Some process $p_i$ delivers $m_1$ and
-	later broadcasts $m_2$
-	\item Transitivity: There is a message m' s.t $m_1 \to m' \ and \ m'\to m_2$
+    \item FIFO order: Some process $p_i$ broadcasts $m_1$ before
+        broadcasting $m_2$
+    \item Network order: Some process $p_i$ delivers $m_1$ and
+        later broadcasts $m_2$
+    \item Transitivity: There is a message m' s.t $m_1 \to m' \ and \ m'\to m_2$
 \end{itemize}
 \paragraph{Property}
 \begin{itemize}
-	\item \textbf{CB:} If node $p_i$ delivers $m_1$, then $p_i$ must have 
-	delivered every message causally preceding ($\to$) $m_1$ before $m_1$.
-	\item \textbf{CB':} If $p_j$ delivers $m_1$ and $m_2$,and $m_1\to m_2$
-	then $p_j$ must deliver $m_1$ berfore $m_2$.
+    \item \textbf{CB:} If node $p_i$ delivers $m_1$, then $p_i$ must have 
+        delivered every message causally preceding ($\to$) $m_1$ before $m_1$.
+    \item \textbf{CB':} If $p_j$ delivers $m_1$ and $m_2$,and $m_1\to m_2$
+        then $p_j$ must deliver $m_1$ berfore $m_2$.
 \end{itemize}
 \begin{figure}[h]
-	\centering
-	\includegraphics[scale=0.7]{img/cbs_properties.png}
+    \centering
+    \includegraphics[scale=0.8]{img/cbs_properties.png}
 \end{figure}
 \subsection{Implementation}
 The idea is to broadcast the message along with its history( message 
 that were sent before it). This history is an ordered list of
 causally preceding messages called $past_m$
+
+\begin{lstlisting}[caption=Causal broadcast, mathescape]
+upon event <Init> do
+    deliverd := $\empty$
+    past := nil
+
+upon event <rcoBroadcast | m> do
+    trigger <rbBroadcast | (DATA, past, m)>
+    past := append(past, <$p_i$, m>)
+
+upon event <rbDeliver | $p_i$, (DATA, past$_m$, m)> do
+    if m $\notin$ delivered then
+        forall ($s_n$, n) $\in$ past$_m$ do
+            if n $\notin$ delivered then
+                trigger <rcoDeliver | $s_n$, n>
+                delivered += {n}
+                past := append(past, <$s_n$, n>)
+        
+        trigger <rcoDeliver | $p_i$, m>
+        delivered += {m}
+        past := append(past, <$p_i$, m>)
+        
+\end{lstlisting}
+
 \subsubsection{First algorithm}
-\begin{figure}[h]
-    \begin{tabular}{cc}
-        \includegraphics[width=8cm]{img/cob_1.png} &
-        \includegraphics[width=8cm]{img/cob_2.png}
-    \end{tabular}
-        \caption{Implementation Causal broadcast First implem}
-\end{figure}
 The problem with this algorithm is that the size of the message
 grows. The idea to improve the algorithm is to detect  with 
 ack when all correct node got the message and delete from
-past if it's the case (Garbage Collector).\\
-\begin{figure}[h]
-	\centering
-	\includegraphics[scale=0.7]{img/gc.png}
-\end{figure}
+past if it's the case (Garbage Collector).
+
+
+\begin{lstlisting}[caption=GC causal broadcast, mathescape]
+upon event <Init> do
+    deliverd := $\empty$
+    correct := $\pi$
+    forall m : ack[m] := $\empty$
+
+upon event <crash | $p_i$> do
+    correct := correct \ {$p_i$}
+
+upon event m $\in$ deliverd AND seld $\notin$ ack[m] do
+    ack := ack[m] $\cup$ {self}
+    trigger <rbBroadcast | (ACK, m)>
+
+upon event <rbDeliver | $p_i$, [ACK, m]> do
+    ack := ack[m] $\cup$ {$p_i$}
+    if correct $\subseteq$ ack[m] do
+        past := remove (past, <x, m>)
+\end{lstlisting}
 %TODO Question on GC
+
 \subsubsection{Second algorithm}
 In the first algortihm, the history was a list, in the second its a
 \textbf{vector timestamp}(vector clock).
 Each node has a vector clock s.t a node $p_i$:
 \begin{itemize}
-	\item VC[i] : number of messages $p_i$ coBroadcasted
-	\item VC[j], j $\neq$i: number of messages $p_i$ coDelivered from $p_j$
+    \item VC[i] : number of messages $p_i$ coBroadcasted
+    \item VC[j], j $\neq$i: number of messages $p_i$ coDelivered from $p_j$
 \end{itemize}
 The delivery of m is only done if $VC_m$(attached VC) precedes $VC_i$ 
 (local clock)
-\begin{figure}[h]
-    \begin{tabular}{cc}
-        \includegraphics[width=8cm]{img/cob_2-1.png} &
-        \includegraphics[width=8cm]{img/cob_2-2.png}
-    \end{tabular}
-        \caption{Implementation Causal broadcast Second implem}
-\end{figure}
+
+\begin{lstlisting}[caption=VC causal broadcast, mathescape]
+upon event <Init> do
+    forall $p_i \in \pi$ do VC[i] := 0
+
+upon event <rcoBroadcast | m> do
+    trigger <rbBroadcast | (DATA, VC, m)>
+    VC[self]++
+    trigger <rcoDeliver | self, m>
+
+upon event <rbDeliver | $p_i$, (DATA, VC$_m$, m)> do
+    if $p_i$ != self then
+        pending += ($p_i$, (DATA, VC$_m$, m))
+        delivered-pending()
+
+procedure delivered-pending()
+    while exists x=($s_m$, (DATA, VC$_m$, m)) $\in$ pending s.t VC $\ge$ VC$_m$ do
+        pending := pending | ($s_m$, (DATA, VC$_m$, m))
+        trigger <rcoDeliver | $s_m$, m>
+        VC[rank($s_m$)]++
+\end{lstlisting}
+
+
 \subsection{Different Possible Orderings}
 \subsubsection{FIFO order}
 \begin{itemize}
-	\item Message form same node delivered in order sent.
-	\item For all messages $m_1$ and $m_2$ and all $p_i$ $p_j$:
-	\begin{itemize}
-		\item if $p_i$ broadcasts $m_1$ before $m_2$, and 
-		if $p_j$ delivers $m_1$ and $m_2$, then $p_j$ delivers
-		$m_1$ before $m_2$.
-	\end{itemize}
+    \item Message form same node delivered in order sent.
+    \item For all messages $m_1$ and $m_2$ and all $p_i$ $p_j$:
+        \begin{itemize}
+            \item if $p_i$ broadcasts $m_1$ before $m_2$, and 
+                if $p_j$ delivers $m_1$ and $m_2$, then $p_j$ delivers
+                $m_1$ before $m_2$.
+        \end{itemize}
 \end{itemize}
 This definition doesn't require the delivery if both messages.
 \subsubsection{Total order}
 \begin{itemize}
-	\item Everyone delivers everythings in exact same order.
-	\item For all messages $m_1$ and $m_2$ and all $p_i$ $p_j$:
-	\begin{itemize}
-		\item if  both $p_i$ and $p_j$  delivers both messages
-		then they deliver them in the same order.
-	\end{itemize}
+    \item Everyone delivers everythings in exact same order.
+    \item For all messages $m_1$ and $m_2$ and all $p_i$ $p_j$:
+        \begin{itemize}
+            \item if  both $p_i$ and $p_j$  delivers both messages
+                then they deliver them in the same order.
+        \end{itemize}
 \end{itemize}
 The order is not necessarily the one in which the message where sent.
 Does not require the delivery of both message 
 \subsubsection{Hierarchy of Orderings}
 \begin{figure}[h]
-	\centering
-	\includegraphics[scale=0.7]{img/hierarchy_ord.png}
+    \centering
+    \includegraphics[scale=0.7]{img/hierarchy_ord.png}
 \end{figure}
+
+
+
+
+
 \section{Consensus}
+
 Nodes proposes value and they must agree on one of these values.
+
+\paragraph{Key problem} Solve total order broadcast, atomic commit, reliable broadcast
+
+
 \subsection{Property}
 \begin{description}
 	\item[Validity] Any value decided is a value proposed
@@ -1004,30 +1234,92 @@ Nodes proposes value and they must agree on one of these values.
 	\item[Termination] Every correct node eventually decides
 	\item[intergrity] A node decides at most once
 \end{description}
+
+\begin{lstlisting}[caption=Consensus interface]
+Request: <cPropose | v>
+Indication: <cDecice | v>
+\end{lstlisting}
+
+
 \subsection{Hierachical Consensus}
-Each nodes stores its proposal and the identifier of the  last adopted 
-proposal.
-There are up to N round and at round i:
+
 \begin{itemize}
-	\item node i is leader and broadcasts and decide its proposal  v
-	\item Other nodes adopt i proposal v (save it in lastprop) or 
-	detect crash of i.
+
+    \item Use perfect P and BEB
+
+    \item Each nodes stores its \texttt{proposal} and the identifier of the  last adopted 
+        proposer in \texttt{lastprop}.
+    
+    \item Loop throug round 1 to N
+
+        \begin{tabular}{m{1.3cm}m{13cm}}
+            Round i&
+        \begin{itemize}
+            \item node i is leader and broadcasts and decide its proposal  v
+            \item Other nodes adopt i proposal v (save it in lastprop) or 
+                detect crash of i.
+
+            \item[$\to$] Future round will only propose v
+        \end{itemize}
+    \end{tabular}
 \end{itemize}
-Future round will only propose v
-\subsubsection{Orphan message}
+
+\subsubsection{Orphan message issue}
+
 Problem is that broadcast can be delayed and the leader crash
 and a node can receive two proposal in the next round. It will
-therefore affect future round.\\
-Counter measure $\to$ ranking of the node based on there identifier
-($p_1>p_2>p_3>...$
-\subsubsection{Implementation}
-\begin{figure}[h]
-    \begin{tabular}{cc}
-        \includegraphics[width=8cm]{img/hc_1.png} &
-        \includegraphics[width=8cm]{img/hc_2.png}
-    \end{tabular}
-        \caption{Implementation hierarchical}
+therefore affect future round.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=8cm]{img/orphan.png}
+    \caption{Orphan}
 \end{figure}
+
+\paragraph{Solution}
+
+Counter measure $\to$ ranking of the node based on there identifier
+($p_1>p_2>p_3>...$)
+
+$\Rightarrow$ Adopt if proposer p is ranked lower than lastprop otherwise p has
+crashed and should be ignored
+
+\subsubsection{Implementation}
+\begin{lstlisting}[caption=Hierachical consensus, mathescape]
+upong event <Init> do
+    detected :=  $\empty$
+    round    := 1
+    proposal := $\top$
+    lastprop := 0
+
+    for i=1 to N do
+        broadcast[i] := delivered[i] := false
+
+upon event <Crash | p$_i$ do 
+    detected := detected $\cup$ {rand(p$_i$)}
+
+upon event <cPropose | v> do
+    if proposal = $\top$ then
+        proposal := v
+
+upon round = rand(self) and
+     broadcast[round] = false and
+     proposal != $\top$ do
+
+    broadcaset[round] := true
+    trigger <cDecide | proposal>
+    trigger <bebBroadcast | (DECIDED, round, proposal)>
+
+upond event <bebDeliver | p$_i$, (DECIDED, r, v)> do
+    if r > lastprop then
+        proposal := v; lastprop := r
+    delivered[r] := true
+
+upon delivered[round] or round $\in$ detected do
+    round := round + 1
+\end{lstlisting}
+
+
 \subsubsection{Correctess}
 \begin{itemize}
 	\item Validity? $\to$ Always decide own proposal or adopted value
@@ -1040,26 +1332,87 @@ Counter measure $\to$ ranking of the node based on there identifier
 		\item If leader correct, validity of BeB ensures delivery. 
 	\end{itemize}
 	\item Agreement? $\to$ take correct leader with minimum id i.
+        \begin{itemize}
+            \item By termination it will decide v and v will be BEB
+            \item[$\to$] Every correct node adopts v no older proposal 
+                can override the adoption
+        \end{itemize}
 \end{itemize}
-Failute-torerant up to N-1 
-%TODO Formalism and notation important
+
+\textbf{Failute-torerant up to N-1} 
+
+\subsubsection{Formalism}
+\begin{lstlisting}[caption=Hierarchical consensus]
+x i := proposal
+for r:=1 to N do
+    if r=i then
+        forall j in 1..N do 
+            send <val, x i , r> to P j ;
+        decide x i
+    if collect <val, x', r> from r then
+        x i := x';
+end
+\end{lstlisting}
+
 \subsection{Uniform consensus}
 Compare to nonuniform consensus where node i decides in round i,in
 uniform consensus with P, node move the decision to the end.
+
+\begin{lstlisting}[caption=Hierarchical consensus]
+x i := proposal
+for r:=1 to N do
+    if r=i then
+        forall j in 1..N do 
+            send <val, x i , r> to P j ;
+    if collect <val, x', r> from r then
+        x i := x';
+end
+decide x i
+\end{lstlisting}
+
+\subsubsection{With inaccurate FD}
+
 \begin{figure}[h]
-    \begin{tabular}{cc}
+    \centering
+    \begin{tabular}{m{8cm}m{8cm}}
         \includegraphics[width=8cm]{img/hc_fd.png} &
-        \includegraphics[width=8cm]{img/uhc_fd.png}
+        \includegraphics[width=8cm]{img/uhc_fd.png} \\
+        p2 suspect p1, p3 suspect p2 (nonuniform consensus) &
+        p2 suspect p1, p3 suspect p2, p1 suspect p3 (uniform consensus)\\
+        \multicolumn{2}{c}{$\Rightarrow$ Does'nt work with innacurrate FD}
     \end{tabular}
-        \caption{lnaccuracy with failure detector}
+        \caption{Inaccuracy with failure detector}
 \end{figure}
-\subsubsection{Uniform with S}
+
+\textbf{The algorithm doesn't work with innaccurate FD}
+
+\subsubsection{With Strong failure detectore}
+
 The algorithm works with a S (strong dectector). The difference between
-Strong detector and a Perfect detecor comes from the accuracy w.r.t one node.
-%TODO correcteness (2)
-\subsection{With Eventual failure detector}
+Strong detector (weaker than P) and a Perfect detector comes from the
+accuracy w.r.t one node.
+
+\paragraph{Correctess}
+\begin{itemize}
+	\item Validity? $\to$ Always decide own proposal or adopted value
+	\item Integrity? $\to$ Rounds increase monotonically, node only 
+	decide when leader.
+	\item Termination? $\to$ Every correct node makes it to the last round
+	\begin{itemize}
+		\item If some leader fails, completeness of S ensure progress.
+		\item If leader correct, validity of BeB ensures delivery. 
+	\end{itemize}
+	\item Uniform agreement? $\to$ take an accurate correct leader with id i.
+        \begin{itemize}
+            \item By weak accuracy (S) and termination such a node exists
+                and it will BEB v
+        \end{itemize}
+\end{itemize}
+
+
+\subsubsection{With Eventual failure detector}
 Evenutally perfect detector cannot solve consensus with resilience t $\geq$ n/2\\
-Resilience = how many failures it tolerates.
+
 %Proof?
 \begin{itemize}
 	\item Rotating coordinator from before will not work because
@@ -1068,34 +1421,80 @@ Resilience = how many failures it tolerates.
 	correct w.r.t 1 coordinator (coordinator's value becomes
 	agreed value)
 \end{itemize}
+
 \paragraph{Termination}
 There will be a bound on the number of failures $\to$ less (f<n/3) than a third
-can fail. This will allow to decide using majority.\\
- Algo will works as follow:
- \begin{enumerate}
+can fail. This will allow to decide using majority.
+
+\begin{enumerate}
 	\item Everyone send vote to coordinator C
 	\item C picks majority vote V, and broadcasts V
 	\item Every node get broadcast, change vote to V
 	\item Change coordinator C and go to 1
 \end{enumerate}
-\begin{figure}[h]
-	\centering
-	\includegraphics[scale=0.6]{img/rotating_coord.png}
-	\caption{Rotating Coordinator}
-\end{figure}
-If at least n-f nodes vote V in round r, every leader will see a majority for V
-in all rounds > r. Proof:
+
+\begin{lstlisting}[caption=rotate coordinator for <>S]
+x i := input
+r=0
+while true do
+begin
+    r:=r+1                          
+    c:=(r mod n)+1
+    send <value, x i , r> to p c
+
+
+    if i==c then
+    begin
+        msgs[0]:=0; msgs[1]:=0;
+        for x:=1 to n-f do
+        begin
+            receive <value, V, R> from q
+            msgs[V]++;
+        end
+        if msgs[0]>msgs[1] then v:=0 else v:=1 end
+        if msgs[0]&=& 0 or msgs[1]&=& 0 then d:=1 else d:=0 end 
+        forall j do send <outcome, v, r> to p j
+    end
+
+
+    if collect<outcome, v, r> from p c then
+    begin
+        x i := v
+        
+        if d and i!=0 then begin decide(v); i:=0; end 
+    end
+end
+\end{lstlisting}
+
 \begin{itemize}
-	\item We know that at most f nodes don't vote V
-	\item We also know n/3<(n-f)/2 (because f<n/3 implies n-f>2n/3)
-		$\to$ f<(n-f)/2 (because f<n/3 and n/3<(n-f)/2)
-	\item So less than half of any n-f nodes do not vote V
+    \item If at least n-f nodes vote V in round r, every leader will see a majority for V
+        in all rounds > r. 
+
+        \paragraph{Proof}:
+        \begin{itemize}
+            \item We know that at most f nodes don't vote V
+            \item We also know n/3<(n-f)/2 (because f<n/3 implies n-f>2n/3)
+                $\to$ f<(n-f)/2 (because f<n/3 and n/3<(n-f)/2)
+            \item So less than half of any n-f nodes do not vote V
+        \end{itemize}
 \end{itemize}
-%TODO correctenness
+
+
 \section{Terminating Reliable Broadcast}
+
 With normal reliable broadcast, no idea when or if a message will be delivered.
-In TRB, sender broadcast M and receiver await delivery M. All nodes
+
+$\Rightarrow$ In TRB, sender broadcast M and receiver await delivery M. All nodes
 either deliver M or ''abort'' (<SF> sender Faulty message)
+
+TRB requires synchrony!
+
+\begin{lstlisting}
+Request: <trbBroadcast | src, m>
+
+Request: <trbBroadcast | src, m>
+\end{lstlisting}
+
 \subsection{Property}
 \begin{description}
 	\item[Termination] Every correct node eventually delivers one message
@@ -1105,43 +1504,133 @@ either deliver M or ''abort'' (<SF> sender Faulty message)
 	\item[Intergrity] If a node delivers m, then either m=<SF> or m was
 	broadcast by src.
 \end{description}
+
 \subsection{Consensus based TRB}
+Src RB broadcast m (deliver <SF> if src is suspected by P)
 \begin{itemize}
-	\item Src RB broadcast m (deliver <SF> if src is suspected by P)
 	\item Src BeB broadcast m
 	\item Nodes propose whichever comes first: crash suspicion(<SF>) or 
 	BeB delivery from src (M)
 	\item Deliver consensus decision
 \end{itemize}
-%TODO correctness and Hardness of TRB
+
+
+\subsubsection{Hardness}
+\begin{itemize}
+    \item $consensus \prec TRB$ $\Rightarrow$ can't have a asynchronous networks for TRB.
+    \item $ P \prec TRB \Rightarrow$ can't have a eventually synchonous systems
+\end{itemize}
+
+\subsubsection{Correctness}
+TODO
+
+\section{Total order broadcast (consensus)}
+
+The order imposed by causal broadcast is partial. Some message might 
+be delivered in different order by different process.
+
+With \textbf{total order} broadcast, process must deliver all
+messages according to the same order.
+
+\paragraph{\textbf{Total order broadcast} $\equiv$ \textbf{consensus}}
+
+\subsection{Specification}
+The specification of the total order broadcast are roughly the same as the reliable broadcast
+there only a little modification
+
+\begin{description}
+	\item[Uniform agreement] For any message m: if any process delivers
+	m, then every correct process delivers m.
+\end{description}
+\
+\subsection{Type of total order}
+
+\begin{lstlisting}
+Request: <toBroadcast, m>
+Indication: <toDeliver, src, m>
+\end{lstlisting}
+
+\subsubsection{Total order}
+\begin{itemize}
+	\item Let m1 and m2 be any two messages and let pi and pj be any two 
+	correct processes that deliver m1 and m2
+	\item If pi delivers m1 before m2, then pj delivers m1 before m2
+\end{itemize}
+
+\subsubsection{Uniform total order}
+\begin{itemize}
+	\item Let m1 and m2 be any two messages and let pi and pj be any two
+	processess that deliver m2 (only m2!).
+	\item If pi delivers m1 before m2, then pj delivers m1 before m2
+\end{itemize}
+
+\subsection{Consensus based algorithm}
+\begin{lstlisting}[caption=Total order implementation, mathescape]
+upon event <Init> do
+    unordered = delivered = $\empty$
+    wait := false
+    sn := 1
+
+upon event <toBroadcast, m> do
+    trigger <rbBroadcast, m>
+
+upon event <rbDeliver, sm, m> AND (m $\notin$ delivered) do
+    unordered += {(sm, m)}
+
+upon (unordored != $\empty$) AND not(wait) do
+    wait := true
+    trigger <Propose sn, unordered>
+
+upon event <Decide sn, decided> do
+    unordered := unordered \ decided
+    ordered = deterministicSort(decided)
+
+    for all (sm, m) $\in$ ordered:
+        trigger <toDeliver, sm, m>
+        delivered += {m}
+
+    sn++
+    wait := false
+\end{lstlisting}
+
+
 \section{Shared Memory}
+
 In real shared memory there is no message-passing, node access one
 shared memory. But in distributed system we simulate shared memory 
 using message passing.
+
 \begin{itemize}
 	\item A register represents each memory location (objects)
-	\item Node can read/write to registers
+    \item Node can \texttt{read(R) => x}/\texttt{write(R, x)}
 	\item Simplification of key-value stores
 \end{itemize}
+
 \paragraph{Basic Assumptions}
-Nodes are sequential, they can only do one operation at a time. 
-invocation,response,invocation,response,...\\
-The values are positive integers initially zero.
+\begin{itemize}
+    \item Nodes are sequential, they can only do one operation at a time. 
+invocation,response,invocation,response,\ldots
+\item The values are positive integers initially zero.
+    \end{itemize}
+
 \paragraph{Definitions}
 In an execution, an operation is 
 \begin{itemize}
 	\item Complete if both invocation \& response occured
 	\item Failed if invoked, but no response arrives
 \end{itemize}
+
 $op_1$ precedes $op_2$ if (denoted $<_p$) if response of $op_1$ 
 precedes invocation of $op_2$. Otherwise they are concurrent.
+
 \paragraph{Terminology}
 \begin{itemize}
 	\item (1,N)-algorithm : 1 designated writer, multiple readers
 	\item (N,N)-algorithm : Multiple writers, multiple readers
 \end{itemize}
-\subsection{Regular Registers}
-\subsubsection{Regular Register (1,N)}
+
+
+\subsection{Regular Register (1,N)}
 \begin{itemize}
 	\item Termination : Each read and write operation of a correct node 
 	completes.
@@ -1153,51 +1642,89 @@ precedes invocation of $op_2$. Otherwise they are concurrent.
 	Otherwisz the read must return the last value 
 	written or a concurrent value being written.
 \end{itemize}
-\paragraph{Centralized Algorithm}
+
+
+\subsubsection{Centralized Algorithm}
+
+
 One process is designated as leader. For reading, the latest value must
-be ask to the leader. For writing, leader value is updated. Problem
-is that it does not work if leader crashes.
-\paragraph{Bogus Algorithm}
+be ask to the leader. For writing, leader value is updated. 
+
+$\Rightarrow$ does not work if leader crashes.
+
+\subsubsection{Bogus Algorithm}
+\begin{itemize}
+    \item[read] : return local value
+    \item[write] : overwrite local value and broadcast change
+\end{itemize}
+
 \begin{figure}[h]
-    \begin{tabular}{cc}
-        \includegraphics[width=8cm]{img/bogus_1.png} &
-        \includegraphics[width=8cm]{img/bogus_2.png}
-    \end{tabular}
+    \centering
+        \includegraphics[width=6cm]{img/bogus_1.png}
         \caption{Bogus algorithm}
 \end{figure}
-\paragraph{Majority Voting Algorithm}
+
+
+\paragraph{Read-one write all (1, N)}
+Bogus algorithm modified can be use with a \textbf{perfect FD}
+and fail-stop model.
+
+\begin{itemize}
+    \item[$\to$] Write need to wait ``ACK'' when he broadcast new overwrite
+        value
+\end{itemize}
+
+\subsubsection{Majority Voting Algorithm}
 Main idea is based on a quorum principle,
 \begin{itemize}
 	\item Always write to and read from a majority of nodes
 	\item At least one node knows most recent value
 \end{itemize}
-\subparagraph{Quorum Principle}
+
+\paragraph{Quorum Principle}
 Divide the system into quorums, any two quorums should intersect.
 There are different type of quorum
 \begin{itemize}
 	\item Majority Quorum
 		\begin{itemize}
-			\item Pro : tolerate up to $\lceil N/2 \rceil$ -1 crashes
-			\item Con: Have to read/write $\lfloor N/2 \rfloor$ + 1values
+            \item[Pro]: tolerate up to $\lceil N/2 \rceil$ -1 crashes
+            \item[Con]: Have to read/write $\lfloor N/2 \rfloor$ + 1values
 		\end{itemize}
 	\item Maekawa Quorum
 		\begin{itemize}
 			\item Arrange nodes in MxM grid (M=sqrt(N))
 			\item Write to rows, read to columns (always overlap)
-			\item Pro : Only need to read/write sqrt(N) nodes
-			\item Tolerate at most sqrt(N)-1 crashes
+            \item[Pro]: Only need to read/write sqrt(N) nodes
+            \item[Con]: Tolerate at most sqrt(N)-1 crashes
 		\end{itemize}
 \end{itemize}
-\begin{figure}[h]
-	\begin{tabular}{cc}
-		\includegraphics[width=8cm]{img/maj_voting.png}
-		\includegraphics[width=8cm]{img/maj_voting_2.png}
-	\end{tabular}
-		\caption{Majority Voting Algorithm}
-\end{figure}
+
+\paragraph{Implementation}
+\begin{itemize}
+    \item[Read]: \begin{enumerate}
+            \item Broadcast read request
+                \begin{itemize}
+                    \item[$\to$] receiver response with local value and seq\#
+                \end{itemize}
+            \item Save value from majority of nodes
+            \item Return value with highest seq\#
+        \end{enumerate}
+
+    \item[Write]:
+        \begin{enumerate}
+            \item Broadcast v and seq\# 
+                \begin{itemize}
+                    \item[$\to$] receiver update to v \textcolor{red}{if newer seq\#}
+                \end{itemize}
+            \item Wait for ACK from majority of node
+        \end{enumerate}
+\end{itemize}
+
 The problem with the first algorithm is that old write can override
-new write.
+new write. (resolve by \textcolor{red}{red})
+
 \subsection{Single Storage}
+
 \paragraph{Safety requirements}
 \begin{itemize}
 	\item Sequential Consistency: Only allow executions whose results
@@ -1207,6 +1734,7 @@ new write.
 	results appear as if there is a single system image and 
 	''global time'' is obeyed.
 \end{itemize}
+
 \paragraph{Liveness : progress}
 Liveness requirements : three progressively weaker versions
 \begin{itemize}
@@ -1218,6 +1746,7 @@ Liveness requirements : three progressively weaker versions
 	without interference (contention) it makes progress
 	(no deadlocks, maybe livelocks,maybe starvation)
 \end{itemize}
+
 \subsection{Atomic/Linearizable Registers}
 \begin{itemize}
 	\item Termination(Wait-freedom): If a node is correct,each read and write op
@@ -1231,34 +1760,62 @@ Liveness requirements : three progressively weaker versions
 		\item \textbf{Failed ops} appears as either completed at every node
 		either never occured at any node
 	\end{itemize}
+
+    \paragraph{Equivalent with}
+    \begin{itemize}
+        \item Validity : read 
+            \begin{enumerate}
+                \item[IF] read not conurrent with another write or with a failed operation
+                    return last value written
+                \item[ELSE] return concurrent value written
+            \end{enumerate}
+        \item Ordering : if read $r_1$ precede read $r_2$ then write $r1$ precedes $r2$
+    \end{itemize}
 \end{itemize}
+
+\paragraph{Majority voting}
 There is a a problem with the majority voting as the system could appear
-as non atomic. The solution to resolve this problem is 
-to use causality to enforce atomicity
-$\to$ When reading, also make a write before responding
+as non atomic. 
+
+\subsubsection{One writer (atomic register)}
+
+Solution to previous issues : when reading, also make a write before responding.
+
+$\Rightarrow$ Use \textbf{causality} to enforce \textbf{atomicity}.
+
 \begin{figure}[h]
-	\begin{tabular}{cc}
-		\includegraphics[width=8cm]{img/maj_prob.png}
-		\includegraphics[width=8cm]{img/maj_sol.png}
+    \centering
+    \begin{tabular}{m{7cm}m{7cm}}
+		\includegraphics[width=7cm]{img/maj_prob.png}&
+		\includegraphics[width=6cm]{img/maj_sol.png}
 	\end{tabular}
 		\caption{Majority Voting Problem and Solution}
 \end{figure}
-\subsubsection{Atomic Registers (N,N)}
-With multiple writer, their seq num might be non-synchronized
-which as the effect of ignoring some write operation.\\
-Idea is the following:
-\begin{itemize}
-	\item Get seq num before writing by reading from
+
+
+\subsubsection{Multiple writer (atomic Registers)}
+
+With multiple writer, their \#seq might be non-synchronized
+which as the effect of ignoring some write operation.
+
+\paragraph{Solution}
+\begin{enumerate}
+	\item Get \#seq before writing by reading from
 	the majority (to get last seq num)
-	\item Send Ack if receive write with old seq num
-\end{itemize}
+	\item Send Ack if receive write with old \#seq
+\end{enumerate}
+
 \paragraph{Message passing}
 Message passing can be simulated using shared memory. The idea
-consist of using a register AB to simulate the channel between A and B.
-$\to$ Message passing and shared memory equivalent in functionnality
+consist of using a register AB to simulate the channel between A and B like a pipe.
+
+\begin{itemize}
+    \item $\to$ Message passing and shared memory equivalent in functionnality
 but not in always in efficiency.
-\subsection{Formalism}
-\subsubsection{Linearizability}
+\end{itemize}
+
+\subsection{Linearizability}
+\subsubsection{Formalism}
 \begin{itemize}
 	\item $R-inv_i(X)$ Read invocation by node i on register X
 	\item $R-res_i(a)$ Response with value a to read by node i
@@ -1266,6 +1823,7 @@ but not in always in efficiency.
 	X with value a.
 	\item $W-res_i$ Response (confirmation) to write by node i
 \end{itemize}
+
 \subsubsection{Executions}
 Every execution consists of:
 \begin{itemize}
@@ -1280,48 +1838,37 @@ Every execution consists of:
 		\item no concurrency, read x by p1, write y by p5,...
 	\end{itemize}
 \end{itemize}
-%TODO basic assumptions + rest formalism
-\section{Consensus With Total order}
-The order imposed by causal broadcast is partial. Some message might 
-be delivered in different order by different process.\\
-With \textbf{total order} broadcast, process must deliver all
-messages according to the same order.
-\subsection{Specification}
-The specification of the total order broadcast are roughly the same as the reliable broadcast
-there only a little modification
-\begin{description}
-	\item[Uniform agreement] For any message m: if any process delivers
-	m, then every correct process delivers m.
-\end{description}
-\subsection{Type of total order}
-\subsubsection{Total order}
+
+\subsubsection{Assumption}
 \begin{itemize}
-	\item Let m1 and m2 be any two messages and let pi and pj be any two 
-	correct processes that deliver m1 and m2
-	\item If pi delivers m1 before m2, then pj delivers m1 before m2
-\end{itemize}
-\subsubsection{Uniform total order}
-\begin{itemize}
-	\item Let m1 and m2 be any two messages and let pi and pj be any two
-	processess that deliver m2 (only m2!).
-	\item If pi delivers m1 before m2, then pj delivers m1 before m2
-\end{itemize}
-\subsection{Algorithm}
-\begin{figure}[h]
-	\begin{tabular}{cc}
-		\includegraphics[width=8cm]{img/tob_1.png}
-		\includegraphics[width=8cm]{img/tob_2.png}
-	\end{tabular}
-		\begin{center}
-		\includegraphics[scale=0.6]{img/tob_3.png}
-		\end{center}
-		\caption{Total-order broadcast}
-\end{figure}
+    \item An operation O is pending in execution E if O has no response event 
+    \item An execution is complete if every operation is complete (else partial)
+    \item An operation X precedes operation Y in exec E if response of X is before invocation of Y in E
+    \end{itemize}
+
+%TODO End 7-share 
+
 \section{Group Membership}
-Sometimes, process need to know which processes are participating in the 
-computation and which are not. Failure detectors provide such 
-information however it's not coordinated. (Crash detected at different
-time for different processes)
+
+\begin{itemize}
+    \item process need to know which processes are participating in the 
+        computation and which are not. 
+
+    \item Failure detectors provide such information however it's not       
+        coordinated even if failure detector is perfect.                        
+
+        (Crash detected at different time for different processes)
+\end{itemize}
+
+\begin{figure}[!h]
+    \centering
+    \begin{tabular}{cc}
+        \includegraphics[width=7cm]{img/gm1.png}&
+        \includegraphics[width=7cm]{img/gm1.png}\\
+    \end{tabular}
+    \caption{Group membership}
+\end{figure}
+
 \begin{itemize}
 	\item Like FD, processes are informed about failures; we say that
 	the processes install \textbf{views}.
@@ -1329,10 +1876,11 @@ time for different processes)
 	\item Unlike a PFD, the information about failures are 
 	coordinated, the processes install the same sequence of view.
 \end{itemize}
+
 \subsection{Properties}
 \begin{description}
 	\item[Local Monotonicity] If a process install view (j,M) after 
-	installing (k,N), then j > k and M $\subset$ N %TODO join pas compris
+        installing (k,N), then j > k and M $\subset$ N
 	\item[Agreement] No two processes install views (j,M) and (j,M') such that
 	M $\neq$ M'
 	\item[Completeness] If a process p crashes, then there is an integer
@@ -1341,22 +1889,51 @@ time for different processes)
 	\item[Accuracy] If some process install a view (i,M) and p is not in M
 	,then p has crash (might not be true in general case)
 \end{description}
+
 \subsection{Algorithm}
+\begin{lstlisting}[caption=Group membership, mathescape]
+upon event <Init> do
+    view := (id:0, memb:$\pi$)
+    correct := $\pi$
+    wait := false
+
+upon event <crash $p_i$> do
+    correct := correct \ {$p_i$}
+
+upon event (correct $\subset$ view.memb) AND (wait == false) do
+    wait := true
+    trigger <ucPropose ( view.id + 1, correct)>
+
+upon event <ucDecided (i, m)> do
+    view := (id:i, memb:m)
+    wait := false
+    trigger <membView view>
+\end{lstlisting}
+
 \begin{figure}[h]
-	\begin{tabular}{cc}
 		\includegraphics[width=8cm]{img/gmp_1.png}
-		\includegraphics[width=8cm]{img/gmp_2.png}
-	\end{tabular}
-	\begin{center}
-		\includegraphics[scale=0.5]{img/gmp_3.png}
-	\end{center}
 	\caption{Group membership}
 \end{figure}
-%TODO Non-Blocking Atomic Commit
-%%FROM here on I'm not sure of what to study for the exam
+
+\subsection{Non-blocking atomic commit}
+\begin{lstlisting}
+Request: <nbacPropose | v>      // propose value for the commit (0 or 1)
+Indication: <nbacDecide | v>    // indique decided value
+\end{lstlisting}
+
+\begin{itemize}
+    \item[NBAC1] : \textbf{Uniform agreement} : not two processes decide different values
+    \item[NBAC2] : \textbf{Integrity} : no process decide two value
+    \item[NBAC3] : \textbf{abort-validity} : 0 can only be decided if some process propose 0 or crashes
+    \item[NBAC4] : \textbf{commit-validity} : 1 can only be decided if no process propose 0 
+    \item[NBAC5] : \textbf{Termination} : every correct process eventually decide
+\end{itemize}
+
+
 \section{Peer-to-Peer}
+
 \subsection{Overview P2P systems}
-P2P computing is distributed computing with the following desirable properties:
+P2P computing is distributed computing  with the following desirable properties:
 \begin{itemize}
 	\item Resource sharing
 	\item Dual client/server role
@@ -1364,28 +1941,223 @@ P2P computing is distributed computing with the following desirable properties:
 	\item Scalability
 	\item Robustness/self-organization
 \end{itemize}
+
 \subsection{Distributed Hash Table}
-DHT are third generation of P2P, the idea constist of a dynamic 
-distribution of a hash table onto a set of cooperating nodes.
-(different node contains different parts of the table)
-Each node has a routing table that points to some other nodes.
-Interface with two functions:
+
+DHT are third generation of P2P :
+
+\begin{tabular}{m{10cm}m{6cm}}
 \begin{itemize}
-	\item put(key,value).
-	\item get(key)
+    \item a dynamic distribution of a hash table onto a set of cooperating nodes.
+        (different node contains different parts of the table).
+    \item Each node has a routing table that points to some other nodes.
+    \item Lookup operation is done by node to make a key resolution
 \end{itemize}
+&
+    \includegraphics[width=6cm]{img/DHT.png}
+
+     \textcolor{red}{Node D: lookup(9)}\\
+    \\
+\end{tabular}
+
+\begin{lstlisting}[caption=Interface DHT]
+put(key,value).
+get(key)
+\end{lstlisting}
+
 \subsubsection{Chord}
-TODO
+
+\begin{tabular}{m{10cm}m{3cm}m{3cm}}
 \begin{itemize}
-	\item \url{https://www.cs.cmu.edu/~dga/15-744/S07/lectures/16-dht.pdf}
-	\item \url{http://www.powershow.com/view/11c359-NWZjO/Distributed_kary_System_Algorithms_for_Distributed_Hash_Tables_powerpoint_ppt_presentation}
+    \item \textbf{Routing table size} $= M$ s.t $N = 2^M$
+    \item Every node $n$ know successor $(n + 2^{i-1})$ for $i = 1..M$
+    \item $log_2(N)$ maximum hops between two node
+\end{itemize}
+& \includegraphics[width=3cm]{img/chord.png}
+& \includegraphics[width=3cm]{img/chord1.png}\\
+& \multicolumn{2}{c}{$\Rightarrow$ 1 get(15)}
+\end{tabular}
+
+\subsubsection{Generally}
+
+\begin{itemize}
+    \item We have $N$ node
+    \item[$\to$] Trade-off between lookup length and routing table size
+
+   \begin{eqnarray*}
+            H &= log_k(N)\\
+            R &=(k-1) H \\
+            N &= (\frac{R}{H} + 1)^H\\
+        \end{eqnarray*}
 \end{itemize}
 
+Chord is a special case where $k=2$.
+
 \subsubsection{DKS}
+
+\begin{itemize}
+    \item Tunability : \begin{tabular}{l}
+            Routing table size vs lookup length\\
+            fault-tolerance degree
+        \end{tabular}
+    \item Local atomic join and leave (strong guarantees)
+    \item Correction-on-use : no unnecessary bandwith consumption
+\end{itemize}
+
+\subsubsection{Design DKS(n, k, f)}
+\begin{tabular}{m{10cm}m{3cm}m{3cm}}
+\begin{itemize}
+    \item An \textbf{identifier space} of size $N=k^L$
+    \item A hash function
+    \item An item ($key, value$) is stored at \textbf{successor} of
+        H(key)
+    \item \textbf{Bidirectional} linked list of nodes
+    \item Resolving key : $\bigoh(N) hops$
+\end{itemize}
+& \includegraphics[width=3cm]{img/dks1.png}
+& \includegraphics[width=3cm]{img/dks2.png} \\
+\end{tabular}
+
+
+\paragraph{Principle}
+
+\begin{enumerate}
+    \item \textbf{Distributed K-ary search}:
+        \begin{itemize}
+            \item resolution key : $log_k(N)$ hops
+            \item At each node, a $RT$ of $log_k(N)$ level
+            \item Each level of $RT$ has $k$ intervals
+            \item For level $l$ ant interval $i$ : $RT(l)(i) = $ adress of the fist node
+                that follow the start of the interval $i$
+        \end{itemize}
+
+        \paragraph{Interval routing}
+        \begin{enumerate}
+            \item If key between my predecessor and me : done
+            \item Otherwise systematic forwarding level by level
+        \end{enumerate}
+
+        \paragraph{Example with $k=4$, $N=16$}: 
+
+        \begin{tabular}{m{6cm}m{6cm}m{4cm}}
+
+            \begin{center}\textcolor{purple}{Level 1} \end{center}
+            \begin{eqnarray*}
+                I_0 &= [1, 5[ &: RT(1)(0) = 1\\
+                I_1 &= [5, 9[ &: RT(1)(1) = 6\\
+                I_2 &= [9, 13[ &: RT(1)(2) = 10\\
+                I_3 &= [13, 1[ &: RT(1)(3) = 15\\
+            \end{eqnarray*}
+            &
+            \begin{center}\textcolor{green}{Level 2} \end{center}
+            \begin{eqnarray*}
+                I_0 &= [1, 2[ &: RT(2)(0) = 1\\
+                I_1 &= [2, 3[ &: RT(2)(1) = 2\\
+                I_2 &= [3, 4[ &: RT(2)(2) = 3\\
+                I_3 &= [4, 5[ &: RT(2)(3) = 6\\
+            \end{eqnarray*}
+
+            & \includegraphics[width=4cm]{img/design1.png}
+        \end{tabular}
+
+
+    \item \textbf{Local atomic action for guarantees}:
+
+        Use local atomic operation for \textbf{join, leave} to ensure
+        that any key-value pair previously inserted is found despite concurrent
+        joins/leaves.
+
+        \begin{enumerate}
+            \item Atomically insterted by it's current successor on the virtual space
+            \item New node receive approximate routing information from it's current successor
+            \item[$\to$] Concurrent join on the same segment are serialized (because of local
+                atomic action)
+        \end{enumerate}
+
+        \begin{tabular}{m{10cm}m{4cm}}
+
+            \begin{itemize}
+                \item Node 14 join
+                \item Pointer for node 1 on level=1 interval=3 become invalid
+                \item[$\to$] corrected by correction-on-use
+            \end{itemize}
+
+            & \includegraphics[width=4cm]{img/design2.png}
+        \end{tabular}
+
+    \item \textbf{Correction-on-use}:
+
+        \begin{tabular}{m{10cm}m{4cm}}
+            Add i (interval) and l (level) with the message 
+            $\Rightarrow$ $n'$ can comppute $x_i^l(n)$
+
+            \begin{itemize}
+                \item[a)] lookup(Key:13, level:1, Interval:3)
+                \item[b)] badPointer(Key:13, Candidate:14)
+                \item[c)] lookup(Key:13, level:1, Interval:3)
+            \end{itemize}
+
+            & \includegraphics[width=4cm]{img/design3.png}
+        \end{tabular}
+\end{enumerate}
+
+
 \subsection{Broadcast in DHTs}
+
+\begin{itemize}
+    \item \textbf{DHT as distributed k-ary search} : construct a spanning tree
+        derived from the decision tree of the distributed k-ary search after removal 
+        of the virtual hops
+
+        \paragraph{Invariant}:
+        \begin{itemize}
+            \item Any node sends to distinct routing entries
+            \item Any sender informs receiver about a \textbf{forwarding limit}
+            \item[$\to$] Construct disjoint interval and node receives a message once
+        \end{itemize}
+
+        \begin{figure}[!h]
+            \centering
+            \begin{tabular}{m{4cm}m{4cm}m{4cm}}
+                \includegraphics[width=4cm]{img/DHT1.png}
+                & \includegraphics[width=4cm]{img/DHT2.png}
+                & \includegraphics[width=4cm]{img/DHT3.png}\\
+            \end{tabular}
+            \caption{DHD spanning tree}
+        \end{figure}
+
+
+    \item[Alternative]
+
+    \item \textbf{Gnutella-like flooding in DHT} : 
+        \begin{itemize}
+            \item[Pro] know diameter $\to$ correct TTL $\to$ High guarantees
+            \item[Con] High traffic with redundant messages
+        \end{itemize}
+
+    \item \textbf{Traversing the ring in Chord or Pastry} : 
+        \begin{itemize}
+            \item[Pro] No redundant message
+            \item[Con] Sequential execution time
+            \item[Con] Highly sensitive to failure
+        \end{itemize}
+\end{itemize}
+
+
+\subsection{Application infrastructure in DHT}
+%TODO
+
 \section{Gossip}
+
 Gossip is the process by which an information will spread among 
-entities. Two operations, push (Telling to)  and pull (asking to).
+entities. Important technique to solve proble in dynamic large scale system
+(scalable, simple, robust)
+
+\begin{lstlisting}
+push (Telling to)
+pull (asking to)
+\end{lstlisting}
+
 \subsection{Protocol Characterisitc}
 \begin{itemize}
 	\item Cyclic/periodic, pair-wise interaction between peers
@@ -1398,86 +2170,134 @@ entities. Two operations, push (Telling to)  and pull (asking to).
 	\item Reliable communication is not assumed
 	\item Protocol cost is negligible
 \end{itemize}
+
 \subsection{Protocol Usage}
 \begin{itemize}
-	\item Dissemenitation : Spread information in a manner that produces
+	\item \textbf{Dissemenitation} : Spread information in a manner that produces
 	bounded worst-case loads.
-	\item Repairing : Anti-entropy  protocols for reparing replicated data
+	\item \textbf{Repairing} : Anti-entropy  protocols for reparing replicated data
 	, which operate by comparing replicas and reconciling differences.
-	\item Membership : Track processes 
+	\item \textbf{Membership} : Track processes 
+	\item \textbf{Aggregates} : Compute a network-wide aggregate. (Ex: number of node or 
+	computing average/max/min )
 	\item ...
 \end{itemize}
+
 \subsection{Information dissemination}
-Dissemination begins with one peer that wants to 
-disseminate some message. Then every peer
-does the following:
+
 \begin{itemize}
+\item Start with one peer that wants to disseminate some message. 
+\item Then every peer does the following:
+
+\begin{enumerate}
 	\item Buffers every message (information unit) it receives up to a 
 	certain buffer capacity $b$
 	\item Forwards that message a limited number of hops or  time steps $t$
 	\item  Forwards the message each time to frandomly selected set of 
 	processes 
+\end{enumerate}
 \end{itemize}
+
 \subsubsection{Infect-forever Model}
 \begin{itemize}
 	\item Fixed population of size n (at round 1, one is infected)
 	\item If infected, stays infected forever
 	\item $Y_r$ is the number of individuals infected at round r
-	\item f is the number of individuals that infected ones try to infect
+	\item $f$ is the number of individuals that infected ones try to infect
+\item $R$ is the number of round to infect all population
 \end{itemize}
-$Y_r \approx \frac{1}{1+n.e^{-f.r}}$ (ratio of \# infected to \# 
-uninfected increases exponentially).
-Number of round $R$ to infect all population:
-$$R = log_{f+1}(n)+\frac{1}{f}log(n)+O(1)$$
+
+\begin{eqnarray*}
+Y_r &\approx& \frac{1}{1+n.e^{-f.r}}\\
+R &=& log_{f+1}(n)+\frac{1}{f}log(n)+O(1)\\
+\end{eqnarray*}
+
 \subsubsection{Infect-die Model}
-In this model, infectious process ''remains infectious'' for just one round\\
-proportion $\pi$ of process eventually contaminated satisfies the
-following fixpoint equation : $\pi = 1-e^{-\pi.f}$ where
-$\pi$ is the proportion of processes eventually contaminated.\\
-Number of round $R$ to infect all population:
-$$R = \frac{log(n)}{log(log(n))}+O(1)$$
+
+\begin{itemize}
+\item Infectious process ''remains infectious'' for just one round
+\item $p_i$ is the proportion of processes eventually contaminated
+\item $R$ the number of round to infect all population:
+\end{itemize}
+
+\begin{eqnarray*}
+\pi &=& 1-e^{-\pi.f}\\
+R &=& \frac{log(n)}{log(log(n))}+O(1)\\
+\end{eqnarray*}
+
 \subsubsection{Membership}
-To ensure scalability, each process has a partial view (random sample 
-of node).
+
+To ensure scalability, each process has a partial view (random sample of
+node).
+
 \begin{itemize}
 	\item When a process forwards a message, it 
 	includes in this message a set of processess it knows.
 	\item Hence, the process that receives the message can enhance the 
 	list of processes it knows by adding new processes.
 \end{itemize}
-%%TODO Requirements?
+
+\paragraph{Protocols requirement}
+\begin{itemize}
+\item Uniformity : all nodes play the same role
+\item Adaptivity under churn : the parameter have to be tuned (t/f)
+\item Bootstrapping : how do nodes enter and leave, how to start
+\end{itemize}
+
+
 \subsubsection{Buffer Management}
-Depending on broadcast rate , buffer capacity if processes may be 
-insufficient to ensure that every message is buffered long enough.\\
-To counter that, message are classiied according to their
+
+Depending on broadcast rate , buffer capacity if processes may be
+insufficient to ensure that every message is buffered long enough.
+
+\paragraph{To conter that}
+message are classiied according to their
 age (the number of processes the message went through) $\to$
 Old message are replaced.
+
 \subsection{Small-world network}
+
 There are different way at which a process choose its infection target
+
 \begin{description}
 	\item[Nearest-neighbor network] Target is a neighbors (number of
-	round is O($n^{1/D}$ for a D-dimensional grid)
+	round is $\bigoh(n^{1/D})$ for a D-dimensional grid)
 	\item[Random network] Target is random (number of rounds is
-	O(log(n))
+	$\bigoh(log(n))$)
 	\item[Small world network] In between case (number of rounds
-	is as random network)
+	is $\bigoh(log(n))$)
 \end{description}
-\paragraph{Note:}Real world social network tends to be small-world networks.
+
+\paragraph{Note:} Real world social network tends to be small-world networks.
+
+
 \subsubsection{Properties}
+
 Small-world network has both nearest neighbor connection as well as 
 long range connections.(Node reachable with a small number of hops).
-Defined by two properties
+
+\paragraph{Properties}
 \begin{itemize}
 	\item Small average shortest path length (opposed to large path length
 	in Neighbor graphs)
 	\item A high clustering coefficient (opposed to low CC in Random graphs)
+	\begin{description}
+	\item[Clustering coefficient] = Average of 
+
+        $$\forall_{p_i \in nodes} \frac{\sum { edge | \quad edge.start \in
+            p_i.neighbors \quad AND \quad edge.end \in p_i.neighbors }}
+            {p_i.nbrNeighbors (p_i.nbrNeighbors-1) /2)}$$
+
+\end{description}
 \end{itemize}
+
 The clustering coefficient CC measures degree of clustering. Count the 
 number of edges between neighboring nodes and divide by the maximum
 possible for every node. The average of this number is the CC.
+
 \subsection{Gossip Framework}
-%TODO mettre en deux colonnes
-\begin{lstlisting}[frame=single]
+\begin{tabular}{m{0.5\linewidth}m{0.5\linewidth}}
+\begin{lstlisting}
 // active thread 
 do forever 
     wait(T time units) 
@@ -1485,31 +2305,205 @@ do forever
     push S to q 
     pull Sq from q 
     S = Update(S,Sq) 
-    
+\end{lstlisting}
+&
+\begin{lstlisting}
 // passive thread 
 do forever 
     (p,Sp) = pull * from * 
     push S to p 
     S = Update(S,Sp) 
 \end{lstlisting}
+\end{tabular}
+
 To instantiate the framework, define 
 \begin{itemize}
-	\item Local state S,
-	\item Method SelectPeer() and Update()
-	\item Style of interaction : push,pull,push-pull
+	\item Local state \texttt{S},
+	\item Method \texttt{SelectPeer()} and \texttt{Update()}
+	\item Style of interaction : \texttt{push, pull, push-pull}
 \end{itemize}
+
 \subsubsection{Aggregation}
+The style of interaction is push-pull
 \begin{itemize}
-	\item The style of interaction is push-pull
-	\item S  is the current estimate of global aggregate
-	\item SelectPeer(): Single random neighbor
-	\item Update(): Numerical function defined according to desired global
+	\item S is the current estimate of global aggregate
+	\item \texttt{SelectPeer()}: Single random neighbor
+	\item \texttt{Update()}: Numerical function defined according to desired global
 	aggregate(arihtmetic/geometric mean,max,\ldots)
 \end{itemize}
-%TODO properties and Network-size
+$$ p = \frac{E(\phi^2_{i+1})}{E(\phi^2_i)} \approx \frac{1}{2 \sqrt{e}} \approx 0.303 $$
+
+%TODO Network-size
 
 \subsubsection{Topology Management}
+Topology gradually appears as a result of a ranking function
+
+
+\begin{itemize}
+\item Given a set of N node (each node has a \texttt{view} of size c, \texttt{profile} is used
+to calculate ranking)
+\item Given a ranking function R : $R(x, {y_1,...,y_m}) = {all ordering of {y_1,...,y_m}}$
+\begin{itemize}
+\item[$\to$] R can be defined by a distance function
+\end{itemize}
+\end{itemize}
+
+\paragraph{T-Man algorithm}
+\begin{itemize}
+    \item \texttt{InitialView()} : random sample of nodes
+    \item \texttt{Merge($v_1, v_2$)} : $v_1 \cup v_2$
+    \item \texttt{SelectPeer(v)} : rank current view v with R and return
+    random sample from first half
+    \item \texttt{SelectView(b)} : rand b with R and return first c element
+\end{itemize}
+
+\paragraph{Convergenge}
+Rapide convergence phase followed by endgame phase.
+\begin{itemize}
+\item After 1 cycle, view is closest c out of $2c$
+\item After i cycle, view is closest c out of $2^i c$
+\end{itemize}
+
+\subparagraph{Handling the endgame}
+\begin{itemize}
+\item Balancing : during rapid convergence, receiving node refuses
+contact if there are already too many
+\item Routing : ing endgame, instead of random selection of a
+peer node, select closest one on the topology (with
+exponentially decreasing probabilities)
+\end{itemize}
+
 \subsubsection{Heartbeat Synchronization}
+
+
+\section{Bit torrent}
+
+\paragraph{Problem}
+\begin{itemize}
+\item Large number of user $\bigoh(10^3)$
+\item Fast as possible
+\end{itemize}
+
+\subsection{Naïve solution}
+All client download from the server with the maximum
+number of parallel client (depend of the available bandwith).
+
+\paragraph{Problem}
+It's really slow and to sequential ordering.
+In addition, we don't use upload resources of clients.
+
+\subsection{Pieces}
+
+A file is sliced into a number of smaller transfer units called pieces of a
+small predefined size.
+
+\begin{itemize}
+\item \textbf{Selecting the right peers} : From the point of view of one peer, selecting the
+right peer to connect to can make a difference in the speed of downloading a file
+\item \textbf{Selecting the right pieces} : Not only peer selection is important, piece
+selection can affect the download time
+\item[$\Rightarrow$] maximize the utilization of network resource of everybody
+\end{itemize}
+
+\subsubsection{Select peers and pieces}
+
+\begin{itemize}
+\item Global knowledge OR no global knowledge
+\item[$\to$] In real P2P, the bandwith changes over time, peers come and go,
+peers are selfish (Download file and run away)
+
+\item[Solution] : random decision s.t 
+\begin{itemize}
+\item Make sur that all peers have roughly the same number of links
+\item A peer choose random piece from the peers he is connected
+\end{itemize}
+\end{itemize}
+
+\subsection{Bittorent}
+
+\subsubsection{Terminology}
+\begin{description}
+\item[Seeds] : machines that have a complete copy of the file. They are usually selfish and do not want to
+wait after they get the file.
+
+At least the first seed has to stay to serve
+one complete copy of the file.
+
+\item[Leechers] : Any peer who does not have a complete file
+is called a leecher
+\item[Tracker] : A peer that keeps track of who are the seeds and the leechers.
+\item[Tracker.getPeers] : Give a subset of peers
+\item[.torrent file/Meta-info File] : \includegraphics[width=7cm]{img/torrent.png}
+\item[Handshaking] : Once a peer list is received, a handshake message
+is sent to the all peers
+\item[Exchanging bitfields] after handshaking with peers
+
+\end{description}
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=9cm]{img/after.png}
+\caption{After exchange}
+\end{figure}
+
+%TODO Choking
+
+\subsubsection{Piece selection}
+\begin{itemize}
+\item Rarest-first amoung your peers
+\item Random-first piece to get first piece as fast as possible (only first few piece)
+\item EndGame mode 
+\end{itemize}
+
+\subsubsection{Peer selection}
+\begin{enumerate}
+\item Construction of the peer list by using the tracker
+\item Unchoking (=Choice based on which peer can give me pieces faster)
+
+\begin{itemize}
+    \item A peer has a total of 80 connections, 40 initiated by
+    him and 40 by others
+    \item A peer unchokes only 4 peers simultaneously
+    \item Decision about unchoking is reconsidered every ten
+    seconds
+    \begin{itemize}
+        \item 3 peers are unchoked (given that they are interested)
+        based on their upload rate to me
+        \item Optimistically look for a fast guy randomly in the 40
+        remaining connections
+    \end{itemize}
+\end{itemize}
+\end{enumerate}
+
+
+\section{Raft}
+
+\begin{itemize}
+    \item At any given time, each servier is EITHER :
+        \begin{enumerate}
+            \item Follower : completely passive 
+            \item Candidate : used to elect a new leader
+            \item Leader
+        \end{enumerate}
+    \item Time divided into term (maintains current term value)
+\end{itemize}
+
+\subsection{Leader election}
+\begin{enumerate}
+    \item Increment current term
+    \item Change to candidate state
+    \item Vote for self
+    \item Send request vote RPC to all other server
+        \begin{itemize}
+            \item Receive vote from majority $\Rightarrow$ leader
+            \item Receive RPC from valid leader $\Rightarrow$ follower state
+            \item Ellection timeout elapse $\Rightarrow$ new election
+        \end{itemize}
+\end{enumerate}
+
+\subsection{Log replication}
+Leader take commands from clients and replicates its log to other server.
+
 \begin{thebibliography}{1} 
 \bibitem{icampus} http://www.icampus.uclouvain.be, {\em Icampus}
 \end{thebibliography}

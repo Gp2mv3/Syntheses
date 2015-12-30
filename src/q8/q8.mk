@@ -1,2 +1,2 @@
 QUADRI=8
-include ../../../root.mk
+include $(BASE_DIR)../../../root.mk

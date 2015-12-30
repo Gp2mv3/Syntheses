@@ -53,7 +53,7 @@
 \newcommand{\annexe}{\part{Annexes}\appendix}
 
 % Bibliography
-\newcommand{\biblio}{\bibliographystyle{plain}\bibliography{biblio}}
+\newcommand{\biblio}[1][plain]{\bibliographystyle{#1}\bibliography{biblio}}
 
 \RequirePackage{fullpage}
 
@@ -64,6 +64,22 @@
 
 \RequirePackage{tikz}
 \usetikzlibrary{positioning, calc}
+
+% For tikz v3 or higher we should use the babel tikz library
+% but for tikz v2 or lower it does not exists
+\newif\iftikzthree
+\begingroup
+\def\getmainversion#1.#2\getmainversion{#1}
+\ifnum\expandafter\getmainversion\pgfversion\getmainversion=3
+  \global\tikzthreetrue
+\fi
+\endgroup
+
+\iftikzthree
+\usetikzlibrary{babel}
+\else
+\typeout{You have an old version of Tikz: \pgfversion, try to update some time ;)}
+\fi
 
 \RequirePackage{pdfpages}
 %\usepackage{subfig}
@@ -94,6 +110,8 @@
 \ifthenelse{\isundefined{\skiptitlepage}}{
 \begin{titlepage}
 \maketitle
+% Remove duplicate page number on title page
+\thispagestyle{empty}
 
   \paragraph{\IfLanguageName{english}{Important Information}{Informations importantes}}
    \IfLanguageName{english}{This document is largely inspired from the excellent course given by}{Ce document est grandement inspiré de l'excellent cours donné par}
@@ -107,11 +125,11 @@
    yours is therefore welcome as well.
    It is always possible to improve it,
    it is even more true if the course has changed because the summary must be updated accordingly.
-   The source code can be found at the following address}
+   The source code and a link to the latest version of the pdf can be found at the following address}
    {Il est écrit par les auteurs susnommés avec l'aide de tous
    les autres étudiants, la vôtre est donc la bienvenue.
    Il y a toujours moyen de l'améliorer, surtout si le cours change car la synthèse doit alors être mise à jour en conséquence.
-   On peut retrouver le code source à l'adresse suivante}
+   On peut retrouver le code source et un lien vers la dernière version du pdf à l'adresse suivante}
    \begin{center}
      \url{https://github.com/Gp2mv3/Syntheses}.
    \end{center}
@@ -158,7 +176,7 @@
    votre aide est la bienvenue.}
 
    \IfLanguageName{english}
-   {to contribute to the bug tracker of the wiki,
+   {To contribute to the bug tracker or the wiki,
    you just have to create an account on GitHub.
    To interact with the source code of the summaries,
    you will have to install}
