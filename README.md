@@ -28,10 +28,10 @@ Vous pouvez aussi directement modifier le code et nous le soumettre
 en utilisant `git`, voir le document
 [How_to_Contribute.pdf](https://www.dropbox.com/s/s48t7iv4n6xotya/How_to_Contribute.pdf?dl=0)
 pour une explication rapide.
-Pour un explication plus détaillée, lisez la partie *Utilisation linéaire de Git* de
+Pour une explication plus détaillée, lisez la partie *Utilisation linéaire de Git* de
 [ce tutoriel](http://sites.uclouvain.be/SystInfo/notes/Outils/html/git.html)
 écrit par Benoît Legat.
-Voir auss le [wiki](https://github.com/Gp2mv3/Syntheses/wiki) à ce sujet.
+Voir aussi le [wiki](https://github.com/Gp2mv3/Syntheses/wiki) à ce sujet.
 
 Vous pouvez visualiser le statut des différentes synthèses
 [ici](https://github.com/Gp2mv3/Syntheses/wiki/Status).
