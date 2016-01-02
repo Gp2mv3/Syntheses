@@ -144,66 +144,102 @@ maximal value
 \end{itemize}
 
 
-\subsubsection{Resolution}
-
-\textbf{Residual graph}Ø Gf = (V, Ef) are used to discover paths from the
-source to the sink on which it is possible to push an
-additional quantity of water and so increase the value of the
-flow. This graph is composed of exactly the same nodes as the
-original graph G = (V, E) but the edges may have a different
-direction and a different (residual) capacity.
-
-Basically if an edge is present only if it didn't reach it's maximal capacity and 
-the residual capacity is is given by the quantity of the flow that can be added 
-without violating the capacity of the edge.
-
-A path joining the source s to the sink t in the residual graph Gf is
-called \textbf{augmenting path}
 
 \subsubsection{Graphical representation}
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.7\linewidth]{MaxFlowGraphRepr.png}
-\end{figure}
-\FloatBarrier
+\begin{tabular}{m{9cm}m{8cm}}
+We usually only represent edges with positive capacity and non
+negative flows. We now implicitly add the \textbf{reverse edges} with
+capacity 0.
+&
+    \includegraphics[width=\linewidth]{MaxFlowGraphRepr.png}
+\end{tabular}
 
+\begin{tabular}{m{10cm}m{1.5cm}m{1.5cm}}
 For bidirectional edges, the reverse edge that we have will have the capacity of the second edge as shown in the example below.
+&
+    \includegraphics[width=\linewidth]{MaxFlowBidirectionnalRepresentation.png}
+    &
+    \includegraphics[width=\linewidth]{MaxFlowBidirectionnalRepresentation2.png}
+\end{tabular}
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.7\linewidth]{MaxFlowBidirectionnalRepresentation.png}
-\end{figure}
-\FloatBarrier
+
+\subsubsection{Residual and augmenting path}
+
+\begin{itemize}
+    \item \textbf{Residual graph} $G_f = (V, E_f)$ are used to discover paths from the
+        source to the sink on which it is possible to push an
+        additional quantity of water and so increase the value of the
+        flow. 
+
+        \begin{itemize}
+            \item This graph is composed of exactly the same nodes as the
+                original graph $G = (V, E)$ but the edges may have a different
+                direction and a different (residual) capacity.
+
+            \item A edge $(a, b)$ is in the residual only if it is not
+                satured (we can add flow):
+                $$(a, b) \in E_f \Leftrightarrow f(a, b) < c(a, b)$$
+
+            \item The residual capacity is 
+                $$c_f(a, b) = c(a, b) - f(a, b)$$
+
+            \item The residual flow is
+                $$f'(a, b) = \begin{cases}
+                    f(a,b) + q & if (a, b) \in C\\
+                    f(a,b) - q & if (b, a) \in C\\
+                    f(a,b)  & otherwise\\
+                \end{cases}$$
+        \end{itemize}
+
+        \begin{center}
+            \includegraphics[width=8cm]{residualGraphExample}
+            \end{center}
+
+    \item A path joining the source $s$ to the sink $t$ in the residual
+        graph $G_f$ is called \textbf{augmenting path}.
+\end{itemize}
+
 
 \subsubsection{Ford-Fulkerson Algorithm}
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.9\linewidth]{MaxFlowAlgo.png}
-\end{figure}
-\FloatBarrier
+\begin{lstlisting}[mathescape]
+Ford-Fulkerson(V, E, c, s, t):
+// Build a vector $f$ with $\frac{|V|}{2}$ entries initialized at 0
+    do
+        Build the residual graph $G_f$ 
+        Find a path $C$ from $s$ to $t$ in $G_f$ 
+        if such a path exists then
+            Let q be the smallest residual capacity on an edge of path C;
+            for every edges $(a, b)$ of path $C$ do
+                $f (a, b) = f (a, b) + q$
+                $f (b, a) = f (b, a) q$
+    while we cannot find a path between $s$ and $t$ in $G_f$ 
+    return $f$ ;
+\end{lstlisting}
 
-Note : As is, the complexity of the algorithm is O(|V||E|U) with U the maximum flow of the graph. The complexity is thus not polynomial but pseudo-polynomial. For this algorithm to be polynomial you must use delta scaling. \newline
-
-Delta scaling pseudocode :
+Note : As the complexity of the algorithm is O(|V||E|U) with U the
+maximum flow of the graph. The complexity is thus not polynomial but
+pseudo-polynomial. For this algorithm to be polynomial you must use
+delta scaling.
 
 \begin{lstlisting}
-delta = X > 1
-while true {
-	Filter out all edges with capa < X in residual graph
-	if you find an augmenting path :
-		delta *= 2
-		q = smallest capa of path
-		for every edge of path do:
-			f(a,b) = f(a,b) + q
-			f(b,a) = f(b,a) - q
-	else if delta > 1 :
-		delta /= 2
-	else
-		break;
-}
-return result
+Delta-Scaling :
+    delta = X > 1
+    while true {
+        Filter out all edges with capa < X in residual graph
+        if you find an augmenting path :
+            delta *= 2
+            q = smallest capa of path
+            for every edge of path do:
+                f(a,b) = f(a,b) + q
+                f(b,a) = f(b,a) - q
+        else if delta > 1 :
+            delta /= 2
+        else
+            break;
+    }
+    return result
 \end{lstlisting}
 
 As their are a maximum of log(U) iteration with delta scaling, the algorithm is of polynomial complexity. The complexity becomes O(|E|² log U)
