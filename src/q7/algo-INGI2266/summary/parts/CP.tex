@@ -1,4 +1,19 @@
 
+\subsection{CP Advantage}
+\begin{itemize}
+    \item Rich modeling language:
+        \begin{itemize}
+            \item  integer variables, set variables, graph variables
+            \item  library of constraints (not necessarily linear)
+        \end{itemize}
+    \item  Fast prototyping
+    \item  Easy to adapt/change a model
+    \item  Extensible (you can create new constraints)
+    \item  Great framework to hybridize with other techniques
+\end{itemize}
+
+\subsection{Description}
+
 \begin{itemize}
     \item \textsc{Model} : Describe real world problem with
         \begin{itemize}
@@ -223,207 +238,332 @@ A set of constraints $S$ is called the decomposition of $g$ iff :
 $$ \forall D(X): sols(X, D(X), \{g\}) = sols(X, D(X), S)$$
 
 \begin{itemize}
-\item GAC pruning equivalent in $S$ and $g$ iff the constraint
-graph of the D is \textbf{acyclic}.
+    \item GAC pruning equivalent in $S$ and $g$ iff the constraint
+        graph of the D is \textbf{acyclic}.
 
-Otherwise, GAC pruning stronger in global constraint
+        Otherwise, GAC pruning stronger in global constraint
 
-\begin{itemize}
-    \item GAC on decomposition : supports(s) for each literal on each constraints
-        \textbf{separately}
-    \item GAC on global constraint: global support(s) for each literal on global constraint
-\end{itemize}
-
-
-\item FC pruning stronger in the decomposition
-    \end{itemize}
-
-
-
-\subsubsection{AllDifferent constraint}
-
-GAC pruning for \texttt{allDifferent($[x_1,\cdots, x_r]$)} use a value graph :
-\begin{itemize}
-    \item one node for each variable $x_1,\cdots, x_r$
-    \item one node for each value in $\cap D(x_i)$
-    \item one edge between $x_i$ and $a$ if $a \in D(x_i)$
-    \item[Note:] bipartite graph
-\end{itemize}
-
-\paragraph{Matching}
-A matching is a \textbf{set of edgges} such that no edge share
-a same node.
-
-\begin{itemize}
-    \item Size matching = \# edges
-    \item Maximum matching = largest size
-    \item Maximum size = \# variables
-\end{itemize}
-
-\begin{description}
-    \item \texttt{AllDifferent($[x_1,\cdots, x_r]$)} satisifiable iff
-        $\exists$ matching of the value graph covering $x_1,\cdots, x_r$ (=
-        matching of maximum size)
-    \item M is a maximum matching iff no augmenting
-        path exists
-\end{description}
-
-\paragraph{Finding a maximum matching}
-
-\begin{enumerate}
-    \item Start with any matching (e.g. empty matching)
-    \item Iteratively improve the matching with \textbf{augmenting path}
-
-        \paragraph{Augmenting path}
         \begin{itemize}
-            \item Edge in M : variables $\to$ values
-            \item Other : values $\to$ variables
-
-            \item[$\Rightarrow$] An augmenting path is a \textbf{directed path}
-                from a uncovered value to an uncovered variable.
-
-                Use DSF or BFS
+            \item GAC on decomposition : supports(s) for each literal on each constraints
+                \textbf{separately}
+            \item GAC on global constraint: global support(s) for each literal on global constraint
         \end{itemize}
 
-        \begin{figure}[!h]
-            \centering
-            %\includegraphics[width=8cm]{img/augmenting-paths.png}
-            \caption{Augmenting paths}
-        \end{figure}
 
-    \item Stop when no more augmenting paths
-\end{enumerate}
-
-\paragraph{GAC}
-
-\begin{description}
-    \item \texttt{AllDifferent} is \textbf{GAC} iff all edge belong to
-        a maximun matching covering all the variables
-\end{description}
-
-\begin{itemize}
-    \item \textbf{Alternating path}
-
-    \item \textbf{Alternating cycle}
-
+    \item FC pruning stronger in the decomposition
 \end{itemize}
 
-\paragraph{Filtering}
-
-\begin{enumerate}
-    \item Find a maximun matching M
-    \item if M.size != \#variables : \textcolor{red}{Fail}
-
-    \item Find all edges belonging to an even \textbf{length alternating
-        path} startint at a uncovered node (DFS or BDS)
-
-        \paragraph{Alternating path}: start at an uncovered node and
-        switch the edges in/out the matching. Change values
-        of variables to stays maximum with different edges.
-
-        \begin{figure}[!h]
-            \centering
-            %\includegraphics[width=8cm]{img/alternating.png}
-            \caption{Alternating paths}
-        \end{figure}
-
-    \item Find all edges belonging to \textbf{alternating cycle} which
-        correpons to the strongly connected components in the directed value
-        graph
-
-        \paragraph{Alternating cycle}: switch the edges in/out the matching.
-        Exchange values of variables to stays maximum with different edges.
-
-    \item Remove all edges/literals not in M and not found
-\end{enumerate}
-
-\paragraph{Incrementality of the filtering}
-The value graph and maximum matching is keep in memory between calls to propagator.
-
-\begin{tabular}{cm{12cm}}
-When called
-&
-\begin{enumerate}
-    \item Remove esdge not present anymore
-    \item recompute maximum matching if necessary
-    \item recompute GAC edges
-\end{enumerate}
-\end{tabular}
 
 \subsubsection{Sum constraint}
+\begin{center}
+    \texttt{Sum($x_1 + x_2 + ... + x_n$) = K}
+\end{center}
 
-\paragraph{NP-Hard}
-Gac for a sum constraint is NP-Hard :
-
-\paragraph{Proof} reduction of subset-sum to GAC for Sum
 \begin{itemize}
-    \item subset-sum: a NP-Hard problem for integer set ($S=\{a_1,\cdots, a_r\}$),
-        does any non-empty subset of S sums to 0?
+    \item \textbf{GAC} for sum constraint is NP-Hard.
 
-    \item reduction to GAC for Sum:
-        \begin{lstlisting}[mathescape]
+        Proof: reduction of subset-sum to GAC for Sum
+        \begin{itemize}
+            \item subset-sum: a NP-Hard problem for integer set ($S=\{a_1,\cdots, a_r\}$),
+                does any non-empty subset of S sums to 0?
+
+            \item reduction to GAC for Sum:
+                \begin{lstlisting}[mathescape]
 variables  $x_i$ with domains $\{0, a_i\}$
 GAC on sum($[x_1,..., x_r], 0$)
 
 if $D(x_i) = \{0\} \forall x_i$ : answer no
 else: answer yes
-\end{lstlisting}
+                \end{lstlisting}
+        \end{itemize}
+
+       GAC propagator for sum constraint is exponential (unless P=NP).
+
+   \item \textbf{Bound consistency} can be done in $O(n)$
+
+       \begin{lstlisting}[mathescape]
+$x_i^{max} = K \sum_{j \neq i} - x_j^{min}$
+$x_i^{min} = K \sum_{j \neq i} - x_j^{max}$
+       \end{lstlisting}
 \end{itemize}
 
-\paragraph{Consequences} GAC propagator for sum is exponential (unless P=NP), so
-the propagator is usually done with \textbf{Bound Consistency}
+\subsubsection{AllDifferent constraint}
+\begin{center}
+    \texttt{allDifferent($x_1, x_2,..., x_n$)}
+\end{center}
 
-\paragraph{Bound consistency}
+\begin{enumerate}
+    \item Build the variable-value graph 
 
-\begin{lstlisting}[mathescape]
-propagate(){
-    $\Delta = \emptyset$
-    for( x $\leftarrow$ scope) {
-        new_min = k - ($\sum_{(y \in scope, y \neq x)} y.max$)
-        for( a $\leftarrow$ D(x) if a < new_min)
-            $\Delta$ += (x, a)
+        \begin{tabular}{m{8cm}m{6cm}}
+            \begin{itemize}
+                \item one node for each variable $x_1,\cdots, x_r$
+                \item one node for each value in $\cap D(x_i)$
+                \item one edge between $x_i$ and $a$ if $a \in D(x_i)$
+                \item[Note:] bipartite graph
+            \end{itemize}
+            &
+            \includegraphics[width=2cm]{variableValue}
+        \end{tabular}
 
-        new_max = k - ($\sum_{(y \in scope, y \neq x)} y.min$)
-        for( a $\leftarrow$ D(x) if a > new_max)
-            $\Delta$ += (x, a)
-    }
-    return $\Delta$
-}
-\end{lstlisting}
+    \item There is a solution to allDifferent($x_1, x_2, ..., x_n$)
+        if there is a maximum matching of size $n$ in the graph.
+
+        \begin{itemize}
+            \item A matching is a \textbf{set of edgges} such that
+                no edge share a same node. 
+            \item Size matching = \# edges, the maximum size = \#
+                variables
+        \end{itemize}
+
+
+        \paragraph{Finding a maximum matching}
+
+        \begin{enumerate}
+            \item Start with any matching (e.g. empty matching)
+            \item Iteratively improve the matching with \textbf{augmenting path}
+                until no more augmenting paths.
+
+                \paragraph{Augmenting path}
+                \begin{itemize}
+                    \item Edge in M : variables $\to$ values
+                    \item Other : values $\to$ variables
+
+                    \item[$\Rightarrow$] An augmenting path is a \textbf{directed path}
+                        from a uncovered value to an uncovered variable.
+                        Use DSF or BFS
+                \end{itemize}
+
+                \begin{figure}[!h]
+                    \centering
+                    \includegraphics[width=8cm]{augmenting-paths.png}
+                    \caption{Augmenting paths}
+                \end{figure}
+
+        \end{enumerate}
+
+    \item Remove useless edge by using a \textbf{transformed var-value
+        graph} in order to keep edge where there is a directed
+        cycle in the transformed graph:
+        \begin{itemize}
+            \item Alternating path: change value of variable
+            \item Alternating cycle: exchange value of variable
+        \end{itemize}
+
+        Note that to have the alternate matching, only switch the
+        edges in/out.
+
+        \begin{center}
+            \includegraphics[width=5cm]{transformed}
+        \end{center}
+
+        \paragraph{Remove edge}
+        Remove all edge $(x, a)$ such that 
+        \begin{itemize}
+            \item $(x, a)$ is not in the matching 
+            \item $a$ and $x$ are in two different Strongly
+                Connected Components in the transformed graph because
+                there is no directed cycle 
+        \end{itemize}
+
+        %TODO show how to make SCC
+
+\end{enumerate}
+
 
 \subsubsection{Element constraint}
-%TODO
 
-%TODO constraint slide 63 to 66
+\begin{tabular}{m{6cm}m{6cm}}
+    \texttt{Element($c, y$) = x}
+    \begin{itemize}
+        \item $X = C[Y]$
+    \end{itemize}
+    &
+    \includegraphics[width=6cm]{elements}
+\end{tabular}
 
+%TODO: example slide 63
+
+
+\subsubsection{Knapsack constraint}
+\begin{center}
+    \texttt{binaryKnapsack($x=[0, 1, 0], p=[100, 200, 300], w=[1, 5, 3],
+    P=400, W=6$)}
+\end{center}
+Maximize profit while satisfying the capacity.
+
+\subsubsection{BinPacking constraint}
+\begin{center}
+    \texttt{binPacking($x=[0, 3, 1], w=[1, 5, 3], l=[4, 0, 6]$)}
+\end{center}
+Placement of weighted items into capacitated bins.
+
+\subsubsection{Hamiltonian circuit constraint}
+\begin{center}
+    \texttt{circuit($x[CPIntVar]$)}
+\end{center}
+
+\begin{tabular}{m{5cm}m{10cm}}
+$x(i)$ is visited after $i$
+&
+    \includegraphics[width=6cm]{hamilto}
+\end{tabular}
 
 
 \subsection{Search}
-
-CP mainly use DFS and at each
-%TODO from slide 67 to the end
-
-
-
-
-
-
-
-
-
-
-
-\subsection{Advantage}
 \begin{itemize}
-    \item Rich modeling language:
-        \begin{itemize}
-            \item  integer variables, set variables, graph variables
-            \item  library of constraints (not necessarily linear)
-        \end{itemize}
-    \item  Fast prototyping
-    \item  Easy to adapt/change a model
-    \item  Extensible (you can create new constraints)
-    \item  Great framework to hybridize with other techniques
+    \item Recursive search (divide and conquer) with DFS.
+        
+        The tree is construct during exploration and only the current
+        node in memory (DFS). The alternative decisions is memorized.
+
+    \item Branching and variable/value heuristic
+        in order to specify for each child nodes
+        how to split problem.
+
+        \paragraph{Node expansion}
+        Subdivision of a CSP into smaller CSP such that the union of the small CSP
+        is equivalent to the original.
+
 \end{itemize}
+
+\subsubsection{Depth First Backtraking search}
+
+\begin{itemize}
+    \item Based on:
+    \begin{enumerate}
+            \item \textbf{stack of sets of decision}
+            \item \textbf{stack of restoration states}
+        \end{enumerate}
+    \item Backtracking restores:
+        \begin{enumerate}
+            \item Variables/domains
+            \item Constraints
+            \item Backtracked structures (ex: fistSupport)
+        \end{enumerate}
+\end{itemize}
+
+\begin{lstlisting}[caption=Depth First backtracking search]
+while (! decisionStack.isEmpty) {
+    val decisionsOfNode = decisionStack.pop()
+
+    val decision = decisionsOfNode.pop()
+    if( decision.hasNext() )
+        pushState()
+
+    applyDecision(decision)
+
+    if (!isFailed() ){
+        val isExpandable = expand(branching)
+        if (! isExpandable) {
+            solFound()
+            popState()
+        }
+    } else {
+        popState()
+    }
+}
+\end{lstlisting}
+
+
+\subsubsection{Branching}
+
+\begin{itemize}
+    \item A branching strategy is \textbf{completeness}
+        if the union of the child CSPs is the parent CSP.
+
+    \item \textbf{Strategy}: 
+        \begin{tabular}{l}
+            binary labelling ($x_1=a, x_1 \neq a$),\\
+            n-ary labelling ($x_1=a, x_1=b, x_1=c, x_1=d$),\\
+            domain spliting ($x_1\geq t, x_1 < t$)
+        \end{tabular}
+
+    \item \textbf{Variable heuristic}: 
+        \begin{tabular}{l}
+            Random, lexicographic \\
+            Highest number of constraint, variable with unstable
+            domain
+        \end{tabular}
+
+        \paragraph{First fail principle}: choose first a variable that
+        is more likely to fail (Consider the most difficult parts of the
+        CSP first).
+
+    \item \textbf{Value heuristic}:
+        \begin{tabular}{l}
+            Random, lexicographic\\
+            Value with minimum pruning, maximum number of solution\\
+        \end{tabular}
+
+        \paragraph{Best first principle}: Choose first a value that is
+        more likely to succeed
+\end{itemize}
+
+\subsubsection{Trailing: restoring state}
+
+\begin{tabular}{m{10cm}m{6cm}}
+    In opposition to copying the node in order to perform backtracking,
+    trailing only store the \textbf{modification}.
+
+    \begin{itemize}
+        \item \textbf{Trail level}
+            Trailed operations are marked with an integer which is increase!
+
+        \item \textbf{Restoring} undo all operations with trail level greater than
+            desired set the trail level to desired one.
+    \end{itemize}
+
+    Sparse set are use to store the domain!
+    &
+    \includegraphics[width=6cm]{trailing}
+\end{tabular}
+
+\paragraph{Sparse set data structure}:
+
+
+\begin{tabular}{m{7cm}m{1.5cm}}
+\begin{itemize}
+        \item Composed of two table: $dom$ and $map$
+        \item $dom$ is split in two set: value in the domain
+            are before \textbf{size} and removed value after.
+
+        \item \textbf{}{Invariant} :
+            $$ D = \{dom[i] | 0 \leq i \leq size\}$$
+            $$map[v] = i \Leftrightarrow dom[i] = v$$
+    \end{itemize}
+&
+\includegraphics[width=9cm]{sparse.png}
+\end{tabular}
+
+\begin{itemize}
+    \item \textbf{Checking} if $v$ in the domain: $O(1)$
+        \begin{enumerate}
+        \item $v \in D \Leftrightarrow map[v] < size$
+            \end{enumerate}
+
+    \item \textbf{Removing value} $c$: $O(1)$
+        \begin{enumerate}
+        \item Exchange value of $map[c]$  and  $map[dom[size-1]$
+                \item Decrement $size$ value
+            \end{enumerate}
+
+        \item \textbf{Restore removed value}: $0(1)$ thanks to
+            ReversibleInteger.
+
+            Note that value are restore in different positions
+
+    \item \textbf{Min/Max} can be added to sparse-set to perform
+        efficient BC filtering. 
+
+        When min value are removed, then consider min+1, min+2,...
+        until a value in the domain is found (in practive only few
+        iterations)
+
+    \item Domain \textbf{iterator} is the only limitation of sparse-set
+\end{itemize}
+
+
+
 
 
