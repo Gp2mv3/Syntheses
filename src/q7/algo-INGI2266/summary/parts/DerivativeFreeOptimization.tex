@@ -1,94 +1,192 @@
-Usually when we try to optimize a function with a continuous domain we use derivative.
-However it is not always possible because:\newline
-1) The gradient is not computable\newline
-2) We dont know the objective function\newline
-3) The gradient is to expensive to compute\newline
-4) We don't know how to compute the gradient\newline
 
-We can use Derivative free optimization.
+It's not always possible to use derivative in order to optimize a
+fonction with a continuous domain because:
+\begin{enumerate}
+    \item  The gradient is not computable
+    \item  We dont know the objective function
+    \item  The gradient is to expensive to compute
+    \item  We don't know how to compute the gradient
+\end{enumerate}
+
+In this case, we can use \textbf{Derivative free optimization}.
 We dont know the objective function but we have comparison function that allows us to compare solutions.
 
+
+\subsection{Background}
+%TODO
+
 \subsection{Grid Search}
-Since the domain is continuious we can't compare every point. To solve this problem we will cut each dimension of the domain in m. We evaluate eaach one of these combination and we output the minimum.
-We will always have $m^n$ evaluation(because we have n dimensions that we cut in m parts).
-We could do a smarter grid search but iteratively perform a grid search and then reduce our domaine for the minimum output area we have found.
-So if we do i iterations we will have $i * m^n$ evaluations od the objective.
+
+As the domain is continuous and we can't compare every point:
+\begin{enumerate}
+    \item Cut each dimension of the domain $\Omega$ in m
+    \item Evaluate each one of these combination 
+    \item Output the minimum
+
+    \item[$\Rightarrow$]  We will always have $m^n$ evaluation,
+        because we have $n$ dimensions that
+we cut in $m$ parts.
+\end{enumerate}
+
+\subsubsection{Iteratively}
+\begin{itemize}
+    \item Perform a grid search for the domain $\Omega$ 
+    \item Around the min point found define a new smaller domain
+        $\Omega$ 
+    \item[$\Rightarrow$] So if we do i iterations we will have $i *
+        m^n$ evaluations for the objective.
+\end{itemize}
+
 \subsection{Directional Direct Search}
-Global idea\newline
-Test a sample of points in specified directions around the iterate.
-If a point is better, select it as next iterate.\newline
-This algorithm consiste of two steps:\newline
-1)Poll step:\newline
-We test the different possibilities and go to a better one(with our comparaison function)\newline
-2)Mesh parameter update:\newline
-We update the size of the step we want to perform.\newline
-\subsubsection{Poll step}
-We define a set D of positive bases that is going to define the direction we will explore.
-Exemple:\newline
-For a 3D space D is :\newline
-$e_1$ = (1,0,0)\newline
-$e_2$ = (0,1,0)\newline
-$e_3$ = (0,0,1)\newline
 
-How to build a new point:\newline
-$x_(new) = x+\alpha*d $(with d in D)
-\subsubsection{Mesh Parameter Update}
-Two cases:\newline
-1)Iteration declared sucessfull(we found a better solution with the comparaison function)\newline
-We increase $\alpha$\newline
-2)Iteration declared unsucessfull\newline
-We decrease $\alpha$\newline
+\begin{tabular}{m{12cm}m{3cm}}
+The global idea is to \textbf{test a sample of points} in specified
+directions around the iterate.
+If a point is better, select it as next iterate.
+&
+\includegraphics[width=2cm]{DDS}
+\end{tabular}
 
-\subsubsection{Problem : Denis-Wood Coutours}
-We can not go toward a better solution with contours like that.\newline
-Two solutions:\newline
-1)Rotate the bases after N unsuccessful iterations\newline
-2)Run DDS N times with N different set of bases.\newline
+\subsubsection{Step}
 
-\subsubsection{Complexity}
-b is the number of bases.
-Worst case : Nbeval = O(n)
-Best case : O(1)
+\begin{enumerate}
+    \item \textbf{Poll step}: Test $N$ points in specified directions
+        around iterate and stop when better (with our comparison
+        function) point found.
+
+        \begin{itemize}
+
+            \item \textbf{Directions and bases}
+                We define a set $D$ of positive bases used to evaluate new
+                points (directions):
+                $$D = [l, -l] = [e_1,..., e_n, -e_1,..., -e_n]$$
+                where the $e_i (1 < i < n)$ are unit vector ($||e_i|| = 1$)
+
+            \item \textbf{Build new point}: 
+                $$x_(new) = x+\alpha*d \quad \textrm{where } d \in D$$
+        \end{itemize}
+
+        \paragraph{Example} For a 3D space,
+        $$D = [l, -l] = [e_1, e_2, e_3, -e_1, -e_2, -e_3] \quad
+        \textrm{where} \quad \begin{cases}
+            e_1 = (1,0,0) \\
+            e_2 = (0,1,0)\\
+            e_3 = (0,0,1)\\
+        \end{cases} $$
+        $$\textrm{Suppose} \quad \begin{cases} 
+            x = (40, 42, 42)\\
+            d = (1, 0, 0)\\
+            \alpha =2
+        \end{cases} \quad           
+        x_{new}  = (40, 42, 42) + 2 * (1, 0, 0) = (42, 42, 42)$$
+
+
+    \item \textbf{Mesh parameter update}: Update or maintain the step
+        size parameter, $\alpha_k$ in order to converge faster.
+
+        \begin{enumerate}
+            \item Iteration declared successful: increase $\alpha_k$ to
+                perform greater step
+                $$\alpha_{k+1} = \gamma \alpha_k \quad \textrm{with}\quad \gamma > 1$$
+
+            \item Iteration declared unsuccessful: decrease $\alpha_k$ to
+                converge to an optimum
+                $$\alpha_{k+1} = \beta \alpha_k \quad \textrm{with}\quad
+                0 < \beta < 1$$
+            \end{enumerate}
+\end{enumerate}
+
+\subsubsection{Denis-Wood Coutours}
+
+\begin{tabular}{m{12cm}m{5cm}}
+No convergence if Denis-Wood contours appears in objective
+function
+&
+\includegraphics[width=2cm]{contour}
+\end{tabular}
+
+\paragraph{Two solutions}:
+\begin{enumerate}
+    \item Rotate the bases after $N$ unsuccessful iterations
+    \item Run DDS $N$ times with $N$ different set of bases.
+    \end{enumerate}
+
+\subsubsection{One iteration complexity}
+\begin{itemize}
+    \item Worst case: $Nb_{evals} = 2b = 0(b)$ where $b$ is the number
+        of bases used
+    \item Best case: $Nb_{evals} = 1 = \Omega(1)$
+\end{itemize}
+
 
 \subsection{The Nelder-Mead Algorithm}
-Global idea\newline
-Build a structure of points.\newline
-At each iteration, replace the worst point in the structure.\newline
-The point structure\newline
-The structure of point is a polyhedron of dimension n + 1.(abusively called simplex).\newline
-The simplex structure\newline
-The simplex structure Y is a set of n + 1 vertices (where n is the
-dimension of the search space) defined as follows:\newline
-$Y = {y^0,y^1,...,y^n}$\newline
-The vertice $y^0$ is a better solution than the vertice $y^1$ which is a better solution that then vertice $y^2$ ....
+
+The global idea is to build a structure of points and replace the worst
+point at each iteration.
+
+\subsubsection{Simplex}
+\begin{tabular}{m{12cm}m{3cm}}
+    \begin{itemize}
+        \item The structure of point is a polyhedron of dimension $n+1$
+            (abusively called simplex)
+
+    \item The simplex structure $Y$ is a set of $n+1$ vertices where $n$ is the
+dimension of the search space defined as follows:
+$$Y = \{y^0,y^1,...,y^n\}$$
+
+\item The vertice $y^0$ is a better solution than the vertice $y^1$ which is a better solution that then vertice $y^2$ ....
+        \end{itemize}
+&
+\includegraphics[width=3cm]{polyhedron}
+\end{tabular}
+
 \subsubsection{Operations on the simplex}
-1)Reflection\newline
-2)Expansion\newline
-3)Contration\newline
-If no amelioration by doing those : Shrink.\newline
+At each iteration, replace the worst point by performing one of the
+following actions:
+\begin{enumerate}
+    \item \begin{tabular}{m{9cm}m{3cm}}
+            \textbf{Reflection} if $f^0 \leq f < f^{n-1}$ : Replace $y^n$ by $y^r$
 
-First we do a reflection with the worst point.From there we have 3 cases.\newline
-1) $f^0 \leq f^r < f^{n-1}$ -> replace $y^n$ by $y^r$\newline
-2) $f^r < f^0 $-> perform an expansion\newline
-3) $f^r \geq f^{n-1}$ -> perform an contraction\newline
+            $$Nb_{evals} = 1 = \Theta(1)$$
+            & 
+            \includegraphics[width=4cm]{reflection}
+        \end{tabular}
 
-Expansion:\newline
-1) if $f^e \leq f^r$ -> replace $y^n$ by $y^e$\newline
-2) Else replace $y^n$ by $y^r$\newline
+    \item \begin{tabular}{m{9cm}m{3cm}}
+            \textbf{Expansion} if $f^r < f^0$ : 
+            \begin{itemize}
+                \item If $f^e \leq f^r$ replace $y^n$ by $y^e$
+                \item else replace $y^n$ by $y^r$
+            \end{itemize}
 
-Contraction:\newline
-1)$f^r < f^n$-> outside contraction
-2)$f^r \geq f^n$ -> inside contraction
+            $$Nb_{evals} = 2 = \Theta(1)$$
+            & 
+            \includegraphics[width=4cm]{expansion}
+        \end{tabular}
 
-Shrink
+    \item \begin{tabular}{m{9cm}m{3cm}}
+            \textbf{Contraction} if $f^r \geq f < f^{n-1}$ : 
+            \begin{itemize}
+                \item If $f^r < f^n$ replace $y^n$ by $y^{oc}$ (outside)
+                \item else replace $y^n$ by $y^{ic}$ (inside)
+            \end{itemize}
 
-\subsubsection{Complexity}
-Reflection\newline
-Nbevals = O(1)\newline
-Expansion/Contraction\newline
-Nbevals = O(1)\newline
-Shrink\newline
-Nbevals = O(n)\newline
+            $$Nb_{evals} = 2 = \Theta(1)$$
+            & 
+            \includegraphics[width=4cm]{contraction}
+        \end{tabular}
+
+    \item \begin{tabular}{m{9cm}m{3cm}}
+            \textbf{Shrink} if no amelioration by doing thos 
+
+            $$Nb_{evals} = n+2 = \Theta(n)$$ where $n$ is the dimension
+            of the search space
+            & 
+            \includegraphics[width=4cm]{shrink}
+        \end{tabular}
+\end{enumerate}
+
+
 \subsection{Multi-Directional Search}
 Global idea\newline
 Same point structure than in Nelder-Mead.\newline
