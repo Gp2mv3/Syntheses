@@ -35,12 +35,12 @@
 
 \subsubsection{DFS}
 
-\begin{tabular}{m{6cm}m{6cm}m{3cm}}
-    \begin{lstlisting}
+\begin{tabular}{m{7cm}m{5cm}m{3cm}}
+    \begin{lstlisting}[mathescape]
 DFS(V , E):
     // Initialization;
     Create global variable Color[1..|V |]
-    Create global variable P arent[1..|V |]
+    Create global variable Parent[1..|V |]
     for each node $u \in V$ do 
         Color[u] = white
         Parent[u] = Nul
@@ -50,7 +50,7 @@ DFS(V , E):
             Visit(u, V, E)
     \end{lstlisting}
     &
-    \begin{lstlisting}
+    \begin{lstlisting}[mathescape]
 Visit(u, V, E):
     Color[u] = Grey
     for $v \in Adj[u]$ do
@@ -184,7 +184,16 @@ For bidirectional edges, the reverse edge that we have will have the capacity of
             \item The residual capacity is 
                 $$c_f(a, b) = c(a, b) - f(a, b)$$
 
-            \item The residual flow is
+        \begin{center}
+            \includegraphics[width=8cm]{residualGraphExample}
+            \end{center}
+
+    \item A path joining the source $s$ to the sink $t$ in the residual
+        graph $G_f$ is called \textbf{augmenting path}.
+
+        \paragraph{Adding a augmenting path $C$}
+            Let $q=c_f(a, b)$, the following
+            flow $f'$ is a valid flow with value:
                 $$f'(a, b) = \begin{cases}
                     f(a,b) + q & if (a, b) \in C\\
                     f(a,b) - q & if (b, a) \in C\\
@@ -192,12 +201,6 @@ For bidirectional edges, the reverse edge that we have will have the capacity of
                 \end{cases}$$
         \end{itemize}
 
-        \begin{center}
-            \includegraphics[width=8cm]{residualGraphExample}
-            \end{center}
-
-    \item A path joining the source $s$ to the sink $t$ in the residual
-        graph $G_f$ is called \textbf{augmenting path}.
 \end{itemize}
 
 
@@ -218,14 +221,34 @@ Ford-Fulkerson(V, E, c, s, t):
     return $f$ ;
 \end{lstlisting}
 
-\subsubsection{Complexity}
+\paragraph{Ford-Fulkerson runtime example}
+\begin{center}
+    \includegraphics[width=0.55\linewidth]{MaxFlowAlgoExecutionExample.png}
+\end{center}
+
+\paragraph{Complexity}
 As the complexity of the algorithm is $O(|V| |E| U)$ with U the
 maximum flow of the graph. The complexity is thus not polynomial but
 pseudo-polynomial (because the input takes $log(U)$ bits to represent
-$U$). For this algorithm to be polynomial you must use
-delta scaling.
+$U$). 
 
-%TODO: sure about pseudo-code
+\subsubsection{Delta-scaling}
+In order to be polynomial, we must use
+delta scaling where the idea is to augment the flow along a path with sufficiently large
+residual capacity ( ≥ $\Delta$)
+
+\begin{enumerate}
+    \item initial $\Delta = 2^{log(U)}$
+    \item Let $G_{f,∆}$ be $G_f$ with edges with residual capacacity $c_f \geq \Delta$ 
+
+        $\Rightarrow$ Then find augmenting paths in $G_{f,∆}$ until not
+        possible with current value of $\Delta$. Call this phase a
+        $\Delta$-scaling phase.
+
+    \item if $\Delta > 1$ : $\Delta = \frac{\Delta}{2}$ and go to 1.
+
+\end{enumerate}
+
 \begin{lstlisting}
 Delta-Scaling :
     delta = X > 1
@@ -245,18 +268,16 @@ Delta-Scaling :
     return result
 \end{lstlisting}
 
-
-As their are a maximum of log(U) iteration with delta scaling, the
-algorithm is of polynomial complexity. The complexity becomes 
-$O(|E|^2 log U)$
-
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.55\linewidth]{MaxFlowAlgoExecutionExample.png}
-    \caption{Ford-Fulkerson runtime example}
-    \label{fig:Ford-Fulkerson_example}
-\end{figure}
-
+\paragraph{Complexity}
+$O(|E|^2 log U)$ because 
+\begin{itemize} 
+        \item $O(|E|)$ augmenting path at each $\Delta$-scaling phase
+        \item $O(|E|)$ to discover one augmenting path
+        \item $O(Log(U)))$ iteration in scaling.
+            
+            $\Rightarrow$ As their are a maximum of log(U) iteration with delta scaling, the
+            algorithm is of polynomial complexity.
+    \end{itemize}
 
 \subsection{Min cut}
 
@@ -303,22 +324,47 @@ $s$ and $t$, are in different partition. Answer == MaxFlow(s,t)
         \end{tabular}
 
 
-\subsubsection{}
+\subsubsection{Net flow of cut with value of flow}
 \begin{center}
     \includegraphics[width=0.7\linewidth]{CutProof.png}
 \end{center}
 
-\subsubsection{Proof that min cut is solved by max flow}
 \subsection{Max flow - min cut theorem}
-Given a feasible flow f, these properties are equivalent:
+Given a feasible flow $f$, these properties are equivalent:
 \begin{enumerate}
-    \item f is maximum flow in G;
-    \item The residual graph G f has no augmenting path
-    \item There exists a cut (S, T) with capacity c(S, T) equal to
-        v(f).
+    \item $f$ is maximum flow in $G$
+    \item The residual graph $G_f$ has no augmenting path
+    \item There exists a cut ($S, T$) with capacity $c(S, T) = v(f)$
 \end{enumerate}
 
-\subsubsection{}
+\begin{itemize}
+    \item[$1\Rightarrow2$] If this path would exists, we could build a
+        larger flow (contradicts the fact that it is maximal).
+
+    \item[$2\Rightarrow3$] Let $u \in S$ and $v\in T$:
+        \begin{itemize}
+            \item if $(u, v) \in E$ is an edge then $f(u, v) = c(u, v)$
+                otherwise $s$ could reach $v$ in $G_f$ 
+            \item If $(v, u) \in E$ is an edge then $f(u, v) = 0$
+                otherwise $s$ could reach $v$ in $G_f$ .
+            \item Otherwise, $f(u, v) = 0$ since no flow can flow between
+                two nodes not linked by an edge
+        \end{itemize}
+        \begin{center}
+    \includegraphics[width=11cm]{23.png}
+    \end{center}
+
+    \item[$3\Rightarrow1$] The value of flow cannot exceed the capacity of one of its
+        cut.
+        \begin{center}
+    \includegraphics[width=10cm]{31.png}
+    \end{center}
+    \end{itemize}
+
+$\Rightarrow$ A flow with a value equal to the capacity of one of its cut is thus
+maximum.
+
+\subsubsection{Proof that the cut is minimal}
 For any feasible flow f of value v(f), there exists a cut (S,T) such
 that the flow f(S,T) that crosses the cut is equal to v(f). Since for
 any feasible flow we have f(S,T) <= c(S,T), if you find a flow v(f) =
