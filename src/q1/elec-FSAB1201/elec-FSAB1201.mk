@@ -1,2 +1,2 @@
 COURSE=elec-FSAB1201
-include ../../q1.mk
+include $(BASE_DIR)../../q1.mk
