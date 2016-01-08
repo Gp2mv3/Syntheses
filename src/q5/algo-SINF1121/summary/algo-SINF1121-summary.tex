@@ -3,10 +3,11 @@
 \usepackage{../../../eplcommon}
 \usepackage{../../../eplcode}
 \usepackage{wrapfig}
+\usepackage{float}
 \lstset{language=Java, basicstyle=\rm\small\ttfamily, tabsize=2}
 
 \hypertitle[']{Algorithms and data structures}{5}{SINF}{1121}
-{Antoine Paris}
+{Antoine Paris\and Sylvain Ramelot\and Charles Momin}
 {Pierre Schauss}
 
 % TODO
@@ -1346,7 +1347,419 @@ in table \ref{tab:cost-summary-searching}.
 
 \section{Strings}
 \subsection{Tries}
-% TO DO
+\paragraph{Goals}
+As with sorting, we can take advantage of properties of strings to develop search meth-
+ods (symbol-table implementations) that can be more efficient for typical applications where search keys are strings.
+More specifically, the goals are the next-ones: 
+\begin{itemize}
+\item{Search hits take time proportional to the length of the search key.}
+\item{Search misses involve examining only a few characters.}
+\end{itemize}
+
+To achieve it, we have to adjust the symbol-table API (cfr fig \ref{triesAPI}) to provide specific character-based operations for string keys.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=.7\linewidth]{img/APItries.png}
+\caption{Tries API}
+\label{triesAPI}
+\end{figure}
+
+Considering the following example keys: she sells sea
+shells by the sea shore ,let's focus on the addition of three new method: \begin{itemize}
+\item{\textbf{{\textit{longuestPrefixOf()}}}: takes a string as argument and returns the longest
+key in the symbol table that is a prefix of that string. For the given keys,
+longestPrefixOf("shell") is she and longestPrefixOf("shellsort") is
+shells .}
+\item{\textbf{{\textit{keysWithPrefix()}}} takes a string as argument and returns all the keys
+in the symbol table having that string as prefix. For the given keys,
+keysWithPrefix("she") is she and shells , and keysWithPrefix("se") is
+sells and sea .}
+\item{\textbf{{\textit{keysThatMatch()}}} takes a string as argument and returns all the keys in the
+symbol table that match that string, in the sense that a period (.) in the argu-
+ment string matches any character. For the given keys, keysThatMatch(".he")
+returns she and the , and keysThatMatch("s..") returns she and sea .}
+\end{itemize}
+
+\subsubsection{Basic Tries}
+
+\begin{mydef}[Tries]
+A \textit{trie} is a search tree build from the characters of the string keys that allows the use the characters of the search
+key to guide the search. A trie has the same structure as a search tree. We usually omit null links due to a substantial number of these one. Each node corresponds to a character value (except the root) and is associated to a value, which can be \textit{null} or the value associated to one of the string key of the symbol table. A representation is given fig \ref{Basic trie}.
+\end{mydef}
+
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=.4\linewidth]{img/tries.png}
+\caption{Basic trie}
+\label{Basic trie}
+\end{figure}
+
+\paragraph{Search}
+Due to this organisation, search in tree is very easy: beginning at the root, following the path made by the characters inside the nodes until reaching the last character of the key is the only thing you have to do. Null links may be found if the next desired character isn't in the trie. Three results can occur:
+\begin{itemize}
+\item{The value at the node corresponding to the last character in the key is not null: this result is
+a \textbf{search hit}. The value associated with the key is the value in the node corre-
+sponding to its last character.}
+\item{The value in the node corresponding to the last character in the key is null (as
+in the search for shell depicted at top right above). This result is a \textbf{search miss}:
+the key is not in the table.}
+\item{The search terminated with a null link (as in the search for shore depicted at
+bottom right above). This result is also a \textbf{search miss}.}
+\end{itemize}
+
+An example of search is given fig \ref{Search in a basic trie}.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=.75\linewidth]{img/trieSe.png}
+\caption{Search in a basic trie}
+\label{Search in a basic trie}
+\end{figure}
+
+\paragraph{Insertion}
+To insert a value, we begin by doing a search: we go down the trie, guided by the character of the key. Two situations can occur:
+\begin{itemize}
+\item{\textbf{Null link encountered}: a null link is encountered before reaching the last character of the key. This implies that there is no node corresponding to this one and we have thus to create a new node for each remaining character of the key. The value is set in the node of the last character.}
+\item{\textbf{Last character encountered}: the last character of the key is encountered before reaching a null link. We just have to set the node's value to the value corresponding to the key.}
+\end{itemize}
+
+An example of insertion in a basic trie is given fig \ref{Insertion in a basic trie}.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=.4\linewidth]{img/trieIn1.png}
+\includegraphics[width=.3\linewidth]{img/trieIn2.png}
+\includegraphics[width=.4\linewidth]{img/trieIn3.png}
+\caption{Insertion in a basic trie}
+\label{Insertion in a basic trie}
+\end{figure}
+
+\paragraph{Implementation}
+A implementation of a trie is given below:
+\begin{lstlisting}
+public class TrieST<Value>
+{
+
+private static int R = 256; // radix
+private Node root;
+// root of trie
+
+private static class Node
+{
+	private Object val;
+	private Node[] next = new Node[R];
+}
+
+public Value get(String key)
+{
+	Node x = get(root, key, 0);
+	if (x == null) return null;
+	return (Value) x.val;
+}
+
+private Node get(Node x, String key, int d)
+{ // Return value associated with key in the subtrie rooted at x.
+	if (x == null) return null;
+	if (d == key.length()) return x;
+	char c = key.charAt(d); // Use dth key char to identify subtrie.
+	return get(x.next[c], key, d+1);
+}
+
+public void put(String key, Value val)
+{ root = put(root, key, val, 0); }
+
+private Node put(Node x, String key, Value val, int d)
+{ // Change value associated with key if in subtrie rooted at x.
+	if (x == null) x = new Node();
+	if (d == key.length()) { x.val = val; return x; }
+	char c = key.charAt(d); // Use dth key char to identify subtrie.
+	x.next[c] = put(x.next[c], key, val, d+1);
+	return x;
+}
+}
+\end{lstlisting}
+
+\paragraph{Collecting keys}
+Because keys are represented implicitly in the trie, it is difficult to provide to user the ability to iterate through the keys. We do not use a queue to stock the different keys as with the binary search tree but we create a explicit representation of all the string keys using the recursive method \textit{collect()}. This method visits the differents nodes and appends the corresponding characters to create the keys. The \textit{collect()} method is use to implements the \textit{keysWithPrefix()} method which is used to implements the \textit{keys()} method. The last one allow to create all the different keys (exemple given fig \ref{keysRe}). A implementation of the  \textit{collect()}, \textit{keysWithPrefix} and \textit{keys()} methods are given below: 
+
+\begin{lstlisting}
+public Iterable<String> keys()
+{ return keysWithPrefix(""); }
+
+public Iterable<String> keysWithPrefix(String pre)
+{
+	Queue<String> q = new Queue<String>();
+	collect(get(root, pre, 0), pre, q);
+	return q;
+}
+
+private void collect(Node x, String pre, Queue<String> q)
+{
+	if (x == null) return;
+	if (x.val != null) q.enqueue(pre);
+	for (char c = 0; c < R; c++)
+		collect(x.next[c], pre + c, q);
+}
+\end{lstlisting} 
+
+The \textit{keysThatMatch()} method use the similar process, but add an argument to specify the pattern to collect. A possible implementation is given below:
+
+\begin{lstlisting}
+public Iterable<String> keysThatMatch(String pat)
+{
+	Queue<String> q = new Queue<String>();
+	collect(root, "", pat, q);
+	return q;
+}
+
+public void collect(Node x, String pre, String pat, Queue<String> q)
+{
+	int d = pre.length();
+	if (x == null) return;
+	if (d == pat.length() && x.val != null) q.enqueue(pre);
+	if (d == pat.length()) return;
+	char next = pat.charAt(d);
+	for (char c = 0; c < R; c++)
+		if (next == '.' || next == c)
+			collect(x.next[c], pre + c, pat, q);
+}
+\end{lstlisting}
+
+The \textit{longuestPrefix()} method first looks for the biggest length found for a path that matches with the parameter string and then return a substring with the obtained length
+
+\begin{lstlisting}
+public String longestPrefixOf(String s)
+{
+	int length = search(root, s, 0, 0);
+	return s.substring(0, length);
+}
+
+private int search(Node x, String s, int d, int length)
+{
+	if (x == null) return length;
+	if (x.val != null) length = d;
+	if (d == s.length()) return length;
+	char c = s.charAt(d);
+	return search(x.next[c], s, d+1, length);
+}
+\end{lstlisting}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=.45\linewidth]{img/keysRe.png}
+\caption{Keys recuperation}
+\label{keysRe}
+\end{figure}
+
+\paragraph{Deletion}
+AS for the insertion, the first step of a deletion is a search: the goal is to find the node corresponding to the key and set its value to null. Two situations may occur then:
+\begin{itemize}
+\item{The node has non-null link to a child. No more work is required}
+\item{All the remaining link are null. We have thus to remove the node. Caution that if doing so leaves all the links null in its parent, we need to remove that node,
+and so forth.}
+\end{itemize}
+A exemple is given fig \ref{trieDel}. A possible implementation is given below:
+\begin{lstlisting}
+public void delete(String key)
+{ root = delete(root, key, 0); }
+
+private Node delete(Node x, String key, int d)
+{
+	if (x == null) return null;
+	if (d == key.length())
+		x.val = null;
+	else
+	{
+		char c = key.charAt(d);
+		x.next[c] = delete(x.next[c], key, d+1);
+	}
+	
+	if (x.val != null) return x;
+	
+	for (char c = 0; c < R; c++)
+		if (x.next[c] != null) return x;
+	return null;
+}
+\end{lstlisting}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=.75\linewidth]{img/trieDel.png}
+\caption{Deletion with basic trie}
+\label{trieDel}
+\end{figure}
+
+\begin{myprop}
+The linked structure (shape) of a trie is independent of the key in-
+sertion/deletion order: there is a unique trie for any given set of keys.
+\end{myprop}
+
+\begin{myprop}
+The number of array accesses when searching in a trie or inserting
+a key into a trie is at most 1 plus the length of the key. From a theorical point of view, this implies that tries are optimal for search hit.
+\end{myprop}
+
+\begin{myprop}
+The average number of nodes examined for search miss in a trie
+built from N random keys over an alphabet of size R is ~log R N .
+\end{myprop}
+
+\begin{myprop}
+The number of links in a trie is between RN and RNw, where w is
+the average key length. More precisely, for $N$ random keys and $w$ the average length of a key, we can proove that:
+\begin{itemize}
+\item{When keys are short, the number of links is close to RN.}
+\item{When keys are long, the number of links
+is close to RNw.}
+\item{Therefore, decreasing R can save a huge
+amount of space.}
+\end{itemize}
+\end{myprop}
+
+\paragraph{Size}
+On average, the required space for a trie is huge due to the one-way-branching that can occur. A solution to this problem is the \textit{ternary search trie}.
+
+\subsubsection{Ternary search tries (TST)}
+
+\begin{mydef}
+A \textit{ternary search trie} is a trie in which each node has a character, three links,
+and a value. The three links correspond to keys
+whose current characters are less than, equal
+to, or greater than the node’s character. In TST, characters appear explicitly in nodes: we
+find characters corresponding to keys only
+when we are traversing the middle links.
+\end{mydef}
+
+\paragraph{Search}
+Due to this configuration, a search appears to be easy: we compare the
+first character in the key with the character at
+the root. If it is less, we take the left link; if it is
+greater, we take the right link; and if it is equal,
+we take the middle link and move to the next
+search key character. The algorithm is applied recursively.
+
+\paragraph{Insertion}
+The insertion is like an insertion for tries: beginning with a search and then add the value in a new node or not. A example is given fig \ref{TSTSe}.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=.4\linewidth]{img/TST.png}
+\includegraphics[width=.4\linewidth]{img/TSTSe.png}
+\caption{TST representation and search}
+\label{TSTSe}
+\end{figure}
+
+Using this arrangement is equivalent to implementing
+each R-way trie node as a binary search tree that uses
+as keys the characters corresponding to non-null links.
+Continuing the correspondence, TSTs correspond to 3-way string quicksort (cfr fig \ref{TSTnode}).
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=.75\linewidth]{img/TSTnode.png}
+\caption{Node representation of a TST}
+\label{TSTnode}
+\end{figure}
+
+\paragraph{Immplementation}
+A implementation is given below:
+
+\begin{lstlisting}
+public class TST<Value>
+{
+
+private Node root;
+private class Node
+{
+	char c;
+	Node left, mid, right;
+	Value val;
+}
+
+public Value get(String key)
+// root of trie
+// character
+// left, middle, and right subtries
+// value associated with string
+// same as for tries (See page 737).
+private Node get(Node x, String key, int
+{
+	if (x == null) return null;
+	char c = key.charAt(d);
+	if(c < x.c) return get(x.left, key, d);
+	else if (c > x.c) return get(x.right, key, d);
+	else if (d < key.length() - 1)
+		return get(x.mid, key, d+1);
+	else return x;
+}
+
+public void put(String key, Value val)
+{ root = put(root, key, val, 0); }
+
+private Node put(Node x, String key, Value val, int d)
+{
+	char c = key.charAt(d);
+	if (x == null) { x = new Node(); x.c = c; }
+	if(c < x.c) x.left = put(x.left, key, val, d);
+	else if (c > x.c) x.right = put(x.right, key, val, d);
+	else if (d < key.length() - 1)
+	x.mid= put(x.mid,key, val, d+1);
+	else x.val = val;
+	return x;
+}
+}
+\end{lstlisting}
+
+\begin{myprop}
+The number of links in a TST built from N string keys of average
+length w is between 3N and 3Nw. This implies that the required space for a TST is well-over shorter than for a basic trie.
+\end{myprop}
+
+\begin{myprop}
+A search miss in a TST built from N random string keys requires on the average $\sim ln N$ character compares:  search hit or an insertion in a TST uses
+a character compare for each character in the search key.
+\end{myprop}
+
+In the worst case, a node might be a full R-way node that is unbalanced, stretched out
+like a singly linked list, so we would need to multiply by a factor of R.
+
+\paragraph{Alphabets}
+The prime virtue of using TSTs is that they adapt gracefully to irregularities
+in search keys. First, we usually use large alphabets  in pratictal applications. These alphabet may be a problem when using a basic tree due to a huge amount of link. With TST, we can use a 256-character ASCII encoding or a 65,536-character
+Unicode encoding without having to worry about the excessive costs of nodes with 256-
+or 65,536-way branching, and without having to determine which sets of characters are
+relevant. 
+
+\paragraph{Prefix match, collecting keys, and wildcard match.}
+A TST represent a trie, so \textit{longuestPrefixOf()}, \textit{keys()}, \textit{keysWithPrefix()} ans \textit{keysThatMatch()} implementation can be easily adapted.
+
+\paragraph{Deletion}
+Deletion for a TST require more work: du to his organisation, we have to use the BST node deletion method.
+
+\paragraph{Improvement: Hybrid TSTs}
+An easy improvement can be made by using large explicit multiway node at the root (by keeping a table of $R$ TST by example). For this method to be effective, the leading digits of the keys must be well distributed.The resulting hybrid tries 
+algorithm corresponds to the way that a human might search for names in a telephone
+book ("Beginning by 'A', before 'Andrews' but after 'Aindan'").
+
+\paragraph{One-way-branching} Just as with tries, we can make TSTs more efficient in their use of
+space by putting keys in leaves at the point where they are distinguished and by eliminating one-way branching between internal nodes. we have thus the next proposition:
+a search or an insertion in a TST built from N random string keys
+with no external one-way branching and $R^t$ -way branching at the root requires
+roughly ln N - t ln R character compares, on the average.
+
+\paragraph{Performance point of view}
+If space is available, R-way tries provide the fastest search, essentially completing the
+job with a constant number of character compares. For large alphabets, where space
+may not be available for R-way tries, TSTs are preferable, since they use a logarithmic
+number of character compares, while BSTs use a logarithmic number of key compares.
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[width=.75\linewidth]{img/perf.png}
+\label{perf}
+\end{figure}
 
 \subsection{Substring search}
 \begin{myprob}[Substring search]
@@ -1528,6 +1941,266 @@ To expand a bitstream :
 \end{itemize}
 
 \section{Graphs}
+
+\subsection{Graphe non-orienté}
+
+\paragraph{Definition}
+A graph is a set of vertices and a collection of edges that each connect a
+pair of vertices.
+
+\paragraph{Anomalies}
+Our definition allows two simple anomalies:
+\begin{itemize}
+
+\item A self-loop is an edge that connects a vertex to itself.
+\item Two edges that connect the same pair of vertices are parallel.
+
+\end{itemize}
+
+
+
+\paragraph{Definition}
+
+A path in a graph is a sequence of vertices
+connected by edges. A simple path is one with no repeated
+vertices. A cycle is a path with at least one edge whose first
+and last vertices are the same. A simple cycle is a cycle with
+no repeated edges or vertices (except the requisite repetition
+of the first and last vertices). The length of a path or
+a cycle is its number of edges.
+
+\paragraph{Definition}
+
+A graph is connected if there is a path from every vertex to every other
+vertex in the graph. A graph that is not connected consists of a set of connected components,
+which are maximal connected subgraphs.
+
+\paragraph{Definition}
+
+A tree is an acyclic connected graph. A disjoint
+set of trees is called a forest. A spanning tree of a
+connected graph is a subgraph that contains all of that
+graph’s vertices and is a single tree. A spanning forest of
+a graph is the union of spanning trees of its connected
+components.
+
+For example, a graph G with V vertices is a tree if and
+only if it satisfies any of the following five conditions:
+
+\begin{itemize}
+\item G has V-1 edges and no cycles.
+\item G has V-1 edges and is connected.
+\item G is connected, but removing any edge disconnects it.
+\item G is acyclic, but adding any edge creates a cycle.
+\item Exactly one simple path connects each pair of vertices in G.
+\end{itemize}
+
+\paragraph{Definition}
+
+A bipartite graph is a graph whose vertices we can divide into two sets
+such that all edges connect a vertex in one set with a vertex in the other
+set. The figure at right gives an example of a bipartite graph, where one
+set of vertices is colored red and the other set of vertices is colored black.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.15]{img/graph_bipart.png}
+	\caption{A bipartite graph}
+	\label{fig:bipart}
+\end{figure}
+
+\subsubsection{Différents types de représentations des graphes}
+
+Il y en a 3: 
+\begin{itemize}
+\item une liste de liens
+\item une matrice d'adjascence
+\item une liste d'adjascence 
+\end{itemize}
+
+Les complexités des méthodes \texttt{adj(int v)} et \texttt{addEdge(int v, int w)} sont les suivantes: 
+
+\vspace{0.3cm}
+\begin{tabular}{|c|c|c|c|}
+\hline
+& \textbf{Liste de liens} & \textbf{Matrice d'adjascence} & \textbf{Listes d'adjascence }\\
+\hline
+\textbf{adj(int v)} & O(m) & O(n) & O(1) 
+\\
+\textbf{addEdge(int v, int w)} & O(1) & O(1)& O(1)
+\\
+\hline
+\end{tabular}
+
+\subsubsection{DepthFirstSearch}
+
+
+
+\lstinputlisting{code/DepthFirstSearch.java}
+
+\subsubsection{DepthFirstPath}
+
+
+\lstinputlisting{code/DepthFirstPath.java}
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.5]{img/dfp.png}
+	\caption{Trace of pathTo(5) computation}
+	\label{fig:dfp}
+\end{figure}
+
+\subsection{Graphes orientés}
+
+\paragraph{Definition}
+
+A directed graph (or digraph) is a set of vertices and a collection of directed
+edges. Each directed edge connects an ordered pair of vertices.
+
+\paragraph{Definition}
+
+A directed path in a digraph is a sequence of vertices in which there is
+a (directed) edge pointing from each vertex in the sequence to its successor in the
+sequence. A directed cycle is a directed path with at least one edge whose first and
+last vertices are the same. A simple cycle is a cycle with no repeated edges or vertices
+(except the requisite repetition of the first and last vertices). The length of a path or
+a cycle is its number of edges.
+
+\subsubsection{DirectedDFS}
+
+\lstinputlisting{code/DirectedDFS.java}
+
+\subsubsection{DirectedCycle}
+
+\paragraph{Definition}
+
+A directed acyclic graph (DAG) is a digraph with no directed cycles.
+\\
+
+This class adds to our standard recursive dfs() a boolean array onStack[] to keep track of the vertices
+for which the recursive call has not completed. When it finds an edge v->w to a vertex w that is on
+the stack, it has discovered a directed cycle, which it can recover by following edgeTo[] links.
+
+\lstinputlisting{code/DirectedCycle.java}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.8]{img/directed_cycle.png}
+	\caption{Trace of cycle computation	}
+	\label{fig:directed cycle}
+\end{figure}
+
+\subsubsection{Tri topologique}
+
+\paragraph{Proposition}
+A digraph has a topological order if and only if it is a DAG.
+
+Three vertex orderings are
+of interest in typical applications:
+
+\begin{itemize}
+\item Preorder : Put the vertex on a queue before the recursive calls.
+\item Postorder : Put the vertex on a queue after the recursive calls.
+\item Reverse postorder : Put the vertex on a stack after the recursive calls.
+
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=1]{img/pre_post_rev.png}
+	\caption{Computing depth-first orders in a digraph}
+	\label{fig:directed cycle}
+\end{figure}
+
+
+
+A
+one-line addition to our standard recursive DFS does the job! To convince you of this
+fact, we begin with the class DepthFirstOrder
+
+\lstinputlisting{code/DFSOrder.java}
+
+\lstinputlisting{code/TopologicalSort.java}
+
+\subsection{Minimum Spanning Trees}
+
+\paragraph{Definition}
+
+A minimum spanning tree (MST ) of an
+edge-weighted graph is a spanning tree whose weight
+(the sum of the weights of its edges) is no larger than
+the weight of any other spanning tree.
+
+\paragraph{Definition}
+A cut of a graph is a partition of its vertices into two nonempty disjoint
+sets. A crossing edge of a cut is an edge that connects a vertex in one set with a vertex
+in the other.
+
+\paragraph{Edge-weighted graph data type}:
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.7]{img/edge_w_api.png}
+	
+	\label{fig:edge w api}
+\end{figure}
+
+\paragraph{Cut Property}
+
+Given any cut in an edgeweighted
+graph, the crossing edge of minimum weight is in
+the MST of the graph.
+
+\subsubsection{Prim's algorithm}
+
+Prim’s algorithm computes the MST of any
+connected edge-weighted graph.
+
+\lstinputlisting{code/LazyPrimMST.java}
+
+\subsubsection{Kruskal's algorithm}
+
+\lstinputlisting{code/Kruskal2.java}
+
+\subsubsection{Summary}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.8]{img/summary_mst.png}
+	
+	\label{fig:summary MST}
+
+
+\end{figure}
+
+
+\subsection{Shortest path}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.5]{img/directed_edge_w_api.png}
+	
+	\label{fig:directed w edge api}
+
+
+\end{figure}
+
+
+\subsubsection{Dijkstra's algorithm}
+\lstinputlisting{code/Dijkstra.java}
+
+\subsubsection{Summary}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.5]{img/summary_SPT.png}
+	
+	\label{fig:summary spt}
+
+
+\end{figure}
+
 
 % Need a better title for this section
 \section{Various algorithms}
