@@ -14,6 +14,20 @@
 \DeclareOption{skiptitle}{\newcommand{\skiptitlepage}{}}
 
 \DeclareOption{usereportclass}{\newcommand{\usereport}{}}
+\DeclareOption{10pt}{
+\ifcsname usereport\endcsname%
+\PassOptionsToClass{10pt}{report}
+\else%
+\PassOptionsToClass{10pt}{article}
+\fi%
+}
+\DeclareOption{landscape}{
+\ifcsname usereport\endcsname%
+\PassOptionsToClass{landscape}{report}
+\else%
+\PassOptionsToClass{landscape}{article}
+\fi%
+}
 
 \DeclareOption*{\ClassError{eplbase}{I have not the faintest idea of what you wanted to do when you gave the the option ``\CurrentOption''. I could have just thrown a warning, ignore it and continue compiling but I think I will just stop here. Press ``H'' for help}{If you really don't understand why I say that, please ask on Github with an issue.}}
 
@@ -21,9 +35,9 @@
 \ProcessOptions\relax
 
 \ifcsname usereport\endcsname%
-\LoadClass[11pt,a4paper]{report}
+\LoadClass[a4paper]{report}
 \else%
-\LoadClass[11pt,a4paper]{article}
+\LoadClass[a4paper]{article}
 \fi%
 
 \RequirePackage[utf8x]{inputenc}
@@ -35,6 +49,7 @@
 
 \RequirePackage{ifthen}
 \RequirePackage{url}
+\RequirePackage{xparse}
 
 %%% SECTION TITLE APPEARANCE
 \RequirePackage{sectsty}
@@ -94,7 +109,7 @@
 
 % le `[e ]' rend le premier argument (#1) optionnel
 % avec comme valeur par défaut `e `
-\newcommand{\basehypertitle}[8][e ]{
+\DeclareDocumentCommand{\basehypertitle}{ O{e } m m m m m m m O{} }{
 
 {\renewcommand{\and}{\unskip, }
 \hypersetup{pdfauthor={#6},
@@ -198,6 +213,8 @@
    {Si cela pose problème,
    nous sommes évidemment ouverts à des contributeurs envoyant leurs
    changements par mail ou par n'importe quel autre moyen.}
+
+   #9
 \end{titlepage}
 }{}
 

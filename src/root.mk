@@ -6,7 +6,6 @@
 #PDFVIEWER=xpdf # lightweight
 PDFVIEWER=xdg-open # Default pdf viewer - GNU/Linux
 #PDFVIEWER=open # Default pdf viewer - Mac OS
-MAIN_NAME=${COURSE}-${TYPE}
 ifneq (,$(filter $(TYPE),exam test))
   MAIN_NAME=${COURSE}-${TYPE}-${YEAR}-${MONTH}-${MINMAJ}
 else
