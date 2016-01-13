@@ -10,9 +10,9 @@ public Catalog(String filename) {
             int duration = Integer.parseInt(properties[2]);
             contents[i] = new Song(title, author, duration);
         }
+        br.close();
     } catch(IOException e) {
         System.err.println("Erreur lors de la lecture du fichier");
     }
-    br.close();
 }
 
