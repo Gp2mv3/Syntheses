@@ -1,4 +1,6 @@
 # Synthèses de l'EPL
+
+[![Join the chat at https://gitter.im/Gp2mv3/Syntheses](https://badges.gitter.im/Gp2mv3/Syntheses.svg)](https://gitter.im/Gp2mv3/Syntheses?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Les documents présents sur ce repository sont des documents
 mis à disposition pour les étudiants de l'EPL.
 
