@@ -1,0 +1,129 @@
+\subsection{Motivations}
+
+\paragraph{One-way Function} function $h:A \rightarrow B$, easy to compute but
+hard to invert.
+One-way function are used to store password. To break password, an exhaustive
+search can be used in two different ways.
+\begin{table}[ht!]
+    \centering
+    \begin{tabular}{c|c|c}
+        & Online exhaustive search & Precalculated exhaustive search \\
+        \hline
+        Computation & $ |A|:=N $ & 0 \\
+        Storage & 0 & N \\
+        Precalculation & 0 & N \\
+    \end{tabular}
+\end{table}
+
+\subsection{Hellman's TMTO}
+Hellman table is used to precalculation phase to speed up the online attack.
+\subsubsection{Table creation}
+%$$ H: A \to B \quad the\ hash\ function $$
+%$$ R: B \to A \quad the\ reduction\ function $$
+%A number M of chains is generated from a arbitrary value in A\@:
+\begin{tabular}{m{6cm}m{8cm}}
+\begin{tikzpicture}
+
+    \node[draw, circle] (A1) {S1};
+    \node[draw, circle] (A2) [below=of A1] {};
+    \node[draw, circle] (A3) [below=of A2] {};
+    \node[draw, circle] (A4) [below=of A3] {E1};
+
+    \node[draw, circle] (B1) [below right=0.5cm and 3cm of A1] {};
+    \node[draw, circle] (B2) [below=of B1] {};
+    \node[draw, circle] (B3) [below=of B2] {};
+
+\node [draw, ellipse, fit={(A1) (A2) (A3) (A4)}] (F) {};
+\node [draw, ellipse, fit={(B1) (B2) (B3) }] (FF) {};
+
+\draw[->] (A1) edge node[above] {h} (B1);
+\draw[->] (B1) edge node[above] {R} (A2);
+
+\path[->] (A2) edge (B2)
+(B2) edge (A3)
+(A3) edge (B3)
+(B3) edge (A4);
+
+\end{tikzpicture}
+&
+\begin{itemize}
+\item $h: A \to B$
+\item $R: B \to A$
+
+\item[$\Rightarrow$] R is the reduction function.
+\end{itemize}
+$$$$
+\begin{tikzpicture}
+    \node[draw, circle] (A1) {S1};
+    \node[draw, circle] (A2) [right=of A1] {};
+    \node[draw, circle] (A3) [right=of A2] {};
+    \node[draw, circle] (A4) [right=of A3] {};
+
+    \node[draw, circle] (A5) [right=of A4] {};
+    \node[draw, circle] (A6) [right=of A5] {};
+    \node[draw, circle] (A7) [right=of A6] {E1};
+
+\path[bend left, ->] (A1) edge node[above] {h} (A2)
+(A2) edge node[above] {R} (A3)
+(A3) edge node[above] {h} (A4)
+
+(A5) edge node[above] {h} (A6)
+(A6) edge node[above] {R} (A7);
+
+    \node[draw, circle] (B1) [below=of A1] {S2};
+    \node[draw, circle] (B2) [right=of B1] {};
+    \node[draw, circle] (B3) [right=of B2] {};
+    \node[draw, circle] (B4) [right=of B3] {};
+
+    \node[draw, circle] (B5) [right=of B4] {};
+    \node[draw, circle] (B6) [right=of B5] {};
+    \node[draw, circle] (B7) [right=of B6] {E2};
+
+\path[bend left, ->] (B1) edge node[above] {h} (B2)
+(B2) edge node[above] {R} (B3)
+(B3) edge node[above] {h} (B4)
+
+(B5) edge node[above] {h} (B6)
+(B6) edge node[above] {R} (B7);
+
+\end{tikzpicture}
+\\
+\end{tabular}
+During the generation of the chains, chains may collide between each other, to
+avoid that, different reduction function must be used.
+\subsubsection{Online attack}
+%%TODO ADD from the book, image
+The idea is to take the a value $h$ in B, use the reduction function to get in A
+and check if the value is contains in the last column of the table match.
+If they don't match, use two reduction function and redo the verification.
+If the verification fails, redo with 3 reduction function and so on.\ if
+no match is found then the attack fails.
+
+When there is a match, redo the chains from the beginning and stop when the
+current value is equal to $h$. The password is the value just before $h$
+%%TODO false alarms
+
+\subsection{Oechslin Tables}
+Oechslin tables also called rainbow table. The main difference compared to
+Hellman table is that it uses different reduction function per column such that:
+
+\begin{itemize}
+    \item If 2 chains collide in different columns, they don't merge.
+    \item If 2 chains collide in same column, merge can be detected.
+\end{itemize}
+
+\paragraph{Theorem} The success probability of a table is bounded:
+\begin{itemize}
+    \item
+    Given $t$ and a sufficiently large $N$, the expected maximum number of
+    chains per perfect rainbow table without merge is:
+    $$ m_{\max}(t)\approx\frac{2N}{t+1} $$
+    \item
+    Given $t$, for any problem of size $N$, the expected maximum probability of
+    success of a single perfect rainbow table is:
+    $$ P_{\max}(t)\approx 1 - (1-\frac{2}{t+1})^t $$
+    which tends toward $ 1 - e^{-2}\approx 86\% $ when $t$ is large.
+
+    %%TODO have we seen that Average cryptanalysis time ?
+\end{itemize}
+
