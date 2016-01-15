@@ -58,52 +58,142 @@ Challenge response protocol can use different mechanism:
 \subsubsection{Challenge Response example}
 \begin{itemize}
     \item \textbf{Bad CR} protocol
+        \begin{eqnarray*}
+            A \leftarrow B & r_B \\
+            A \rightarrow B & E_k(r_B) \\
+        \end{eqnarray*}
+
+        \begin{itemize}
+            \item An attacker can't get the secret key $k$ by
+                observing protocol
+            \item B can be sure than message comes from A because
+                only A and B share $k$
+            \item No replay because $r_B$ is a nonce
+        \end{itemize}
+
+        \paragraph{Bad}
+        \begin{itemize}
+            \item Attacker can replay $E_k(r_B)$ if $r_B$ appear twice
+            \item If $r_B$ is predictible, the adversary can play
+                the role of B (verifier) in front of A, sending him
+                a random $r_B$ , then play the role of A (prover) in
+                front of B.
+            \item Chosen-plaintext attack possible because response
+                from A is not randomized.
+                \begin{enumerate}
+                    \item Adversary can precompute all possible
+                        answers
+                    \item The adversary can require the
+                        prover to sign a chosen value (with
+                        public key CR)
+                \end{enumerate}
+        \end{itemize}
 
     \item \textbf{Medium CR} protocol
+        \begin{eqnarray*}
+            A \leftarrow B & r_B \\
+            A \rightarrow B & E_k(r_A, r_B) \\
+        \end{eqnarray*}
+
+        \paragraph{Bad}
+        \begin{itemize}
+        \item A adversary can make a reflection attacks
+            \begin{enumerate}
+                \item Initiate a new protocol with B and send $r_B$
+                \item B will response with $E_k(r_B', r_B)$ which is
+                    precisely the answer the adversary must provide
+                    to B to impersonate A
+            \end{enumerate}
+        \end{itemize}
 
     \item \textbf{Better CR} protocol
+        \begin{eqnarray*}
+            A \leftarrow B & r_B \\
+            A \rightarrow B & E_k(r_A, r_B, B) \\
+        \end{eqnarray*}
+
+        \begin{itemize}
+            \item Unilateral authentication protocol (A to B)
+        \end{itemize}
+
+    \item \textbf{King CR} protocol
+        \begin{eqnarray*}
+            A \leftarrow B & r_B \\
+            A \rightarrow B & E_k(r_B, B), r_A \\
+            A \leftarrow B & E_k(r_A, A) \\
+        \end{eqnarray*}
 \end{itemize}
 
 
 \subsection{ISO 9798 Challenge/Response}
-ISO 9798\text{-}2 based on Symmetric-Key Encryption:
 \begin{itemize}
-    \item Mechanism-1
-        $$ A  \rightarrow B \quad E_k(t_A,B) $$
-    \item Mechanism-2
-        $$ A  \leftarrow  B \quad r_B $$
-        $$ A  \rightarrow B \quad E_k(r_B,B) $$
-    \item Mechanism-3
-        $$ A  \leftarrow B \quad r_B $$
-        $$ A  \rightarrow B \quad E_k(r_A,r_B,B) $$
-        $$ A  \leftarrow  B \quad E_k(r_n,r_A) $$
+    \item Mechanism~1: Unilateral authentication with timestamps
+    \item Mechanism~2: Unilateral authentication with random numbers
+    \item Mechanism~3: Mutual authentication with random numbers
 \end{itemize}
-%%TODO VARIANT slide 162
-ISO 9798\text{-}4 based on Hash function:
+
+\subsubsection{ISO 9798\text{-}2 based on Symmetric-Key Encryption}
+
+\begin{eqnarray*}
+    Mechanism~1 \quad & A  \rightarrow B &  E_k(t_A,B)\\
+    \\
+    Mechanism~2 \quad & A \leftarrow  B & r_B \\
+                & A  \rightarrow B & E_k(r_B,B) \\
+    \\
+    Mechanism~3 \quad & A  \leftarrow B & r_B \\
+                & A  \rightarrow B & E_k(r_A,r_B,B) \\
+                & A  \leftarrow  B & E_k(r_B,r_A) \\
+    \\
+    Map1 (Mech~3 alternative) & A  \leftarrow B & r_B \\
+                & A  \rightarrow B & E_k(A, B, r_B,r_A) \\
+                & A  \leftarrow  B & E_k(\textcolor{red}{B},r_A) \\
+    \\
+    Map1.1 (Mech~3 alternative) & A  \leftarrow B & r_B \\
+                & A  \rightarrow B & E_k(A, B, r_B,r_A) \\
+                & A  \leftarrow  B & E_k(r_A) 
+\end{eqnarray*}\\
+
+\subsubsection{ISO 9798\text{-}4 based on Hash function}
+\begin{eqnarray*}
+    Mechanism-1 \quad & A \rightarrow B & H_k(t_A,B),t_A \\
+    \\
+    Mechanism-2 \quad & A \leftarrow B & r_B \\
+                      & A \rightarrow B & H_k(r_B,B),B \\
+    \\
+    Mechanism-3 \quad & A \leftarrow B & r_B \\
+                      & A \rightarrow B & H_k(r_A,r_B,B),r_A \\
+                      & A \leftarrow B & H_k(r_B,r_A,A) 
+\end{eqnarray*}
+
+\subsubsection{ISO 9798\text{-}3 based on Public-Key Signature}
+\begin{eqnarray*}
+    Mechanism-1 \quad & A \rightarrow B & S_A(t_A,B),B,t_A,cert_A \\
+    \\
+    Mechanism-2 \quad & A \leftarrow B & r_B\\
+                      & A \rightarrow B &
+    S_A(r_A,r_B,B),B,r_A,cert_A \\
+    \\
+    Mechanism 3 \quad & A \leftarrow B & r_B \\
+                      & A \rightarrow B &
+    S_A(r_A,r_B,B),B,r_A,cert_A \\
+    & A \leftarrow B & S_B(r_B, r_A, A), A, cert_B \\
+    \\
+    Public-key witness (Mech~3 alternative) & A \leftarrow B & h(r), B, P_A(r, B) \\
+    & A \rightarrow B & r \\
+    \\
+    Public-key (Mech~3 alternative) & A \leftarrow B & h(r), B, P_A(r_B, B) \\
+                                    & A \rightarrow B & P_B(r_B, r_A)\\
+                                    & A \leftarrow B & r_A
+\end{eqnarray*}
+
+\paragraph{Note} 
 \begin{itemize}
-    \item Mechanism-1
-        $$ A \rightarrow B \quad H_k(t_A,B),t_A $$
-    \item Mechanism-2
-        $$ A \leftarrow B \quad r_B $$
-        $$ A \rightarrow B \quad H_k(r_B,B),B $$
-    \item Mechanism-3
-        $$ A \leftarrow B \quad r_B $$
-        $$ A \rightarrow B \quad H_k(r_A,r_B,B),r_A $$
-        $$ A \leftarrow B \quad H_k(r_b,r_A,A) $$
+    \item $r$ is a witness, it proves that B knows r : this avoids a
+        chosen-plaintext attack
+    \item $P_A(m)$ means the
+        encryption of the message $m$ with A’s public key.
 \end{itemize}
-ISO 9798\text{-}3 based on Public-Key Signature:
-\begin{itemize}
-    \item Mechanism-1
-        $$ A \rightarrow B \quad S_A(t_A,B),B,t_A,cert_A $$
-    \item Mechanism-2
-        $$ A \leftarrow B \quad r_B$$
-        $$ A \rightarrow B \quad S_A(r_A,r_B,B),B,r_A,cert_A $$
-    \item Mechanism 3
-        $$ A \leftarrow B \quad r_B $$
-        $$ A \rightarrow B \quad S_A(r_A,r_B,B),B,r_A,cert_A $$
-        $$ A \leftarrow B \quad S_B(r_B,r_A,A),A,cert_B $$
-\end{itemize}
-%%TODO VARIANT slide 174
+
 \subsection{Authentication with Key Establshment}
 During the phase of authentication phase, the two parties can exchange key
 material.
