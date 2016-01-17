@@ -1,2 +1,2 @@
 TYPE=summary
-include ../INGI2143.mk
+include ../concurrent-INGI2143.mk
