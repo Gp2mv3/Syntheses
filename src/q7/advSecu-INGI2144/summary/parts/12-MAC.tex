@@ -6,18 +6,19 @@ key otherwise modification of the message cannot be done.
     \item[$\Rightarrow$] MAC ensures integrity, authentication but not confidentiality.
 \end{itemize}
 
-\subsection{Constructions}
+\subsection{Constructions (Naïve)}
 Let $h$ be a hash function, $k$ a key, $m$ the message to be MACed, and $M$ the
 computed MAC.
 \begin{itemize}
     \item Prefix method: $ M = h(k||m) $
     \item Suffix method: $ M = h(m||k) $
-    \item Envelop method:$ M = h(k||p||m||k) $
+    \item Envelop (weak) method:$ M = h(k||p||m||k) $
 \end{itemize}
 
 \subsubsection{Hash MAC scheme}
 MAC uses hash function rather than block cipher because hash function are
 generally faster.
+$HMAC(k,m) = h(opad \oplus k || h(m||k\oplus ipad))$
 
 \begin{center}
     \begin{tikzpicture}
@@ -113,6 +114,8 @@ block, intermediary blocks are thrown out and IV consists of zeros.
             \item Not secure with variable lengths
             \item CBC-MAC $(length(M)||M)$ to avoid truncation attacks
         \end{itemize}
+        
+
 
     \item \textbf{Retail-MAC}: the last block is decrypted with key $k'$
         then re-encrypted with $k$. This reduces the threat of exhaustive key search
@@ -244,6 +247,59 @@ block, intermediary blocks are thrown out and IV consists of zeros.
         %TODO slide 379
 
 \end{itemize}
+
+\subsubsection{Attack on CBC-MAC}
+Let,
+\begin{itemize}
+	\item E be the cipher in CBC mode
+	\item $m_1$ (resp. $m_2$) a random value with $MAC(m_1) =  M_1$ ($MAC(m_2 = M_2)$
+	\item $|m_1| = |m_2|=B = block size of E$
+\end{itemize}
+
+\paragraph{MAC of forged message}
+To find the MAC of a forged message without the knowledge of the key, let 
+consider a $m_3 = m_1 || (m_2 \oplus M_1)$
+\begin{center}
+\begin{minipage}{.5\textwidth}
+	\begin{tikzpicture}
+		\node at (0,0) (xor1) {$\oplus$};
+		\node [right = 2cm of xor1](xor2) {$\oplus$};
+		\node [below = of xor1,encrypt] (e1) {E}; 
+		\node [below = of xor2,encrypt] (e2) {E};
+		\node [left = 0.5cm of e1] (k1) {K};
+		\node [left = 0.5cm of e2] (k2) {K};
+		
+		\node [above = 0.5cm of xor1] (m1) {$m_1$};
+		\node [above = 0.5cm of xor2] (m2) {$m_2\oplus M_1$};
+		\node [left = 0.5cm of xor1] (iv) {\textbf{0}};
+		\node [right = 0.5cm of e2] (m3) {M3};
+		
+		\node [ below = 0.5cm of e1] (tmp) {};
+		\node [ right = of tmp ] (tmp1) {};
+		\node [ left = of xor2] (tmp2) {};
+		
+		\draw [very thick] (e1) |- (tmp1);
+		\draw [->,very thick] (tmp1) |- (xor2);
+		\draw [->,very thick] (iv) -- (xor1);
+		\draw [->,very thick] (m1) -- (xor1);
+		\draw [->,very thick] (xor1) -- (e1);
+		\draw [->,very thick] (xor2) -- (e2);
+		\draw [->,very thick] (e2) -- (m3);
+		\draw [->,very thick] (m2) -- (xor2);
+		\draw [->,very thick] (k1) -- (e1);
+		\draw [->,very thick] (k2) -- (e2);
+	\end{tikzpicture}
+\end{minipage}
+
+\begin{minipage}{.5\textwidth}
+\begin{align*}
+		Mac(m_3) &= E(\underbrace{E(m_1)}_{=M_1} \oplus m_2 \oplus M_1)\\
+		&= E (m_2)\\
+		&=Mac (m_2)
+\end{align*}
+\end{minipage}
+\end{center}
+\paragraph{MAC collision}
 
 
 \subsection{Encrypt and MAC}
