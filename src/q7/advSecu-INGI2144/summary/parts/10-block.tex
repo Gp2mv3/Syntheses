@@ -24,118 +24,420 @@
     \end{tabular}
 \end{center}
 
-\subsection{Key Generation}
-Some block ciphers suffer from poor keys. For example DES has 16 known poor
-(weak and semi-weak) keys. %TODO add definition
+\subsection{Characteristic block cipher}
 
-\subsection{Mode of Operation} %TODO add schema
+\subsubsection{Key Generation}
+Use a \textbf{good pseudo-random generator (PRG)}.
+
+\paragraph{Poor keys}
+Some block ciphers suffer from poor keys. For example DES has 16 known poor
+(weak and semi-weak) keys. 
+%TODO add definition
+
+\subsubsection{Mode of Operation} 
 Mode of operation is used to define how to encrypt a message whose length
 is larger than the cipher block size.
-\subsubsection{Electronic codeBook}
 
+\begin{center}
+    \begin{tabular}{|m{2.5cm}|m{1.5cm}|m{1.5cm}|m{1.5cm}|m{2cm}|m{2.5cm}|}
+        \hline
+        & \textbf{ECB}        & \textbf{CBC}        & \textbf{CFB}    & \textbf{OFB} & \textbf{Counter} \\
+        \hline
+        Oriented                   & Block      & Block      & Stream & Stream
+        & Stream\\
+        Padding                    & Require    & Require    & No & No & No\\
+        IV                         & No         & Require    & Require &
+        Require & No\\
+        \hline
+        Decryption done with encryption & No & No & Yes & Yes & Yes \\
+        \hline
+        Parallelization encryption & Yes        & No         & No &
+        Preprocessing if IV know & Preprocessing if nonce/counter know\\
+        \hline
+        Parallelization decryption & Yes        & Yes        & if IV know &
+        Preprocessing if IV know & Preprocessing if nonce/counter know\\
+        \hline
+    \end{tabular}
+\end{center}
+
+\tikzstyle{vertex}=[draw,fill=black!15,circle,minimum size=20pt,inner sep=0pt]
+\tikzstyle{encrypt}=[draw,fill=black!15,rectangle,minimum size=20pt,inner sep=0pt]
+
+%TODO: decryption
 \begin{itemize}
-    \item Block oriented
-    \item Require padding
-    \item Do not require initialization vector.
-    \item Parallel encryption possible and parallel decryption possible.
-    \item Swapping blocks is undetectable
-    \item Same plaintext blocks produce same ciphertext blocks
-    \item Not suitable for long or strongly structured messages
+    \item \textbf{Electronic codeBook (ECB)}: Not suitable for long or strongly structured messages
+        \begin{itemize}
+            \item Swapping blocks is undetectable
+            \item Same plaintext blocks produce same ciphertext blocks
+        \end{itemize}
+
+        \begin{tabular}{cm{1.5cm}c}
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr) at ({(\nr-\n)*2}, 0) {$C_\nr$};
+                \node (M\nr) at ({(\nr-\n)*2}, 2) {$M_\nr$};
+                \node (E\nr)[encrypt] at ({(\nr-\n)*2},1) {$E$};
+                \node (K\nr) at ({(\nr-\n)*2-1},1) {$K$};
+
+                \draw[->,very thick] (M\nr) -- (E\nr);
+                \draw[->,very thick] (K\nr) -- (E\nr);
+                \draw[->,very thick] (E\nr) -- (C\nr);
+            }
+        \end{tikzpicture}
+        & &
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr) at ({(\nr-\n)*2}, 0) {$M_\nr$};
+                \node (M\nr) at ({(\nr-\n)*2}, 2) {$C_\nr$};
+                \node (E\nr)[encrypt] at ({(\nr-\n)*2},1) {$D$};
+                \node (K\nr) at ({(\nr-\n)*2-1},1) {$K$};
+
+                \draw[->,very thick] (M\nr) -- (E\nr);
+                \draw[->,very thick] (K\nr) -- (E\nr);
+                \draw[->,very thick] (E\nr) -- (C\nr);
+            }
+        \end{tikzpicture}
+        \end{tabular}
+
+    \item \textbf{Cipher Block chaining (CBC)}: General-purpose block-oriented encryption
+
+        \begin{tabular}{cm{1.5cm}c}
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {$C_\nr$};
+                \node (D\nr)[encrypt]   at ({(\nr-\n)*2},1.5) {$E$};
+                \node (x\nr)       at ({(\nr-\n)*2},2.5) {$\oplus$};
+                \node (M\nr)            at ({(\nr-\n)*2},3.5) {$M_\nr$};
+
+                \node (K\nr)            at ({(\nr-\n)*2-1},1.5) {$K$};
+
+                \draw[->,very thick] (D\nr) -- (C\nr);
+                \draw[->,very thick] (x\nr) -- (D\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+
+                \draw[->,very thick] (K\nr) -- (D\nr);
+            }
+
+            \foreach \nr in {2, ..., \n}{
+                \pgfmathtruncatemacro{\tmp}{\nr-1}
+                \draw[->,very thick] ({(\n-\tmp)*-2},0.75) -|
+                ({(\n-\tmp)*-2+0.75},0.75) |- ({(\n-\tmp)*-2+0.75},2) |- (x\nr);
+            }
+
+            \node (IV) at ({\n*-2+1},2.5) {$IV$};
+            \draw[->, very thick] (IV) -- (x1);
+        \end{tikzpicture}
+        & &
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {$M_\nr$};
+                \node (D\nr)[encrypt]   at ({(\nr-\n)*2},2) {$D$};
+                \node (x\nr)            at ({(\nr-\n)*2},1) {$\oplus$};
+                \node (M\nr)            at ({(\nr-\n)*2},3.5) {$C_\nr$};
+
+                \node (K\nr)            at ({(\nr-\n)*2-1},2) {$K$};
+
+                \draw[->,very thick] (M\nr) -- (D\nr);
+                \draw[->,very thick] (D\nr) -- (x\nr);
+                \draw[->,very thick] (x\nr) -- (C\nr);
+
+                \draw[->,very thick] (K\nr) -- (D\nr);
+            }
+
+            \foreach \nr in {2, ..., \n}{
+                \pgfmathtruncatemacro{\tmp}{\nr-1}
+                \draw[->,very thick] ({(\n-\tmp)*-2},2.75) -|
+                ({(\n-\tmp)*-2+0.75},2.75) |- ({(\n-\tmp)*-2+0.75},2) |- (x\nr);
+            }
+
+            \node (IV) at ({\n*-2+1},1) {$IV$};
+            \draw[->, very thick] (IV) -- (x1);
+        \end{tikzpicture}
+        \end{tabular}
+
+    \item \textbf{Cipher feedback (CFB)}: General-purpose stream-oriented encryption
+
+        \begin{tabular}{cm{1.5cm}c}
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {$C_\nr$};
+                \node (x\nr)   at ({(\nr-\n)*2},1.5) {$\oplus$};
+                \node (D\nr)[encrypt]       at ({(\nr-\n)*2-1},1.5) {$E$};
+                \node (K\nr)            at ({(\nr-\n)*2-1},2.5) {$K$};
+                \node (M\nr)            at ({(\nr-\n)*2},3) {$M_\nr$};
+
+                \draw[->,very thick] (x\nr) -- (C\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+                \draw[->,very thick] (K\nr) -- (D\nr);
+                \draw[->,very thick] (D\nr) -- (x\nr);
+            }
+
+            \foreach \nr in {2, ..., \n}{
+                \pgfmathtruncatemacro{\tmp}{\nr-1}
+                \draw[->,very thick] ({(\n-\tmp)*-2}, 0.75) --
+                ({(\n-\nr)*-2-1}, 0.75) -- (D\nr);
+            }
+
+            \node (IV) at ({\n*-2+1},0.50) {$IV$};
+            \draw[->, very thick] (IV) -- (D1);
+
+        \end{tikzpicture}
+        & &
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {$M_\nr$};
+                \node (x\nr)            at ({(\nr-\n)*2},1.5) {$\oplus$};
+                \node (D\nr)[encrypt]   at ({(\nr-\n)*2-1},1.5) {$D$};
+                \node (K\nr)            at ({(\nr-\n)*2-1},0.5) {$K$};
+                \node (M\nr)            at ({(\nr-\n)*2},3) {$C_\nr$};
+
+                \draw[->,very thick] (x\nr) -- (C\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+                \draw[->,very thick] (K\nr) -- (D\nr);
+                \draw[->,very thick] (D\nr) -- (x\nr);
+            }
+
+            \foreach \nr in {2, ..., \n}{
+                \pgfmathtruncatemacro{\tmp}{\nr-1}
+                \draw[->,very thick] ({(\n-\tmp)*-2}, 2.4) --
+                ({(\n-\nr)*-2-1}, 2.4) -- (D\nr);
+            }
+
+            \node (IV) at ({\n*-2+1},2.50) {$IV$};
+            \draw[->, very thick] (IV) -- (D1);
+
+        \end{tikzpicture}
+        \end{tabular}
+
+    \item \textbf{Output feedback (OFB)}: Enable preprocessing
+
+        \begin{tabular}{cm{1.5cm}c}
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {$C_\nr$};
+                \node (D\nr)   at ({(\nr-\n)*2},1) {$\oplus$};
+                \node (x\nr)[encrypt]       at ({(\nr-\n)*2},2.5) {$E$};
+                \node (M\nr)            at ({(\nr-\n)*2},3.5) {$K$};
+
+                \node (K\nr)            at ({(\nr-\n)*2-1},1) {$M_\nr$};
+
+                \draw[->,very thick] (D\nr) -- (C\nr);
+                \draw[->,very thick] (x\nr) -- (D\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+
+                \draw[->,very thick] (K\nr) -- (D\nr);
+            }
+
+            \foreach \nr in {2, ..., \n}{
+                \pgfmathtruncatemacro{\tmp}{\nr-1}
+                \draw[->,very thick] ({(\n-\tmp)*-2},1.75) -|
+                ({(\n-\tmp)*-2+0.75},1.75) |- ({(\n-\tmp)*-2+0.75},2) |- (x\nr);
+            }
+
+            \node (IV) at ({\n*-2+1},2.5) {$IV$};
+            \draw[->, very thick] (IV) -- (x1);
+
+        \end{tikzpicture}
+        & &
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {$M_\nr$};
+                \node (D\nr)   at ({(\nr-\n)*2},1) {$\oplus$};
+                \node (x\nr)[encrypt]       at ({(\nr-\n)*2},2.5) {$D$};
+                \node (M\nr)            at ({(\nr-\n)*2},3.5) {$K$};
+
+                \node (K\nr)            at ({(\nr-\n)*2-1},1) {$C_\nr$};
+
+                \draw[->,very thick] (D\nr) -- (C\nr);
+                \draw[->,very thick] (x\nr) -- (D\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+
+                \draw[->,very thick] (K\nr) -- (D\nr);
+            }
+
+            \foreach \nr in {2, ..., \n}{
+                \pgfmathtruncatemacro{\tmp}{\nr-1}
+                \draw[->,very thick] ({(\n-\tmp)*-2},1.75) -|
+                ({(\n-\tmp)*-2+0.75},1.75) |- ({(\n-\tmp)*-2+0.75},2) |- (x\nr);
+            }
+
+            \node (IV) at ({\n*-2+1},2.5) {$IV$};
+            \draw[->, very thick] (IV) -- (x1);
+
+        \end{tikzpicture}
+        \end{tabular}
+
+    \item \textbf{Counter (CTR)}: Enable preprocessing and random access
+
+        \begin{itemize}
+            \item Same as OFB but randomizes the encryption with a
+                \textbf{counter} value instead of some feedback from previous block
+            \item Must have a different counter value for every plaintext block.
+        \end{itemize}
+        %TODO slide 328 Initial CTR
+
+        \begin{tabular}{cm{1.5cm}c}
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {$C_\nr$};
+                \node (D\nr)   at ({(\nr-\n)*2},1) {$\oplus$};
+                \node (x\nr)[encrypt]       at ({(\nr-\n)*2},2) {$E$};
+                \node (M\nr)            at ({(\nr-\n)*2},3) {$nonce||\nr$};
+
+                \node (K\nr)            at ({(\nr-\n)*2-1},1) {$M_\nr$};
+
+                \draw[->,very thick] (D\nr) -- (C\nr);
+                \draw[->,very thick] (x\nr) -- (D\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+
+                \draw[->,very thick] (K\nr) -- (D\nr);
+            }
+
+            \node (IV) at ({\n*-2+1},2) {$IV$};
+            \draw[->, very thick] (IV) -- (x1);
+
+        \end{tikzpicture}
+        & &
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {$M_\nr$};
+                \node (D\nr)   at ({(\nr-\n)*2},1) {$\oplus$};
+                \node (x\nr)[encrypt]       at ({(\nr-\n)*2},2) {$D$};
+                \node (M\nr)            at ({(\nr-\n)*2},3) {$nonce||\nr$};
+
+                \node (K\nr)            at ({(\nr-\n)*2-1},1) {$C_\nr$};
+
+                \draw[->,very thick] (D\nr) -- (C\nr);
+                \draw[->,very thick] (x\nr) -- (D\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+
+                \draw[->,very thick] (K\nr) -- (D\nr);
+            }
+
+            \node (IV) at ({\n*-2+1},2) {$IV$};
+            \draw[->, very thick] (IV) -- (x1);
+
+        \end{tikzpicture}
+        \end{tabular}
 \end{itemize}
 
-\subsubsection{Cipher Block chaining}
+\subsubsection{Initialization Vector}
+%TODO complete with note
 
-\begin{itemize}
-    \item Block oriented
-    \item Require padding
-    \item Require initialization vector
-    \item Parallel encryption not possible but parallel decryption possible
-    \item General-purpose block-oriented encryption
-\end{itemize}
-
-\subsubsection{Cipher feedback}
-
-\begin{itemize}
-    \item Stream-oriented
-    \item Do not require padding
-    \item Require initialization vector
-    \item Parallel encryption not possible but decryption possible (if IV known)
-    \item Decryption can be done with the encryption function
-    (cannot be used with a PK cipher)
-    \item General-purpose stream-oriented encryption
-\end{itemize}
-
-\subsubsection{Output feedback}
-
-\begin{itemize}
-    \item Stream-oriented
-    \item Do not require padding
-    \item Require initialization vector
-    \item Prepocessing possible for encryption and decryptio (if IV known)
-    \item Decryption can be done with encryption function
-    (cannot be used with a PK cipher)
-    \item Enable preprocessing
-\end{itemize}
-
-\subsubsection{Counter}
-
-\begin{itemize}
-    \item Stream-oriented
-    \item Do not require padding
-    \item Do not require initialization vector
-    \item Preprocessing possible for encrytion and decryption
-    (nonce/counter known)
-    \item Decryption can be done with encryption function. (cannot not be used
-    with a PK cipher)
-    \item Same as OFB but randomizes the encryption with a counter value instead
-    of some feedback from previous blocl
-    \item Must have a different counter value for every plaintext block.
-    \item Enable preprocessing, Random access.
-\end{itemize}
-
-\subsection{Initialization Vector}
-Required with CBC,CFB,OFB %%TODO complete with note
-
-\subsection{Padding}
+\subsubsection{Padding}
 \begin{itemize}
     \item Main aim of padding is to fill the last block of plaintext (No
-    necessarily the shortest)
-    \item Can be eithet bit vs byte-oriented
+        necessarily the shortest)
+    \item Can be either bit vs byte-oriented
     \item Required with ECB and CBC
     \item Padding should be checked after decryption
     \item Padding increases the size of the plaintext
 \end{itemize}
 
-\subsubsection{ISO/IEC 9797}
+\paragraph{Methods}
+
 \begin{itemize}
-    \item Method 1: Append some 0-bits (possibly none) to the end of the message
-    to fill the last block of plaintext. Problem is that it brings ambiguity if
-    recipient does not know the length of the plaintext.
 
-    \item Method 2: Put a 1-bit at the end of the plaintext, then pad with
-    some 0-bits (possibly none) to fill the last block of plaintext. To avoid
-    ambiguity, plaintext should always be padded even if the last block is
-    already completed.
+    \item \textbf{ISO/IEC 9797}
+        \begin{itemize}
+            \item Method 1: Append some 0-bits (possibly none) to fill
+                the last block.
+                
+                $\Rightarrow$ \textbf{Ambiguous} because trailing 0-bits
+                of the message cannot be distinguished from the padding!
+                \begin{center}
+                    \begin{tabular}{|c|c|c|}
+                        \cline{1-1} \cline{3-3}
+                        DD DD DD DD DD DD DD DD & & DD DD
+                        \textcolor{red!50!black}{00 00 00 00 00 00} \\
+                        \cline{1-1} \cline{3-3}
+                    \end{tabular}
+                \end{center}
+                
+            \item Method 2: Put a 1-bit at the end of the plaintext, then pad with
+                some 0-bits (possibly none) to fill the last block of plaintext. 
+                
+                $\Rightarrow$ To avoid ambiguity, plaintext should
+                always be padded even if the last block is already
+                completed.
+                \begin{center}
+                    \begin{tabular}{|c|c|c|}
+                        \cline{1-1} \cline{3-3}
+                        DD DD DD DD DD DD DD DD & & DD DD
+                        \textcolor{green!50!black}{80}
+                        \textcolor{red!50!black}{00 00 00 00 00} \\
+                        \cline{1-1} \cline{3-3}
+                    \end{tabular}
+                \end{center}
+
+                $80_{HEX}$ = $10000000_{BIN}$
+        \end{itemize}
+
+    \item \textbf{ANSI X9.23}: Append some 0-bits to the message and the
+        length (in bytes) of the padding.
+                \begin{center}
+                    \begin{tabular}{|c|c|c|}
+                        \cline{1-1} \cline{3-3}
+                        DD DD DD DD DD DD DD DD & & DD DD
+                        \textcolor{red!50!black}{00 00 00 00 00}
+                        \textcolor{green!50!black}{06}\\
+                        \cline{1-1} \cline{3-3}
+                    \end{tabular}
+                \end{center}
+
+    \item \textbf{ISO/IEC 10126}: Append some random bits to the message
+        and the length (in bytes) of the padding.
+                \begin{center}
+                    \begin{tabular}{|c|c|c|}
+                        \cline{1-1} \cline{3-3}
+                        DD DD DD DD DD DD DD DD & & DD DD
+                        \textcolor{red!50!black}{9F 3B 45 10 23}
+                        \textcolor{green!50!black}{06}\\
+                        \cline{1-1} \cline{3-3}
+                    \end{tabular}
+                \end{center}
+
+    \item \textbf{PKCS 7}: Each added byte is the length (in bytes) of the padding.
+                \begin{center}
+                    \begin{tabular}{|c|c|c|}
+                        \cline{1-1} \cline{3-3}
+                        DD DD DD DD DD DD DD DD & & DD DD
+                        \textcolor{red!50!black}{06 06 06 06 06 06}\\
+                        \cline{1-1} \cline{3-3}
+                    \end{tabular}
+                \end{center}
 \end{itemize}
-
-\subsubsection{ANSI X9.23}
-Append some 0-bits to the message and the length (in bytes) of the padding.
-
-\subsubsection{ISO/IEC 10126}
-Append some random bits to the message and the length (in bytes) of the padding.
-
-\subsubsection{PKCS 7}
-Each added byte is the length (in bytes) of the padding.
 
 \subsection{Cipher used as Hash Function}
 A block cipher can be used in place of a hash function.
-\paragraph{Davies-Meyer} $H_i=E_{m_i}(H_{i-1})\oplus H_{i-1}$ The $m_i$ are
-blocks of the padded message to be hashed. This construction leads to fixed
-points $E_m(h)\oplus h=h$.
-\paragraph{Matyas-Meyer} $h_i = E_{g(H_{i-1})}(m_i)\oplus m_i$
+
+\subsubsection{Davies-Meyer} 
+$$H_i=E_{m_i}(H_{i-1})\oplus H_{i-1}$$ 
+
 \begin{itemize}
-    \item $m_i$ are blocks of the padded message to be hashed.
-    \item Function g is just to map the output size of H into the key size.
+    \item The $m_i$ are blocks of the padded message to be hashed. 
+    \item[$\Rightarrow$] This
+        construction leads to fixed points $E_m(h)\oplus h=h$.
+
+        The Merkle-Damgard strengthening is used to avoid fixed points: the
+        bit-length of the message is appended to its end.
 \end{itemize}
 
+\subsubsection{Matyas-Meyer} 
+$$h_i = E_{g(H_{i-1})}(m_i)\oplus m_i$$
+
+\begin{itemize}
+    \item $m_i$ are blocks of the padded message to be hashed.
+    \item Function $g$ is just to map the output size of $H$ into the key size.
+\end{itemize}
 
