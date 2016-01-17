@@ -167,7 +167,7 @@ block, intermediary blocks are thrown out and IV consists of zeros.
         \end{itemize}
 
     \item \textbf{CMAC}
-        Generate $K_1$ and $K_2$ from $K$
+        %TODO finish CMAC
 
         \begin{tabular}{cc}
             (a) Multiple of block size & (b) Not multiple of block size
@@ -190,8 +190,7 @@ block, intermediary blocks are thrown out and IV consists of zeros.
             }
 
 
-            \node (C3)            at ({(3-\n)*2},-0.5) {MAC};
-            \node[encrypt] (CC3)            at ({(3-\n)*2},0.5) {$MSB(Tlen)$};
+            \node (C3)            at ({(3-\n)*2},0) {MAC};
             \node (A) at ({(3-\n)*2+1},2.5) {$K_1$};
 
 
@@ -202,8 +201,7 @@ block, intermediary blocks are thrown out and IV consists of zeros.
                 ({(\n-\tmp)*-2+0.75},0.75) |- ({(\n-\tmp)*-2+0.75},2) |- (x\nr);
             }
 
-            \draw[->,very thick] (D\n) -- (CC\n);
-            \draw[->,very thick] (CC\n) -- (C\n);
+            \draw[->,very thick] (D\n) -- (C\n);
             \draw[->,very thick] (A) -- (x\n);
             \node (IV) at ({\n*-2+1},2.5) {$0$};
             \draw[->, very thick] (IV) -- (x1);
@@ -227,8 +225,7 @@ block, intermediary blocks are thrown out and IV consists of zeros.
             }
 
 
-            \node (C3)            at ({(3-\n)*2},-0.5) {MAC};
-            \node[encrypt] (CC3)            at ({(3-\n)*2},0.5) {$MSB(Tlen)$};
+            \node (C3)            at ({(3-\n)*2},0) {MAC};
             \node (A) at ({(3-\n)*2+1},2.5) {$K_2$};
 
 
@@ -239,24 +236,15 @@ block, intermediary blocks are thrown out and IV consists of zeros.
                 ({(\n-\tmp)*-2+0.75},0.75) |- ({(\n-\tmp)*-2+0.75},2) |- (x\nr);
             }
 
-            \draw[->,very thick] (D\n) -- (CC\n);
-            \draw[->,very thick] (CC\n) -- (C\n);
+            \draw[->,very thick] (D\n) -- (C\n);
             \draw[->,very thick] (A) -- (x\n);
             \node (IV) at ({\n*-2+1},2.5) {$0$};
             \draw[->, very thick] (IV) -- (x1);
         \end{tikzpicture}
         \end{tabular}
 
-        \begin{lstlisting}[mathescape, caption=Generate subkeys]
-Step 1. L := AES-128(K, const_Zero);
-Step 2. if MSB(L) is equal to 0
-            then K1 := L << 1;
-            else K1 := (L << 1) XOR const_Rb;
-Step 3. if MSB(K1) is equal to 0
-            then K2 := K1 << 1;
-            else K2 := (K1 << 1) XOR const_Rb;
-Step 4. return K1, K2;
-\end{lstlisting}
+        \paragraph{Generate subkeys}
+        %TODO slide 379
 
 \end{itemize}
 
@@ -271,11 +259,11 @@ Let,
 \paragraph{MAC of forged message}
 To find the MAC of a forged message without the knowledge of the key, let 
 consider a $m_3 = m_1 || (m_2 \oplus M_1)$
-\begin{center}
-\begin{minipage}{.5\textwidth}
+
+\begin{multicols}{2}
 	\begin{tikzpicture}
 		\node at (0,0) (xor1) {$\oplus$};
-		\node [right = 2cm of xor1](xor2) {$\oplus$};
+		\node [right = 2.5cm of xor1](xor2) {$\oplus$};
 		\node [below = of xor1,encrypt] (e1) {E}; 
 		\node [below = of xor2,encrypt] (e2) {E};
 		\node [left = 0.5cm of e1] (k1) {K};
@@ -301,18 +289,34 @@ consider a $m_3 = m_1 || (m_2 \oplus M_1)$
 		\draw [->,very thick] (k1) -- (e1);
 		\draw [->,very thick] (k2) -- (e2);
 	\end{tikzpicture}
-\end{minipage}
-
-\begin{minipage}{.5\textwidth}
+\break
 \begin{align*}
 		Mac(m_3) &= E(\underbrace{E(m_1)}_{=M_1} \oplus m_2 \oplus M_1)\\
 		&= E (m_2)\\
 		&=Mac (m_2)
 \end{align*}
-\end{minipage}
-\end{center}
-\paragraph{MAC collision}
+\end{multicols}
 
+\paragraph{MAC collision}
+Find 2 messages with the same MAC. We have $B_1,B_2$ two arbirtrary
+value such that $|B_1|=|B_2|=B$:
+\begin{itemize}
+	\item $m_3 = m_1 || B_1$
+	\item $m_4 = m_2 || B_2$
+\end{itemize}
+
+\begin{multicols}{2}
+\begin{align*}
+	Mac(m_3) &= E(\underbrace{E(m_1)}_{=M_1} \oplus B_1)\\
+	&= E (M_1\oplus B_1)
+\end{align*}
+\break
+\begin{align*}
+	Mac(m_4) &= E(\underbrace{E(m_2)}_{=M_2} \oplus B_2)\\
+	&= E (M_2 \oplus B_2)
+\end{align*}
+\end{multicols}
+If $B_2 = M_1 \oplus M_2 \oplus B1\quad \to\quad Mac(m_4) = Mac(m_3)$
 
 \subsection{Encrypt and MAC}
 Encryption does not ensure integrity but MAC does, so they must be combined.
