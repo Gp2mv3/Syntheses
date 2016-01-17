@@ -1,55 +1,250 @@
 
 \subsection{Basics}
 The goal of MAC is to prevents tampering with a message. MAC require a secret
-key otherwise modification of the message cannot be done. MAC ensures integrity,
-authentication but not confidentiality.
+key otherwise modification of the message cannot be done. 
+\begin{itemize}
+    \item[$\Rightarrow$] MAC ensures integrity, authentication but not confidentiality.
+\end{itemize}
 
 \subsection{Constructions}
-Let h be a hash function, k a key, m the message to be MACed, and M the
-computed MAC\@.
+Let $h$ be a hash function, $k$ a key, $m$ the message to be MACed, and $M$ the
+computed MAC.
 \begin{itemize}
     \item Prefix method: $ M = h(k||m) $
     \item Suffix method: $ M = h(m||k) $
     \item Envelop method:$ M = h(k||p||m||k) $
 \end{itemize}
+
+\subsubsection{Hash MAC scheme}
 MAC uses hash function rather than block cipher because hash function are
 generally faster.
-\begin{figure}[ht!]
-    \centering
-    \includegraphics[scale=0.5]{img/hmac}
-\end{figure}
 
-\subsubsection{Built upon a cipher}
-Based on the CBC mode of operation
+\begin{center}
+    \begin{tikzpicture}
+        \node [rectangle, red, draw] (H) {h};
+
+        \node [left=1.4cm of H, draw, rectangle] (HMAC) {HMAC(k, m)};
+
+        \node [above=of H, C, o-] (C1) {$||$};
+        \node [above right=0.0cm and 0.1cm of C1] (X1) {$\oplus$};
+        \node [draw, rectangle,above right=1.4cm and 0.1cm of C1] (k) {$k$};
+        \node [draw, rectangle,above left=1.4cm and 0.1cm of C1] (m) {$m$};
+        \node [right=0.4cm of X1] (ipad) {\textsc{ipad}};
+
+        \node [right=0.6cm of H, C, o-] (C2) {$||$};
+        \node [above right=0.5cm and 1cm of C2] (X2) {$\oplus$};
+        \node [left=0.4cm of X2] (opad) {\textsc{opad}};
+
+        \path[->] (H) edge (HMAC)
+        (C1) edge (H) 
+        (C2) edge (H) 
+        (ipad) edge (X1)
+        (opad) edge (X2);
+
+        \draw[->] (X2) |- (C2.20);
+        \draw[->] (X1) |- (C1);
+        \draw[->] (m) |- (C1);
+        \draw[] (k.280) edge[->] node (tmp) {} (X1);
+        \draw[->] (tmp.center) -| (X2);
+
+        \draw[->] (H) |- (+0.5cm, -0.5cm)  -| (+1.5cm, -0.5cm) |-
+        (C2.340);
+
+        \node [below left= 0.4cm and -0.2cm of m] (A) {};
+        \node [below = 0.1cm of H] (B) {};
+        \node [right = -0.2cm of X2] (C) {};
+
+        \node [draw, double, rectangle, fit={(A) (B) (C) }] (FF) {};
+    \end{tikzpicture}
+\end{center}
+
+%TODO example 374
+
+\subsubsection{Built upon CBC block-cipher}
+
+It's based on the CBC mode of operation: the \textbf{MAC} is the final
+block, intermediary blocks are thrown out and IV consists of zeros.
+
 \begin{itemize}
-    \item The message is encrypted in CBC mode
-    \item Final block is the MAC
-    \item Intermediary blocks are thrown out
-    \item IV consists of zeros
+    \item \textbf{CBC-MAC}
+
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {};
+                \node (D\nr)[encrypt]   at ({(\nr-\n)*2},1.5) {$E$};
+                \node (x\nr)       at ({(\nr-\n)*2},2.5) {$\oplus$};
+                \node (M\nr)            at ({(\nr-\n)*2},3.5) {$M_\nr$};
+
+                \node (K\nr)            at ({(\nr-\n)*2-1},1.5) {$K$};
+
+                \draw[->,very thick] (x\nr) -- (D\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+
+                \draw[->,very thick] (K\nr) -- (D\nr);
+            }
+
+            \node (C3)            at ({(3-\n)*2},0) {MAC};
+
+            \foreach \nr in {2, ..., \n}{
+                \newcommand{\tmp}{\n-\nr}
+                \pgfmathtruncatemacro{\tmp}{\nr-1}
+                \draw[->,very thick] (D\tmp) -- ({(\n-\tmp)*-2},0.75) -|
+                ({(\n-\tmp)*-2+0.75},0.75) |- ({(\n-\tmp)*-2+0.75},2) |- (x\nr);
+            }
+
+            \draw[->,very thick] (D\n) -- (C\n);
+            \node (IV) at ({\n*-2+1},2.5) {$0$};
+            \draw[->, very thick] (IV) -- (x1);
+        \end{tikzpicture}
+
+        \paragraph{Characteristic}
+        \begin{itemize}
+            \item The IV should not be random
+            \item Slower than HMAC
+            \item The MAC can be truncated to enforce security but this also reduces the
+                key search space
+        \end{itemize}
+
+        \paragraph{Security}
+        \begin{itemize}
+            \item CBC-MAC is secure for messages of a fixed number of blocks assuming
+                the block cipher is secure.
+            \item Not secure with variable lengths
+            \item CBC-MAC $(length(M)||M)$ to avoid truncation attacks
+        \end{itemize}
+
+    \item \textbf{Retail-MAC}: the last block is decrypted with key $k'$
+        then re-encrypted with $k$. This reduces the threat of exhaustive key search
+
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {};
+                \node (x\nr)       at ({(\nr-\n)*2},2.5) {$\oplus$};
+                \node (M\nr)            at ({(\nr-\n)*2},3.5) {$M_\nr$};
+
+
+                \draw[->,very thick] (x\nr) -- (D\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+
+                \draw[->,very thick] (K\nr) -- (D\nr);
+            }
+
+            \foreach \nr in {1, ..., 2}{
+                \node (K\nr)            at ({(\nr-\n)*2-1},1.5) {$K$};
+                \node (D\nr)[encrypt]   at ({(\nr-\n)*2},1.5) {$E$};
+            }
+
+
+                \node (K3)            at ({(3-\n)*2-1},1.5) {$K'$};
+            \node (D3)[encrypt]   at ({(3-\n)*2},1.5) {$D$};
+            \node (DB3)[encrypt]   at ({(3-\n)*2},0.5) {$E$};
+            \node (KB3)   at ({(3-\n)*2+1},0.5) {$K$};
+
+            \node (C3)            at ({(3-\n)*2},-0.5) {MAC};
+
+            \foreach \nr in {2, ..., \n}{
+                \newcommand{\tmp}{\n-\nr}
+                \pgfmathtruncatemacro{\tmp}{\nr-1}
+                \draw[->,very thick] (D\tmp) -- ({(\n-\tmp)*-2},0.75) -|
+                ({(\n-\tmp)*-2+0.75},0.75) |- ({(\n-\tmp)*-2+0.75},2) |- (x\nr);
+            }
+
+            \draw[->,very thick] (DB\n) -- (C\n);
+            \draw[->,very thick] (D\n) -- (DB\n);
+            \draw[->,very thick] (KB\n) -- (DB\n);
+            \node (IV) at ({\n*-2+1},2.5) {$0$};
+            \draw[->, very thick] (IV) -- (x1);
+        \end{tikzpicture}
+
+        \begin{itemize}
+            \item Encrypt $length(M)$ with K, yielding K' and use it as key for the
+                MAC function
+        \end{itemize}
+
+    \item \textbf{CMAC}
+        %TODO finish CMAC
+
+        \begin{tabular}{cc}
+            (a) Multiple of block size & (b) Not multiple of block size
+            \\
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {};
+                \node (x\nr)       at ({(\nr-\n)*2},2.5) {$\oplus$};
+                \node (M\nr)            at ({(\nr-\n)*2},3.5) {$M_\nr$};
+
+                \node (K\nr)            at ({(\nr-\n)*2-1},1.5) {$K$};
+                \node (D\nr)[encrypt]   at ({(\nr-\n)*2},1.5) {$E$};
+
+                \draw[->,very thick] (x\nr) -- (D\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+
+                \draw[->,very thick] (K\nr) -- (D\nr);
+                
+            }
+
+
+            \node (C3)            at ({(3-\n)*2},0) {MAC};
+            \node (A) at ({(3-\n)*2+1},2.5) {$K_1$};
+
+
+            \foreach \nr in {2, ..., \n}{
+                \newcommand{\tmp}{\n-\nr}
+                \pgfmathtruncatemacro{\tmp}{\nr-1}
+                \draw[->,very thick] (D\tmp) -- ({(\n-\tmp)*-2},0.75) -|
+                ({(\n-\tmp)*-2+0.75},0.75) |- ({(\n-\tmp)*-2+0.75},2) |- (x\nr);
+            }
+
+            \draw[->,very thick] (D\n) -- (C\n);
+            \draw[->,very thick] (A) -- (x\n);
+            \node (IV) at ({\n*-2+1},2.5) {$0$};
+            \draw[->, very thick] (IV) -- (x1);
+        \end{tikzpicture}
+        &
+        \begin{tikzpicture}
+            \newcommand{\n}{3}
+            \foreach \nr in {1, ..., \n}{
+                \node (C\nr)            at ({(\nr-\n)*2},0) {};
+                \node (x\nr)       at ({(\nr-\n)*2},2.5) {$\oplus$};
+                \node (M\nr)            at ({(\nr-\n)*2},3.5) {$M_\nr$};
+
+                \node (K\nr)            at ({(\nr-\n)*2-1},1.5) {$K$};
+                \node (D\nr)[encrypt]   at ({(\nr-\n)*2},1.5) {$E$};
+
+                \draw[->,very thick] (x\nr) -- (D\nr);
+                \draw[->,very thick] (M\nr) -- (x\nr);
+
+                \draw[->,very thick] (K\nr) -- (D\nr);
+                
+            }
+
+
+            \node (C3)            at ({(3-\n)*2},0) {MAC};
+            \node (A) at ({(3-\n)*2+1},2.5) {$K_2$};
+
+
+            \foreach \nr in {2, ..., \n}{
+                \newcommand{\tmp}{\n-\nr}
+                \pgfmathtruncatemacro{\tmp}{\nr-1}
+                \draw[->,very thick] (D\tmp) -- ({(\n-\tmp)*-2},0.75) -|
+                ({(\n-\tmp)*-2+0.75},0.75) |- ({(\n-\tmp)*-2+0.75},2) |- (x\nr);
+            }
+
+            \draw[->,very thick] (D\n) -- (C\n);
+            \draw[->,very thick] (A) -- (x\n);
+            \node (IV) at ({\n*-2+1},2.5) {$0$};
+            \draw[->, very thick] (IV) -- (x1);
+        \end{tikzpicture}
+        \end{tabular}
+
+        \paragraph{Generate subkeys}
+        %TODO slide 379
+
 \end{itemize}
 
-\begin{figure}[ht!]
-    \centering
-    \includegraphics[scale=0.5]{img/cbc-mac}
-\end{figure}
-
-\begin{itemize}
-    \item CBC-MAC is secure for messages of a fixed number of blocks assuming
-    the block cipher is secure.
-    \item Not secure with variable lengths
-    \item CBC-MAC $(length(M)||M)$ to avoid truncation attacks
-    \item Encrypt $length(M)$ with K, yielding K' and use it as key for the
-    MAC function
-\end{itemize}
-\paragraph{Note:} There is a improvement of CBC-MAC known as Retail-MAC where
-the last block is decrypted with key k' then re-encrypted with k. This reduces
-the threat of exhaustive key search
-\begin{itemize}
-    \item The IV should not be random
-    \item Slower than HMAC
-    \item The MAC can be truncated to enforce security but this also reduces the
-    key search space
-\end{itemize}
 
 \subsection{Encrypt and MAC}
 Encryption does not ensure integrity but MAC does, so they must be combined.
