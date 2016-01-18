@@ -92,14 +92,15 @@ with continous repetitive weihting of 731
         \node [draw=red, rectangle, text width=5cm, below=of B] (C) {Skimming a passport};
         \node [draw=red, rectangle, text width=5cm, below=of C] (D) {Eavesdropping the communication};
 
-        \node [right=2cm of A] (AA) {Passive Authentication
-        (Signature)};
-        \node [right=2cm of B] (BB) {Active Authentication
-(Challenge Response)};
-        \node [right=2cm of C] (CC) {Basic Access Control
-(Reader Authentication)};
-        \node [right=2cm of D] (DD) {Secure Messaging
-(Encryption)};
+        \node [right=2cm of A, text width=4cm] (AA) {Passive Authentication};
+        \node [right=2cm of B, text width=4cm] (BB) {Active Authentication};
+        \node [right=2cm of C, text width=4cm] (CC) {Basic Access Control};
+        \node [right=2cm of D, text width=4cm] (DD) {Secure Messaging};
+
+        \node [right=0cm of AA]  {(Signature)};
+        \node [right=0cm of BB]  {(Challenge Response)};
+        \node [right=0cm of CC]  {(Reader Authentication)};
+        \node [right=0cm of DD]  {(Encryption)};
 
         \draw[->, >=latex, blue] (AA) to node[] {} (A);
         \draw[->, >=latex, blue] (BB) to node[] {} (B);
@@ -110,7 +111,7 @@ with continous repetitive weihting of 731
     \end{tikzpicture}
 \end{center}
 
-\subsubsection{Passive Authentication (Signature)}
+\subsubsection{Passive Authentication (PA)}
 Passive authentication is a \textbf{mandatory security mechanism}: it proves
 that the file EF.SOD and LDS are authentic and not modified.
 
@@ -168,7 +169,7 @@ that the file EF.SOD and LDS are authentic and not modified.
     keys every 3~months
 \end{itemize}
 
-\subsubsection{Active Authentication (CR)}
+\subsubsection{Active Authentication (AA)}
 
 The active authentication is an optional security mechanism:
 it prove that the \textbf{EF.SOD} belongs to the authentic ePassport, i.e
@@ -204,12 +205,43 @@ bits, and 160 bits.
     \end{tabular}
 \end{center}
 
-\subsubsection{Access Control and Secure Messaging}
-%TODO schema
-\begin{figure}[ht!]
-    \centering
-    \includegraphics[scale=0.5]{img/access-control}
-\end{figure}
+\subsubsection{Basic Access Control (BAC) and Secure Messaging (SM)}
+
+\begin{tikzpicture}
+    \footnotesize
+    \node (BAC) {\bf Basic Access Control};
+\node[below=0cm of BAC, text width=3.3cm] (BAC1) {\begin{tabular}{l}Encryption Key\\ MAC Key\end{tabular}};
+
+        \node[below=2cm of BAC] (SM) {\bf Secure Messaging};
+    \node[below=0cm of SM, text width=3.3cm] (SM1) {\begin{tabular}{l}Session Encryption
+    Key\\ Session MAC Key\end{tabular}};
+
+    \node[draw, rectangle, above left=0.0cm and 1.5cm of BAC] (MRZ) {\begin{tabular}{l} Passport
+        Number\\Expiration Date \\ Birth Date\end{tabular}};
+    \node[above=0cm of MRZ] {\bf MRZ};
+
+    \node[draw, rectangle, double, fit={(BAC) (BAC1)}] (BBAC)  {};
+    \node[draw, rectangle, double, fit={(SM) (SM1)}] (SSM)  {};
+
+    \draw[->] (MRZ) -| (BBAC);
+    \draw[->] (BBAC) -| (-2.5cm, -1.5cm) |- (SSM);
+
+    \node[above left=0.2cm and 1cm of SM] {$K_r, K_p$};
+
+    \node[right=of BBAC] {\scriptsize \begin{tabular}{rcl}
+            \bf Reader &&\bf Passport\\
+                       &\fl{$C_p$}&\\
+                       &\fr{$a = ENC\big(C_p, C_r, K_r\big), MAC(a)$}&\\
+                       &\fl{$b = ENC\big(C_p, C_r, K_p\big), MAC(b)$}&\\
+            \end{tabular} };
+
+    \node[right=of SSM] {\scriptsize \begin{tabular}{rcl}
+            \bf Reader &&\bf Passport\\
+                       &\fr{Authenticated Query}&\\
+                       &\fr{Encrypted Data}&\\
+            \end{tabular} };
+\end{tikzpicture}
+
 \begin{itemize}
     \item Three-pass CR protocol according to ISO 11770\text{-}2 Key Establishment
     Mechanism 6, 2-key 3DES as block cipher
@@ -236,10 +268,11 @@ bits, and 160 bits.
 \end{enumerate}
 \end{tabular}
 
-%TODO weaknesses
 \subsection{Weaknesses}
 BAC keys are derived from the MRZ, especially date of birth, date of expiry,
-passport number. But passport numbers are usually not random. DOB and DOE are
+passport number. 
+
+$\Rightarrow$ But passport numbers are usually not random, DOB and DOE are
 neither random.
 
 \begin{itemize}
@@ -247,6 +280,29 @@ neither random.
     increase the timeouts.
     \item Evidence of Presence: Abuse the active authentication which can be
     doable without passing the BAC
-    \item Chain og Trust: If the root certificate cannot be verified, making a
+    \item Chain of Trust: If the root certificate cannot be verified, making a
     fake passport is quite easy
 \end{itemize}
+
+\subsubsection{Information leakage through side channel}
+An adversary can guess the issuing state of an ePassport without
+knowledge of the BAC keys:
+\begin{enumerate}
+    \item Send wrong messages to the passport
+    \item Analyze the error messages.
+    \item  Fingerprint the countries.
+\end{enumerate}
+Error messages are the external signal of an internal behavior.
+Implementer have too frequently to deal themselves with the
+error messages but they are not aware of potential security issues.
+
+\subsection{Extended Access Control (EAC)}
+EAC is an improved security mechanism that aims to eventually
+replace BAC and AA.
+
+\begin{itemize}
+    \item Includes the tag authentication (should eventually replace AA)
+        and the terminal authentication (makes obsolete BAC because
+        only authorized readers have access to the data).
+\end{itemize}
+
