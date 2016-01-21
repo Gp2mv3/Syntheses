@@ -1,2 +1,2 @@
-MAIN_NAME=os
-include ../q5.mk
+COURSE=os-INGI1113
+include ../../q5.mk
