@@ -1,2 +1,2 @@
 TYPE=summary
-include ../info.mk
+include ../info-FSAB1402.mk

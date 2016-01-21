@@ -1,3 +1,3 @@
 SOL=only
 TYPE=exercises
-include ../info.mk
+include ../info-FSAB1402.mk
