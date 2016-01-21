@@ -1,3 +1,2 @@
-COURSE=INGI1341
-QUADRI=5
-include ../../../root.mk
+COURSE=network-INGI1341
+include ../../q5.mk
