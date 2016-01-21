@@ -1,2 +1,2 @@
 TYPE=summary
-include ../INMA2471.mk
+include ../opti-INMA2471.mk
