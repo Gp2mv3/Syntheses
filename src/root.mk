@@ -79,7 +79,7 @@ ifneq (,$(filter $(TYPE),exam test))
 	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) $(SETSOL) config.yml
 else
 	cd ../../..; smartcp -vv -s \
-	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) $(SETSOL) config.yml
+	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s num=$(NUM) $(SETSOL) config.yml
 endif
 
 add:
