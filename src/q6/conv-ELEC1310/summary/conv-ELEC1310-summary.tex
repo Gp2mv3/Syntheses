@@ -711,7 +711,7 @@ une charge de \SI{2}{\ohm}, comme illustré à la figure \ref{fig:adapt-imp}.
 \'{E}cartons-nous maintenant du transformateur idéal en retirant une
 par une les hypothèses posées précédemment.
 
-\paragraph{Matériau magnétique parfait} 
+\paragraph{Matériau magnétique imparfait} 
 On commence par supprimer l'hypothèse \ref{hyp:perm-infty} ; le matériau
 ferromagnétique ne possède plus une perméabilité magnétique infinie.
 On a donc maintenant $H \neq 0$, et donc l'application de la loi d'Ampère
@@ -825,6 +825,131 @@ cûté du transformateur (figure \ref{fig:mod-res-non-nulles}).
 	\caption{Modélisation de la résistance des enroullements.}
 	\label{fig:mod-res-non-nulles}
 \end{figure}
+
+\paragraph{Flux de fuite}
+En pratique, une partie du flux généré par les bobinages passe en
+dehors du circuit magnétique, comme le montre la figure \ref{fig:flux-leak}.
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[scale=0.35]{img/flux-leak.png}
+	\caption{Simulation d'un transformateur à vide avec le logiciel
+	\textsc{Femm}.}
+	\label{fig:flux-leak}
+\end{figure}
+
+En se plaçant du côté du primaire, le flux total est donc composé du
+flux élémentaire circulant dans le circuit magnétique et du flux de fuite
+\[ \Phi_{\text{tot,1}} = \Phi + \Phi_{f,1} \]
+et donc le flux total intercepté par le primaire est donné par
+\[ \Psi_1 = n_1(\Phi + \Phi_{f,1}). \]
+En injectant $\Psi_1$ dans l'équation \ref{eq:faraday-transfo}, on obtient
+\[ u_1 = n_1\fdif{\Phi}{t} + n_1\fdif{\Phi_{f,1}}{t} + R_1i_1 \]
+ce qui suggère l'ajout d'une inductance série dans notre modèle du
+transformateur réel (voir figure \ref{fig:mod-flux-leak}).
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[scale=0.35]{img/mod-flux-leak.png}
+	\caption{Modélisation du champ de fuite.}
+	\label{fig:mod-flux-leak}
+\end{figure}
+
+\paragraph{Hystérèse}
+Les matériaux ferromagnétiques présentent un phénomène d'hystérèse
+comme illustré sur la figure \ref{fig:hysteresis}.
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[scale=0.35]{img/hysteresis.png}
+	\caption{Relation constitutive non univoque d'un matériau ferromagnétique :
+	phénomène d'hystérèse.}
+	\label{fig:hysteresis}
+\end{figure}
+La densité d'énergie magnétique étant donnée par
+\begin{equation}
+	W = \int \H \cdot \dif\B,
+\end{equation}
+on peut calculer la densité d'énergie totale durant un cycle complet
+\[ W_\text{cycle} = \int_{B_r}^{-B_m} \H \cdot \dif\B 
++ \int_{-B_m}^{-B_r} \H \cdot \dif\B
++ \int_{-B_r}^{B_m} \H \cdot \dif\B
++ \int_{B_m}^{B_r} \H \cdot \dif\B \] 
+et se rendre compte qu'elle est positive. %FIX: why?
+La densité d'énergie perdue par cycle est proportionnelle à la surface du
+cycle $W_\text{cycle} \propto S_\text{cycle}$ qui est elle
+même $\propto B^2_m$.
+
+La puissance totale perdue est donc donnée par
+\begin{equation}
+	P = fW_\text{cycle}V = K_hfVB^2_m
+\end{equation}
+où $f$ est la fréquence d'oscillation du champ magnétique,
+$V$ le volume du matériau magnétique et $K_h$ une constante
+propre au matériau.
+
+\paragraph{Conductivité électrique non-nulle}
+Chaque section du matériau magnétique intercepte lui aussi un flux
+variable dans le temps. Par le loi de Faraday, une force électromotrice
+apparait donc sur le contour de cette section
+\[ e_{cm} = \fdif{}\Phi_{cm} \neq 0. \]
+Si la conductivité du matériau magnétique est non-nulle, sa résistance
+$R_{cm} \neq \infty$ et donc un courant $i_{cm} \neq 0$ apparaît. On les
+appelle les courants de Foucault. Il est possible de réduire ces courants
+en utilisant une superposition de tôles ferromagnétiques séparées par
+un isolant à la place d'un seul bloc de matériau ferromagnétique. De la sorte,
+on réduit la surface traversée par le flux variable.
+Ces courants de Foucault engendre une perte de puissance
+\begin{equation}
+	P_\text{fouc} = R^2_{cm}I^2_{cm} = \frac{V^2_{cm}}{R_{cm}}.
+\end{equation}
+Comme en pratique on travaille avec des grandeurs sinusoïdales, on
+peut dire que $\Phi_{cm} \propto B_m\cos(\omega t + \varphi)$ et
+donc que $e_{cm} \propto \omega B_m$. On a donc finalement
+\begin{equation}
+	P_\text{fouc} = K_ff^2VB^2_m
+\end{equation}
+où $K_f$ est une constante propre au matériau et à l'épaisseur de tôle.
+
+\paragraph{Pertes fer ou pertes magnétiques}
+Les deux non-idéalités précédentes se regroupent dans ce qu'on
+appelle les \emph{pertes fer} ou pertes magnétiques
+\[ P_\text{fer} = P_\text{hyst} + P_\text{fouc}. \]
+
+%FIX: je ne comprend pas comment on déduit ce modèlé àpd slide 25
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[scale=0.35]{img/mod-pertes-fer.png}
+	\caption{Modélisation des pertes magnétiques.}
+	\label{fig:mod-pertes-fer}
+\end{figure}
+
+\subsection{Circuit équivalent de référence}
+Le circuit équivalent de référence du transformateur, aussi appelé
+circuit en T du transformateur est donné en forme phasorielle à la figure
+\ref{fig:mod-ref-transfo}. 
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[scale=0.35]{img/mod-ref-transfo.png}
+	\caption{Circuit équivalent de référence ou circuit en T du
+	transformateur.}
+	\label{fig:mod-ref-transfo}
+\end{figure}
+
+Ce modèle ne tient pas compte 
+\begin{itemize}
+	\item des pertes par hystérésis et par courant de Foucault
+	liées aux flux de fuite ;
+	\item des effets péliculaires (effet de peau) dans les
+	conducteurs des bobinages.
+\end{itemize}
+Néanmoins, on peut montrer que la modélisation de ces effets ne
+changent pas la forme du schéma équivalent de référence. Les
+paramètres du schéma équivalent ne peuvent donc pas être obtenus
+directement par les formules présentées précédemment mais peuvent
+par contre être identifiés par voie expérimentale.
+
+%TODO : slide 28, modèle à inductances couplées
 
 \section{Le transformateur triphasé}
 
