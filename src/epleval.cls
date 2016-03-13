@@ -25,12 +25,14 @@
 
 \RequirePackage{../../../../../../eplcommon}
 
+\RequirePackage{fancybox}
+
 \RequirePackage{titlesec}
 \titleformat
 {\section} % command
-[display] % shape
-{\bfseries\Large} % format
-{Question \thesection} % label
+[hang] % shape
+{\bfseries} % format
+{\shadowbox{~\thesection~}} % label
 {0.5ex} % sep
 {} % before-code
 

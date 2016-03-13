@@ -67,38 +67,70 @@ We can choose to relax in order to reduce the search space as much as possible.
 
 \subsection{B\&B pseudo-code}
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.8\linewidth]{PseudoCodeBB.png}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
+\begin{tabular}{m{8cm}m{8cm}}
+\begin{lstlisting}[mathescape, caption=BB with recursion]
+def backtrackSearch(c) {
+    if reject(P, c) then return
+    if accept(P, c) then output(P, c)
+    for s $\leftarrow$ children(c) do
+        backtrackSearch(s)
+}
 
-With the preceding algorithm, a partial solution will be represented as a growing vector
-of zero and ones representing whether a given item as been selected or not.
+backtrackSearch(root(P))
+\end{lstlisting}
+&
+\begin{lstlisting}[mathescape, caption=BB with stack]
+  def branchAndBound() = {
+      var queue = List(root(P))
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=\linewidth]{PartialSolBB.png}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
+      while(queue.nonEmpty) {
+          var c = queue.head
+          queue = queue.tail
 
-This algorithm however has limitations, we must always evaluate the variables of the 
-problem in the same order (We cannot affect $X_1$ then$ X_2$ at the left side of the tree 
-while on the other side we affect $X_2$ then $X_1$, each level of the tree must strictly 
-correspond to the affectation of a variable). As affecting variable in different order may result in better performance, this a limitation.\newline
+          if( ! reject(P, c)) {
+            if( accept(P, c)) output(P, c)
+            for (s $\leftarrow$ children(P, c))
+            queue = s :: queue
+          }
+      }
+  }
+  \end{lstlisting}
+\end{tabular}
 
-We also cannot process trees which posses a variable number of children easily with this method. If it was possible we could, for example, decide multiple variable at once
-and thus increase the performances of our algorithm. \newline
 
-We must find a way to implement reversible states to improve our algorithm further
-by breaking those two limitations. The space usage of those reversible state must however
-be relative the the change that have been made on the parent. We do not want to simply
-clone the parent and waste memory.
+\begin{itemize}
+    \item For the knapsack, partial solution by a list of boolean: 
+        $\begin{cases} 
+            list[i]= 1 \text{ if item i is selected}\\
+            list[i]= 0 \text{ else}\\
+        \end{cases}$
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=10cm]{PartialSolBB.png}
+\end{center}
+
+\paragraph{Limitations which may affect performance}:
+\begin{itemize}
+    \item Must evaluate variable in the same order. We cannot affect $X_1$
+        then$ X_2$ at the left side of the tree while on the other side we
+        affect $X_2$ then $X_1$, each level of the tree must strictly
+        correspond to the affectation of a variable.
+
+    \item Cannot process trees which has a variable number of children easily.
+        If it's the case, we could, for example, decide multiple variables at once.
+\end{itemize}
 
 \subsection{Reversible state and magical integers}
 
+\textbf{Reversible states} are use to improve our algorithm in two way:
+\begin{enumerate}
+    \item By breaking the two previous limitation
+    \item By use only one incremental state relative of the change
+        that have been made on the parent instead of
+            simply clone the parent and waste memory.
+\end{enumerate}
+        
 \subsubsection{The idea}
 
 To implement those reversible states, we will thus make use of three objects.
@@ -113,78 +145,138 @@ To implement those reversible states, we will thus make use of three objects.
 	only be used by the ReversibleContext class.
 \end{enumerate}
 
-Using those three object can then implement an reversible context 
-which can be used as shown in the following piece of code :
+\begin{tabular}{m{8cm}m{7cm}}
+\begin{lstlisting}[mathescape]
+val rc = new ReversibleContext() 
+val n1 = new ReversibleInt(rc,2)
+val n2 = new ReversibleInt(rc,5) 
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=\linewidth]{ReversibleIntegerIntroductionBB.png}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
+rc.pushState()    // Store $n_1=2$ and $n2=5$
 
-With the push pop operation acting as follows:
+n1.value = 6
+n1.value = 5
+n2.value = 4
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.9\linewidth]{ReversibleStatePushPop.png}
-    \caption{Push/Pop implementation in reversible context}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
+rc.pushState()    // Store $n_1=5$ and $n2=4$
+
+n1.value = 3
+n2.value = 7
+
+rc.pop()          // Restore $n_1=5$ and $n_2=4$
+rc.pop()          // Restore $n_1=2$ and $n_2=5$
+\end{lstlisting}
+& 
+\begin{itemize}
+    \item Each reversible contains the \textbf{time} at which its last value was given
+    \item A each \texttt{pushState()} the clock increase
+    \item When the value of a reversible change, if its last value was given at a
+        time different from the current time, then we store it before actually changing
+        the current value
+    \end{itemize}
+\end{tabular}
+
+
+\subsubsection{Push/Pop operation in reversible context}
+\begin{center}
+    \includegraphics[width=12cm]{ReversibleStatePushPop.png}
+\end{center}
 
 \subsubsection{Implementation}
 
-\#Ca pue l'exam les gars
+\begin{tabular}{m{8cm}m{7cm}}
+\begin{lstlisting}[mathescape]
+class ReversibleContext() {
+    private var magicNumber: Long = 0
+    private val trailStack: Stack[TrailEntry] = new Stack()
+    private val pointerStack: Stack[TrailEntry] = new Stack()
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=1.1\linewidth]{ReversibleStateImplementation.png}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
+    def magic: Long = magicNumber
+    def pushOnTrail[T](reversible: ReversibleInt, value: Int): Unit = {
+        val entry = new TrailEntry(reversible, value)
+        trailStack.push(entry)
+    }
+    def pushState(): Unit = {
+        magicNumber += 1
+        pointerStack.push(trailStack.top)
+    }
+    def pop(): Unit = {
+        restoreUntil(pointerStack.pop())
+        magicNumber += 1
+    }
+    def restoreUntil(until: TrailEntry): Unit = {
+        while (trailStack.top != until) {
+            val entry = trailStack.pop()
+            entry.restore()
+        }
+    }
+}
+\end{lstlisting}
+& 
+\begin{lstlisting}[mathescape]
+class ReversibleInt(context: ReversibleContext, v: Int) {
+    protected var pointer: Int = v
+    private var lastMagic: Long = -1L
+    trail()
 
-The slides (lecture 2 page 28) contains an implementation of B\&B using branch and bound
-which we will not place here as it is highly unlikely that we will be interrogated on it.
-Also if you have understood reversible context then it should be fairly easy 
-to reimplement in the worst case scenario.
+    def trail(): Unit = {
+        val contextMagic = context.magic
+        if (lastMagic != contextMagic) {
+            // Store previous value on store 
+            // because magic time has changed
+            lastMagic = contextMagic
+            context.pushOnTrail(this, value)
+        }
+    }
+    def value_=(value: Int): Unit = {
+        if (value != pointer) {
+            // Before overriding, trail it if necessary
+            trail()
+            this.pointer = value
+        }
+    }
+    def value = pointer
+    def restore(value: Int): Unit = pointer = value
+}
+\end{lstlisting}
+\end{tabular}
+
+\paragraph{Implementation B\&B using reversible}
+Show example lecture 2 page 28
 
 \subsection{Search heuristics}
-
-So far we have always added items on the left side of the tree (affecting variable to 1)
-and removed items on the right side. We have also always affected variable sequentially, 
-in the same order each time\newline
-
-Now that we can traverse the tree as we want, we can change that and make use of 
-heuristics which, at each given moment, decide what variable to instantiate 
+With heuristic, we can at each given moment, decide what variable to instantiate 
 and/or which value to assign. 
-\newline
 
-In a Branch and bound algorithm, finding good solution faster is better 
-as the pruning will become more effective.
-Heuristic will also result in a better \textbf{anytime behavior} (the quality of the best
-solution you have if you stop the search after a time limit).  \newline
+\begin{itemize}
+    \item Variables heuristic: Choose which variable will know be 
+        assigned
+    \item Value heuristic: Choose the order of assigned value for
+        the variables
+    \end{itemize}
 
 \subsubsection{Iterative Discrepancy Search}
 
-Discrepancy = Number of right (the side in a tree) decisions
+\begin{tabular}{m{11cm}m{6cm}}
+\begin{description}
+    \item[Discrepancy] = Number of right (the side in a tree) decisions
+\end{description}
+\begin{lstlisting}[mathescape]
+for (d $\leftarrow$ 0 to 100) {
+    problem.search(maxDiscrepancy = d)
+}
+\end{lstlisting}
+&
+    \includegraphics[width=4cm]{LimiteDiscrpancy.png}
+\end{tabular}
 
-If i posses a trustworthy heuristic where interesting sub tree are on the left of a parent,
-using a limited discrepancy search would be a good optimisation as wrong decision often
-take place in early stages.
 
-\begin{figure}[!ht]
-    \centering
-    \includegraphics[width=0.8\linewidth]{LimitedDiscrepancySearch.png}
-    \label{fig:Knapsack_example}
-\end{figure}
-\FloatBarrier
-
-As you can see with this method we rapidly find good solution which will help the pruning
-during the following iterations. We thus obtain a potentially fast and complete algorithm
-(depending on the heuristic). If the heuristic is not significant however the algorithm will
-be far slower as it involves much re computation (which normally won't be too signifiant
-thanks to the pruning).\newline
+\paragraph{Advantages}
+\begin{itemize}
+    \item Easy to implement, weak memory consumption (DFS)
+    \item Can potentially be fast \textbf{depending on the heuristics},
+        but also slower because of recomputation which are normally for the
+        most part pruning in recomputation.
+\end{itemize}
 
 \textbf{If the discrepancy search does not explore the tree completely, 
 it is not considered complete !} This can however be used as a form of greedy
@@ -217,31 +309,18 @@ TODO
 \subsubsection{Symmetry detection}
 
 In case of symmetric items in the knapsack set (understand identical), we can reduce the
-search space significantly as the items are completely interchangeable.\newline
-
-For example given four symmetrical items $(X_{n+1}, X_{n+2}, X_{n+3}, X_{n+4})$, 
-their assignment tree would normally contain 16 elements $(2^4)$ but it can 
-be reduced to five due to their symmetrical property. 
-We only need to explore the following states:
-
-\begin{enumerate}
-	\item (0,0,0,0) => take 0
-	\item (1,0,0,0) => take 1
-	\item (1,1,0,0) => take 2
-	\item (1,1,1,0) => take 3
-	\item (1,1,1,1) => take 4
-\end{enumerate}
+search space significantly as the items are completely interchangeable.
 
 \subsubsection{Dominance detection}
 
 In case an item b is dominated by another item a
 (b is dominated by a if $V_a \geq V_b \wedge W_a \leq W_b$)
-It is never interesting to take b if a is not also taken ! \newline
+It is never interesting to take b if a is not also taken ! 
 
-An optimal solution cannot have a = 0 and b = 1. 
+$\Rightarrow$ An optimal solution cannot have a = 0 and b = 1. 
 We can thus avoid to explore such states.
 
-\subsection{Bonus questions and exam questions}
+\subsection{Bonus questions}
 
 \subsubsection{Reversible set}
 
@@ -326,3 +405,23 @@ while(!state_to_visit.isEmpty()) {
 return bestSol; 
 \end{lstlisting}
 
+\subsection{Exam}
+\begin{itemize}
+    \item Give the pseudo-code of a backtracking search algorithm
+        \begin{itemize}
+            \item  What kind of search tree exploration is it?
+            \item  What are the advantages of such an exploration?
+        \end{itemize}
+    \item Explain the trailing and reversible mechanism
+        \begin{itemize}
+            \item  Sketch the code to implement it, give an example of how to use
+                it
+            \item  Illustrate the solving of a combinatorial problem with a
+                backtracking search using reversibles to restore state
+        \end{itemize}
+    \item  Explain Limited Discrepancy Search, why it is useful? How to
+        implement it using DFS while staying complete
+    \item  Explain/Illustrate the heuristics and how it can impact B\&B
+    \item  Explain what are symmetries and dominances, how to avoid
+        them?
+\end{itemize}
