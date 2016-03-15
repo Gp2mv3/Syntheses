@@ -1,2 +1,2 @@
 COURSE=distributed-SINF2345
-include ../../q8.mk
+include $(BASE_DIR)../../q8.mk
