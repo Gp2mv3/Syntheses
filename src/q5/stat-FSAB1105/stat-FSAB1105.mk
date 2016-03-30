@@ -1,2 +1,2 @@
 COURSE=stat-FSAB1105
-include ../../q5.mk
+include $(BASE_DIR)../../q5.mk
