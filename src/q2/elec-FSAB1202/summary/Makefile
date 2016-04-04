@@ -1,2 +1,2 @@
 TYPE=summary
-include ../elec.mk
+include ../elec-FSAB1202.mk
