@@ -3,6 +3,7 @@
 
 \LoadClassWithOptions{../../../../../../epleval}
 
-\IfLanguageName{english}{\newcommand{\epltype}{Test}}{\newcommand{\epltype}{Interro}}
+\IfLanguageName{english}{\newcommand{\Epltype}{Test}}{\newcommand{\Epltype}{Interro}}
+\IfLanguageName{english}{\newcommand{\epltype}{test}}{\newcommand{\epltype}{interro}}
 
 \endinput

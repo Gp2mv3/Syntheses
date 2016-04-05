@@ -3,6 +3,6 @@
 
 \LoadClassWithOptions{../../../../../../epleval}
 
-\IfLanguageName{english}{\newcommand{\epltype}{Exam}}{\newcommand{\epltype}{Examen}}
+\IfLanguageName{english}{\newcommand{\Epltype}{Exam}\newcommand{\epltype}{exam}}{\newcommand{\Epltype}{Examen}\newcommand{\epltype}{examen}}
 
 \endinput

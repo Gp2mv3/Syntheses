@@ -14,7 +14,7 @@
 \LoadClass{../../../../../../eplbase}
 
 \newcommand{\hypertitle}[9][e ]{%
-\basehypertitle[#1]{#2}{#3}{#4}{#5}{#8}{#9}{\epltype{} \IfLanguageName{english}{of}{de} #7 #6}}
+\basehypertitle[#1]{#2}{#3}{#4}{#5}{#8}{#9}{\Epltype{} \IfLanguageName{english}{of}{de} #7 #6}}
 
 \ifthenelse{\isundefined{\Sol}}{\def\Sol{true}}{}
 
