@@ -36,6 +36,12 @@ Vous pouvez visualiser le statut des différentes synthèses
 [ici](https://github.com/Gp2mv3/Syntheses/wiki/Status).
 N'hésitez pas à en rajouter dans la liste :)
 
+## License
+Sauf mention expresse, vous licensiez sous license [CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)
+tout le contenu que vous soumettez pour inclusion dans ce dépot.
+
+Si cette license vous pose problème, venez en discuter en ouvrant une [issue](https://github.com/Gp2mv3/Syntheses/issues/new).
+
 ## Copier les synthèses à leur destination
 Vous pouvez copier les synthèses automatiquement vers leur destination à l'aide de `make release` mais pour cela il vous faut d'abord spécifier les destination dans un fichier de configuration `src/config.yml` et installer
 [`smartcp`](https://github.com/blegat/smartcp).

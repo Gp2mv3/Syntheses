@@ -12,6 +12,7 @@
 % If you want to compile without it
 \DeclareOption{skiptoc}{\newcommand{\skiptableofcontents}{}}
 \DeclareOption{skiptitle}{\newcommand{\skiptitlepage}{}}
+\DeclareOption{license=none}{\newcommand{\nolicense}{}}
 
 \DeclareOption{usereportclass}{\newcommand{\usereport}{}}
 \DeclareOption{10pt}{
@@ -215,6 +216,17 @@
    changements par mail ou par n'importe quel autre moyen.}
 
    #9
+
+    \ifthenelse{\isundefined{\nolicense}}{
+        \bigskip
+        \paragraph{License} \IfLanguageName{english}
+        {This work is licensed under the Creative Commons Attribution 4.0 Unported License.
+            To view a copy of this license, visit \url{http://creativecommons.org/licenses/by/4.0/},
+        or look into the github repository (see above).}
+        {Ce travail est disponible sous license Creative Commons Attribution 4.0 Unported.
+            Une copie de cette license est disponible sur \url{http://creativecommons.org/licenses/by/4.0/},
+        on dans le dépot github (voir ci-dessus).}
+    }{}
 \end{titlepage}
 }{}
 
