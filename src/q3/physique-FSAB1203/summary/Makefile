@@ -1,2 +1,2 @@
 TYPE=summary
-include ../physique.mk
+include ../physique-FSAB1203.mk
