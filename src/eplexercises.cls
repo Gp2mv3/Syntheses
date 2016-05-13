@@ -3,6 +3,7 @@
 
 \LoadClassWithOptions{../../../eplbase}
 
+\IfLanguageName{english}{\newcommand{\epltype}{exercises solution}}{\newcommand{\epltype}{correctif}}
 \newcommand{\hypertitle}[7][e ]{%
 \basehypertitle[#1]{#2}{#3}{#4}{#5}{#6}{#7}{\IfLanguageName{english}{Exercises solutions}{Correctif des APEs}}}
 
