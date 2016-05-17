@@ -75,10 +75,10 @@ show: $(FULL)
 
 release: all
 ifneq (,$(filter $(TYPE),exam test))
-	cd ../../../../../..; smartcp -vvvv -s \
+	cd ../../../../../..; python3 ~/git/smartcp/smartcp.py --google-drive -vvvv -s \
 	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) $(SETSOL) config.yml
 else
-	cd ../../..; smartcp -vv -s \
+	cd ../../..; python3 ~/git/smartcp/smartcp.py --google-drive -vv -s \
 	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s num=$(NUM) $(SETSOL) config.yml
 endif
 

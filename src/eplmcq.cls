@@ -3,8 +3,9 @@
 
 \LoadClassWithOptions{../../../eplbase}
 
+\IfLanguageName{english}{\newcommand{\epltype}{MCQ}}{\newcommand{\epltype}{QCM}}
 \newcommand{\hypertitle}[7][e ]{%
-\basehypertitle[#1]{#2}{#3}{#4}{#5}{#6}{#7}{\IfLanguageName{english}{MCQ}{QCM}}}
+\basehypertitle[#1]{#2}{#3}{#4}{#5}{#6}{#7}{\IfLanguageName{english}{MCQ}{QCM}}
 
 \RequirePackage{../../../eplcommon}
 
