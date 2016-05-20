@@ -11,7 +11,7 @@
 \usepackage{pgf}
 \usepackage{tikz}
 \usepackage{circuitikz}
-\usetikzlibrary{arrows,automata}
+\usetikzlibrary{arrows,automata, shapes, positioning}
 \usetikzlibrary{positioning}
 
 \tikzset{
@@ -389,8 +389,20 @@ We need to release all locks at once.
 \newline
 If this situation happens, both threads will wait forever! $\rightarrow$ Circular wait between threads that need resources : deadlock.
 \subsubsection{Wait for graph}
-%TODO 
-%I've the graph and the notes of it but not able to draw it on LaTeX.
+\begin{center}
+\begin{tikzpicture}[on grid, auto]
+    \node[draw, ellipse] (A) {T1};
+    \node[draw, ellipse] (B) [right = 2.5 cm of A] {C2};
+    \node[draw, ellipse] (C) [below = 2.5 cm of B] {T2};
+    \node[draw, ellipse] (D) [below = 2.5 cm of A] {C1};
+
+    \path[-latex] (A) edge [bend left] node [above] {waits for} (B);
+    \path[-latex] (B) edge [bend left] node [right] {used by} (C);
+    \path[-latex] (C) edge [bend left] node [below] {waits for} (D);
+	\path[-latex] (D) edge [bend left] node [right] {used by} (A);
+\end{tikzpicture}
+\end{center}
+In a wait for graph, we represent the relations between the transactions and Cells (protected by a lock). There are only 2 kind of nodes in this graph : used by and waits for. 
 \subsubsection{Concurrency control}
 Need of concurrency control(CC) : 
 \begin{itemize}
@@ -415,7 +427,7 @@ If the TM is pessimistic, it delays if it's risky.
 	\item STRICT 2PL : only allowed to release after all gets.
 \end{itemize}
 \textbf{Deadlock repair} :
-Detect cycle, %in wait for graph
+Detect cycle in wait for graph.
 if cycle found, choose one transaction and restart it (abort by releasing all locks, and start again).
 \newline
 \textbf{Deadlock avoidance} :
@@ -426,8 +438,26 @@ If we give priorities to transactions and give higher priorities to earlier tran
 	\item locked by higher priority transaction : waits
 	\item locked by lower priority transaction : low priority transaction restarts and release all its locks.
 \end{itemize}
-%TODO 
-%state diagram of a transaction : I've it in my notes but i'm not able to draw it on \LaTeX.
+\vspace{1cm}
+\begin{tikzpicture}[on grid, auto]
+    \node[initial,draw, ellipse] (A) {running};
+    \node[draw, ellipse] (B) [right =6 cm of A] {continue or abort};
+    \node[draw, ellipse] (C) [below =3cm of B] {Running without probation};
+    \node[draw, ellipse] (D) [below =4cm of A] {waiting};
+    \node[draw, ellipse] (E) [below = 3cm of C] {restart};
+
+    \path[-latex] (A) edge [loop above] node {asks for free lock} (A);
+    \path[-latex] (A) edge [bend right] node [left] {asks for locks already taken} (D);
+    \path[-latex] (D) edge [bend right] node [right] {gets lock} (A);
+    \path[-latex] (A) edge node {} (B);
+    \path[-latex] (A) edge node[sloped, anchor=center,above] {HPT asks one of my locks} (C);
+    \path[-latex] (C) edge node {Done} (B);
+    \path[-latex] (C) edge node {asks for lock} (E);
+    \path[-latex] (D) edge node[sloped, anchor=center,below] {HPT needs one of my locks} (E);
+\end{tikzpicture}
+\newline
+HPT = higher priority transaction
+The part "Running without probation" is an additional part for optimisation.
 \clearpage
 \part{Définitions}
 Ceci est une liste exhaustive constituée par Arnaud Schils
