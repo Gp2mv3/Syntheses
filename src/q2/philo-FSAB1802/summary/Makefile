@@ -1,2 +1,2 @@
 TYPE=summary
-include ../philo.mk
+include ../philo-FSAB1802.mk
