@@ -1,2 +1,2 @@
 TYPE=summary
-include ../meca.mk
+include ../meca-FSAB1202.mk
