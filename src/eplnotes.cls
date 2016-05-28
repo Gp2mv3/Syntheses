@@ -3,6 +3,7 @@
 
 \LoadClassWithOptions{../../../eplbase}
 
+\newcommand{\epltype}{notes}
 \newcommand{\hypertitle}[7][e ]{%
 \basehypertitle[#1]{#2}{#3}{#4}{#5}{#6}{#7}{Notes}}
 
