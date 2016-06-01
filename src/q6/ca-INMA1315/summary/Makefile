@@ -1,2 +1,2 @@
 TYPE=summary
-include ../ca.mk
+include ../ca-INMA1315.mk
