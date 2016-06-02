@@ -225,7 +225,7 @@
         or look into the github repository (see above).}
         {Ce travail est disponible sous license Creative Commons Attribution 4.0 Unported.
             Une copie de cette license est disponible sur \url{http://creativecommons.org/licenses/by/4.0/},
-        on dans le dépot github (voir ci-dessus).}
+        ou dans le dépot github (voir ci-dessus).}
     }{}
 \end{titlepage}
 }{}
