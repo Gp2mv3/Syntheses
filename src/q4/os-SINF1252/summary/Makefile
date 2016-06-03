@@ -1,2 +1,2 @@
 TYPE=summary
-include ../os-SINF1225.mk
+include ../os-SINF1252.mk
