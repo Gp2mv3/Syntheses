@@ -138,7 +138,266 @@ OS specifically designed for real-time systems:
 	\item Fast context switch
 	\item Guaranteed time-bounded response to interrupts
 	\item Tries to avoid code that cannot be preempted
-
 \end{itemize}
 
+\subsubsection{OSs for WSN}
+\begin{itemize}
+	\item Thin abstraction layer to hardware(I/O, timers, \ldots)
+	\item Limited multiprocessing
+	\item Specific network protocol implementations
+	\item Power Saving
+\end{itemize}
+\paragraph{TinyOS}
+TinyOS applications consist of components that you can use in your own
+application. Each component is provided with an interfaces defining the 
+commands (function) and event available in the component.\\
+\begin{itemize}
+	\item The device sleeps most of the time and they wake up when
+	an event is triggered.
+	\item Event-handling function execute and then device goes back to sleep.
+\end{itemize}
+\subparagraph{Task}
+Tasks are functions that canbe preempted by interrupts but not by other tasks.
+\begin{itemize}
+	\item Task scheduler is a FIFO queue
+	\item Not possible to post the same task while it is in the queue
+	\item Device sleeps when task queue is empty and no event to process
+\end{itemize}
+\subparagraph{Synchronous vs Asynchronous}
+Hardware events can happen at any time and interrupt the current execution.
+This can result in race conditions for variables shared between hardware and
+task.
+Compile differentiates between
+\begin{itemize}
+	\item Synchronous code: reachable only from tasks
+	\item Asynchronous code: reachable from interrupts
+\end{itemize}
+Static analysis allows compiler to detect race conditions so programmer
+are forced to explicitly use atomic section.
+\subparagraph{Optimization}
+\begin{itemize}
+	\item TinyOS programmed in NesC (subset of C)$\to$ No pointers or 
+	dynamic allocation.
+	\item Static analysis is used for optimization $\to$ can reduce apps by 60\%
+\end{itemize}
+
+\paragraph{Contiki}
+Differences with TinyOS
+\begin{itemize}
+	\item No special description language
+	\item Cooperative process instead of task queue
+	\item Core (kernal + libraries) is uploaded once
+	\item Applications can be loaded at run-time
+\end{itemize}
+Application are composed of one or multiple processes. Proccesses are
+cooperative, meaning that other processes can only run if current process
+stops.
+\begin{itemize}
+	\item Processes communicate with each other by posting event
+	\begin{itemize}
+		\item Synchronous events: delivered immediately
+		\item Asynchronous events: delivered later
+	\end{itemize}
+	\item Processes implemented as Proto-Threads
+	\begin{itemize}
+		\item Like threads but cheaper
+		\item No separate stack per process $\to$ Local variables lose
+		their value after a context switch
+	\end{itemize}
+	\item Process can be preempted by interrupts triggerd by hardware events.
+\end{itemize}
+\paragraph{RIOT}
+RIOT application programmed in C or C++ and used Multi-threading 
+(not event-driven). $\to$ Use priority based scheduling.
+
+\subsubsection{Networking Stacks}
+uIP : Ipv4 stack in 4-5 KBytes of code.
+\begin{itemize}
+	\item One single packet buffer $\to$ easier to manage
+	\item Incoming packet must be processed immediately $\to$ Radio interface queue
+	incoming packet while processing.
+	\item Retransmission is left to the application to recreate lost packet segments
+	\item Send segment one at the time, wait ACK before sending next segment
+\end{itemize}
+
+\section{TinyDB}
+%%TODO
+\section{Real-Time Scheduling}
+\begin{description}
+	\item[Job/processes/threads]: A task to be executed which compete for
+	limited resource, the CPU
+	\item[Scheduling:] Given N jobs, in which order should the CPU execute
+	them
+\end{description}
+In general purposes OS( Linux,Windows, \ldots) scheduling has the following
+goals:
+\begin{description}
+	\item[Fairness] All jobs should be finally executed (no starvation)
+	\item[Optimize response time] Should be as short as possible on average
+	\item[Optimize throughput] serve as many jobs as possible on average
+	(Time to wait for CPU + Execution Time)
+\end{description}
+In real-time system it's a bit different, the most important thing is that
+task meets their deadline
+\begin{itemize}
+	\item Don't care about fairness and throughput
+	\item Focus on worst-case performance
+\end{itemize}
+
+\subsection{Scheduling in general purpose OS}
+Based on the idea of Round Robin scheduling which is preemptive with time
+slice:
+\begin{enumerate}
+	\item All jobs wait in a queue for the CPU
+	\item Job at the head of the queue receives service for time quantum Q
+	\item Then it is interrupted by the next waiting job and goes back to the
+	end of the queue
+	\item Repeated until job is finished
+	\item If Q is small, illusion of parallelism but careful of the cost for
+	context switching
+\end{enumerate}
+By default all jobs are equal: order in queue is order of arrival and same time
+slice for all jobs. But there are some variation with different priority and 
+different time slice. Priority can be assigned manually or automatically
+
+\subsection{Schedulability}
+\begin{itemize}
+	\item Given a set of tasks with their periods, deadlines, etc.
+	\item Given a scheduling algorithm
+\end{itemize}
+The task set is \textbf{schedulable} if all jobs meet their deadlines\\
+Differents ways to know whether a task set is schedulable:
+\begin{itemize}
+	\item Measurement on real system : expensive!
+	\item Simulation
+	\item Mathematical analysis
+\end{itemize}
+We will focus on mathematical analysis.
+\paragraph{Assumption}
+\begin{itemize}
+	\item Single CPU
+	\item No priority inversion
+	\item Zero overhead for context switching
+	\item Fixed number $N$ of independent periodic tasks with
+	period $T_i$ and deadline $D_i$ (relative to begin of period), $i$=1,\ldots, $N$
+	\item Task $i$ has a worst-case execution time $C_i$
+\end{itemize}
+
+\subsubsection{Rate Monotonic Scheduling}
+RM assingns a static priority to each task, the task with the shortest period
+has highest priority. Preemption is possible.\\
+Assuming $D_i=T_i$ for all tasks, it can be shown that RM is an optimal
+preemptive static priority scheduling algorithm:
+\begin{itemize}
+	\item If a task is not schedulable with RM, no other preemptive static
+	priority algorithm can schedule it.
+\end{itemize}
+If we assume $D_i=T_i$ for all tasks, a sufficient (but too pessimistic) test 
+for schedulability with RM is:
+$$\sum_{i=1}^N \frac{C_i}{T_i}\leq N(2^{\frac{1}{N}}-1)$$
+RM is easy to implement with low overhead since task priorities are set at 
+design time and does not change during run time but RM does not 
+allow high CPU utilization because scheduling too rigid
+
+\paragraph{Worst Case Execution Time}
+To know worst case execution we can either do measurement or use static analysis
+
+\subsubsection{Deadline Monotonic Scheduling}
+RM does is not good for $D_i < T_i$, so in DM, task with shortest deadline
+has highest priority. DM is an optimal preemptive static scheduling algorithm for $D_i<T_i$.
+$$\sum_{i=1}^N \frac{C_i}{D_i}\leq N(2^{\frac{1}{N}}-1)$$
+
+\paragraph{Response Time Analysis}
+RTA provides a sufficient and necessary test for all fixed-priority preemptive 
+scheduling algorithms (RM,DM,\ldots)\\
+A task set is schedulable if worst-case response time $R_i \leq D_i$ for all tasks.
+\begin{itemize}
+	\item Response time $R_i$ = $C_i + I_i$ where $I_i$ is the
+	worst case interference time = amount of time a task is delayed by execution of higher priority tasks
+\end{itemize}
+\begin{equation}
+R_i = C_i + I_i$$ $$R_i = C_i + \sum_{j\in hp(i)} \lceil \frac{R_i}{T_j}\rceil C_j
+\label{rta-eq}
+\end{equation}
+whete hp(i) is the set of tasks with higher priotity than task i 
+$\to \lceil \frac{R_i}{T_j}\rceil$ is the number of preemptions of task i by task j.
+~\eqref{rta-eq} is a recursive formula so it is solve by finding smallest fixed point:
+$$R_i^0 = C_i$$
+$$R_i^{m+1} = C_i + \sum_{j \in hp(i)} \lceil \frac{R_i^m}{T_j}\rceil C_j$$
+
+\paragraph{Earliest Deadline First}
+Optimal preemptive \textbf{dynamic} priority scheduling algorithm 
+where task with earliest absolute deadline has the highest priority. The
+absolute deadline is the time when the job is ready + $D_i$.
+
+\subsection{Priority Inversion}
+We have assumed that task are independent, in a real systems, tasks can be 
+dependent because they access a shared resource in a critical section (CS).
+Response time becomes:
+%%TODO add imge slide 27 chap Scheduling
+$$R_i = C_i + I_i + B_i$$ where $B_i$ is the time the task is 
+blocked because a resource has been locked.
+\paragraph{Note:} RTA a test only sufficient, not necessary with blocking.\\
+
+A task with highest priority can be \textbf{unboundedly} blocked by tasks with
+lower priority.
+
+\subsubsection{Priority Inheritance Protocol}
+To avoid this problem, a low-priority task inherits the priority of the 
+blocked high-priority task.
+\begin{itemize}
+	\item When task i is blocked by a CS held by task k 
+	and prio(i) > prio(k) $\to$ prio(k) := prio(i)
+	\item When task k leaves the CS:
+		\begin{itemize}
+			\item If task k no longer blocks any tasks, it returns to its old priority
+			\item If task k still blocks other tasks, it inherits their highest priority
+		\end{itemize}
+\end{itemize}
+
+\subsubsection{Priority Ceiling Protocol}
+Alternative to priority inheritance, a shared resource R can be accessed
+only tasks $S_R = \{ t_1,\ldots,t_m\}$.
+\begin{itemize}
+	\item Assign a priority ceiling $C_R$ to that resource
+	$$C_R = max_{t_i\in S}(prio(t_i))$$
+	\item When a task locks that resource, its priority is immediately boosted $C_R$
+\end{itemize}
+
+\paragraph{Note:}
+Priority inheritance and priority ceiling require a scheduler that can handle
+dynamic priorities
+
+\subsection{Aperiodic/sporadic tasks with hard deadlines}
+\begin{itemize}
+	\item Take the lowest inter-arrival time L of those tasks
+	\item Treat them as a virtual periodic task with period L in 
+	schedulability analysis
+	\item Too pessimistic
+\end{itemize}
+
+\subsection{Aperiodic/sporadic tasks without hard deadlines}
+\begin{itemize}
+	\item Maintain the hard deadlines for the periodic tasks
+	\item Try to reduce response time for the other tasks
+\end{itemize}
+Another solution is the Polling Server:
+\begin{itemize}
+	\item A periodic task (''server'') with period $T_S$ to serve 
+	aperiodic/sporadic requests
+	\item Incoming aperiodic/sporadic jobs are queued in a queue
+	\item In one execution period, the server only runs up to $C_S$ time units
+\end{itemize}
+Performance can be controlled by the period and the priority of the server
+tasks and by $C_S$. 
+
+\begin{itemize}
+	\item Advantage: Polling server can be treated like a periodic task with
+	WCET $C_S$
+	\item Disadvantage: If an aperiodic/sporadic job is not handled by the
+	server in a time period, it has to wait for the next period $\to$ 
+	response time increases
+	\item Can be extended to multiple servers with different priorities,
+	periods and $C_S$ for different classes/types jobs.
+\end{itemize}
 \end{document}
