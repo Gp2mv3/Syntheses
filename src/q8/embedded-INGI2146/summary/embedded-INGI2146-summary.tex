@@ -1,5 +1,7 @@
 \documentclass[en]{../../../eplsummary}
-
+\usepackage{listings}
+\usepackage{float}
+\usepackage{graphicx}
 \hypertitle{embedded-INGI2146}{8}{INGI}{2146}
 {Gorby Nicolas Kabasele Ndonda\and Author2\and Author3}
 {Professor}
@@ -504,5 +506,417 @@ dynamic priorities
         \end{enumerate}
 \end{itemize}
 
+\section{Routing with RPL}
+\subsection{Routing Protocols}
+There are two classes of routing protocols:
+\begin{itemize}
+	\item Link-State: Each node knows network topologu and runs a shortest-path 
+	algorithm $\to$ powerful but require more resources
+	\item Distance-Vector: a node only needs to know which neighbor leads
+	to which node.
+	\begin{itemize}
+		\item Each node maintains for each destination, the minimum distance
+		and the neighbor to forward to.
+	\end{itemize}
+\end{itemize}
+\paragraph{Count To Infinity problem with DSV routing}
+\begin{figure}[ht!]
+	\centering
+	\begin{tikzpicture}
+		\node[shape=circle,draw](a){A};
+		\node[shape=circle,draw,right of=a](b){B};
+		\node[shape=circle,draw,right of=b](c){C};
+		\node[shape=circle,draw,right of=c](d){D};
+	
+		\draw[-] (a) -- (b);
+		\draw[-] (b) -- (c);
+		\draw[-] (c) -- (d);
+	\end{tikzpicture}
+	\caption{Count-To-Infinity, distance metric: number of hops}
+\end{figure}
+\begin{itemize}
+	\item Initial state: B knows that A is 1 hop away
+	\item A disappears. B removes it from its routing table
+	\item Before B notifies C, C sends that A is 2 hop away to B
+	\item B thinks it has found a new path to A, so it store this path
+	and send that A is 3 hop-away
+	\item C update its routing table A is 4 hop away and sends
+	\item \ldots
+\end{itemize}
 
+\subsection{RPL}
+RPL is a routing protocol designed for Low-power and Lossy Networks (LLN).
+Characteristics of such networks:
+\begin{itemize}
+	\item Lossy,slow and unstable links
+	\item Traffic mostly flows form devices to a server/sink or border
+	router( or in opposite direction)
+	\item Large number of nodes
+	\item Constrained devices with small memory
+\end{itemize}
+\subsubsection{Routing Topology}
+Topology represented as a Destination Oriented Directed Acyclic Graph (DODAG)
+where the root is a server, border router, etc.
+\begin{figure}[ht!]
+	\centering
+	\begin{tikzpicture}
+		\node[shape=circle,draw,fill=green](root){0};
+		\node[shape=circle,draw,below left of=root](c1){1};
+		\node[shape=circle,draw,below right of=root](c2){1};
+		\node[shape=circle,draw,below left of=c2](c3){2};
+		\node[shape=circle,draw,below right of=c3](c4){3};
+		\node[shape=circle,draw,below left of=c3](c5){3};
+		
+		\node[left =1cm of root](ds){};
+		\node[below =2cm of ds](de){};
+		
+		\node[right =1cm of root](us){};
+		\node[below =2cm of us](ue){};
+		
+		\draw[->] (c1) -- (root);
+		\draw[->] (c2) -- (root);
+		\draw[->] (c3) -- (c1);
+		\draw[->] (c3) -- (c2);
+		\draw[->] (c4) -- (c3);
+		\draw[->] (c5) -- (c3);
+		\draw[->] (c4) -- (c2);
+		\draw[->] (c5) -- (c1);
+		
+		\draw[->] (ds) -- (de);
+		\draw[->] (ue) -- (us);
+	\end{tikzpicture}
+	\caption{root in green, number correspond to node rank}
+\end{figure}
+\begin{itemize}
+	\item Not a tree as they are multiple path possible for a destination.
+	\item An RPL is a set disjoint DODAGS
+	\item You can have multiple RPL instances on the same physical network
+	\item Each RPL control messages carry a DODAG ID and a RPL-instance ID
+	\item Rank is node property, typicallt proportional to path cost but coarser.
+	The rank of node must be greater than rank of parent.
+\end{itemize}
+\subsubsection{RPL Control Messages}
+\paragraph{DAG Information Object (DIO)}
+\begin{itemize}
+	\item Link-local multicasted by existing RPL nodes to advertise a DODAG
+	\item Sent periodically by but also on request when routing problem detected
+	\item Contains rank od sending node and network prefix
+	\item Nodes find parent(s) in this way
+	\item Multiple parents possible. Choice depends on path costs
+\end{itemize}
+$\Rightarrow$ Nodes know about possible parents and routes up toward DODAG root
+established.
+\subparagraph{Version Number}
+When the root advertises a DODAG with the DIO message, it also includes a version
+number
+\begin{itemize}
+	\item A that joins a DODAG with version X ignores lower versions
+	\item When a node receives a message with higher version, it can move to that 
+	version $\to$ new rank and parent
+\end{itemize}
+The root can decide to increase the version number and advertise a new version
+of the DODAG. It typically happens when a problem with current DODAG is 
+detected and there is a repair.
+\subparagraph{Path Cost}
+To compute how expensive a path is, the DODAG can define a Objective
+Function that the nodes must used. Cost can expressed in terms of:
+\begin{itemize}
+	\item Signal quality
+	\item Throughput
+	\item Delay
+\end{itemize}
+
+\paragraph{Destination Advertisement Object}
+\begin{itemize}
+	\item DAO messages travel up and forwarded to root
+	\item Are unicasted to parent (or link-local multcasted to help for 
+	direct P2P traffic)
+	\item The goal is to propagate information about children(new and disappeared)
+	 so that parents can populate their routing table.
+\end{itemize}
+$\Rightarrow$ Routes down away from root established
+
+\paragraph{DODAG Information Solicitation (DIS)}
+Node send DIS message to request DIO when:
+\begin{itemize}
+	\item A new node want to joins an RPL instance
+	\item A sleeping node wakes up and needs recent information
+	about the network or want to inform the network that it is back
+	\item A node cannot reach the router anymore $\to$ looking
+	for a new parent
+\end{itemize}
+\subsection{Packet Forwarding}
+\begin{itemize}
+	\item In up direction:
+	\begin{itemize}
+		\item Packet is sent to lower rank (or siblings, if no lower rank)
+	\end{itemize}
+	\item In down direction
+	\begin{itemize}
+		\item Node knows route to destination thanks to DAO message
+	\end{itemize}
+\end{itemize}
+Node only store information about next hop to destination, it's a DSV
+with ranks.
+
+\subsubsection{Loop Avoidance Mechanism}
+\paragraph{IPv6 header option}
+There is a direction flag in the header indicating the expected direction
+of a data packet:
+\begin{itemize}
+	\item Sender sets the direction
+	\item If an up-packet is forwarded from a node A to a node B with 
+	higher rank, a problem is detected by B (same in opposed situation)
+	\item Node B sets the R (repair flag) in the packet. This indicates
+	that the DODAG has to be repaired
+\end{itemize}
+
+\paragraph{Node movement}
+Node might find better parents:
+\begin{itemize}
+	\item New nodes appear or old nodes disappear
+	\item Signal strength changes
+\end{itemize}
+However, node are only allowed to move up toward the root $\Rightarrow$ A node
+cannot become a child of one of its children.
+
+\subsubsection{Trickle Timer}
+A DIO message are sent to build new DODAG, on a DIS message and periodically. To
+avoid that to send to many DIO when it's not necessary, a Trikle Timer is run
+on each node:
+\begin{itemize}
+	\item $T_min$: minimum duration of the timer
+	\item $T_max$: maximum duration of the timer
+	\item $T$: current duration used by the timer
+	\item $C$: number of good messages received by the node
+	\item $K$: some threshold for C
+\end{itemize}
+\begin{lstlisting}[frame=single]
+T:= Tmin, C:=0
+t = rand(T/2,T)
+wait(event)
+	if event == t expires and C<K:
+		send DIO 
+		restart t
+	if event == T expires:
+		T:= 2*T (up to Tmax)
+		restart T
+		t := rand (T/2,T)
+	if event == good DIO:
+		C:= C+1
+	if event == bad DIO:
+		C:= 0
+		T= Tmin
+		t:=rand(T/2,T)
+\end{lstlisting}
+\begin{itemize}
+	\item C is increased by 1 for every good message = DIO that does not announce a
+	change
+	\item C is reset to 0 and T is reset to $T_min$ for bad message= DIO that 
+	announces a change or with R flag.
+\end{itemize}
+Good message indicate a stable network and because T is increased,
+nodes send DIS messages less messages less frequently.
+
+\section{Constrained Application Protocol}
+An HTTP-inspired protocol designed for constrained devices and networks used
+for RESTful access to resources. Default port is 5673 (coap) adn 5684(coaps)\\
+Key features:
+\begin{itemize}
+	\item Low overhead
+	\item Easy to implement
+	\item For Machine-2-Machine communication
+	\item Simple mapping to HTTP for CoAP-HTTP proxies
+\end{itemize}
+CoAP messages provide reliable messaging over UDP and consist of a set of
+method that resemble HTTP request methods and response code.
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[scale=0.65]{img/coap-layer.png}
+\end{figure}
+\subsection{Message Format}
+Messages are exchanged between UDP end-point and they have the same
+format for request and response. Header and options are in binary format.
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[scale=0.65]{img/coap-format.png}
+\end{figure}
+Message are compact $\Rightarrow$ avoid IP fragmentation and easy parsing.
+\subsubsection{Fields}
+\begin{description}
+	\item[Ver:] Version number(01). Unknown versions are silently ignored.
+	\item[Code:] Method Code in request resp. Response Code in responses
+	\begin{itemize}
+		\item Method similar to HTTP: GET(0.01), POST(0.02),PUT(0.03),DELETE(0.04)
+		\item Response codes similar to HTTP responses code: ok (2.05), not found
+		(4.04),\ldots
+		\item URI and additional options are stored in the options fields.
+	\end{itemize}
+	
+	\item[Options:] Additional (0 or more) options, end marked by 1111111
+	\begin{itemize}
+		\item Options identified by their option code
+		\item Option Code = Delta + previous option code
+		\item Option length = length of option in bytes
+		\item Delta is used to indicate presence of extension fields
+	\end{itemize}
+	An URI such as \texttt{coap://example.com:5683/sensors/temp?x=1\&y=2} is not
+	stored as one big string in a request but it is store as option.
+	\begin{itemize}
+		\item Host name in Uri-Host option (code 3)
+		\item Port in Uri-Port option (code 7)
+		\item Path segments in one or more Uri-Path options (without /)
+		\item Query arguments in one or more Uri-Query (without \& and ?)
+	\end{itemize}
+	$\Rightarrow$ Simplifies parsing.
+	
+	\item[Token:] A 0 to 8 bytes value (length in TKL) generated by the client
+	for concurrent request. Request for same source-dest should have unique token
+	number.
+	\begin{itemize}
+		\item Response will use same number as the request
+		\item Responses with unexpected token number are rejected
+	\end{itemize}
+	CoAp connection can use Datagram Transport Layer Security which is like TLS but
+	for UDP. If DTLS is not used , token should be long randomized token value to
+	prevent response spoofing.
+	
+	\item[T:] Specifies the type of the message:
+	\begin{itemize}
+		\item Confirmable(0)
+		\item Non-confirmable(1)
+		\item Acknowlegment(2)
+		\item Reset(3)
+	\end{itemize}
+\end{description}
+
+\subsection{Transmission}
+Depending on the type of the message, its treatment will be different
+\subsubsection{Transmission without Reliability}
+Lightweight and useful for repeated operations, it applies to request or response
+of type \textcolor{red}{Non-confirmable}.
+\begin{itemize}
+	\item Message might be sent multiple times by sende or network so each copy
+	as a unique message ID to identify them.
+	\item Message is ignored by recipient if unexpected or ill-formatted
+	(unknonw codes,wrong token value) $\to$ Recipient may send Reset 
+	message with same message ID
+\end{itemize}
+\subsubsection{Transmission with Reliability}
+This applies to message of type \textcolor{red}{Confirmable}, Message ID
+is crucial but not only for de-duplication. Indeed, recipient must either
+reply with:
+\begin{itemize}
+	\item Acknowledgement (with same message ID) or 
+	\item Reset (with same msg ID) and ignore the message
+\end{itemize}
+Sender retransmits Confirmable message until ACK or Reset received 
+(or runs out of attempts)
+\paragraph{Retransmission}
+Exponential back-off
+\begin{lstlisting}[frame=single]
+ACK_TIMEOUT = 2s
+ACK_RANDOM_FACTOR = 1.5
+MAX_RETRANSMIT = 4
+
+timeout := rand(ACK_TIMEOUT,ACK_TIMEOUT*ACK_RANDOM_FACTOR)
+retransmission-counter := 0
+(*) send CON message
+wait until timeout or ACK or RESET
+if timeout and retransmission-counter < MAX_RETRANSMIT:
+	timeout := timeout*2
+	retransmission-counter++
+	go to (*)
+\end{lstlisting}
+
+\subsubsection{Synchronous Message Exchange}
+\begin{minipage}{0.5\textwidth}
+	\begin{figure}[H]
+		\includegraphics[scale=0.5]{img/syn-exchange.png}
+	\end{figure}
+\end{minipage} \hfill
+\begin{minipage}{0.45\textwidth}
+	\begin{itemize}
+		\item Request sent as CON message
+		\item Response sent as ACK message (piggybacking)
+		\item Efficient
+	\end{itemize}
+\end{minipage}
+
+
+
+
+\subsubsection{Asynchronous Message Exchange}
+\begin{minipage}{0.5\textwidth}
+	\begin{figure}[H]
+		\includegraphics[scale=0.5]{img/asyn-exchange.png}
+	\end{figure}
+\end{minipage} \hfill
+\begin{minipage}{0.45\textwidth}
+	\begin{itemize}
+		\item Request sent as CON message
+		\item Recipient replies immediatel with empty ACK message (code 0.00)
+		\item Recipient replies later with actual response in CON message
+		\item More overhead than piggybacking
+		\item Tokens for matching request <-> response
+	\end{itemize}
+\end{minipage}
+
+\paragraph{Remarks}
+\begin{itemize}
+	\item CON and NON-CON messages can be mixed, ex: request as NON-CON and
+	response as CON
+	\item Empty CON (code 0.00) can be used as ping message, recipient replies with
+	RESET message
+	\item No definition of how long request should wait for response, CON-ACK 
+	mechanism is only about reliable transmission
+\end{itemize}
+
+\subsection{CoAP Features}
+\subsubsection{Multicastin and Discovery}
+CoAP supports requests to IP multicast groups, if a request is multicast, the
+behavior will be a bit different:
+\begin{itemize}
+	\item Servers must not reply RESET to unwanted NON-CON messages 
+	$\Rightarrow$ avoid too many error responses
+	\item Servers should wait random time before responding request
+	$\Rightarrow$ avoid congestion
+\end{itemize}
+Multicastinf is useful for automatic service discovery in M2M scenarios.
+Servers should also support resource discovery:
+\begin{itemize}
+	\item Client sends \texttt{GET ./well-known/core} to server
+	\item Server returns list of resources
+\end{itemize}
+
+\subsubsection{Caching}
+CoAp uses a simple caching mode with an \textcolor{red}{age} option indicationg
+cache lifetime. This useful for proxies to cache information of sleeping nodes
+or to reduce network traffic
+\paragraph{Optional ETag}
+\begin{enumerate}
+	\item Server can put an ETag string in response
+	\item Client sends ETag when re-requesting a cached resource
+	\item Server can respond with 2.03 (valid) if resource has not
+	changed
+\end{enumerate}
+ETag can be used in PUT-requests with If-Match-Option: Only write 
+new value if I have latest one $\Rightarrow$ protection against accidental
+concurrent overwrites
+
+\subsubsection{Other Features}
+\begin{itemize}
+	\item Observing resources
+	\item Block transfer (specify wanted bytes in request)
+\end{itemize}
+
+\subsection{Spoofing Attack}
+CoAp runs over UDP, no handshak \& sequence number
+\begin{itemize}
+	\item Third party can spoof RESET message to disrupt connection
+	\item CoAP endpoints can be used for amplication \& reflection 
+	attacks against other targets.
+\end{itemize}
+Security (DTLS) and careful implementation (randome token) can prevent attack
+to some degree.
 \end{document}
