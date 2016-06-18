@@ -1819,13 +1819,16 @@ $\Rightarrow$ Advantages of separating IMSI and MSISDN: MSISDN can be
 changed afterwards
 
 \subsubsection{Handover}
+
 Because MS can move freely, so MS can move from one cell to
-another. BSC can decide to de a handover based on signal quality
+another. BSC can decide to de a handover based on signal quality:
+
 \begin{itemize}
 	\item BTS constantly measures signal quality and reports to BSC
 	\item MS also reports quality of signals it receives from other cells
 \end{itemize}
-3 differents scenarios:
+
+\paragraph{Scenarios} 3 different scenarios:
 \begin{itemize}
 	\item Intra-BSC handover: old and new cell connected to same BSC
 	\begin{enumerate}
@@ -1834,6 +1837,7 @@ another. BSC can decide to de a handover based on signal quality
 		\item Once MS and BTS have confirmed handover, BSC redirects
 		voice data to new cell and deallocates old TCH
 	\end{enumerate}
+
 	\item Inter-BSC handover: old and new cell connected different BSCs,
 	but same MSC
 	\begin{enumerate}
@@ -1843,6 +1847,7 @@ another. BSC can decide to de a handover based on signal quality
 		\item Once MS and BSC have confirmed handover, MSC redirects voice
 		data and tells old BSC to close old TCH
 	\end{enumerate}
+
 	\item Inter-MSC handover
 	\begin{enumerate}
 		\item Old MSC sends handover request to new MSC
@@ -1854,76 +1859,73 @@ another. BSC can decide to de a handover based on signal quality
 \end{itemize}
 
 \subsubsection{Security}
-GSM security consist of:
-\begin{description}
-	\item[Authentication:] MS is authenticated
-	\item[Encryption:] Communication between MS and BTS is encrypted
-\end{description}
+GSM security consist of Authentication and encryption:
+
+\begin{itemize}
+	\item \textbf{Authentication:} MS is authenticated
+
+        Symmetric Key Ki(max. 128 bits) for IMSI stored in SIM
+        card and in Authentication Center
+        \begin{enumerate}
+            \item Authentication Center generates:
+                \begin{itemize}
+                    \item a 128 bit random number RAND
+                    \item a 32-bit signed responses SRES = A3(Ki,RAND)
+                \end{itemize}
+            \item MSC sends RAND to MS
+            \item SIM card also computes SRES
+            \item Response sent back to MSC
+            \item MSC compares responses
+        \end{enumerate}
+        The A3 algorithm is not standardized. 
+        \begin{itemize}
+            \item New RAND and SRES generated for each authentication
+            \item For speed-up, several RAND/SRES computed  in advance and
+                buffered in MSC and VLR
+        \end{itemize}
+
+    \item \textbf{Encryption:} Communication between MS and BTS is encrypted
+
+        Data exchanges between MS and BTS are encrypted,
+        \begin{itemize}
+            \item Creation of a 64-bit session key Kc = A8(Ki,RAND) by the 
+                Authentication center
+            \item MSC sends RAND to MS, so MS can also compute Kc
+            \item Session key can be changed, at reqular intervals
+        \end{itemize}
+        MSC and MS use Kc and A5 algorithm to encrypt/decrypt data.
+        A5 is a set of algorithms A5/1, A5/2...
+        \begin{itemize}
+            \item Input:
+                \begin{tabular}{m{10cm}}
+                    Kc\\
+                    Current frame number N: different for every burst
+                \end{tabular}
+            \item Output:
+                \begin{tabular}{m{10cm}}
+                    114-bit sequence C=A5/x(Kc,N)
+                \end{tabular}
+
+            \item Encryption:
+                \begin{tabular}{m{10cm}}
+                    Encrypted burst = Original burst data XOR C
+                \end{tabular}
+        \end{itemize}
+\end{itemize}
+
 The keys of IMSI are stored in Authentication Center and in SIM card
 and algorithm are implemented in the GSM network and on the SIM
 card.
-\paragraph{MS Authentication}
-Symmetric Key Ki(max. 128 bits) for IMSI stored in SIM
-card and in Authentication Center
-\begin{enumerate}
-	\item Authentication Center generates:
-		\begin{itemize}
-			\item a 128 bit random number RAND
-			\item a 32-bit signed responses SRES = A3(Ki,RAND)
-		\end{itemize}
-	\item MSC sends RAND to MS
-	\item SIM card also computes SRES
-	\item Response sent back to MSC
-	\item MSC compares responses
-\end{enumerate}
-The A3 algorithm is not standardized. 
-\begin{itemize}
-	\item New RAND and SRES generated for each authentication
-	\item For speed-up, several RAND/SRES computed  in advance and
-	buffered in MSC and VLR
-\end{itemize}
 
-\paragraph{Encryption}
-Data exchanges between MS and BTS are encrypted,
-\begin{itemize}
-	\item Creation of a 64-bit session key Kc = A8(Ki,RAND) by the 
-	Authentication center
-	\item MSC sends RAND to MS, so MS can also compute Kc
-	\item Session key can be changer, at reqular intervals
-\end{itemize}
-MSC and MS use Kc and A5 algorithm to encrypt/decrypt data.
-A5 is a set of algorithms A5/1, A5/2...
-\begin{itemize}
-	\item Input:
-	\begin{itemize}
-		\item Kc
-		\item Current frame number N: different for every burst
-	\end{itemize}
-	\item Output:
-	\begin{itemize}
-		\item 114-bit sequence C=A5/x(Kc,N)
-	\end{itemize}
-	
-	\item Encryption:
-	\begin{itemize}
-		\item Encrypted burst = Original burst data XOR C
-	\end{itemize}
-\end{itemize}
 \paragraph{Strength and Weaknesses}
 \begin{itemize}
-	\item Strength:
-	\begin{itemize}
-		\item Keys and key generation inside SIM card, not by phone software
-	\end{itemize}
-	\item Weaknesses:
-	\begin{itemize}
-		\item A3/A5/A8 algorithm were secret and not publicly discussed
-		\item 128 bit key length: Too short for modern computers
-		\item Communication between BTS and BSC not encrypted
-		\item MS is authenticated to network but not vice versa
-		\item Network operator knows all keys
-		\item No end-to-end authentication \& encryption
-	\end{itemize}
+        \proitem{} Keys and key generation inside SIM card, not by phone software
+		\consitem{} A3/A5/A8 algorithm were secret and not publicly discussed
+		\consitem{} 128 bit key length: Too short for modern computers
+		\consitem{} Communication between BTS and BSC not encrypted
+		\consitem{} MS is authenticated to network but not vice versa
+		\consitem{} Network operator knows all keys
+		\consitem{} No end-to-end authentication \& encryption
 \end{itemize}
 
 \section{GPRS}
