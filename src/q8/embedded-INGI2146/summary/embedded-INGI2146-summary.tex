@@ -1768,17 +1768,27 @@ An MSC has access to several detabases that store information about subscribers:
             \item Temporary data: current \textcolor{red}{VLR,MSC} 
         \end{itemize}
 
-    \item \textbf{Visitor Location Register (VLR)}: Local database of a
-        MSC (often built into MSC). It contains information from HLR (or
-        MS) when subscriber has roamed to VLR's service area (each BS
-        served by exactly one VLR). It contains:
+        $\Rightarrow$ \textbf{master table of the GSM operator,
+        containing a record for each subscriber}
+
+    \item \textbf{Visitor Location Register (VLR)}: Local database to
+        reduce signaling between MSC and HLR. 
+
         \begin{itemize}
-            \item Subscriber's ID number and phone number
-            \item Service profile
-            \item HLR address
-            \item Roamin number: temporary phone number that can be used to find MS 
-                (MSC number)
-            \item \ldots
+            \item It contains information from HLR when MS enters the
+                VLR's service area (each BS served by exactly one VLR):
+                \begin{itemize}
+                    \item Subscriber's ID number and phone number
+                    \item Service profile
+                    \item HLR address
+                    \item Roamin number: temporary phone number that can be used to find MS 
+                        (MSC number)
+                    \item \ldots
+                \end{itemize}
+
+            \item Typically implemented in the MSC
+            \item Location area identity to further reduce signaling
+                with HLR
         \end{itemize}
 
     \item Localization: Service areas are divided into smaller location
@@ -1791,4 +1801,269 @@ An MSC has access to several detabases that store information about subscribers:
         \end{center}
 
 \end{itemize}
+
+\paragraph{IMSI and MSIDN}
+IMSI is the key identifying a SIM card, it stored in the HLR and on the SIM card
+but the MSIDN (phone numbers) are not stored on SIM card.
+
+\begin{tabular}{cm{10cm}}
+    When MS is switched on:&
+    \begin{enumerate}
+        \item MS sends IMSI to MSC
+        \item MSC analyses the country code and network code
+        \item MSC sends request to HLR to retrieve the record
+    \end{enumerate}
+\end{tabular}
+
+$\Rightarrow$ Advantages of separating IMSI and MSISDN: MSISDN can be
+changed afterwards
+
+\subsubsection{Handover}
+Because MS can move freely, so MS can move from one cell to
+another. BSC can decide to de a handover based on signal quality
+\begin{itemize}
+	\item BTS constantly measures signal quality and reports to BSC
+	\item MS also reports quality of signals it receives from other cells
+\end{itemize}
+3 differents scenarios:
+\begin{itemize}
+	\item Intra-BSC handover: old and new cell connected to same BSC
+	\begin{enumerate}
+		\item BSC activates a TCH in new cell
+		\item BSC informs LS via old cell to handover to new TCH
+		\item Once MS and BTS have confirmed handover, BSC redirects
+		voice data to new cell and deallocates old TCH
+	\end{enumerate}
+	\item Inter-BSC handover: old and new cell connected different BSCs,
+	but same MSC
+	\begin{enumerate}
+		\item BSC of old cell asks MSC to initiate handover
+		\item MSC asks BSC of new cell to prepare a TCH
+		\item MSC notifies MS to handover
+		\item Once MS and BSC have confirmed handover, MSC redirects voice
+		data and tells old BSC to close old TCH
+	\end{enumerate}
+	\item Inter-MSC handover
+	\begin{enumerate}
+		\item Old MSC sends handover request to new MSC
+		\item New MSC contacts new BSC to establish TCH
+		\item MSC notifies MS to handover
+	\end{enumerate}
+	The first MSC still stays responsible for the call, the call is routed from
+	the G-MSC through the anchor MSC to the new MSC
+\end{itemize}
+
+\subsubsection{Security}
+GSM security consist of:
+\begin{description}
+	\item[Authentication:] MS is authenticated
+	\item[Encryption:] Communication between MS and BTS is encrypted
+\end{description}
+The keys of IMSI are stored in Authentication Center and in SIM card
+and algorithm are implemented in the GSM network and on the SIM
+card.
+\paragraph{MS Authentication}
+Symmetric Key Ki(max. 128 bits) for IMSI stored in SIM
+card and in Authentication Center
+\begin{enumerate}
+	\item Authentication Center generates:
+		\begin{itemize}
+			\item a 128 bit random number RAND
+			\item a 32-bit signed responses SRES = A3(Ki,RAND)
+		\end{itemize}
+	\item MSC sends RAND to MS
+	\item SIM card also computes SRES
+	\item Response sent back to MSC
+	\item MSC compares responses
+\end{enumerate}
+The A3 algorithm is not standardized. 
+\begin{itemize}
+	\item New RAND and SRES generated for each authentication
+	\item For speed-up, several RAND/SRES computed  in advance and
+	buffered in MSC and VLR
+\end{itemize}
+
+\paragraph{Encryption}
+Data exchanges between MS and BTS are encrypted,
+\begin{itemize}
+	\item Creation of a 64-bit session key Kc = A8(Ki,RAND) by the 
+	Authentication center
+	\item MSC sends RAND to MS, so MS can also compute Kc
+	\item Session key can be changer, at reqular intervals
+\end{itemize}
+MSC and MS use Kc and A5 algorithm to encrypt/decrypt data.
+A5 is a set of algorithms A5/1, A5/2...
+\begin{itemize}
+	\item Input:
+	\begin{itemize}
+		\item Kc
+		\item Current frame number N: different for every burst
+	\end{itemize}
+	\item Output:
+	\begin{itemize}
+		\item 114-bit sequence C=A5/x(Kc,N)
+	\end{itemize}
+	
+	\item Encryption:
+	\begin{itemize}
+		\item Encrypted burst = Original burst data XOR C
+	\end{itemize}
+\end{itemize}
+\paragraph{Strength and Weaknesses}
+\begin{itemize}
+	\item Strength:
+	\begin{itemize}
+		\item Keys and key generation inside SIM card, not by phone software
+	\end{itemize}
+	\item Weaknesses:
+	\begin{itemize}
+		\item A3/A5/A8 algorithm were secret and not publicly discussed
+		\item 128 bit key length: Too short for modern computers
+		\item Communication between BTS and BSC not encrypted
+		\item MS is authenticated to network but not vice versa
+		\item Network operator knows all keys
+		\item No end-to-end authentication \& encryption
+	\end{itemize}
+\end{itemize}
+
+\section{GPRS}
+IP traffic can be transmitted on TCH but GSM is a circuit-switched network:
+\begin{itemize}
+	\item Good For voice but cumbersome for packet traffic
+	\item Data is circuit-switched between MS and gateway to Internet
+\end{itemize}
+Circuit-switched network have some disadvantages:
+\begin{itemize}
+	\item Resource are wasted as an entire physical is allocated to one end-point
+	while Internet traffic is typically bursty
+	\item Subscriber has to pay time, even when e-mail client is just waiting
+	for incoming e-mails
+	\item GSM is slow, 13 kbit/s
+\end{itemize}
+\subsubsection{HSCSD}
+HSCSD = High Speed Circuit Switched Data was the first attempt to performance
+of GSM for data transfer. Key Idea:
+\begin{itemize}
+	\item Requires only small changes in the MSC
+	\item Bundling of time slots
+	\item Bundling of channels (asymmetric: 1 up, 3 or 4 down)
+	\item Up to 115.2 kbit/s (in practice 57.6 kbit/s)
+\end{itemize}
+Faster than GSM, but it's still circuit-switched.
+
+\subsection{GPRS Principles}
+General Packet Radio Service:
+\begin{itemize}
+	\item GSM extension for packet based data transmission
+	\item Require changes in BSS and NSS
+	\item up to 170 kbit/s, typically 85kbit/s
+\end{itemize}
+\subsubsection{Channels}
+Bursty packet traffic in GSM means a low utilizarion of allocated TCH.
+GPRS introduce a new channels: 
+\begin{itemize}
+	\item PDTCH (Packet-Data TCH):
+	\begin{itemize}
+		\item One physical channel like TCH
+		\item But: block of 4 bursts on PDTCH assigned to MS
+		\item Network can decide to assign the next block to 
+			another MS
+	\end{itemize}
+	\item Timeslot bundling: up to 5 downlink timeslots and up
+	to 3 uplink timeslots
+	\item New channel PACCH to send acknoledgments
+\end{itemize}
+There are other new channels but signaling is pretty similar to ordinary voice
+calls:
+\begin{itemize}
+	\item MS send message on RACH to request PDTCH
+	\item MS receives answer on AGCH
+\end{itemize}
+
+\subsubsection{Coding Schemes}
+Depending on quality of connection (bit errors), BS and 
+MS can choose between 4 coding schemes with different amount 
+of error correction information $\Rightarrow$ more correction 
+information means less relevant data.
+
+\subsection{EDGE}
+EDGE enhances GPRS to provide better perfomance, 150-200kbit/s. GSM and
+GPRS use Phase-Shift Keying modulation with two possible phases but its 
+different for EDGE:
+\begin{itemize}
+	\item Uses PHSK with 8 possibles phases meaning that it can transmit
+	3 bits where GSM/GPRS transmit 1 bit
+	
+	\item Requires new radio interfaces in the BTS and MS
+	\item Support different coding scheme that is selected dynamically depending
+	on transmission quality (measure by BTS and MS)
+
+\end{itemize}
+
+\subsection{GPRS core network}
+GPRS introduces new nodes in the core network to support 
+packet-switched data transfer:
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.5]{img/gprs.png}
+\end{figure}
+\begin{description}
+	\item[Gateway GPRS support node (GGSN):] Gateway to Internet
+	\item[Serving GPRS support node (SGSN):] node between MSC and
+	BS, does all the packet handling, routing, \ldots
+\end{description}
+
+\subsection{GPRS operation}
+GPRS operation similar to GSM, phone connects to network, authenticates itself 
+and request traffic channel. MS communicates with SGSN and GGSN.
+
+ \subsubsection{Encryption}
+ Encryption is done between the MS and SGSN:
+ \begin{itemize}
+	\item Advantages:
+	\begin{itemize}
+		\item More secure, since communication between BTS and BSC is often carried 
+		over microwave links
+		\item Better support for mobility: MS can smoothly move to a different cell 
+		of the SGSN without too much overhead
+	\end{itemize}
+	\item Drawbacks:
+	\begin{itemize}
+		\item SGSN must have more processing power than BTS because it has 
+		to encrypt/decrypt traffic for many MS
+	\end{itemize}
+\end{itemize}
+
+\subsubsection{Connection Management}
+\begin{itemize}
+	\item When opening a connection, PDP (Packet Data Protocol) context is
+	created
+	\item No dedicated channel resources allocared for PDP: MS can stay
+	always ''connected'' to Internet wihtout using resources
+	\item PDTCH only used when needed
+\end{itemize}
+
+\subsubsection{IP traffic routing in GPRS}
+Together wiht the PDP context, the GGSSN allocates an IP address for the MS.
+The traffic is transported over IP between the GGSN and the current SGSN of
+the MS.\\
+When MS roams to a new SGSN $\Rightarrow$ Route change so the IP address
+of the MS is changed
+\paragraph{GPRS Tunneling Protocol (GPT)}
+Protocol that runs on top of UDP:
+\begin{itemize}
+	\item GTP packet contains the IP adress of the MS
+	\item UDP packet contains the address of the current SGSN
+	\begin{itemize}
+		\item Set by the GGSN when the traffic enters the GPRS network
+		from the Internet
+		\item GGSN is informed whenever the MS changes to a different
+		SGSN
+	\end{itemize}
+\end{itemize}
+When you have roamed to a different operator, your IP traffic is routed to the 
+GGSN of your home operator
+
+\section{UMTS}
+
 \end{document}
