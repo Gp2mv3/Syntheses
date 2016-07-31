@@ -1,2 +1,2 @@
 TYPE=summary
-include ../sigsys.mk
+include ../sigsys-FSAB1106.mk
