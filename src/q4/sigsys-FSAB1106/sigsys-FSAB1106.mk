@@ -1,2 +1,2 @@
 COURSE=sigsys-FSAB1106
-include ../../q4.mk
+include $(BASE_DIR)../../q4.mk
