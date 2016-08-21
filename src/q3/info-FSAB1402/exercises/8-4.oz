@@ -3,7 +3,7 @@ declare
 fun{Shuffle L}
    A N M F
 in
-   A={NewArray 1 {Length L} 1}        %array à créer
+   A={NewArray 1 {Length L} 1}        %array a creer
    N={NewCell {Length L}}             %compteur1
    M={NewCell {Length L}}             %compteur2
    F={NewCell nil}                    %liste a renvoyer
