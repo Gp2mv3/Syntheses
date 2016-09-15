@@ -1,12 +1,12 @@
 public void addBefore(Song songin, Song songnew) {
     // on verifie que le premier element n est pas la chanson recherchee
-    if(head.data == songin) {
+    if(head.data.equals(songin)) {
         Node newHead = new Node(songnew, head);
         head = newHead;
     } else {
-        runner = head;
+        Node runner = head;
         while(runner != tail) {
-            if(runner.next.data == songin) {
+            if(runner.next.data.equals(songin)) {
                 Node newNode = new Node(songnew, runner.next);
                 runner.next = newNode;
                 return;
@@ -15,3 +15,5 @@ public void addBefore(Song songin, Song songnew) {
         }
     }
 }
+
+// Que se passe-t-il si la liste est vide (malgré les prés ?)
