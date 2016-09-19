@@ -14,7 +14,7 @@ public interface ComputerIF
      * @post le processus a été ajouté à cet ordinateur, si les ressources nécessaires sont disponibles. Retourne true si le processus a été ajouté, false sinon.
      */
     public boolean addProcess(Process p);
-    
+
     /**
      * @pre p != null
      * @post le processus a été retiré de cet ordinateur, si ce processus se trouve sur cet ordinateur, et libère les ressources occupées. Retourne true si le processus a été supprimé, false sinon.

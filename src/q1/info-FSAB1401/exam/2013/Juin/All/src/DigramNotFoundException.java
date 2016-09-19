@@ -7,8 +7,8 @@ public class DigramNotFoundException extends Exception
 	 * @pre msg != null
 	 * @post construit une DigramNotFoundException avec le message {msg}
 	 */
-	 public DigramNotFoundException(String msg) {
-	 	super(msg);
+	public DigramNotFoundException(String msg) {
+		super(msg);
 	}
 }
 // Voilà

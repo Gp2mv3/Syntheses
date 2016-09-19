@@ -3,7 +3,7 @@ import java.io.*;
 
 /**
  * Une grappe (Cluster) d'ordinateurs formant une ressource commune pour l'exécution de processus.
- * 
+ *
  * @author O. Bonaventure, Ch. Pecheur
  * @version 2016
  */
@@ -72,7 +72,7 @@ public class Cluster
         }
         count++;
     }
-    
+
     /**
      * @pre comp != null
      * @post L'ordinateur comp a été retiré du cluster, s'il s'y trouvait. Si comp est en tête de liste, la tête de liste passe au noeud suivant, sinon elle est inchangée. Retourne true si comp a été retiré, false sinon.

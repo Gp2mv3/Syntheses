@@ -2,10 +2,10 @@ public Catalog(String filename) {
 	BufferedReader br;
 	try {
 		br = new BufferedReader(new FileReader(filename)); // throw IOException
-		
+
 		int nbSongs = Integer.parseInt(br.readLine());// throws NumberFormatException, ignoré
 		contents = new Song[nbSongs];
-		
+
 		String ligne = br.readLine();// throws IOException
 		int countPos=0;// nombre de chansons lues jusqu'à présent, et première case libre dans contents.
 		while(ligne != null && ligne.size()>0) {

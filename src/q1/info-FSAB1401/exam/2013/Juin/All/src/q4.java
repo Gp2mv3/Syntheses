@@ -18,7 +18,7 @@ public void remove(Digram d) throws DigramNotFoundException {
 	Node runner=head;
 	while(runner.next !=null && runner.next.digram.equals(d))
 		runner=runner.next;
-	
+
 	// deux possibilités de sortie
 	if (runner.next==null) // on est arrivé au bout de la liste
 		throw new DigramNotFoundException("Digramme non trouvé");

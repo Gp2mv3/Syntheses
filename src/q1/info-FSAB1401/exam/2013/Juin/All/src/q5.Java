@@ -13,12 +13,12 @@ public void analyze(String fileName) {
 		bf = new BufferedREader(new FileReader(fileName)); // throws FileNotFoundException, IOException
 		String ligne = bf.readLine(); // la ligne en cours ; throws IOException
 		String precedent = ""; // buffer contenant le dernier mot de la ligne précédente
-		
+
 		while (ligne != null) {
 			String[] tab = splitWords(ligne);
 			if (tab.length <= 0) // pas de mot ; ligne vide
 				continue;
-			
+
 			// tout d'abord, on check le premier mot et {precedent}
 			if ( dict.contains(precedent) && dict.contains(tab[0]) ) // sans doute moyen d'optimiser cela pour n'avoir qu'un seul appel à contains
 				add( new Digram(precedent, tab[0]) );

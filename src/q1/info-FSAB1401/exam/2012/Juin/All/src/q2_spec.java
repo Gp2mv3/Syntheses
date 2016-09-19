@@ -5,9 +5,7 @@
  *       Titre;Auteur;Duree
  *
  *       Ou Titre est le titre de la chanson, Auteur son auteur et Duree sa duree.
- *
  * @post Initialise le contenu du catalogue avec les chansons contenues dans le fichier de nom (filename).
- *
  *       En cas d erreur d entrees/sorties, le programme s'arrete en affichant un message d erreur en français.
  */
 public Catalog(String filename) {

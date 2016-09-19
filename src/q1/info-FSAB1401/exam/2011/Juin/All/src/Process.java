@@ -1,7 +1,7 @@
 /**
  * Un processus ayant un nom, une capacité de stockage requise, un identifiant de processus (PID), pouvant s'exécuter sur un ordinateur implémentant l'interface ComputerIF.
  * Les PID sont attribués séquentiellement à chaque nouveau processus créé, à partir de 1.
- * 
+ *
  * @author Jean-Martin Vlaeminck
  * @version 2016/01/12
  */
