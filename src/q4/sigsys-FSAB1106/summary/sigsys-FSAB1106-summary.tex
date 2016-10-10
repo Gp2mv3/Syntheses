@@ -1,0 +1,1566 @@
+%analogique:
+%------> temps
+%^
+%|
+%|
+%| continuum
+\documentclass[fr]{../../../eplsummary}
+
+\usepackage{../../../eplcode}
+\usepackage[SIunits]{../../../eplunits}
+
+\usepackage{pgfplots}
+\newcommand{\fourier}{\mathcal{F}}
+\newcommand{\laplace}{\mathcal{L}}
+\newcommand{\laplacu}{\mathcal{L}_u}
+\newcommand{\transfz}{\mathcal{Z}}
+\newcommand{\transzu}{\mathcal{Z}_u}
+\newcommand{\roc}{\mathrm{ROC}}
+\DeclareMathOperator{\cof}{cof}
+
+
+\hypertitle{Signaux et syst\`emes}{4}{FSAB}{1106}
+{Beno\^it Legat\and Antoine Paris}
+{Luc Vandendorpe et Vincent Wertz}
+
+\lstset{language=MATLAB}
+
+\paragraph{Prérequis}
+Il sera supposé tout au long de cette synthèse que les
+formules
+\begin{align*}
+  f & = \frac{1}{T} & \omega & = 2\pi f
+\end{align*}
+sont maitrisées et connues.
+Elles seront utilisées abondamment sans le signaler.
+La deuxième formule est d'ailleurs l'origine de beaucoup
+de facteur $2\pi$ dans les formules car $\dif\omega = 2\pi \dif f$.
+
+%  ____  _                   _
+% / ___|(_) __ _ _ __   __ _| |___
+% \___ \| |/ _` | '_ \ / _` | / __|
+%  ___) | | (_| | | | | (_| | \__ \
+% |____/|_|\__, |_| |_|\__,_|_|___/
+%          |___/
+
+\part{Signaux}
+\section{Signaux}
+Un signal est formellement défini comme une fonction d'une
+ou plusieurs variables qui transporte de l'information sur
+la nature d'un phénomène physique.
+
+\subsection{Propriétés d'un signal}
+\paragraph{Continu ou discret}
+Un signal peut-être vu soit de façon continue
+(analogique) soit de façon discrète (numérique).
+On notera les signaux continus avec les parenthèses (e.g. $x(t)$)
+et les signaux discrets avec des crochets (e.g. $x[n]$).
+Quand on notera juste $x$, ça signifiera que la propriété est vraie
+en discret et en continu.
+
+Pour les signaux discrets, on considère qu'on prend les points où on
+évalue le signal à un intervalle régulier.
+Du coup, on peut juste donner un entier $n$ en argument.
+On nomme $T_s$, la période entre deux évaluations.
+En effet, passer d'un signal continu $x(t)$ à un signal discret
+$x[n] = x(nT_s)$ est appelé de l'échantillonnage qui en anglais se dit
+``sampling''. D'où le $T_s$ qui réfère à la période de ``sampling''.
+L'échantillonnage est vu plus en détail à la \sectionref{sampling}.
+
+\paragraph{Pair ou impair}
+Un signal peut être pair si
+\[ x(-t) = x(t) \]
+ou impair si
+\[ x(-t) = -x(t). \]
+On peut décomposer un signal en une composante
+paire et une composante impaire
+\[ x(t) = x_e(t) + x_o(t). \]
+On peut alors prouver que
+\[ x_e(t) = \frac{1}{2}[x(t) + x(-t)], \]
+\[ x_o(t) = \frac{1}{2}[x(t) - x(-t)]. \]
+
+Dans le cas d'un signal complexe
+$x(t) = a(t) + jb(t)$, on peut parler
+de symétrie conjuguée
+\[ x(-t) = x^*(t). \]
+On voit alors qu'un signal complexe
+est symétrique conjuguée si
+sa partie réelle est paire et sa
+partie imaginaire impaire.
+
+\paragraph{Périodique ou apériodique}
+Un signal peut être périodique.
+C'est à dire qu'il existe $T$ tel que
+$\forall t$,
+\[ x(t) = x(t + T). \]
+Le plus petit $T$ respectant cela est appelé sa période
+fondamentale.
+
+Par exemple,
+\[ x(t) = B\cos(\omega t + \phi) \]
+est périodique de période $\frac{2\pi}{\omega}$.
+\[ x[n] = A\cos(\Omega n + \Phi) \]
+est périodique si $\exists k, N \in \mathbb{Z}$ tels que
+$\Omega = 2\pi\frac{k}{N}$, la période est alors $N$ divisé
+par le PGCD de $k$ et $N$.
+
+\paragraph{Déterministe ou aléatoire}
+Un signal déterministe est un signal à propos
+duquel il n'y a aucune incertitude sur sa valeur
+à aucun moment du temps. Par opposition, un signal
+aléatoire est un signal dont on ne peut pas
+prédire la valeur à un instant $t$.
+
+% TODO : energy and power signals
+
+\section{Transformée de Fourier}
+Nous noterons la transformée de Fourier d'un signal $x$, $\fourier\{x\}$.
+
+\subsection{FT - Transformée de Fourier continue}
+Toute fonction $x(t)$ peut être non seulement décrite par son continuum de
+valeurs aux temps $t$ mais aussi par un continuum d'amplitudes à des fréquences
+$f$.
+On nomme la fonction qui donne l'amplitude de ces fréquences sa transformée
+de Fourier.
+On la note avec une majuscule et au lieu de lui donner en argument la fréquence
+$f$, on lui donne $j\omega$ ce qui ne change pas grand chose car
+$j\omega = j2\pi f$.
+On a les relations suivantes
+\begin{align}
+  \label{eq:tfc}
+  X(j\omega) & = \int_{-\infty}^\infty x(t) e^{-j\omega t} \dif t\\
+  \label{eq:tfci}
+  x(t) & = \frac{1}{2\pi} \int_{-\infty}^\infty X(j\omega) e^{j\omega t}
+  \dif \omega.
+\end{align}
+
+Comme $|e^{-j\omega t}| = 1$, on remarque que l'intégrale
+converge si $\int_{-\infty}^\infty |x(t)| \dif t < \infty$.
+
+\subsection{DTFT - Transformée de Fourier discrète}
+\label{sec:fourier_discret}
+% TODO : il y a ici une confusion entre DTFT et DFT il
+% me semble, dans la synthèse les deux sont nomméss "Transformée
+% de Fourier discrète"
+En discret, on pourrait imaginer qu'on va appliquer la même formule en prenant
+simplement $x(t) =  \sum_{n=-\infty}^\infty x[n] \delta(t-nT_s)$, c'est à dire
+qu'on aurait, en notant $\Omega = \omega T_s$,
+\begin{align}
+  \label{eq:tfd}
+  X(j\omega) & = \int_{-\infty}^\infty \sum_{n=-\infty}^\infty x[n]
+  \delta(t-nT_s) e^{-j\omega T_sn} \dif t\\
+  \nonumber
+  & = \sum_{n=-\infty}^\infty x[n] e^{-j\Omega n}.
+\end{align}
+Seulement, on peut remarquer que
+\begin{align*}
+  X(j(\omega+2\pi/T_s)) & = \sum_{n=-\infty}^\infty x[n]
+  e^{-j(\Omega+2\pi) n} \dif t\\
+  & = \sum_{n=-\infty}^\infty x[n]
+  e^{-j\Omega n} \dif t\\
+  & = X(j\omega).
+\end{align*}
+La transformée de Fourier serait donc périodique de période $\frac{2\pi}{T_s}$.
+Ça justifie d'ailleurs le tableau~\ref{tab:recap_fourier}.
+
+En connaissance de cela, une transformée de Fourier discrète plus appropriée
+a été créée
+\begin{align*}
+  X(e^{j\Omega}) & = \sum_{n=-\infty}^\infty x[n]e^{-j\Omega n}\\
+  x[n] & = \frac{1}{2\pi}
+  \int_{0}^{2\pi} X(e^{j\Omega})e^{j\Omega n} \dif \Omega.
+\end{align*}
+À nouveau, comme $|e^{-j\Omega t}| = 1$, on remarque que la somme
+converge si $\sum_{n=-\infty}^\infty |x[n]| < \infty$.
+
+On pourrait se demander pourquoi on note $X(e^{j\Omega})$ et pas $X(j\Omega)$.
+Il se fait que c'est en fait beaucoup plus explicite de le noter ainsi.
+En effet, on montre ici bien que c'est périodique de période $2\pi$
+en $\Omega$ car, si on prend $\Omega + 2\pi$,
+on obtient $X(e^{j(\Omega + 2\pi)}) = X(e^{j\Omega})$.
+
+La raison pour laquelle on parle en terme de $\Omega$ et non de $\omega$ n'est pas
+évidente à saisir.
+Lorsqu'on a un signal $x[n]$, parler de $f_s$ ou $T_s$ est un peu superflu.
+En effet, avec par exemple un signal $x(t) = \sin(2\pi f t)$.
+On a $x[n] = \sin\left(2\pi \frac{f}{f_s} n\right)$.
+On voit bien ici qu'un même signal $x[n]$ peut être produit par $(f,f_s) = (2,2)$
+ou par $(f,f_s) = (4,4)$ par exemple.
+Lorsqu'on calcule la tranformée de Fourier discrète, on veut une transformée de Fourier
+indépendante de $f_s$.
+Même si, lorsqu'on connait $f_s$, on peut facilement repasser à la transformée de Fourier
+classique en remplaçant $\Omega$ par $\omega T_s$.
+Pour ceux pour qui ça parait abstrait, voir la \sectionref{fft}.
+
+\subsection{FS - Série de Fourier continue}
+\label{sec:sfc}
+Si on a un signal périodique de période $T$, on peut faire encore mieux.
+Au lieu de prendre toutes les fréquences possibles dans le domaine spectral,
+on ne va prendre que celle dont l'exponentielle correspondante est
+aussi périodique de période $T$.
+
+Cela peut se justifier de la même manière que pour
+la transformée de Fourier discrète.
+En effet, on a vu à la \sectionref{fourier_discret}
+que la transformée de Fourier d'un signal discret
+donne un signal périodique.
+On peut donc s'attendre à ce que la transformée de Fourier inverse d'un
+signal discret soit un signal périodique.
+Tout cela justifie à nouveau le tableau~\ref{tab:recap_fourier}.
+
+Pour cela, rappelons nous que $e^{jk\omega_0t}$ est un signal périodique
+de période $\frac{2\pi}{\omega_0}$.
+En posant $\omega_0 = \frac{2\pi}{T}$, on a donc
+\begin{align}
+  \label{eq:sfc}
+  X[k] & = \frac{1}{T}\int_0^T x(t) e^{-jk\omega_0t} \dif t\\
+  \label{eq:sfci}
+  x(t) & = \sum_{k=-\infty}^\infty X[k]e^{jk\omega_0t}.
+\end{align}
+
+On remarque que la série de fourier n'est pas un échantillonage de la transformée de fourier.
+C'est dû au fait qu'ici on divise par $T$.
+Si on tend $T$ vers l'infini, on voit qu'on a la transformée de fourier divisée par $T$.
+On a alors l'infini sur l'infini.
+Ça s'interprète assez facilement avec un exemple.
+Si on prend $x(t) = \exp(j\pi t)$, on a $T = 2$ et donc $\omega_0 = \pi$,
+on voit par \eqref{eq:tfci} que $X(j\omega) = 2\pi\delta(\omega - \pi)$ alors qu'on voit
+avec \eqref{eq:sfci} que $X[k] = \delta[k - 1]$.
+$X(j\pi)$ est infini alors que $X[1]$ vaut juste 1.
+
+On voit aussi que l'avantage de diviser par la longueur de l'intégrale c'est
+que $X[k]$ ne change pas si on intègre sur n'importe quel multiple de la période.
+On pourrait par exemple intégrer de $0$ à $2T$ et diviser par $2T$, on aurait le même résultat.
+
+\subsubsection{Série de Fourier d'une répétition de deltas}
+\label{sec:deltas}
+Soit un signal
+\[ x(t) = \sum_{n=-\infty}^\infty \delta(t-nT), \]
+sa série de Fourier est
+\footnote{On intègre de $-T/2$ à $T/2$ car si on intégrait
+de $0$ à $T$ on ne saurait pas clairement si on prend $\delta(t)$ et
+$\delta(t-T)$.
+De toute façon, c'est périodique donc l'intégrale est la même.}
+, par \eqref{eq:sfc},
+\begin{align*}
+  X[k] & = \frac{1}{T}\int_{-T/2}^{T/2} \sum_{n=-\infty}^\infty \delta(t-nT)
+  e^{-2\pi jkt/T} \dif t\\
+  & = \frac{1}{T}\int_{-T/2}^{T/2} \delta(t) e^{-2\pi jkt/T} \dif t\\
+  & = \frac{1}{T} e^{-2\pi jk0/T}\\
+  & = \frac{1}{T}.
+\end{align*}
+
+Du coup, par \eqref{eq:sfci},
+\[ x(t) = \frac{1}{T}\sum_{k=-\infty}^\infty e^{2\pi jkt/T} \]
+ce qui nous permet,
+par la linéarité de la transformée de Fourier et en nous aidant du
+tableau~\ref{tab:fourier_ex} et de la propriété de décalage en fréquentiel,
+d'obtenir le résultat assez intéressant
+qui nous sera utile dans la \sectionref{sampling}
+\[ X(j\omega) = \frac{2\pi}{T}
+\sum_{k=-\infty}^\infty \delta(\omega-2\pi k/T). \]
+
+\paragraph{Remarque}
+On pourrait se demander pourquoi ne pas avoir
+directement calculer la transformée de Fourier
+du train d'impulsions. La réponse est assez simple :
+strictement parlant, la transformée de Fourier ne
+converge pas pour des signaux périodiques. 
+C'est assez ennuyant car on
+travaille souvent avec des signaux de types
+différents. Pour mieux comprendre, voici un exemple
+tiré de \cite[p.~341]{haykin2003}. Imaginons que l'on applique
+un signal périodique en entrée d'un système LTI
+stable, la sortie de ce système est donnée par
+la convolution d'un signal non-périodique
+(la réponse impulsionnelle) et d'un signal
+périodique (l'entrée). Pour calculer cette convolution,
+il est souvent beaucoup plus simple de passer dans
+le domaine fréquentiel puisqu'elle se transforme
+en un produit. Or, comme on le verra
+à la \sectionref{fourier-transform-properties},
+cette propriété de convolution qui devient un
+produit est différente selon que les signaux
+soient périodiques ou non.
+
+Pour pallier ce problème, on fait un lien entre
+la série de Fourier et la transformée de Fourier
+exactement comme précédemment avec le train
+d'impulsions.
+
+\subsection{DTFS - Série de Fourier discrète}
+\label{sec:sfd}
+Un signal discret et périodique a donc,
+selon le tableau~\ref{tab:recap_fourier}, une transformée
+périodique car il est discret et discrète car il est périodique.
+
+En considérant que $x[n]$ est de période $N$.
+On combine les résultats de la transformée de Fourier discrète
+et de la série de Fourier continue.
+\begin{description}
+  \item[transformée de Fourier discrète]
+    La transformée de Fourier est périodique de période $\frac{2\pi}{T_s}$
+    lorsque $x$ est discret avec une période de discrétisation $T_s$.
+  \item[série de Fourier continue]
+    La transformée de Fourier est discrète de période de discrétisation
+    $\frac{2\pi}{T}$ lorsque $x$ est périodique de période $T$.
+\end{description}
+La transformée de Fourier est donc ici discrète et périodique.
+$x$ est discret et de période $N$, sa période en continu est donc $NT_s$
+car $T_s$ est la distance entre deux valeurs discrètes.
+
+La transformée de Fourier a donc une période de discrétisation de $\omega_0 = \frac{2\pi}{NT_s}$
+et une période de $\omega = \frac{2\pi}{T_s}$.
+En prenant $\Omega = \omega T_s$ (et donc $\Omega_0 = \omega_0 T_s$)
+pour la même raison que pour la transformée de Fourier discrète,
+on a un signal avec une période de discrétisation de $\Omega_0 = \frac{2\pi}{N}$ et une période
+de $\Omega = 2 \pi$.
+La période de la transformée de Fourier en discret est donc $N$, comme celle du signal de départ!
+C'est pour ça que lorsqu'on applique FFT sur un vecteur de longueur $N$ on reçoit un vecteur de longueur
+$N$ également (voir \sectionref{fft}).
+On a donc
+\begin{align}
+  \label{eq:sfd}
+  X[k] & = \frac{1}{N} \sum_{n=0}^{N-1}x[n]e^{-jk\Omega_0n}\\
+  \nonumber
+  x[n] & = \sum_{k=0}^{N-1}X[k]e^{jk\Omega_0n}.
+\end{align}
+
+Il est amusant de s'imaginer la série de Fourier discrète
+comme une interpolation des $N$ points d'une période par
+une combinaison linéaire des $N$ fonctions $\phi_k(t) = e^{jk\Omega_0n}$.
+Les coefficients de cette combinaison linéaire sont alors les $X[k]$.
+
+\begin{table}
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline
+    \textbf{Temporel} & \textbf{Fréquentiel}\\
+    \hline
+    Continu & Non-périodique\\
+    \hline
+    Discret & Périodique\\
+    \hline
+    Non-périodique & Continue\\
+    \hline
+    Périodique & Discret\\
+    \hline
+  \end{tabular}
+  \caption{Tableau récapitulatif de la transformée de Fourier}
+  \label{tab:recap_fourier}
+\end{table}
+
+\subsection{Fast Fourier Transform (FFT)}
+\label{sec:fft}
+Le but de l'algorithme FFT est de calculer une transformée de Fourier de façon numérique.
+Le problème avec le numérique c'est qu'on ne sait pas s'occuper d'une infinité de points.
+On doit donc travailler sur un intervalle et avec une version discrétisée de la fonction.
+On effectue alors une série de Fourier discrète.
+Malheureusement, la série de Fourier discrète suppose que la fonction soit périodique.
+FFT ne va donc pas calculer la transformée de Fourier de la fonction mais la transformée
+de Fourier de la fonction obtenue en répétant l’intervalle et l'image de la fonction sur
+cet intervalle.
+
+L'algorithme prend donc en entrée les $N$ valeurs $x[0], \ldots, x[N-1]$ et calcule
+$X[0], \ldots, X[N-1]$.
+tels que
+\[ X[k] = \sum_{n=0}^{N-1}x[n]e^{-jk\Omega_0n} \]
+ou encore
+\[ X[k] = \sum_{n=0}^{N-1}x[n]e^{-j\frac{2\pi}{N} kn}. \]
+Pour obtenir la série de Fourier discrète,
+il faut encore diviser ce résultat par $N$
+comme on le voit avec l'équation~\eqref{eq:sfd}.
+
+Comme on l'a vu à la \sectionref{sfc},
+il ne faut pas interpréter les $X[k]$ comme la valeur de
+la transformée de Fourier en $k\omega_0$ mais plutôt la présence
+d'une composante $\exp(jk\omega_0 t)$ d'amplitude $X[k]$
+dans $x(t)$.
+Dans la transformée de Fourier, comme on l'a vu
+à l'exemple de la \sectionref{sfc},
+on a plutôt $2\pi X[k] \delta(\omega - k\omega_0)$.
+Par exemple, pour $\cos(4\pi)$ on peut s'attendre à
+une série de Fourier continue $\frac{\delta[k-1]+\delta[k+1]}{2}$
+pour $T = 1/2$ ($\omega_0 = \frac{2\pi}{T} = 4\pi$)
+et $\frac{\delta[k-2]+\delta[k+2]}{2}$
+pour $T = 1$ ($\omega_0 = \frac{2\pi}{T} = 2\pi$).
+
+Il faut bien comprendre également que l'algorithme FFT
+est indépendant de $T_s$ et donc de $T = nT_s$.
+On lui donne un vecteur de $N$ éléments, il nous renvoit $N$
+éléments.
+Il peut trouver $\Omega_0 = \frac{2\pi}{N}$ et utiliser
+l'équation~\eqref{eq:sfd} sans se soucier de $T_s$.
+On voit à la \sectionref{sfd} où le $T_s$ se simplifie.
+À nous donc de nous souvenir quel $T_s$ on a utilisé.
+On sait alors que $\omega_0 = \Omega_0 f_s$ et donc on peut
+calculer
+$X(j\omega) = 2\pi \sum_{k=0}^{N-1} X[k] \delta(\omega - k\omega_0)$.
+
+On voit qu'une manière simple de calculer la FFT est directement
+avec la formule.
+C'est un algorithme en $\bigoh(N^2)$.
+Les algorithmes utilisés en pratiques sont plus rapides ($\bigoh(N\log(N))$)
+et même plus précis.
+Voici un exemple d'utilisation de \lstinline|fft| avec \matlab{},
+avec un cosinus de fréquence $2$
+\begin{lstlisting}
+N = 10;
+t = (0:N-1) / N;
+u = cos(2*pi*2*t);
+U = fft(u) / N;
+f = 0:N-1;
+stem(f, U);
+\end{lstlisting}
+La ligne la moins évidente est la ligne 5 et la division par $N$.
+Essayez de la comprendre avec les formules de $\omega_0$, etc, vues plus haut.
+Pour avoir les fréquences de $-5$ à $4$ et non de $0$ à $9$,
+il faut remplacer les lignes 4 et 5 par
+\begin{lstlisting}
+U = fftshift(fft(u)) / N;
+f = (0:N-1) - N/2;
+\end{lstlisting}
+
+% TODO : zero-padding
+
+\subsection{Propriétés de la transformée de Fourier}
+\label{sec:fourier-transform-properties}
+La transformée de Fourier a pas mal de propriétés intéressantes.
+Pour commencer, elle est linéaire, c'est à dire que
+$\fourier\{ax + by\} = a\fourier\{x\} + b\fourier\{y\}$.
+À ne pas confondre avec le changement d'échelle\footnote{Il y
+a un certain parallélisme entre cette propriété et le
+principe d'incertitude d'Heisenberg. En effet, comprimer le
+signal dans le domaine temporel ($a>1$) revient à l'étendre
+dans le domaine fréquentiel.}
+\[ \fourier\{x(at)\} = \frac{1}{|a|}X(j\omega/a). \]
+Il est important de remarquer qu'un changement
+d'échelle en discret entraîne la perte d'informations.
+
+De plus,
+\begin{itemize}
+  \item Si un signal est réel,
+    la partie réelle de sa transformée de Fourier est paire et
+    la partie imaginaire est impaire : la transformée est donc
+		symétrique conjuguée ;
+  \item Si un signal est pair, sa transformée de Fourier est réelle et paire;
+  \item Si un signal est impair,
+    sa transformée de Fourier est imaginaire pure et impaire.
+\end{itemize}
+
+Pour des signaux \emph{non-périodiques} $x$ et $y$,
+\begin{align}
+  \nonumber
+  \fourier\{x * y\} & = X Y\\
+  \label{eq:prod2conv}
+  \fourier\{xy\} & = \frac{1}{2\pi}X * Y
+\end{align}
+et pour des signaux \emph{périodiques} $x$ et $y$
+où $X$ et $Y$ sont donc leur série de Fourier,
+\begin{align*}
+  \fourier\{x * y\} & = T X Y \text{ où $T$ est la période
+																		fondamentale de $x$ et $y$}\\ 
+  \fourier\{xy\} & = X * Y.
+\end{align*}
+La disparition du facteur $\frac{1}{2\pi}$ et du au facteur
+$\frac{1}{T}$ de l'équation~\eqref{eq:sfc}. Cette propriété
+de convolution permet d'expliquer le phénomène de
+Gibbs, plus d'informations dans~\cite[p.~169]{haykin2003}.
+
+Une propriété très intéressante pour les équations différentielles est que
+\begin{align*}
+  \fourier\left\{\fdif{x(t)}{t}\right\} & = j\omega X(j\omega)\\
+  \fourier^{-1}\left\{\fdif{X(j\omega)}{\omega}\right\} & =
+  -jtx(t).
+\end{align*}
+
+On a aussi une propriété de décalage en continu
+\begin{align*}
+  \fourier\{x(t-t_0)\} & = e^{-j\omega t_0}X(j\omega)\\
+  \fourier^{-1}\{X(j(\omega-\nu))\} & = e^{j\nu t}x(t)
+\end{align*}
+et en discret
+\begin{align*}
+  \fourier\{x[n-k]\} & = e^{-j\Omega k} X(e^{j\Omega})\\
+  \fourier^{-1}\{X(e^{j(\Omega-\nu)})\} & = e^{j\nu n}x[n]
+\end{align*}
+qui va nous être utile dans la résolution d'équations aux différences.
+La propriété de décalage fréquentiel correspond à une modulation
+en amplitude (comme vu au cours de physique 3).
+
+Une propriété intéressante pour trouver $U(j\omega)$ donné dans le
+tableau~\ref{tab:fourier_ex} à l'aide de \eqref{eq:uintdelta} est que si
+$y(t) = \int_{-\infty}^t x(\tau) \dif \tau$, alors
+\[ Y(j\omega) = \frac{1}{j\omega}X(j\omega) + \pi X(j0)\delta(\omega). \]
+
+La relation de Parseval permet de passer d'une certaine intégrale en temporel
+à une intégrale en fréquentiel
+\[ \int_{-\infty}^\infty |x(t)|^2 \dif t
+= \frac{1}{2\pi} \int_{-\infty}^\infty |X(j\omega)|^2 \dif \omega. \]
+Physiquement, elle indique que l'énergie d'un signal est la même
+dans le domaine temporelle et dans le domaine
+fréquentiel.
+
+\begin{table}
+  \[
+    \begin{array}{|c|c|l|}
+      \hline
+      x(t) & X(j\omega) & \text{condition (convergence)}\\
+      \hline
+      e^{-at}u(t) & \frac{1}{a + j\omega} & \Re(a) > 0\\
+      \frac{\sin(Wt)}{\pi t} &
+      \begin{cases}
+        1, \text{si } |\omega| \leq W\\
+        0, \text{sinon}
+      \end{cases}
+      &\\
+			% TODO : expliquer que cette TF ne converge pas
+			% strictement parlant mais qu'on l'accepte car
+			% elle satisfait aux propriétés d'une paire TF
+			% et qu'elle permet beaucoup de choses.
+      \frac{1}{2\pi} & \delta(\omega) & \\
+      u(t) & \frac{1}{j\omega} + \pi \delta(\omega)&\\
+      \hline
+      x[n] & X(e^{j\Omega}) &\\
+      \hline
+      \alpha^n u[n] & \frac{1}{1-\alpha e^{-j\Omega}} & |\alpha| < 1\\
+      \frac{\sin(Wn)}{\pi n} &
+      \begin{cases}
+        1, \text{si } |\Omega| \leq W\\
+        0, \text{sinon}
+      \end{cases}
+      &\\
+      \hline
+    \end{array}
+  \]
+  \caption{Exemples de transformées de Fourier}
+  \label{tab:fourier_ex}
+\end{table}
+
+\subsection{Échantillonnage}
+\label{sec:sampling}
+\subsubsection{Échantillonnage en temporel}
+Lorsqu'on échantillonne un signal continu $x(t)$ en $x_s(t)$,
+comme on a vu à la \sectionref{fourier_discret},
+son spectre devient périodique.
+
+En effet, échantillonner,
+revient à multiplier en temporel par
+\[ \sum_{n=-\infty}^{\infty} \delta(t-nT_s). \]
+C'est à dire, comme on a vu dans la \sectionref{deltas} et
+en utilisant \eqref{eq:prod2conv},
+faire une convolution en fréquentiel par
+\[ \frac{1}{2\pi} \times
+\frac{2\pi}{T_s}\sum_{k=-\infty}^\infty\delta(\omega-2\pi k/T_s)
+= \frac{1}{T_s}\sum_{k=-\infty}^\infty\delta(\omega-2\pi k/T_s). \]
+On va donc prendre le spectre de $x(t)$ et on va le reproduire tous les
+$2\pi/T_s = \omega_s$ en le divisant par $T_s$.
+On remarque donc que si $X(j\omega)$ n'est différent de 0 que pour
+$|\omega| \leq \omega_\mathrm{max}$,
+le spectre a une largeur de $2\omega_\mathrm{max}$,
+il faut donc que $\frac{2\pi}{T_s} > 2\omega_\mathrm{max}$ pour que les
+reproductions de signal ne se chevauchent pas (on parle
+sinon de repli spectral, ou d'\emph{aliasing} en anglais).
+Comme $\omega_s = \frac{2\pi}{T_s}$, on a en fait $f_s > 2f_\mathrm{max}$.
+C'est le \emph{théorème de Shannon}.
+
+Pour reconstituer le signal de départ après échantillonnage,
+il suffit de se débarrasser de ces reproductions en fréquentiel
+et de remultiplier le signal par $T_s$.
+Pour cela, si on a fait bien attention à
+ce qu'il n'y ait pas de chevauchements,
+il suffit de multiplier le signal en fréquentiel par une fenêtre
+qui vaut $T_s$ pour $-\pi/T_s \leq \omega < \pi/T_s$ et 0 sinon;
+ce qui fait une convolution par $\sin(\pi t/T_s)/(\pi t/T_s)$ en temporel.
+On appelle ça un \emph{filtre passe-bas}.
+
+Il peut arriver que bien que les conditions du théorème de Shannon n'aient
+pas été respectées, on sache quand même récupérer le signal de départ.
+Il faut pour cela qu'il ne se soit pas chevauché avec ses reproductions.
+C'est le cas quand les fréquences sont localisés par exemple entre
+$4\pi \leq \omega < 6\pi$.
+On peut alors récupérer le signal de départ en multipliant
+en fréquentiel par une fenêtre qui faut $T_s$ pour
+$4\pi \leq \omega < 6\pi$ et 0 ailleurs.
+C'est un \emph{filtre passe-bande}.
+
+\paragraph{Périodicité temporelle du signal échantillonné}
+Même si $x(t)$ est périodique,
+$x_s(t)$ n'est pas nécessairement périodique.
+Pour que $x_s(t)$ soit périodique, il faut et il suffit que
+$T_s$ soit un multiple rationnel de la période de $x(t)$.
+
+\subsubsection{TFD - Transformée de Fourier discrète}
+Faire une transformée de Fourier discrète consiste simplement à faire une
+transformée de Fourier normale et puis d'échantillonner en fréquentiel.
+Ce qui, du coup, reproduit périodiquement le signal en temporel.
+
+Cela fait fort penser à la série de Fourier, en effet,
+si on échantillonne \eqref{eq:tfd} tous les $2\pi/N$, on arrive
+à la même chose que \eqref{eq:sfd} modulo un facteur $1/N$.
+En effet, on a
+\[ X[k] = \frac{X(e^{ik2\pi/N})}{N}. \]
+
+\section{Transformée de Laplace}
+La transformée de Laplace est une généralisation de la transformée de Fourier
+continue.
+
+En effet, au lieu de se limiter à $j\omega$, on prend $s = \sigma + j\omega$.
+Les formules deviennent
+\begin{align}
+  \label{eq:tl}
+  X(s) & = \int_{-\infty}^\infty x(t) e^{-st} \dif t\\
+  \nonumber
+  x(t) & = \frac{1}{2\pi}\int_{-\infty}^\infty X(\sigma+j\omega)
+  e^{(\sigma+j\omega)t} \dif \omega.
+\end{align}
+
+En comparant l'équation~\ref{eq:tl} à l'équation~\ref{eq:tfc}, on remarque que
+$\laplace\{x(t)\} = \fourier\{x(t) e^{-\sigma t}\}$.
+D'où la condition de convergence.
+\[ \int_{-\infty}^\infty |x(t)|e^{-\sigma t} < \infty. \]
+Contre toute attente, on a donc une convergence dépendante de $\sigma$, c'est
+à dire la partie réelle de $s$.
+L'avantage, c'est qu'on va trouver des transformées de Laplace pour des
+signaux n'ayant pas de transformée de Fourier.
+Par exemple, bien que $e^tu(t)$ n'a pas de transformée de Fourier,
+on va pouvoir lui trouver une transformée de Laplace.
+Le désavantage, c'est qu'elle aura une ``Region Of Convergence'' ($\roc$).
+
+\subsection{Propriétés de la transformée de Laplace}
+Comme pour Fourier, on a la linéarité
+\[ \laplace\{ax(t)+by(t)\} = aX(s) + bY(s) \]
+où $\roc_1 \cap \roc_2 \subseteq \roc$,
+le décalage temporel
+\[ \laplace\{x(t-t_0)\} = e^{-st_0}X(s) \]
+où le $\roc$ ne change pas,
+le décalage fréquentiel
+\[ \laplace^{-1}\{X(s-s_0)\} = e^{s_0t}x(t) \]
+où le $\roc$ devient $\roc + \Re(s_0)$,
+la convolution
+\[ \laplace\{x*y\} = XY, \]
+la différentiation
+\[ \laplace\left\{\fdif{x}{t}\right\} = sX(s), \]
+l'intégration
+\[ \laplace\left\{\int_{-\infty}^tx(\tau)\dif\tau\right\} = \frac{X(s)}{s} \]
+et la différentiation en fréquence
+\[ \laplace^{-1}\left\{\fdif{X(s)}{s}\right\} = -tx(t). \]
+
+\subsection{Propriétés de la région de convergence}
+\begin{description}
+  \item[Signal de support fini]
+		$\roc = \C$ ;
+  \item[Signal de support fini à gauche\footnotemark]\footnotetext{Un signal de
+	support fini à gauche (resp. à droite) est un signal entièrement
+	situé à droite (resp. à gauche) d'un axe vertical. Attention car
+	cela se traduit par \emph{right-sided} en anglais.}
+		$\roc = \Re(s) > k$ ;
+	\item[Signal de support fini à droite]
+		$\roc = \Re(s) < k$ ;
+	\item[Signal de support infini]
+		$\roc = k_1 < \Re(s) < k_2$.
+\end{description}
+
+\subsection{Transformée de Laplace unilatérale}
+\label{sec:laplacu}
+La propriété sur la différentiabilité nous permet de résoudre les équations
+différentielles aux données initiales nulles mais pour les autres,
+il nous faudra définir une transformée de Laplace unilatérale
+\begin{align*}
+  X_u(s) & = \int_{0^-}^\infty x(t) e^{-st} \dif t.
+\end{align*}
+
+Pour cette transformée, on a
+\begin{align*}
+  \laplacu\left\{\fdif{x(t)}{t}\right\} & =
+  sX_u(s) - x(0^-)\\
+  \laplacu\left\{\ffdif{x(t)}{t}\right\} & =
+  s^2X_u(s) - sx(0^-) - x'(0^-)
+\end{align*}
+et pour des systèmes stables et causaux,
+\begin{align*}
+  \lim_{s\to\infty} sX_u(s) & = x(0^+)\\
+  \lim_{s\to 0} sX_u(s) & = x(\infty).
+\end{align*}
+
+\section{Transformée en $z$}
+La transformée en $z$ est une généralisation de la transformée de Fourier
+discrète.
+
+La transformée en $z$ d'un signal discret est
+\begin{align*}
+  X(z) & = \sum_{k=-\infty}^{\infty} x[k]z^{-k}\\
+  x[n] & =
+  \frac{1}{2\pi}\int_{-\pi}^{\pi} X(re^{j\omega})(re^{j\omega})^n\dif \omega\\
+  & = \frac{1}{2\pi j}\oint X(z) z^{n-1} \dif z.
+\end{align*}
+L'égalité entre les deux dernières intégrales
+s'obtient directement avec le changement
+de variable $z = re^{j\omega}$ d'où $\dif z = zj\dif \omega$.
+
+Comme $\transfz\{x[n]\} = \fourier\{x[n]r^n\}$,
+une condition suffisante pour qu'une transformée en $z$ converge est
+\[ \sum_{n=-\infty}^\infty|x[n]r^{-n}| < \infty. \]
+La convergence dépend donc de $r$.
+
+\subsection{Propriétés de la transformée en $z$}
+Comme pour Laplace, on a la linéarité
+\[ \transfz\{ax[n]+by[n]\} = aX(z) + bY(z) \]
+où $\roc_1 \cap \roc_2 \subseteq \roc$,
+le décalage temporel
+\[ \transfz\{x[n-n_0]\} = z^{-n_0}X(z) \]
+où le $\roc$ ne change pas,
+le changement d'échelle en fréquentiel
+\[ \transfz^{-1}\{X(z/z_0)\} = z_0^nx[n] \]
+où le $\roc$ devient $\roc |z_0|$,
+la convolution
+\[ \transfz\{x*y\} = XY, \]
+et la différentiation en fréquence
+\[ \transfz^{-1}\left\{z\fdif{X(z)}{z}\right\} = -nx[n]. \]
+
+\subsection{Propriétés de la région de convergence}
+\begin{description}
+  \item[Signal de support fini]
+		$\roc = \C$ sauf éventuellement $|z| = 0$
+		ou $|z| = \infty$ ;
+  \item[Signal de support fini à gauche]
+		$\roc = |z| < r$ ;
+	\item[Signal de support fini à droite]
+		$\roc = |z| > r$ ;
+	\item[Signal de support infini]
+		$\roc = r_1 < |z| < r_2$.
+\end{description}
+
+\subsection{Transformée en $z$ unilatérale}
+Comme pour la \sectionref{laplacu}, on a besoin
+d'une transformée en $z$ unilatérale pour résoudre les équations
+aux différences à conditions initiales non-nulles
+\begin{align*}
+  X_u(z) & = \sum_{n=0}^\infty x[n] z^{-n}.
+\end{align*}
+
+Pour cette transformée, on a\footnote{Attention le 
+principe est le même qu'avec Laplace mais pas le signe.}
+\begin{align*}
+  \transzu\{x[n-1]\} & =
+  z^{-1}X_u(z) + x[-1]\\
+  \transzu\{x[n-2]\} & =
+  z^{-2}X_u(z) + z^{-1}x[-1] + x[-2]\\
+  \transzu(x[n-k]) & =
+  z^{-k}X_u(z) + z^{-k+1}x[-1] + \ldots + z^{-1}x[-k+1] + x[-k]
+\end{align*}
+et pour des systèmes stables et causaux,
+\begin{align*}
+  \lim_{|z|\to\infty} X_u(z) & = x[0^+]\\
+  \lim_{z\to 1} (z-1)X_u(z) & = x[\infty].
+\end{align*}
+
+% on est pas interrogé sur le développement en série de puissances
+
+%  ____            _
+% / ___| _   _ ___| |_ ___ _ __ ___  ___
+% \___ \| | | / __| __/ _ \ '_ ` _ \/ __|
+%  ___) | |_| \__ \ ||  __/ | | | | \__ \
+% |____/ \__, |___/\__\___|_| |_| |_|___/
+%        |___/
+
+\part{Systèmes}
+Un système prend un signal en entrée $x(t)$ et retourne un signal $y(t)$
+en sortie.
+On note $H\{x(t)\} = y(t)$.
+
+\section{Système LTI}
+Un système LTI est un système Linéaire à Temps Invariant.
+
+\subsection{Invariance temporelle}
+Un système est dit invariant dans le temps (ou permanent)
+si ``retarder'' (ou ``avancer'') l'entrée d'un certain
+temps $t_0$ entraîne \emph{uniquement} un retard (ou une avance)
+identique de la sortie. Autrement dit, un système permanent
+réagit de manière identique peu importe quand l'entrée
+est appliquée. Mathématiquement,
+$H\{x(t)\} = y(t)$, $H\{x(t-t_0)\} = y(t-t_0)$.
+
+\subsection{Linéarité}
+Un système peut être linéaire, c'est à dire que
+\[ H\left\{\sum a_ix_i(t)\right\} = \sum a_iH\{x_i(t)\}. \]
+
+\subsection{Système LTI sans mémoire}
+Un système LTI peut être sans mémoire,
+cela signifie simplement que $y(t)$ ne dépend que de $x(t)$.
+Comme le système est temporellement invariant,
+il fait la même chose pour tous les $x(t)$.
+Du coup, $\exists c$ tel que $y(t) = cx(t)$, d'où
+\begin{align*}
+  h[n] & = c \delta[n] & h(t) = c \delta(t).
+\end{align*}
+
+\subsection{Système LTI causal}
+Un système est causal si la réponse impulsionnelle ne dépend
+que des valeurs présentes et passées, mais pas des valeurs futures.
+Cela revient à dire que
+\begin{align*}
+  h[n] & = 0 \, \forall n < 0  & h(t) = 0 \, \forall t < 0.
+\end{align*}
+En effet, comme
+\[ y[n] = \sum_{k=-\infty}^{+\infty}x[k]h[n-k] \]
+pour que le signal ne soit pas influencé par les $x[k]$ avec
+$k > n$, il faut que le $h[n-k]$ correspondant soit 0.
+Comme $k > n$, $n - k < 0$ il faut donc bien $h[k] = 0$ $\forall k < 0$.
+
+Un système non-causal ne peut pas opérer en temps réel.
+Par exemple, le système de moyenne mobile décrit par
+\[ y[n] = \frac{1}{3}(x[n-1]+x[n]+x[n+1]) \]
+devra attendre d'avoir reçu la valeur $x[n+1]$
+avant de produite $y[n]$. Par conséquent, il va devoir
+garder en mémoire les autres valeurs. Et donc un système
+non-causal est forcément un système avec mémoire.
+
+\subsection{Système LTI inversible}
+Pour qu'un système LTI soit inversible, il faut qu'il existe $h^{-1}$ tel que
+$h^{-1}*h*x = x$.
+Comme vu précédemment, le neutre de la convolution est $\delta$ il faut donc
+qu'il existe $h^{-1}$ tel que $h^{-1} * h = \delta$.
+
+% TODO : trouver un meilleur endroit. Selon
+% moi la réponse impusionnelle/indicielle ne sont
+% pas vraiment des propriétés d'un système mais
+% plutôt une façon de les représenter. P-e créer
+% une nouvelle grosse section "Représentations
+% des systèmes LTI" ?
+\subsection{Réponse impulsionnelle}
+On peut représenter un système LTI à l'aide de sa réponse impulsionnelle
+définie par $h(t) = H\{\delta(t)\}$. On a
+\[ y(t) = x(t) * h(t). \]
+
+\subsection{Réponse indicielle}
+La réponse indicielle d'un système LTI notée $s(t)$ est par définition
+\begin{align*}
+  s(t) & \eqdef h(t) * u(t)\\
+  & = \int_{-\infty}^t h(\tau) \dif \tau &
+  s[n] & = \sum_{k=-\infty}^n h[k]
+\end{align*}
+d'où
+\begin{align*}
+  h(t) & = \fdif{}{t}s(t) & h[n] & = s[n] - s[n-1].
+\end{align*}
+
+On peut aussi calculer la réponse indicielle à l'aide de $H(s)$
+ou $H(z)$.
+C'est à dire calculer
+\begin{align*}
+  S(s) & = H(s)U(s) & S(z) & = H(z)U(z).
+\end{align*}
+et puis faire la transformée inverse pour trouver $s(t)$ ou $s[n]$.
+
+\subsection{Interconnections de systèmes LTI}
+Si $h_1(t)$ et $h_2(t)$ sont les réponses impulsionnelles
+de deux systèmes connectés en parallèle, alors la
+réponse impulsionnelle du système équivalent est $h_1(t) + h_2(t)$.
+Mathématiquement, cela implique que la convolution est
+distributive.
+
+Si ces deux systèmes sont maintenant connectés en
+série, alors la réponse impulsionnelle du système
+équivalent est $h_1(t) * h_2(t)$. Mathématiquement,
+cela implique que la convolution est associative.
+De plus, comme la convolution est commutative, l'ordre
+des systèmes LTI dans une connexion en série peut
+être interchangé.
+
+%\subsection{Équations différentielles}
+%Time Invariant car coefficients indépendants du temps.
+%Linear car $y$ et $y'$ etc. apparaissent de façon linéaire
+
+\section{Fonction de transfert}
+\subsection{Transformée en $z$ dans un système LTI}
+Supposons qu'on doive calculer l'image d'un signal discret par un système LTI.
+On peut éviter de calculer le produit de convolution grâce à la fonction
+de transfert
+\[ H(z) = \sum_{k=-\infty}^{\infty} h[k] z^{-k}. \]
+On remarque d'ailleurs que $H(z)$ est la transformée en $z$ de $h$.
+
+En effet, on remarque que l'image de $z^n$ est
+\begin{align*}
+  \sum_{k=-\infty}^{\infty} h(k) z^{n-k} &
+  = z^{n} \sum_{k=-\infty}^{\infty} h[k] z^{-k}\\
+  & = z^n H(z)
+\end{align*}
+
+Dès lors, lorsqu'on veut calculer l'image d'un signal $x[n]$. Il suffit de
+prendre sa transformée en $z$ $X(z)$ dont l'image est $Y(z) = X(z) H(z)$
+et puis d'appliquer la transformée en $z$ inverse sur $Y(z)$ pour trouver
+$y[n]$.
+
+C'est pareil pour les signaux continus avec Laplace.
+
+\subsection{Diagramme de Bode}
+Une aide peut être trouvé dans~\cite[pp.~251-253]{astrom2010feedback} ou dans~\cite{cheever2013bode} qui contient de bons exemples.
+Soit une fonction de transfert $H(s)$.
+Le diagramme de Bode de $H(s)$ est le graphe de la fonction $20\log|H(j\omega)|$
+en fonction de $\omega$, avec l'axe $\omega$ en échelle logarithmique.
+Une approximation de ce diagramme peut être très facilement dessiné à la main
+à l'aide de l'équation de $H(s)$ exprimé sous la forme
+\[ H(s) = K \frac{\sum_{i=0}^mb_is^i}{\sum_{i=0}^na_is^i}. \]
+
+Il nous suffit de factoriser le numérateur et le dénominateur
+jusqu'à avoir 4 types de facteurs.
+\begin{itemize}
+  \item Une racine nulle
+    \[ s; \]
+  \item Une racine simple réelle
+    \[ \frac{s}{\omega_0} + 1; \]
+  \item Deux racines conjuguées $(-1 < \zeta < 1)$,% I do not use 0 < |\zeta| < 1 so that it's clear it is real
+    \[ \left(\frac{s}{\omega_0}\right)^2 +
+    2\zeta\frac{s}{\omega_0} + 1; \]
+  \item Une racine double réelle
+    \[ \left(\frac{s}{\omega_0} + 1\right)^2. \]
+\end{itemize}
+Il est important d'avoir à chaque fois la bonne forme pour les facteurs
+car ça modifie $K$.
+Par exemple, pour la racine simple réelle, il ne faut pas garder
+$(s + \omega_0)$ mais le transformer en $(s/\omega_0 + 1)$.
+
+En suite, comme on trace le graphe d'un logarithme,
+le produit de ses facteurs va devenir leur somme.
+En effet, par exemple,
+\[ 20\log\left|2\frac{s}{s + 1}\right| =
+20\log 2 + 20\log|s| - 20\log|s+1|. \]
+
+Il nous suffit donc de prendre le graphe de chacun de nos constituants
+et de les additionner.
+Les graphes seront en dB par decade, les graphes de chacun de nos
+composants sont donnés par le tableau~\ref{tab:bode}.
+On remarque que le graphe d'un des éléments au dénominateur est simplement
+l'opposé de celui au numérateur.
+\begin{table}
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline
+    \emph{Type} & \emph{Graphe}\\
+    \hline
+    Contante $K$ & $20\log|K|$\\
+    \hline
+    Zéro nul & $\si{20}{dB\per decade}$ passant par $\si{0}{dB}$ pour
+    $\omega=1$\\
+    \hline
+    Pôle nul & $\si{-20}{dB\per decade}$ passant par $\si{0}{dB}$ pour
+    $\omega=1$\\
+    \hline
+    Zéro réel & $\si{20}{dB\per decade}$ à partir de $\omega = \omega_0$\\
+    \hline
+    Pôle réel & $\si{-20}{dB\per decade}$ à partir de $\omega = \omega_0$\\
+    \hline
+    Zéros conjugués &
+    $\si{40}{dB\per decade}$ à partir de $\omega = \omega_0$.\\
+    & Il faut aussi rajouter un pic à $\omega_0$ d'amplitude
+    $20\log(2|\zeta|)$.\\
+    \hline
+    Pôles conjugués &
+    $\si{-40}{dB\per decade}$ à partir de $\omega = \omega_0$.\\
+    &
+    Il faut aussi rajouter un pic à $\omega_0$ d'amplitude
+    $-20\log(2|\zeta|)$.\\
+    \hline
+    Double zéro réel &
+    $\si{40}{dB\per decade}$ à partir de $\omega = \omega_0$\\
+    \hline
+    Double pôle réel &
+    $\si{-40}{dB\per decade}$ à partir de $\omega = \omega_0$\\
+    \hline
+  \end{tabular}
+  \caption{Diagramme de bode pour les différents facteurs de $H(s)$.
+  ``À partir de'' signifie que c'est \si{0}{dB} avant et puis
+  que ça part de $\si{0}{dB}$.}
+  \label{tab:bode}
+\end{table}
+
+\begin{myexem}
+  \label{ex:bode}
+  Par exemple, si
+  \[ H(s) = -100\frac{s}{s^3+12s^2+21s+10} =
+  -10\frac{s}{(s+1)^2\left(\frac{s}{10}+1\right)}, \]
+  on a
+  \begin{itemize}
+    \item une constante de $-10$, ce qui fait
+      $\si{20}{dB}$;
+    \item un zéro nul ce qui fait une droit qui passe par $(0,1)$
+      avec une pente de $\si{20}{dB\per decade}$;
+    \item un pôle réel à $s = -10$ ce qui fait
+      $\si{-20}{dB\per decade}$ à partir de $\omega = 10$;
+    \item un double pôle réel à $s = -1$ ce qui fait
+      $\si{-40}{dB\per decade}$ à partir de $\omega = 1$.
+  \end{itemize}
+  %Le graphe obtenu est montré par la figure~\ref{fig:bodeexem}
+  %\begin{figure}
+    %\centering
+    %\begin{tikzpicture}
+      %\begin{semilogxaxis}[xmin=1e-2,xmax=1e3,xlabel=$\omega$, ylabel=dB,
+        %ymin=-140,ymax=100,smooth]
+        %\addplot {20};
+        %\addlegendentry{$d = R$}
+        %\addplot {20*log10(x)};
+        %\addlegendentry{$d = 2R$}
+      %\end{semilogxaxis}
+    %\end{tikzpicture}
+    %\caption{Diagramme de bode de $H(s)$ dans l'exemple~\ref{ex:bode}}
+    %\label{fig:deqr}
+  %\end{figure}
+\end{myexem}
+
+\section{Schéma bloc et représentation d'état}
+Le schéma bloc et la représentation d'état constituent la représentation
+interne d'un système, il y en a en général plusieurs possibles pour une
+même représentation entrée-sortie.
+
+Un schéma bloc est difficile à appréhender si on essaie d'y appliquer
+notre logique des circuits électriques.
+En effet, oubliez la loi de Kirchhoff sur les courants
+$I_1 + I_2 + \ldots + I_n = 0$, dans un schéma bloc, c'est plutôt
+$I_1 = I_2 = \ldots = I_n = 0$.
+
+Un schéma bloc est constitué d'une entrée $x$, d'une sortie $y$ et
+d'états internes $q_i$\footnote{L'état d'un système est défini comme
+un ensemble minimal de signaux $(q_1, q_2, \dots, q_n)$ qui 
+représentent entièrement la ``mémoire'' du système. Autrement
+dit, en connaissant $(q_1(t_0), q_2(t_0), \dots, q_n(t_0))$
+et en connaissant l'entrée du système pour $t \geq t_0$, il
+est possible de déterminer la sortie $\forall t \geq t_0$.}.
+
+Il est parsemé de blocs $\int$ en continu (resp. $D$ en discret) tels que
+la sortie du bloc est l'intégrale (resp. le décalage $D\{x[n]\} = x[n-1]$) du
+signal d'entrée.
+On met généralement les états $q_i$ à la sortie de ces blocs\footnote{On peut
+ici faire une analogie à un circuit électrique. En électricité, l'opération
+d'intégration est réalisée par un condensateur. Si on défini $i_C(t)$
+comme étant l'entrée du condensateur et $v_C(t)$ comme étant sa sortie, on voit
+en effet que $v_C(t) = \frac{1}{C}\int_{-\infty}^{t}i_C(t')\dif t'$. On peut
+réécrire cette relation comme $v_C(t) = v_C(t_0) + \frac{1}{C}\int_{t_0}^{t}i_C(t')\dif t'$.
+On voit donc que $v_C(t_0)$ \emph{capture} toute l'histoire du condensateur : à partir
+de $v_C(t_0)$ et étant donné $i_C(t)$ $\forall t \geq t_0$, on peut calculer
+$v_C(t)$ $\forall t \geq t_0$. La sortie $v_C(t)$ du condensateur est bien
+un état du condensateur.}.
+% FIX : footnote maybe a bit too long...
+
+On peut décrire le schéma bloc à l'aide de sa représentation d'état qui
+en continu est de la forme
+\begin{align*}
+  q'(t) & = Aq(t) + Bx(t)\\
+  y(t) & = Cq(t) + Dx(t)
+\end{align*}
+et en discret est de la forme
+\begin{align*}
+  q[n+1] & = Aq[n] + Bx[n]\\
+  y[n] & = Cq[n] + Dx[n].
+\end{align*}
+
+On remarque que lorsqu'on a mis les $q_i$ aux sorties des blocs,
+les $q_i[n+1]$ et les $q'(t)$ sont simplement l'entrée des blocs.
+La première équation s'écrit donc simplement en regardant ce qui rentre
+dans les blocs.
+La seconde équation s'écrit en regardant ce qui sort du système en $y$.
+
+\subsection{Changement de représentation interne}
+Lorsqu'on change de représentation interne, on peut obtenir
+la nouvelle représentation d'état en exprimant le changement de représentation
+comme un changement de variable en $q$, $\tilde{q} = Tq$.
+On a alors
+\begin{align*}
+  \tilde{q} & = TAT^{-1}\tilde{q} + TBx\\
+  y & = CT^{-1}\tilde{q} + Dx.
+\end{align*}
+Ce qui n'est sûrement pas à retenir par coeur tellement c'est immédiat.
+Il suffit de remplacer $q$ par $T^{-1}\tilde{q}$ dans la représentation d'état
+en $q$ puis de multiplier la première équation par $T$.
+
+On remarquera quand même que cela nous permet d'obtenir facilement une
+transformation du système qui rendra $\tilde{A}$ diagonale.
+En effet, trouver $D$ et $Q$ tels que $A = QDQ^{-1}$ est une opération connue,
+c'est la diagonalisation.
+Pour avoir $\tilde{A}$ diagonale,
+il suffit donc de trouver $Q$ en diagonalisant $A$
+et de faire un changement de variable $\tilde{q} = Tq$ avec $T = Q^{-1}$.
+L'avantage si $A$ est diagonale, c'est qu'on peut très
+facilement calculer $A^k$ et donc très facilement
+trouver les matrices de commandabilité et d'observabilité
+(voir \sectionref{com-and-obs}).
+
+\subsection{De représentation d'état à fonction de transfert}
+On peut passer de la représentation d'état de temporel à fréquentiel
+en gardant les mêmes matrices.
+
+En continu, on a
+\begin{align*}
+  sQ(s) & = AQ(s) + BX(s)\\
+  Y(s) & = CQ(s) + DX(s)
+\end{align*}
+et on trouve alors
+\[ H(s) = \frac{Y(s)}{X(s)} = C(sI-A)^{-1}B + D. \]
+En discret, c'est pareil
+\begin{align*}
+  zQ(z) & = AQ(z) + BX(z)\\
+  Y(z) & = CQ(z) + DX(z)
+\end{align*}
+et on trouve alors
+\[ H(z) = \frac{Y(z)}{X(z)} = C(zI-A)^{-1}B + D. \]
+
+Le plus simple pour inverser en pratique est à l'aide de
+\[ C(zI-A)^{-1}B = \frac{1}{\det(zI-A)} C\cof(zI-A)^TB. \]
+L'astuce est de bien regarder les coefficients de $C$ et de $B$
+qui sont nuls pour éviter de calculer trop de cofacteurs.
+Le calcul n'est alors pas si fastidieux. On constate
+que les pôles de la fonction de transfert sont des
+valeurs propres de $A$. S'il n'y a pas d'annulation
+pôles-zéros, toutes les valeurs propres de $A$ sont des
+pôles de $H$, et la représentation d'état est \emph{minimale}.
+
+On peut aussi calculer $u = (zI-A)^{-1}B$ en résolvant le système
+linéaire $(zI-A)u = B$, ce qui est souvent plus rapide que de
+calculer l'inverse.
+
+\section{Équations différentielles - équations aux différences}
+Elle constitue la représentation entrée-sortie d'un système contrairement
+au schéma bloc ou à la représentation d'état qui constitue une représentation
+interne.
+
+Tout comme dans la résolution standard,
+on parle de solution homogène et solution particulière,
+on va parler de réponse libre et de réponse forcée.
+\begin{description}
+  \item[Réponse libre]
+    Condition initiales spécifiées et entrée nulle.
+    C'est un système linéaire \emph{mais pas à temps invariant}.
+    Il faut donc faire attention à ne pas utiliser les transformées
+    unilatérales.
+  \item[Réponse forcée]
+    Condition initiales nulles et entrée spécifiée.
+    C'est un système LTI.
+\end{description}
+
+% TODO : from differential/difference equation to
+% states variables representation
+
+\section{Commandabilité et observabilité}
+\label{sec:com-and-obs}
+Cette section traitera du cas du système continu mais c'est pareil en discret.
+\subsection{Commandabilité}
+Le concept de commandabilité s'intéresse à la question
+de savoir s'il existe une fonction d'entrée qui permet
+d'amener l'état du système d'une certaine valeur initiale
+à zéro en un temps fini.
+\begin{description}
+  \item[État commandable]
+    Un état $q_0$ est commandable si,
+    pour un état initial $q(0) = q_0$,
+    il existe un $T$ et un $x$ tels qu'on ait $q(T) = 0$.
+		
+  \item[État accessible]
+    Un état $\bar{q}$ est dit accessible si,
+    pour un état initial $q(0) = 0$,
+    il existe un $T$ et un $x$ tels qu'on ait $q(T) = \bar{q}$.
+  \item[Système complètement commandable]
+    Un système est complètement commandable si tous ses états sont
+    commandables.
+\end{description}
+
+Seulement, l'ensemble des états commandables est l'espace engendré
+par les colonnes de la matrice de commandabilité
+(voir l'annexe~\ref{ann:command} pour une démonstration)
+\[ \begin{pmatrix}B & AB & \cdots & A^{n-1}B\end{pmatrix}. \]
+Du coup, un système est complètement commandable si cette matrice est de
+plein rang.
+
+\subsection{Observabilité}
+Le concept d'observabilité s'intéresse à la possibilité de
+reconstruire l'état du système à partir de l'observation
+de la sortie sur un intervalle de temps fini.
+\begin{description}
+  \item[État non observable]
+    Un état $q_0$ est non observable si,
+    pour un état initial $q(0) = q_0$,
+    pour tout $T > 0$, si $x(t) = 0$ $\forall 0 \leq t \leq T$, alors
+    $y(t) = 0$ $\forall 0 \leq t \leq T$.
+  \item[Système complètement observable]
+    Un système est complètement observable si aucun de ses états est
+    non observable.
+\end{description}
+
+À nouveau, l'ensemble des états non observables est le $\ker$ de
+\[ \begin{pmatrix}C\\CA\\\cdots\\CA^{n-1}\end{pmatrix}. \]
+Du coup, un système est complètement observable si cette matrice est de
+plein rang.
+
+On remarque que pour une certaine fonction de transfert,
+on peut avoir une multitude de schéma blocs ou de représentations d'états
+différents.
+Mais la fonction de transfert n'utilise
+que la partie observable et commandable.
+Si un $q_i$ n'est pas observable, ou est non commandable
+(c'est à dire, pour la première composante de $q$ par exemple, que l'état
+$q = (1, 0, \ldots, 0)$ n'est pas observable ou est non commandable),
+il n'apparaitra pas
+dans la fonction de transfert.
+
+\section{Stabilité}
+\subsection{Stabilité BIBO}
+Un système est BIBO (Bounded-Input-Bounded-Output) stable si,
+lorsque $|x[n]| \leq M_x < \infty$ $\forall n$,
+on a aussi $|y[n]| \leq M_y < \infty$ $\forall n$ (pareil en continu).
+Seulement pour un système LTI, comme
+\begin{align*}
+  |y[n]| & = \left|\sum_{k=-\infty}^{\infty}h[k]x[n-k]\right|\\
+         & \leq M_x \sum_{k=-\infty}^{\infty}|h[k]|,
+\end{align*}
+une condition \emph{suffisante} pour qu'un système soit BIBO stable est que
+\begin{align*}
+  \sum_{k=-\infty}^\infty |h[k]| & < \infty &
+  \int_{-\infty}^\infty |h(t)| \dif t & < \infty
+\end{align*}
+C'est la même condition que celle de l'existence de la transformée de Fourier
+de $h$.
+
+Comme la transformée de Fourier
+est la transformée en $z$ pour $r = 1$,
+si la tranformée en $z$ a le cercle unité dans son ROC, on sait
+que le système est BIBO stable.
+
+Comme la transformée de Fourier est la transformée de Laplace pour $\Re(s) = 0$,
+si l'axe imaginaire appartient au ROC, on sait
+que le système est BIBO stable.
+
+Pour un système \emph{causal},
+\begin{itemize}
+  \item pour les systèmes continus, il faut que les pôles $d_k$ soient
+    strictement à gauche de l'axe imaginaire, $\Re(d_k) < 0$. En effet,
+		prenons une fonction de transfert simple ayant un seul pôle $d$. Sa
+		transformée de Laplace inverse est donnée par
+		\[ \laplace^{-1}\left\{\frac{1}{s-d}\right\} = e^{dt}u(t) = h(t). \]
+		Il faut donc en effet que $\Re(d) < 0$ pour que le système soit stable ;
+  \item pour les systèmes discrets, il faut que les pôles $d_k$ soient
+    strictement à l'intérieur du cercle unité, $|d_k| < 1$. \`A nouveau,
+		prenons une fonction de transfert simple ayant un seul pôle $d$. Sa
+		transformée en $z$ inverse est donnée par
+		\[ \transfz^{-1}\left\{\frac{1}{1-dz^{-1}}\right\} = d^nu[n] = h[n]. \]
+		Il faut donc en effet que $|d| < 1$ pour que le système soit stable.
+\end{itemize}
+Un système marginalement stable mais pas asymptotiquement stable
+(ces notions sont définies dans la \sectionref{in-stab})
+qui n'a pas d'annulation pôle-zéro n'est donc pas BIBO stable.
+
+En effet, si le système est causal, il faut que $h[n] = 0$ $\forall n < 0$,
+il faut donc du $u[n]$ et pas du $u[-n-1]$, la formule à utiliser donne
+alors un ROC de $|z| > |\lambda|$.
+S'il existe un $|\lambda| \geq 1$,
+on a $|z| > 1$ et le cercle unité n'est pas
+dans le ROC.
+Par contre si tous les $\lambda < 1$, $|z| = 1$ est dans l'intersection
+des ROC $|z| > |\lambda|$.
+
+\subsection{Stabilité interne}
+\label{sec:in-stab}
+Un point $(\bar{q}, \bar{x})$ est un équilibre si $A\bar{q} + B\bar{x} = 0$.
+Cet équilibre est \emph{stable} si un bruit suffisamment faible
+va toujours rester dans une marge et est \emph{attractif} si
+un bruit suffisamment faible va toujours se tasser à 0.
+Un équilibre \emph{stable} et \emph{attractif}
+est dit \emph{asymptotiquement stable}.
+
+On remarque que $(0,0)$ est un équilibre et que tout équilibre peut se
+ramener à $(0,0)$ par changement de variable.
+
+Du coup, pour qu'un système ait tous ses équilibres stables,
+il faut et il suffit que $(0,0)$ soit stable.
+On peut donc, au lieu de parler d'équilibre stable,
+directement parler de système stable.
+Tous les équilibres ont la même nature,
+on peut donc parler du système.
+Dire qu'un système est stable
+signifie que tous les équilibres du système sont stables.
+
+Soient $\lambda_i$ les valeurs propres de $A$.
+En continu,
+\begin{itemize}
+  \item Si $\forall i$ $\Re(\lambda_i) < 0$, le système est asymptotiquement
+    stable;
+  \item Si $\exists i$ $\Re(\lambda_i) > 0$, le système est instable;
+  \item Si $\forall i$ $\Re(\lambda_i) \leq 0$ et que $\forall i$ tel que
+    $\Re(\lambda_i) = 0$, $m_g(\lambda_i) = m_a(\lambda_i)$\footnote{Pour
+		rappel, la multiplicité géométrique d'une valeur propre $m_g(\lambda)$
+		est définie comme la dimension de l'espace propre associé à $\lambda$
+		tandis que la multiplicité algébrique $m_a(\lambda)$ est définie
+		comme la multiplicité de $\lambda$ en tant que racine du polynôme
+		caractéristique (voir LFSAB1102).},
+    le système est marginalement stable;
+  \item Si $\forall i$ $\Re(\lambda_i) \leq 0$ et que $\exists i$ tel que
+    $\Re(\lambda_i) = 0$, où $m_g(\lambda_i) < m_a(\lambda_i)$,
+    le système est instable.
+\end{itemize}
+
+% TUYAU!!!
+Et en discret,
+\begin{itemize}
+  \item Si $\forall i$ $|\lambda_i| < 1$, le système est asymptotiquement
+    stable;
+  \item Si $\exists i$ $|\lambda_i| > 1$, le système est instable;
+  \item Si $\forall i$ $|\lambda_i| \leq 1$ et que $\forall i$ tel que
+    $|\lambda_i| = 1$, $m_g(\lambda_i) = m_a(\lambda_i)$,
+    le système est marginalement stable;
+  \item Si $\forall i$ $|\lambda_i| \leq 1$ et que $\exists i$ tel que
+    $|\lambda_i| = 1$, où $m_g(\lambda_i) < m_a(\lambda_i)$,
+    le système est instable.
+\end{itemize}
+
+\subsection{Stabilité interne et externe}
+% TUYAU!!!
+Pour la stabilité interne, on regarde tous les états.
+Si un des états est instable, le système est instable.
+
+Comme la fonction de transfert ne regarde que
+la partie observable et commandable,
+on pourrait avoir une fonction de transfert
+BIBO stable pour un système qui est
+lui instable car dans la relation entrée sortie,
+on n'a pas vu la composante instable.
+Cela correspond à l'annulation du pôle zéro dans l'expression de $H(s)$.
+
+Si on a la stabilité interne, alors on a la stabilité BIBO.
+Car si mon système entier est stable,
+alors la partie qui est observable et commandable est stable aussi.
+
+Si on a une stabilité BIBO et une instabilité interne,
+alors on a une annulation de zéro,
+et donc une perte de commandabilité ou d'observabilité
+car si tout était stable et commandable,
+on aurait eu une instabilité BIBO aussi.
+
+%Par exemple, pour
+%\begin{align*}
+  %q_1' & = -2q_2\\
+  %q_2' & = q_1 + 2q_2  3q_3 + x\\
+  %q_3' & = q_1 + 6q_2 - 7q_3 + x
+%\end{align*}
+%
+%\[ C = \begin{pmatrix}0 & -1 & 2\\1 & -1 & -1\\1 & -1 & -1\end{pmatrix} \]
+%base $\mathcal{C}(C)^\perp = (0;1;-1)$
+%donc posons $z_1 = q_1$, $z_2 = q_2$ et $z_3 = q_2 - q_3$.
+
+% TODO : trouver un exemple concret d'un système instable
+% au niveau interne mais BIBO stable
+
+\subsection{Critère de Routh Hurwitz}
+Soit une fonction
+\[ F(s) = a_ns^n + a_{n-1}s^{n-1} + \ldots + a_1s + a_0. \]
+On peut construire le tableau suivant
+\begin{align*}
+  &a_n && a_{n-2} && a_{n-4} && \cdots\\
+  &a_{n-1} && a_{n-3} && a_{n-5} && \cdots\\
+  &b_1=\frac{a_{n-1}a_{n-2}-a_na_{n-3}}{a_{n-1}} &&
+  b_2=\frac{a_{n-1}a_{n-4}-a_na_{n-5}}{a_{n-1}} && \cdots\\
+  &c_1=\frac{b_1a_{n-3}-a_{n-1}b_{2}}{b_1} && \cdots\\
+  \vdots
+\end{align*}
+Ce tableau crée en fait un triangles en ne laissant que des zéros
+sous lui ainsi qu'à sa droite.
+
+On sait ensuite que le nombre de racines à partie réelle positive
+est le nombre de changements de signe des coefficients de la première
+colonne de ce tableau (si ces coefficients sont tous non-nuls).
+
+\subsection{Feedback}
+% Tikz style for block-diagram
+\tikzstyle{block} = [draw, fill=white, rectangle, 
+    minimum height=3em, minimum width=6em]
+\tikzstyle{sum} = [draw, fill=white, circle, node distance=1cm]
+\tikzstyle{input} = [coordinate]
+\tikzstyle{output} = [coordinate]
+\tikzstyle{pinstyle} = [pin edge={to-,thin,black}]
+
+% TODO : améliorer un peu l'explication (exemple concret
+% d'un système de feedback, meilleure définition du système
+% présenté, etc).
+
+On considère ici le système présenté à la \figuref{feedback}.
+Le but d'un tel système est de maintenir sa sortie $y$ le plus proche
+possible d'un signal ``cible'' notée $r$ sur la \figuref{feedback}.
+
+\begin{figure}[ht]
+	\centering
+	\begin{tikzpicture}[auto, node distance=2cm]
+			\node [input, name=input] {};
+			\node [sum, right of=input] (sum) {};
+			\node [block, right of=sum] (controller) {$H$};
+			\node [block, right of=controller, pin={[pinstyle]above:v},
+							node distance=3cm] (system) {$G$};
+
+			\draw [->] (controller) -- node[name=u] {$x$} (system);
+			\node [output, right of=system] (output) {};
+			\node [block, below of=u] (measurements) {Mesure};
+
+			\draw [draw,->] (input) -- node {$r$} (sum);
+			\draw [->] (sum) -- node {$e$} (controller);
+			\draw [->] (system) -- node [name=y] {$y$}(output);
+			\draw [->] (y) |- (measurements);
+			\draw [->] (measurements) -| node[pos=0.99] {$-$} 
+					node [near end] {} (sum);
+	\end{tikzpicture}
+	\caption{Système de contrôle avec feedback. On considère ici que
+	l'étape de mesure est idéale. $r$ désigne le signal de sortie ``cible'',
+	$e = r-y$ est l'erreur commise par la système, $v$ est un bruit
+	apparaissant à la sortie de $G$.}
+	\label{fig:feedback}
+\end{figure}
+
+On a du coup $Y = GH(R - Y)$ d'où 
+$(1+GH)Y = GHR$ et donc
+\[ T \eqdef \frac{Y}{R} = \frac{GH}{1+GH}. \]
+
+On défini la sensibilité $S$ de ce système
+\[ S \eqdef \frac{\Delta T/T}{\Delta G/G} =
+\frac{G}{T}\frac{H(1 + GH) - GHH}{(1+GH)^2}
+= \frac{G(1+GH)}{GH}\frac{H}{(1+GH)^2}
+= \frac{1}{1+GH}. \]
+
+Si on a une perturbation $v$ à la sortie de $G$, on veut
+que la sortie du système reste proche du signal ``cible''
+\[ Y(s) = \underbrace{\frac{GH}{1+GH}}_{T}R + \underbrace{\frac{1}{1+GH}}_{S} V \approx R. \]
+L'objectif lors de la conception d'un système avec feedback sera
+donc de choisir $H$ afin de rendre $T$ proche de $1$ et $S$
+petit afin de réduire la sensibilité du système aux pertubations.
+
+Le désavantage du feedback, c'est une complexité accrue et un risque
+de déstabilisation. Par exemple, si
+\begin{align*}
+  H(s) & = K & G(s) = \frac{1}{1+s\tau}
+\end{align*}
+où $\tau > 0$, on a
+\[ T(s) = \frac{K}{K + 1 + s\tau}. \]
+On n'avait pas de problème de stabilité au niveau de $G(s)$ 
+avec $-\frac{1}{\tau}$ car sa partie
+réelle était strictement négative.
+Mais au niveau de $T(s)$, on a une racine de $-\frac{1+K}{\tau}$,
+Il faut donc que $K \geq -1$ pour rester stable.
+
+Pour une analyse plus détaillée et une comparaison
+avec le même système en boucle ouverte, voir~\cite[pp.~679-682]{haykin2003}.
+
+%Pour une poly du second degré, tous les coef positif est une ssi de stabilité.
+%Pour les + que second, c'est de nécessaire.
+
+\annexe
+\section{Produit de convolution}
+Le produit de convolution est un produit qui se note $*$ et qui se fait
+soit entre deux fonctions discrètes $a[n]$ et $b[n]$
+\[ a[n] * b[n] = \sum_{k=-\infty}^{+\infty} a[k]b[n-k], \]
+soit entre deux fonctions continues $a(t)$ et $b(t)$
+\[ a(t) * b(t) = \int_{\tau=-\infty}^{+\infty} a(\tau)b(t-\tau) \dif \tau. \]
+
+\subsection{Propriétés}
+Le produit de convolution a beaucoup de propriétés en commun avec le produit
+normal~: il est associatif, commutatif et distributif avec l'addition.
+
+L'absorbant est aussi 0. Cependant le neutre n'est pas 1 mais bien
+$\delta(t)$ (resp. $\delta[n]$) en continu (resp. en discret).
+Plus généralement, le $\delta$ permet de décaler un signal
+\[ x(t) * \delta(t - t_0) = x(t - t_0). \]
+
+% TODO : fonctions propres de la convolution et
+% lien avec Fourier, Laplace, et z
+
+\section{Échelon et Impulsion}
+\subsection{Échelon}
+Un échelon se note $u(t)$ et est défini par
+\[ u(t) = \begin{cases}
+    0 & t < 0\\
+    1 & t > 0
+\end{cases} \]
+en continu et
+\[ u[n] = \begin{cases}
+    0 & n < 0\\
+    1 & n \geq 0
+\end{cases} \]
+en discret.
+
+\'A partir de l'échelon, on définit la rampe
+\[ r(t) = tu(t) = \begin{cases}
+    0 & t < 0\\
+    t & t \geq 0
+\end{cases}. \]
+
+\subsection{Impulsion}
+\label{app:dirac}
+Une impulsion de Dirac est une fonction avec singularité en 0.
+Elle se note $\delta(t)$ et est définie par
+\begin{equation}
+  \label{eq:dirac1}
+  \delta(t) =
+  \begin{cases}
+    \infty, & t = 0\\
+    0, & t \neq 0
+  \end{cases}
+\end{equation}
+et
+\begin{equation}
+  \label{eq:dirac2}
+  \int_{-\infty}^{\infty} \delta(t) \dif t = 1.
+\end{equation}
+
+Il peut paraître étrange que l'intégrale soit finie alors que
+$\delta(0) = \infty$.
+Seulement, rappelez-vous qu'une intégrale est une aire et que
+l'aire d'un Dirac n'est pas entièrement définie par \eqref{eq:dirac1}
+car celle-ci impose que l'aire vaut $0 \cdot \infty$, qui est un cas
+d'indétermination.
+\eqref{eq:dirac2} permet de lever cette indétermination.
+
+En discret, c'est un peu différent. L'impulsion unité est
+définie comme
+\[ \delta[n] =
+	 \begin{cases}
+     1, & n = 0\\
+     0, & n \neq 0
+   \end{cases} \]
+et est appelée ``Delta de Kronecker''.
+\subsection{Relations intéressantes}
+\begin{align}
+  \nonumber
+  \delta(t) & = \fdif{u(t)}{t}\\
+	\delta(at) & = \frac{1}{a}\delta(t) \text{ si } a>0\\
+  \label{eq:uintdelta}
+  u(t) & = \int_{-\infty}^t \delta(t) \dif t\\
+  \nonumber
+  f(t_0) & = \int_{-\infty}^\infty f(t)\delta(t-t_0) \dif t\\
+  \label{eq:infinf00}
+  f(t) \delta(t-t_0) & = f(t_0)\delta(t-t_0)
+\end{align}
+La \eqref{eq:infinf00} est vraie car si on a $t \neq t_0$, on a $0 = 0$
+et si on a $t = t_0$, on a $\infty = \infty$.
+
+En discret, on a
+\[ \delta[n] = u[n] - u[n-1] \]
+et
+\[ u[n] = \sum_{k=-\infty}^n \delta[k] \]
+où la somme est l'équivalent de l'intégration
+en discret.
+
+\section{Lien entre matrice de commandabilité et commandabilité}
+\label{ann:command}
+Soit un état $q_0$, on a
+\begin{align*}
+  q[1] & = A q_0 + B x[0]\\
+  \vdots & = \vdots\\
+  q[n] & = A^nq_0 + A^{n-1}Bx[0] + A^{n-2}Bx[1] + \ldots + Bx[n-1]\\
+\end{align*}
+Si on veut $q[n] = 0$, on doit avoir
+\[ -A^nq_0 = A^{n-1}Bx[0] + \ldots + Bx[n-1]. \]
+Pour que le système soit commandable,
+il faut donc que pour tout $q_0$, $-A^nq_0$ soit une combinaison
+linéaire des colonnes de $\begin{pmatrix}A^{n-1}B & \cdots & B\end{pmatrix}$.
+Il suffit donc % faut ?
+que cette matrice soit de rang plein.
+
+% Our job here is done! (And yet another successfully completed mission.)
+% Thérèse & Lena
+
+\biblio
+
+\end{document}

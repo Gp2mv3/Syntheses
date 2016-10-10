@@ -10,7 +10,8 @@
 
 \usepackage{pgf}
 \usepackage{tikz}
-\usetikzlibrary{arrows,automata}
+\usepackage{circuitikz}
+\usetikzlibrary{arrows,automata, shapes, positioning}
 \usetikzlibrary{positioning}
 
 \tikzset{
@@ -152,29 +153,60 @@ On peut remarquer qu'écrire \lstinline|proc lazy| n'aurait pas de sens car une 
 en langage noyau, on ne saurait quelle variable attendre.
 
 \section{Producer-Consumer}
+\subsection{Eager}
+Producer makes new elements and can get ahead of the consumer.
 \begin{description}
-  \item[Eager producer-consumer]
-    Le producteur produit autant qu'il veut et le consommateur consomme ce qu'il produit et attend si le buffer est vide.
-    \textbf{Problème:} Le producteur peut causer un memory overflow.
-  \item[Lazy producer-consumer]
-    Le producteur attend que le consommateur demande un élément pour le produire.
-    \textbf{Problème:} Le consommateur doit attendre pour chaque élément.
-  \item[Bounded buffer]
-    Pareil que ``Eager producer-consumer'' mais le buffer a une taille limitée.
+	\item[Pros] Fast
+	\item[Cons] Risk of memory leak (new elements will pile up).
 \end{description}
+\subsection{Lazy}
+Consumer asks for new element.
+Producer only produces when asked.
+\begin{description}
+	\item[Pros] No leak
+	\item[Cons] Reduction of performance
+\end{description}
+\subsection{Bounded Buffer (BB)}
+Buffer with fixed size (N elements) linking the producer to the consumer.
+Working eagerly while not full and working lazily while full.
+Producer and consumer executed in paralel.
+%\begin{description}
+%  \item[Eager producer-consumer]
+%    Le producteur produit autant qu'il veut et le consommateur consomme ce qu'il produit et attend si le buffer est vide.
+%    \textbf{Problème:} Le producteur peut causer un memory overflow.
+%  \item[Lazy producer-consumer]
+%    Le producteur attend que le consommateur demande un élément pour le produire.
+%    \textbf{Problème:} Le consommateur doit attendre pour chaque élément.
+%  \item[Bounded buffer]
+%    Pareil que ``Eager producer-consumer'' mais le buffer a une taille limitée.
+%\end{description}
 
 \section{Deterministic dataflow}
-\subsection{Avantages du deterministic dataflow} % TODO pourquoi il était mis limites ??
+The expression \textbf{declarative concurrency} seems to represent the same paradigm.
+Declarative programming = functional programming. A program is a mathematical function (deterministic).
+Deterministic dataflow is more general than just functional programming :
+\begin{itemize}
+	\item concurrent/long lived, streams
+	\item unbound variables
+\end{itemize}
+\subsection{Definition of declarative concurrency}
+A program is declarative if for all possible inputs, all executions for a particular input:
+\begin{itemize}
+	\item whether all do not terminate 
+	\item whether all event reach partial termination and outputs are logically equivalent.
+\end{itemize} % both conditions should be true or one of the 2?
+
+All deterministic and lazy deterministic dataflow programs are declarative.
+\subsection{Avantages du deterministic dataflow}
 \begin{itemize}
   \item Tous les programmes fonctionnels peuvent devenir concurrents.
   \item Les résultats ne changent pas quand on ajoute des threads.
-  \item Les calculs devient incrémentaux.
+  \item Les calculs deviennent incrémentaux.
   \item On construit des programmes avec des streams qui sont
     des listes sans fin (ça donnera lieu aux stream objects et stream agents).
 \end{itemize}
-
 \subsection{Limitations du deterministic dataflow}
-Son déterminisme !
+Its determinism.
 \begin{itemize}
   \item same inputs give same (or equivalent) results (eventually).
   \item when the execution stops for a given input, the outputs are equivalent.
@@ -182,8 +214,14 @@ Son déterminisme !
 
 Il y a beaucoup de programmes qui doivent avoir un comportement non-déterministe.
 Par exemple, une application client-serveur avec au moins 2 clients.
-Le comportement de l'application dépend de l'ordre dans lequel le serveur
-reçoit les messages des clients, ce n'est donc pas déterministe.
+Le comportement de l'application dépend de l'ordre dans lequel le serveur reçoit les messages des clients, ce n'est donc pas déterministe.  Il y a besoin d'introduire la notion de choix (non déterministe).
+\begin{lstlisting}
+declare
+proc {Server S1 S2}
+  C={WaitTwo S1 S2} % -> Choice
+  ...
+end
+\end{lstlisting}
 Pour résoudre cela, on introduit les ports.
 
 \subsection{Objets}
@@ -191,8 +229,8 @@ Différents types d'objets
 \begin{itemize}
   \item Stream objects
   \item Port objects
-  \item Active objects
-  \item Passive objects (Java)
+  \item Passive objects : cells (attributes) + data (values) (Java)
+  \item Active objects = Passive object + threads (port).
 \end{itemize}
 
 \section{Ports}
@@ -204,14 +242,228 @@ Message protocols
 \end{itemize}
 
 \section{Shared-State Concurrency}
+Introduction of the cells.
+Multiples threads share a state and have operations.
+Suppose thread T1 having operations $a_1 \ a_2 \ a_3 ... \ a_k$ and thread T2 having operations $b_1 \ b_2 \ b_3 ... \ b_k$ on the cell C.
+There happen conflicts (interleavings). Cell c sees $ a_1 \ a_2 \ b_1 \ a_3 \ ...$ Many possible interleavings exists : 
+$2k! / k!$
+All interleavings should be correct.
+
 Il y a 3 instructions atomiques,
 \lstinline|@|, \lstinline|:=| et \lstinline|Exchange|.
+\subsection{Managing the interleaving}
+\subsubsection{Locks}
+A lock protects a region of code. Only one thread can execute inside at any moments.
+\begin{lstlisting}
+L={NewLock}
+lock L then 
+	_ %New syntax
+	_
+	_
+	_
+end
+\end{lstlisting}
+\begin{lstlisting}
+local X Y in
+	Y=@C
+	C:=X
+	{Wait Y}
+	_
+	_
+	_
+	X=ok
+end
+\end{lstlisting}
 
+To make a lock, we need an atomic read+write operation combining the operations of reading and writing the cell.  This operation must be provided by the system.  All processors provide atomic read+write. In oz, it is provided by the function {Exchange C Y X} where Y is bound to the current content of C and X is the new content of C.
+
+Locks are not enough $\rightarrow$ Bounded Buffer.
+\subsubsection{Monitors}
+2(3) new operators :
+\begin{itemize}
+	\item wait : suspend current thread. put it in wait set, release the lock.
+	\item notify : 
+	\begin{enumerate}
+		\item remove a thread from wait set
+		\item the thread start executing : it first tries to get the lock at the point where it was suspended.
+	\end{enumerate}
+	\item notifyAll: like notify but all thread are removed.
+\end{itemize}
+
+Programming patterns for monitors :
+\begin{lstlisting}
+meth methname(...)
+	lock
+	while not cond do wait
+		%Code
+	notifyAll
+	end
+end
+\end{lstlisting}
+\subsection{Transactions}
+Motivation : Accessing to a database (array of cells).
+\begin{itemize}
+	\item Performance
+	\item Scalability
+	\item Fault tolerance (if crash, coherent stop).
+\end{itemize}
+Different solutions :
+\subsubsection{Naive version}
+One lock for all the database.
+$\rightarrow$ Very slow, not scalable.
+\subsubsection{One lock by cell in DB}
+\begin{itemize}
+	\item allows parallelism
+	\item scalable
+	\item real DB
+\end{itemize}
+\vspace{0.5cm}
+%il doit exister une meilleure manière de dessiner cela mais je ne suis pas expérimenté à ce niveau ^^.
+\begin{circuitikz} \draw %Graphe Thread T1
+(0,0.25) node[] {T1}
+(1.5,0) node[] {$C_a$}
+(5.25,0) node[] {$C_b$}
+(0,0) -- (1,0)
+(1,0) -- (1,0.5)
+(1,0.5) -- (1.75,0.5)
+(1.75, 0.5) -- (1.75,0)
+(1.75,0) -- (4.75,0)
+(4.75,0) -- (4.75, 0.5)
+(4.75, 0.5) -- (5.5, 0.5)
+(5.5,0.5) -- (5.5,0)
+(5.5,0) -- (7,0)
+;
+\end{circuitikz}
+\newline
+\vspace{0.5cm}
+\begin{circuitikz} \draw %Graphe Thread T2
+(0,0.25) node[] {T2}
+(2.5,0) node[] {$C_a$}
+(4,0) node[] {$C_b$}
+(0,0) -- (2.25,0)
+(2.25,0) -- (2.25,0.5)
+(2.25,0.5) -- (3,0.5)
+(3, 0.5) -- (3,0)
+(3,0) -- (3.5,0)
+(3.5,0) -- (3.5, 0.5)
+(3.5, 0.5) -- (4.25, 0.5)
+(4.25,0.5) -- (4.25,0)
+(4.25,0) -- (7,0)
+;
+\end{circuitikz}
+\newline
+There can be interference if the transactions T1 and T2 want to access to cells $C_a$ and $C_b$.  T2 doesn't see the modification of $C_b$ in T1, too late. T1, T2 not serializable : T1 or T2 before T1.
+
+How can we make the problem serializable?
+With 2 phase locking :
+\begin{enumerate}
+	\item We get locks
+	\item We release locks
+\end{enumerate}
+If we use 2PL to get locks then transactions are serializable.
+But what if a transaction abort?
+We need to release all locks at once.
+
+\textbf{Strict 2PL}: serializable transactions without cascading abort.
+\textbf{Deadlock}: ressource conflicts in any system with agents(threads running transactions) and resources (locks).
+\newline
+\begin{circuitikz} \draw
+(0,0.25) node[] {T1}
+(2.25,0) node[] {$C_a$}
+(5,0.5) node[] {need $C_b$ ?}
+(0, 0) -- (2,0)
+(2,0) -- (2,0.5)
+(2,0.5) -- (4, 0.5)
+;
+\end{circuitikz}
+\newline
+\begin{circuitikz} \draw
+(0,0.25) node[] {T2}
+(2.25,0) node[] {$C_b$}
+(5,0.5) node[] {need $C_a$ ?}
+(0, 0) -- (2,0)
+(2,0) -- (2,0.5)
+(2,0.5) -- (4, 0.5)
+;
+\end{circuitikz}
+\newline
+If this situation happens, both threads will wait forever! $\rightarrow$ Circular wait between threads that need resources : deadlock.
+\subsubsection{Wait for graph}
+\begin{center}
+\begin{tikzpicture}[on grid, auto]
+    \node[draw, ellipse] (A) {T1};
+    \node[draw, ellipse] (B) [right = 2.5 cm of A] {C2};
+    \node[draw, ellipse] (C) [below = 2.5 cm of B] {T2};
+    \node[draw, ellipse] (D) [below = 2.5 cm of A] {C1};
+
+    \path[-latex] (A) edge [bend left] node [above] {waits for} (B);
+    \path[-latex] (B) edge [bend left] node [right] {used by} (C);
+    \path[-latex] (C) edge [bend left] node [below] {waits for} (D);
+	\path[-latex] (D) edge [bend left] node [right] {used by} (A);
+\end{tikzpicture}
+\end{center}
+In a wait for graph, we represent the relations between the transactions and Cells (protected by a lock). There are only 2 kind of nodes in this graph : used by and waits for. 
+\subsubsection{Concurrency control}
+Need of concurrency control(CC) : 
+\begin{itemize}
+	\item techniques used to implement transaction
+	\item strict 2PL part of CC
+	\item in a system : Transaction manager
+\end{itemize}
+\subsubsection{Transaction manager (TM)}
+A transaction asks for a lock :
+The transaction manager either :
+\begin{itemize}
+	\item gives the lock
+	\item doesn't give the lock
+	\item delays
+\end{itemize}
+If the TM is optimistic, it gives even if it's risky.
+If the TM is pessimistic, it delays if it's risky.
+\newline
+\textbf{Naive TM} :
+\begin{itemize}
+	\item if transaction asks for unlocked cell : give the lock.
+	\item STRICT 2PL : only allowed to release after all gets.
+\end{itemize}
+\textbf{Deadlock repair} :
+Detect cycle in wait for graph.
+if cycle found, choose one transaction and restart it (abort by releasing all locks, and start again).
+\newline
+\textbf{Deadlock avoidance} :
+If we give priorities to transactions and give higher priorities to earlier transactions, when transaction asks for a lock on a cell :
+\begin{itemize}
+	\item unlocked : it gets the lock
+	\item locked by actual transaction : continue
+	\item locked by higher priority transaction : waits
+	\item locked by lower priority transaction : low priority transaction restarts and release all its locks.
+\end{itemize}
+\vspace{1cm}
+\begin{tikzpicture}[on grid, auto]
+    \node[initial,draw, ellipse] (A) {running};
+    \node[draw, ellipse] (B) [right =6 cm of A] {continue or abort};
+    \node[draw, ellipse] (C) [below =3cm of B] {Running without probation};
+    \node[draw, ellipse] (D) [below =4cm of A] {waiting};
+    \node[draw, ellipse] (E) [below = 3cm of C] {restart};
+
+    \path[-latex] (A) edge [loop above] node {asks for free lock} (A);
+    \path[-latex] (A) edge [bend right] node [left] {asks for locks already taken} (D);
+    \path[-latex] (D) edge [bend right] node [right] {gets lock} (A);
+    \path[-latex] (A) edge node {} (B);
+    \path[-latex] (A) edge node[sloped, anchor=center,above] {HPT asks one of my locks} (C);
+    \path[-latex] (C) edge node {Done} (B);
+    \path[-latex] (C) edge node {asks for lock} (E);
+    \path[-latex] (D) edge node[sloped, anchor=center,below] {HPT needs one of my locks} (E);
+\end{tikzpicture}
+\newline
+HPT = higher priority transaction
+The part "Running without probation" is an additional part for optimisation.
+\clearpage
 \part{Définitions}
-Ceci est une liste exhaustive constituées par Arnaud Schils
+Ceci est une liste exhaustive constituée par Arnaud Schils
 des définitions du livre
 ``Concepts, Techniques and Models of Computer Programming''
-complètées avec ses notes de cours.
+complètée avec ses notes de cours.
 %    ________________________________________________
 %   / ____        __ _       _ _   _                 \
 %  / |  _ \  ___ / _(_)_ __ (_) |_(_) ___  _ __  ___  \
