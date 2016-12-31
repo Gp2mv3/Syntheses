@@ -29,6 +29,8 @@ class Tree
 	 else L = {@left isBalanced($)} Y = {NumLeave @left}
 	 end
 
+	 A = X - Y
+
 	 ( (X-Y) < 2 andthen ~2 < (X-Y) andthen R andthen L )
       end
    end
