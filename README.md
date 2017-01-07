@@ -1,8 +1,8 @@
 # Synthèses de l'EPL
 
-| **Documentation**  | **PDF** |**Social**  |
-|:------------------:|:-------:|:----------:|
-| [<img src="https://cdn.pixabay.com/photo/2013/04/01/21/32/reading-99244_960_720.png" width="48">][doc-url] | [<img src="https://image.freepik.com/free-icon/pdf-file-format-symbol_318-45340.jpg" width="48">][pdf-url] | [![Join the chat at https://gitter.im/Gp2mv3/Syntheses](https://badges.gitter.im/Gp2mv3/Syntheses.svg)](https://gitter.im/Gp2mv3/Syntheses?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) |
+| **Documentation**  | **PDF** | **Chat** | **Forum** | **Git** |
+|:------------------:|:-------:|:--------:|:---------:|:-------:|
+| [<img src="https://cdn.pixabay.com/photo/2013/04/01/21/32/reading-99244_960_720.png" width="48">][doc-url] | [<img src="https://image.freepik.com/free-icon/pdf-file-format-symbol_318-45340.jpg" width="48">][pdf-url] | [![Join the chat at https://gitter.im/Gp2mv3/Syntheses](https://badges.gitter.im/Gp2mv3/Syntheses.svg)][chat-url] | [<img src="http://forum-epl.be/images/avatars/gallery/Photos/logo_phpBB.gif" width="96">][forum-url] | [<img src="https://www.codeschool.com/assets/custom/review/2014/2014-try-git-0090d74a62a5bff9e42f26762e76f5350fcafa9f835acfed59beb2028936c8f2.png" width="48">][git-url]
 
 
 Les documents présents sur ce repository sont des documents
@@ -342,3 +342,6 @@ Comme exemple, voici le mien
 
 [pdf-url]: https://drive.google.com/a/student.uclouvain.be/folderview?id=0B5WS2yn5sWqDV3ZhdlNXdWFLT0U&usp=sharing
 [doc-url]: https://drive.google.com/a/student.uclouvain.be/file/d/0B222E0n9Ab7vTVpBZlYtNktxeHM/view?usp=sharing
+[chat-url]: https://gitter.im/Gp2mv3/Syntheses?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+[forum-url]: http://forum-epl.be
+[git-url]: https://try.github.io
