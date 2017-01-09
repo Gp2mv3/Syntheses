@@ -20,9 +20,9 @@ else:
 			retransmitsegment(snd.una) 
 			ssthresh=max(cwnd/2,2*MSS) 
 			cwnd=ssthresh 
-		else:
-			dupacks=0 
-			# ack for old segment, ignored
+	else:
+		dupacks=0 
+		# ack for old segment, ignored
 
 Expiration of the retransmission timer: 
 	send(snd.una) # retransmit first lost segment 
