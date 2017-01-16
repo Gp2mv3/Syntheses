@@ -73,14 +73,28 @@ proc {Bridge J A B C D}
 in
    {BridgeAux J nil nil nil nil}
 end
-A
-B
-C
-D
-in
+fun{Win A B C D}
+   local Win2 W in
+      fun{Win2 A B}
+	 case A#B
+	 of carte(N1 C1)#carte(N2 C2) then
+	    if C1-C2 > 0 then B
+	    elseif C1-C2 < 0 then A
+	    else
+	       if A == 1 then A
+	       elseif B == 1 then B
+	       elseif N1 - N2 > 0 then A
+	       else B
+	       end
+	    end
+	 end
+      end
+      W = {Win2 A {Win2 B {Win2 C D}}}
+      if W == A then 1
+      elseif W == B then 2
+      elseif W == C then 3
+      else 4
+      end
+   end
+end
 
-{Bridge {Shuffle {MakeDeck}} A B C D}
-
-
-{Browse {Shuffle {MakeDeck}}}
-{Browse A}
