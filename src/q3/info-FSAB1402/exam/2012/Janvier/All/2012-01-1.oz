@@ -53,25 +53,27 @@ fun {DeleteElementAtIndex List Index}
    end
 end
 
-proc {Bridge J A B C D}
-   proc {BridgeAux J Acc1 Acc2 Acc3 Acc4}
-      case J of nil then
-	 A=Acc1
-	 B=Acc2
-	 C=Acc3
-	 D=Acc4
-      []H1|T1 then
-	 case T1 of H2|T2 then
-	    case T2 of H3|T3 then
-	       case T3 of H4|T4 then
-		  {BridgeAux T4 H1|Acc1 H2|Acc2 H3|Acc3 H4|Acc4}
-	       end
-	    end
+proc{Bridge J A B C D}
+   local L4 in
+      fun{L4 L}
+	 case L
+	 of H1|H2|H3|H4|T then H1|{L4 T}
+	 else
+	    nil
 	 end
-      end	 
+      end
+      A = {L4 J}
+      case J
+      of H|T then B = {L4 T}
+	 case T of H1|T1 then C = {L4 T1}
+	    case T1 of H2|T2 then D = {L4 T2}
+	    else D = nil
+	    end
+	 else C = nil D = nil
+	 end
+      else B = nil C = nil D =nil
+      end
    end
-in
-   {BridgeAux J nil nil nil nil}
 end
 fun{Win A B C D}
    local Win2 W in
