@@ -76,9 +76,9 @@ show: $(FULL)
 release: all
 ifneq (,$(filter $(TYPE),exam test))
 	cd ../../../../../..; python3 ~/git/smartcp/smartcp.py --google-drive -vvvv -s \
-	  quadri=$(QUADRI) -s name=$(NAME) -s OPTION=$(OPTION) -s code=$(CODE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) $(SETSOL) config.yml
+	  quadri=$(QUADRI) -s name=$(NAME) -s option=$(OPTION) -s code=$(CODE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) $(SETSOL) config.yml
 else
-	cd ../../..; python3 ~/git/smartcp/smartcp.py --google-drive -vvv -s \
+	cd ../../..; python3 ~/git/smartcp/smartcp.py --google-drive -vvvvv -s \
 	  quadri=$(QUADRI) -s name=$(NAME) -s option=$(OPTION) -s code=$(CODE) -s type=$(TYPE) -s num=$(NUM) $(SETSOL) config.yml
 endif
 
