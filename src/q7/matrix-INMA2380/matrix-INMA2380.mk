@@ -1,2 +1,4 @@
-COURSE=matrix-INMA2380
+NAME=matrix
+OPTION=INMA
+CODE=2380
 include ../../q7.mk

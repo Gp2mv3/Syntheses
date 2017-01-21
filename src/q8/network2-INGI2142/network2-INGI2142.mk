@@ -1,2 +1,4 @@
-COURSE=network2-INGI2142
+NAME=network2
+OPTION=INGI
+CODE=2142
 include ../../q8.mk

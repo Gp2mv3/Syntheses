@@ -7,9 +7,9 @@
 PDFVIEWER=xdg-open # Default pdf viewer - GNU/Linux
 #PDFVIEWER=open # Default pdf viewer - Mac OS
 ifneq (,$(filter $(TYPE),exam test))
-  MAIN_NAME=${COURSE}-${TYPE}-${YEAR}-${MONTH}-${MINMAJ}
+  MAIN_NAME=${NAME}-${OPTION}${CODE}-${TYPE}-${YEAR}-${MONTH}-${MINMAJ}
 else
-  MAIN_NAME=${COURSE}-${TYPE}
+  MAIN_NAME=${NAME}-${OPTION}${CODE}-${TYPE}
 endif
 
 ALL+=$(MAIN_NAME).pdf
@@ -76,10 +76,10 @@ show: $(FULL)
 release: all
 ifneq (,$(filter $(TYPE),exam test))
 	cd ../../../../../..; python3 ~/git/smartcp/smartcp.py --google-drive -vvvv -s \
-	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) $(SETSOL) config.yml
+	  quadri=$(QUADRI) -s name=$(NAME) -s OPTION=$(OPTION) -s code=$(CODE) -s type=$(TYPE) -s year=$(YEAR) -s month=$(MONTH) -s minmaj=$(MINMAJ) $(SETSOL) config.yml
 else
-	cd ../../..; python3 ~/git/smartcp/smartcp.py --google-drive -vv -s \
-	  quadri=$(QUADRI) -s cours=$(COURSE) -s type=$(TYPE) -s num=$(NUM) $(SETSOL) config.yml
+	cd ../../..; python3 ~/git/smartcp/smartcp.py --google-drive -vvv -s \
+	  quadri=$(QUADRI) -s name=$(NAME) -s option=$(OPTION) -s code=$(CODE) -s type=$(TYPE) -s num=$(NUM) $(SETSOL) config.yml
 endif
 
 add:

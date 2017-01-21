@@ -1,2 +1,4 @@
-COURSE=database-INGI2172
+NAME=database
+OPTION=INGI
+CODE=2172
 include ../../q8.mk

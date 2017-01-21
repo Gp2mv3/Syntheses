@@ -1,2 +1,4 @@
-COURSE=telecom-ELEC1930
+NAME=telecom
+OPTION=ELEC
+CODE=1930
 include ../../q6.mk
