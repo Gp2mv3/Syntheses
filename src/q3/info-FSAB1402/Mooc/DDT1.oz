@@ -1,0 +1,1 @@
+{ForCollect [1 2 3 4 5] proc{$ C X} {C X*X} end R}
