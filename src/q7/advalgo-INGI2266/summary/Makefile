@@ -1,2 +1,2 @@
 TYPE=summary
-include $(BASE_DIR)../algo-INGI2266.mk
+include $(BASE_DIR)../advalgo-INGI2266.mk
