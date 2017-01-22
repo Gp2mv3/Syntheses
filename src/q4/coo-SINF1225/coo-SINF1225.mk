@@ -1,4 +1,4 @@
 NAME=coo
-OPTION=LSINF
+OPTION=SINF
 CODE=1225
 include $(BASE_DIR)../../q4.mk
