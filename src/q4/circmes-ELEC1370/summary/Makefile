@@ -1,2 +1,2 @@
-MAIN_NAME=ELEC1370
-include ../q4.mk
+TYPE=summary
+include ../circmes-ELEC1370.mk
