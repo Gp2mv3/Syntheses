@@ -1,2 +1,4 @@
-COURSE=cl-INGI2263
+NAME=cl
+OPTION=INGI
+CODE=2263
 include $(BASE_DIR)../../q7.mk
