@@ -1,2 +1,2 @@
 TYPE=summary
-include ../opti.mk
+include ../opti-INMA1702.mk
