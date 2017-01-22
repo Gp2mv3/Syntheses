@@ -1,2 +1,2 @@
 TYPE=notes
-include ../network2-INGI2142.mk
+include ../network-INGI2142.mk
