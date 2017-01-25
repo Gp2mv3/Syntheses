@@ -1,2 +1,4 @@
-COURSE=modstoch-INMA2470
+NAME=modstoch
+OPTION=INMA
+CODE=2470
 include ../../q8.mk

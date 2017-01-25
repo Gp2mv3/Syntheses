@@ -42,4 +42,4 @@ show: $(PDF_NAME)
 	$(PDFVIEWER) $(PDF_NAME) 2> /dev/null &
 
 release: all
-	smartcp -v config.yml
+	python3 ~/git/smartcp/smartcp.py --google-drive -v config.yml
