@@ -1,5 +1,8 @@
+///// QUESTION 3 /////
+
 /**
- * Un processus ayant un nom, une capacité de stockage requise, un identifiant de processus (PID), pouvant s'exécuter sur un ordinateur implémentant l'interface ComputerIF.
+ * Un processus ayant un nom, une capacité de stockage requise, un identifiant de processus (PID),
+ * pouvant s'exécuter sur un ordinateur implémentant l'interface ComputerIF.
  * Les PID sont attribués séquentiellement à chaque nouveau processus créé, à partir de 1.
  *
  * @author Jean-Martin Vlaeminck
@@ -16,10 +19,11 @@ public class Process
      * @pre name != null, storage >= 0
      * @post Construit un processus ayant pour nom name, et pour capacité de stockage requise storage.
      */
-    public Process(String name, int storage) {
+    public Process(String name, int storage)
+    {
         this.name = name;
         this.storage = storage;
-        this.pid = nextPid++; // deux opérations d'un coup !
+        this.pid = nextPid++; // deux opérations d'un coup ! :)
     }
 
     /**
@@ -44,8 +48,10 @@ public class Process
      * @pre -
      * @post retourne une description du processus selon le format
      *       <nom du processus> <capacité de stockage requise>
+     *       (format adapté aux méthodes getState de ComputerIF).
      */
-    public String getDescr() {
+    public String getDescr()
+    {
         return name+" "+storage;
     }
 }

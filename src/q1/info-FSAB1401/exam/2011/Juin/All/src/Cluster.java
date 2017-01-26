@@ -4,7 +4,7 @@ import java.io.*;
 /**
  * Une grappe (Cluster) d'ordinateurs formant une ressource commune pour l'exécution de processus.
  *
- * @author O. Bonaventure, Ch. Pecheur
+ * @author O. Bonaventure, Ch. Pecheur, J-M Vlaeminck, S. Binard
  * @version 2016
  */
 public class Cluster
@@ -13,7 +13,11 @@ public class Cluster
         ListNode next;
         ComputerIF elem;
     }
-    public ListNode current; // La tête courrante de la liste des ordinateurs. Les noeuds suivants sont chainés de manière circulaire: la chaine finit toujours par revenir à current.
+    /*
+     * La tête courante de la liste des ordinateurs. Les noeuds suivants sont chainés
+     * de manière circulaire: la chaine finit toujours par revenir à current.
+     */
+    public ListNode current;
     public int count; // nombre d'ordinateur dans le cluster
     /**
      * Constructeur
@@ -24,6 +28,8 @@ public class Cluster
         count=0;
     }
 
+    ///// QUESTION 5 /////
+
     /**
      * @pre -
      * @post le processus p a été ajouté au premmier ordinateur, à partir de la tête de la liste, disposant des ressources nécessaires. La nouvelle tête de liste est le noeud qui suit cet ordinateur. Si aucun ordinateur ne dispose des ressources nécessaires, la tête de la liste est inchangée et une UnavailableException est lancée.
@@ -31,7 +37,7 @@ public class Cluster
     public void addProcess(Process p) throws UnavailableException
     {
         if (current==null) // pas d'ordinateur dans le cluster
-            throw new UnavailableException();
+            throw new UnavailableException("Cluster vide");
         ListNode runner=current;
         if (runner.elem.addProcess(p)) // si on a pu ajouter p à current
         {
@@ -39,22 +45,43 @@ public class Cluster
             return;
         }
         runner=runner.next;
-        while(!runner.elem.addProcess(p) && runner!=current) // tant qu'on n'a pas pu ajouter et qu'on n'a pas bouclé
+        // tant qu'on n'a pas pu ajouter et qu'on n'a pas bouclé
+        while(!runner.elem.addProcess(p) && runner!=current)
             runner=runner.next;
         if (runner==current) // soit on a bouclé : pas d'ordi trouvé
-            throw new UnavailableException();
+            throw new UnavailableException("Pas d'espace disponible");
         current=runner.next; // on a trouvé ; on affecte la nouvelle tête
     }
 
     public void removeProcess(Process p) throws UnavailableException
-    // code non fourni, à compléter
+    // Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
+    {
+        if (current==null) throw new UnavailableException("Cluster vide");
+	ListNode runner=current;
+        if (runner.elem.removeProcess(p)) // ça a marché
+            return;
+        runner=runner.next;
+        while (!runner.elem.removeProcess(p) && runner != current)
+        runner=runner.next;
+        if (runner==current)
+        throw new UnavailableException("Processus non trouve");
+    }
 
-    public void removeAllProcess()
-    // code non fourni, à compléter
+    public void removeAllProcesses()
+    // Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
+    {
+        ListNode runner=current;
+        runner.elem.removeAllProcess();
+        while (runner!=current) {
+            runner.elem.removeAllProcess();
+            runner=runner.next;
+        }
+    }
 
     /**
      * @pre comp != null, comp ne fait pas partie du cluster
-     * @post L'ordinateur comp est ajoutée à la liste des ordinateurs.
+     * @post L'ordinateur comp est ajoutée à la liste des ordinateurs. Le point d'insertion
+     *       est entre current et son suivant.
      */
     public void addComputer(ComputerIF comp)
     {
@@ -73,9 +100,11 @@ public class Cluster
         count++;
     }
 
+    ///// QUESTION 6 /////
+
     /**
      * @pre comp != null
-     * @post L'ordinateur comp a été retiré du cluster, s'il s'y trouvait. Si comp est en tête de liste, la tête de liste passe au noeud suivant, sinon elle est inchangée. Retourne true si comp a été retiré, false sinon.
+     * @post L'ordinateur comp a été retiré du cluster, s'il s'y trouvait. Si comp est en tête de liste, celle-ci passe au noeud suivant, sinon elle est inchangée. Retourne true si comp a été retiré, false sinon.
      */
     public boolean removeComputer(ComputerIF comp)
     {
@@ -118,7 +147,30 @@ public class Cluster
      *       Le nom des ordinateurs sur lesques se trouvent les processus n'est pas sauvegardée. Arrête le programme si une erreur d'I/O se produit.
      */
     public void saveState(String filename)
-    // code non fourni
+    // Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
+    {
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(filename); // throws IOException
+        } catch (IOException e) {
+            System.err.println("Erreur d'ouverture du fichier");
+            System.exit(-1);
+        } if (pw==null) return;
+        ListNode runner=current;
+        pw.print(runner.elem.getState()); // PrintWriter ne jette pas d'exception à l'écriture.
+        runner=runner.next;
+        while (runner!=current) {
+            pw.print(runner.elem.getState());
+            runner=runner.next;
+        }
+        if (pw.checkError()) {
+            System.err.println("Erreur d'écriture du fichier.");
+            System.exit(-2);
+        }
+        pw.close(); // ne jette aucune exception
+    }
+
+    ///// QUESTION 7 /////
 
     /**
      * @pre filename le nom d'un fichier sauvegardé par saveState
@@ -126,14 +178,14 @@ public class Cluster
      */
     public void loadState(String fileName)
     {
-        removeAllProcess();// le cluster a toujours des ordis, mais sans processus
-        BufferedReader bf;
+        removeAllProcesses();// le cluster a toujours des ordis, mais sans processus
+        BufferedReader bf=null;
         try {
             bf = new BufferedReader(new FileReader(fileName)); // throws IOException
             String ligne = bf.readLine(); // throws IOException
             while(ligne != null) {
                 String[] lineTab = ligne.split(" ");
-                Process p = new Process(lineTab[0], Integer.parseInt(lineTab[1])); // garanti sans exception
+                Process p = new Process(lineTab[0], Integer.parseInt(lineTab[1])); // garanti sans exception par les specs
                 try {
                     addProcess(p); // throws UnavailableException
                 } catch(UnavailableException f) {
@@ -149,34 +201,57 @@ public class Cluster
             if (bf!=null) // il faut fermer avant de planter
                 try {
                     bf.close();
-                } catch {}
-            System.exit(-1);
+                } catch (IOException f) {
+                    System.exit(-1);
+                }
         }
     }
-    // code alternatif, mais qui ne ferme pas le fichier en cas d'erreur :
+    /** code alternatif, mais qui ne ferme pas le fichier en cas d'erreur :
+     * @author Sébastien Binard
+     */
     public void loadStateSeb(String filename)
     {
         removeAllProcesses();
-	try {
-	    BufferedReader bf = new BufferedReader(new FileReader(filename));
-	    String str=bf.readLine();
-	    int i;
-	    String[] tab;
-	    while(str!=null) {
-	        tab = str.split(" ");
-		i=Integer.parseInt(tab[1]);
-		addProcess(new Process(tab[0], i));
-		str=bf.readLine();
-	    }
-	    bf.close()
-	} catch (IOException e) {
-	    System.err.println("Erreur d'IO: "+e.getMessage());
-	    System.exit(-1);
-	} catch (UnavailableException e) {
-	    System.err.println("Erreur, capacité du cluster insuffisante: "+e.getMessage());
-	}
+        try {
+            BufferedReader bf = new BufferedReader(new FileReader(filename));
+            String str=bf.readLine();
+            int i;
+            String[] tab;
+            while(str!=null) {
+                tab = str.split(" ");
+                i=Integer.parseInt(tab[1]);
+                addProcess(new Process(tab[0], i));
+                str=bf.readLine();
+            }
+                bf.close();
+        } catch (IOException e) {
+            System.err.println("Erreur d'IO: "+e.getMessage());
+            System.exit(-1);
+        } catch (UnavailableException e) {
+            System.err.println("Erreur, capacité du cluster insuffisante: "+e.getMessage());
+            System.exit(-2);
+        }
     }
 
+    public String toString()
+    {
+        ListNode runner=current;
+        StringBuffer sb=new StringBuffer();
+        sb.append(runner.elem.toString());
+        runner=runner.next;
+        while (runner!=current) {
+            sb.append(runner.elem.toString());
+			runner=runner.next;
+		}
+        return sb.toString();
+    }
+
+    /**
+     * Une exception utilisée lorsqu'une opération ne peut pas être effectuée par manque de ressources.
+     *
+     * @author O. Bonaventure, Ch. Pecheur
+     * @version Dec. 2007
+     */
     public static class UnavailableException extends Exception {
         public UnavailableException(String msg) {
             super(msg);

@@ -27,7 +27,9 @@ public class BasicComputer implements ComputerIF
     /**
      * Voir ComputerIF.addProcess(Process p).
      * @pre p != null, p ne se trouve pas déjà sur cet ordinateur
-     * @post le processus p a été ajouté à cet ordinateur, si aucun processus n'est présent et si p ne demande pas de stockage. Retourne true si le processus a été ajouté, false sinon.
+     * @post le processus p a été ajouté à cet ordinateur, si aucun processus n'est présent
+     *       et si p ne demande pas de stockage. Retourne true si le processus a été ajouté,
+     *       false sinon.
      */
     public boolean addProcess(Process p) {
         if(proc==null && p.getRequiredStorage()==0)
@@ -38,6 +40,8 @@ public class BasicComputer implements ComputerIF
         else
             return false;
     }
+
+    ///// QUESTION 1 /////
 
     /**
      * Voir ComputerIF.removeProcess(Process p).
@@ -67,9 +71,14 @@ public class BasicComputer implements ComputerIF
      */
     public String getState() {
         if (proc != null) {
-	    return proc.getDesc() + "\n";
-	} else {
-	    return "";
-	}
+            return proc.getDescr() + "\n";
+        } else {
+            return "";
+        }
+    }
+
+    public String toString()
+    {
+        return getName()+" :\n"+getState();
     }
 }
