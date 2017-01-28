@@ -1,5 +1,6 @@
 public void addBefore(Song songin, Song songnew) {
     // on verifie que le premier element n est pas la chanson recherchee
+    if (head==null) throw new IllegalArgumentException("Liste vide, methode non applicable"); // pas de meilleure idée pour traiter ce cas.
     if(head.data.equals(songin)) {
         Node newHead = new Node(songnew, head);
         head = newHead;

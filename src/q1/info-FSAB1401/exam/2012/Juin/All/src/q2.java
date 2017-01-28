@@ -13,9 +13,9 @@ public Catalog(String filename) {
         br.close();
     } catch(IOException e) {
         System.err.println("Erreur lors de la lecture du fichier");
-        System.exit(-1);
         if (br != null)
             br.close();
+        System.exit(-1);
     }
 }
 

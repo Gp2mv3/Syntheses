@@ -20,4 +20,3 @@ private class JukeBoxListener implements PlayerListener {
 	}
 }
 
-// utilité du while, sachant que normalement quand endOfSong est appelé, il n'y a plus de chanson en cours ?
