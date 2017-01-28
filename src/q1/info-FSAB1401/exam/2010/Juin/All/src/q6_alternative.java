@@ -1,3 +1,4 @@
+// Version alternative
 public void sauvegarde(String fileName) {
 	PrintWriter pw;
 	try {
@@ -7,9 +8,8 @@ public void sauvegarde(String fileName) {
 		System.exit(-1);
 	}
 	// écrivons ; PrintWriter ne jette pas d'exception lors de l'écriture
-	for(MesureEtendue m : super.mesures)
+	for(MesureEtendue m : mesures)
 		pw.printf("%d:%f\n", m.getPression(), m.getTemperature());
-	
 	// Il est temps de vérifier qu'il n'y a pas eu d'erreur
 	boolean erreurs = pw.checkError();
 	pw.close();
@@ -18,6 +18,4 @@ public void sauvegarde(String fileName) {
 		System.exit(-2);
 	}
 }
-
-// pas sûr de l'utilité du super, vu qu'il n'y a rien d'overridé
 // on aurait pu utiliser println directement, si on avait bien défini toString() ;-)
