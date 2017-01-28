@@ -1,3 +1,4 @@
+///// QUESTION 1 /////
 /**
  * Un digramme, c'est-à-dire une paire de mots.
  */
@@ -12,8 +13,9 @@ public class Digram
 	 */
 	public Digram(String mot1, String mot2)
 	{
-		this.mot1=mot1;
-		this.mot2=mot2;
+		// Pour plus de facilités, on définit un digramme comme contenant deux mots en minuscules.
+		this.mot1=mot1.toLowerCase();
+		this.mot2=mot2.toLowerCase();
 	}
 
 	/**
@@ -41,7 +43,7 @@ public class Digram
 			return ( (this.mot1.equalsIgnoreCase(d.mot1)
 			          && this.mot2.equalsIgnoreCase(d.mot2) )
 			      || (this.mot1.equalsIgnoreCase(d.mot2)
-				  && this.mot1.equalsIgnoreCase(d.mot1) ) );
+				  && this.mot2.equalsIgnoreCase(d.mot1) ) );
 		} else
 			return false;
 	}

@@ -1,3 +1,4 @@
+///// QUESTION 3 /////
 /**
  * Exception lancée lorsque un digramme n'est pas présent dans un DigramStats.
  */
