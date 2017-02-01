@@ -30,8 +30,7 @@ proc{FullAdder X Y Z C S} A B D E F in
 end
 fun{NFullAdder S1 S2}
    fun{Retourne L Acc}
-      case L of H|T then
-	 {Retourne T H|Acc}
+      case L of H|T then {Retourne T H|Acc}
       else Acc
       end
    end
