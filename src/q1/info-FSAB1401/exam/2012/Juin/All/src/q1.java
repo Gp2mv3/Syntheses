@@ -1,6 +1,6 @@
 /**
  * @pre  title != null, author != null, duration > 0
- * @post construit un objet Song
+ * @post Crée une chanson de titre {title}, par {author} et durant {duration} secondes.
  */
 public Song(String title, String author, int duration) {
     this.title    = title;

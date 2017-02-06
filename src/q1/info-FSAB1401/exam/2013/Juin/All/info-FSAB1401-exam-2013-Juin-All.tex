@@ -1,0 +1,170 @@
+\documentclass[fr]{../../../../../../eplexam}
+
+\usepackage{../../../../../../eplcode}
+
+\hypertitle{info-FSAB1401}{1}{FSAB}{1401}{2013}{Juin}
+{Sébastien Binard \and Jean-Martin Vlaeminck}
+{Olivier Bonaventure et Charles Pecheur}[
+    \paragraph{Remarque de l'auteur}
+    Ce document ne contient pas l'énoncé détaillé de l'examen ; il peut cependant être retrouvé à l'adresse suivante
+    \begin{center}
+    \url{https://drive.google.com/drive/folders/0B7aBBTDXcgqpZnZMdWYwS09lSHc}
+    \end{center}
+    Il est néanmoins possible que le Drive disparaisse; dans ce cas, consultez
+    \begin{center}
+    \url{https://drive.google.com/a/student.uclouvain.be/folderview?id=0B5WS2yn5sWqDZFFibHM2d0lQVEE&usp=sharing}
+    \end{center}
+    et cherchez le Drive Q1 dans BACHELIER>Tronc commun>Q1.
+    \newline Le répertoire Github contient également des codes sources fonctionnels pour la majorité des classes de l'examen. Il est néanmoins probable que des erreurs soient encore présentes ; n'hésitez pas à nous les signaler !
+]
+
+\lstset{
+	%title=\lstname, %pour afficher le nom des fichiers, plein d'autres options à rajouter
+	language={Java},
+	tabsize=4,
+	escapechar=\$,
+	breakatwhitespace
+}
+
+%\let\code\lstinline
+\newcommand{\code}[1]{\lstinline{#1}}
+% Gros problème avec la ponctuation après un code
+
+% Question 1
+\section{}
+Écrivez complètement (spécifications et code) la classe \code{Digram}, qui représente une paire de mots. Cette classe doit fournir un constructeur, une méthode \code{equals(Object o)} qui vérifie si deux digrammes sont constitués des mêmes mots et une méthode \code{toString()} retournant le digramme sous forme de texte, par exemple \code{hello-world}.
+
+\begin{solution}
+	Pour ce qui est de la méthode \mbox{\code{equals},} on vérifie d'abord que l'objet \code{other} est bien une instance de la classe Digram avec \code{instanceof} (ce qui vérifie également que \code{other!=null}). On caste alors notre objet (ou plutôt sa référence) en \code{Digram} dans la variable \code{d}. Enfin, on vérifie que les deux objets contiennent les mêmes mots.
+	%FIXME Pas sûr de comment on exprime le cast
+	\lstinputlisting[linerange={2-21,34-60}]{src/Digram.java}
+\end{solution}
+%\newpage
+
+% Question 2
+\section{}
+Dans la classe \code{Dict}, écrivez le corps de la méthode \code{contains} selon la spécification ci-dessous. Basez-vous sur le fait que \strong{le tableau est trié} pour faire une recherche plus efficace. Pour rappel, la classe \code{String} fournit la méthode
+\begin{quotation} %fixme qu'est-ce que ça va donner ? Ok
+	\code{public int compareTo(String other)}
+\end{quotation}
+qui retourne un nombre positif, nul ou négatif selon que la chaine courante est postérieure, égale ou inférieure à \code{other} dans l'ordre alphabétique.
+\begin{lstlisting}
+/**
+ * Teste si un mot est dans le dictionnaire.
+ *
+ * @pre s != null
+ * @post retourne true si s est présent dans le dictionnaire et false sinon.
+ */
+\end{lstlisting}
+
+\begin{solution}
+	Comme le tableau est trié, il est conseillé d'effectuer une \emph{recherche binaire}. Comme la classe \code{Arrays} est importée (grâce au \code{import java.util.*} au début du fichier \code{Dict.java}), on peut utiliser la méthode \code{Arrays.binarySearch()}. Le code est alors particulièrement court.
+	\lstinputlisting[linerange={44-47}]{src/Dict.java}
+	Si la classe \code{Arrays} n'avait pas été incluse, il aurait fallu implémenter une recherche binaire nous-même. Le code suivant montre une telle implémentation (qu'il est toujours bon de connaitre).
+	%FIXME cela a l'air de fonctionner, mais le code n'a pas été testé en profondeur
+	\lstinputlisting[linerange={48-62}]{src/Dict.java}
+\end{solution}
+%\newpage
+
+% Question 3
+\section{}
+Écrivez le code de la classe \code{DigramNotFoundException} selon la spécification ci-dessous. Cette classe doit uniquement redéfinir le constructeur de \code{Exception} qui prend un message en paramètre.
+\begin{lstlisting}
+/**
+ * Exception lancée lorsque un digramme n'est pas présent dans un DigramStats.
+ */
+\end{lstlisting}
+
+\begin{solution}
+	\lstinputlisting[linerange={5-14}]{src/DigramNotFoundException.java}
+\end{solution}
+\newpage
+
+% Question 4
+\section{}
+Dans la classe \code{DigramStats}, écrivez le corps de la méthode \code{remove} selon la spécification ci-dessous. Utilisez les mécanismes d'exception à bon escient. Vous pouvez faire l'hypothèse que tous les digrammes dans la liste ont un compteur positif.
+\begin{lstlisting}
+/**
+ * Enlève un digramme {d}.
+ * @pre d != null
+ * @post Si le digramme {d} était présent dans la liste, son compteur a été diminué de 1. Sinon, une {DigramNotFoundException} est lancée. Le digramme est retirée de la liste si son compteur tombe à zéro.
+ */
+\end{lstlisting}
+
+\begin{solution}
+	On commence par vérifier que la liste n'est pas vide (\code{head!=null}) auquel cas on jette une exception. Puis, on vérifie que le digramme ne se situe pas au début. Sinon, on commence à parcourir la liste.
+
+	\begin{sloppypar}Afin de pouvoir facilement enlever un n\oe{}ud dans la liste, on accède au n\oe{}ud actuel avec \code{current.next}, \code{current} référençant donc le n\oe{}ud précédent. La boucle \code{while} peut se terminer de deux façons : soit on a atteint la fin de la liste (cas où \code{current.next==null}) et on jette une exception car le digramme n'a pas été trouvé ; soit on a atteint le n\oe{}ud contenant le digramme.\end{sloppypar}%underfull box : tant pis, ça va comme ça
+
+	Dans le cas où on trouve le digramme, on décrémente le compteur du n\oe{}ud ou, s'il atteint 0, on enlève le n\oe{}ud de la liste (grâce à \code{current}, cette opération est aisée).
+	\lstinputlisting[linerange={113-138}]{src/DigramStats.java}
+\end{solution}
+\newpage
+
+% Question 5
+\section{}
+Dans la classe \code{DigramStats}, écrivez le corps de la méthode \code{analyze} selon la spécification ci-dessous. Analysez le fichier ligne par ligne et utilisez la méthode \code{splitWords} fournie.
+\begin{lstlisting}
+/**
+ * Ajoute les digrammes du fichier {fileName} aux statistiques.
+ *
+ * @pre filename != null, fileName est un nom de fichier contenant un texte.
+ * @post les digrammes se trouvant dans le fichier fileName ont été ajoutés aux statistiques, selon les règles suivantes:
+ *       - Les mots sont tels que retournés par la méthode {splitWords}.
+ *       - Un digramme est constitué de deux mots consécutifs, quels que soient les caractères d'espace ou de ponctuation qui les séparent. En particulier, le dernier mot d'une ligne et le premier mot de la ligne suivante constituent un digramme.
+ *       - Seuls les digrammes dont les deux mots sont dans le dictionnaire sont pris en compte. Si un mot n'est pas dans le dictionnaire, alors les deux digrammes sont il fait partie sont ignorés.
+ *       En cas d'erreur d'I/O, abandonne la lecture du fichier, émet un message sur {System.err} et retourne.
+ */
+\end{lstlisting}
+
+\begin{solution}
+	% tomorrow ; version Sébastien
+	% Note : il y a un problème dans la page de garde : car la examen doit alors être mise à jour
+	On commence par déclarer notre \code{BufferedReader} en dehors du \code{try-catch}, afin d'y avoir accès par la suite. Dans le \code{try}, on crée notre \code{BufferedReader}, puis on lit la première ligne du fichier dans \code{ligne} ; \code{precedent} nous permettra de mémoriser le dernier mot de la ligne précédente.
+
+	On sépare ensuite la ligne en mots valides grâce à \code{splitWords} et on s'assure que le tableau (et la ligne) n'est pas vide (on passe à la suivante). On commence par vérifier que le dernier mot de la ligne d'avant (\code{precedent}) et le premier mot de la ligne forment un digramme (sont-ils dans le dictionnaire ?), puis on vérifie, pour chaque duo de mots dans \code{tab}, s'ils forment un digramme. Enfin, on mémorise le dernier mot de la ligne dans \code{precedent} et on lit la nouvelle ligne. Ces opérations sont effectuées tant qu'il y a du texte  dans le fichier (la ligne renvoyée par \code{readLine()} est non-\code{null}).
+
+	Enfin, on ferme le fichier. Si une exception a eu lieu lors de la lecture, on affiche un message d'erreur et on retourne.
+
+	Si ce code suffit dans le cadre de l'examen, il n'est pas assez sûr dans la vie réelle: si une erreur a lieu lors de la lecture d'une ligne après l'ouverture du fichier, celui-ci ne sera pas refermé! Il faut donc, même après exécution du \code{catch}, fermer le fichier, et pour cela on utilise le bloc \code{finally}, qui s'exécutera à tous les coups. Il faut néanmoins vérifier que \code{bf!=null} (le fichier n'a pas été ouvert), et \code{close} peut envoyer une \code{IOException}.
+	\lstinputlisting[linerange={32-66}]{src/DigramStats.java}
+\end{solution}
+%\newpage
+
+% Question 6
+\section{}
+Dans la classe \code{DigramStatsWithTotals}, écrivez le corps du constructeur et de la méthode \code{add}, qui redéfinissent et étendent leurs correspondants dans \code{DigramStats}. Utilisez l'héritage à bon escient.
+
+\begin{solution}
+	Le constructeur appelle le constructeur de sa classe parente en lui passant le dictionnaire \code{dict}, et initialise ses propres variables membres à 0.
+
+	La méthode \code{add}, elle, appelle la méthode \code{add} parente, qui se charge d'ajouter \code{d} dans la liste, puis lui demande le nombre de \code{Digram} égaux à \code{d}. Si ce nombre est égal à 1, alors le digramme n'était pas présent dans la liste avant, et \code{nDistinctDigrams} est augmenté. \code{nDigrams} est augmenté dans tous les cas.
+	\lstinputlisting[linerange={14-19,25-30}]{src/DigramStatsWithTotals.java}
+\end{solution}
+\newpage
+
+% Question 7
+\section{}
+Dans la classe \code{Main}, écrivez le corps de la méthode \code{main} selon la spécification ci-dessous. Utilisez la classe \code{DigramStatsWithTotal} et sa méthode \code{print} pour imprimer les résultats.
+\begin{lstlisting}
+/**
+ * Compte et imprime les digrammes dans une série de fichiers de texte.
+ *
+ * @pre {args} contient des noms de fichiers contenant du texte.
+ * @post a imprimé sur {System.out} les statistiques de digrammes pour l'ensemble des fichiers dont les noms sont dans {args}.
+ */
+\end{lstlisting}
+
+\begin{solution}
+	% fixme : la virgule après DICTIONARY_FILE est accolée, et le tout dépasse de la marge de droite. Réparé, mais ne pas supprimer les liens.
+	% cf : http://tex.stackexchange.com/questions/64750/avoid-line-breaks-after-lstinline
+	% http://tex.stackexchange.com/questions/281383/linebreak-with-lstinline
+	% http://tex.stackexchange.com/questions/94604/enforce-a-line-break-inside-lstinline
+	% sloppy et fussy
+	% http://www.latex-community.org/forum/viewtopic.php?f=5&t=578
+	\begin{sloppypar}
+	On crée un \code{DigramStatsWithTotals} en lui donnant le dictionnaire créé à partir du fichier \code{DICTIONARY_FILE}, présent dans les variables de \code{Main}. Puis, si il y a des fichiers passés en argument, pour chacun d'eux, on le soumet à l'analyse de notre \code{DigramStatsWithTotals}. Enfin, on imprime les statistiques grâce à \code{print}, sur la sortie standard.\end{sloppypar}
+	\lstinputlisting[linerange={16-25}]{src/Main.java}
+\end{solution}
+
+\end{document}
