@@ -1,5 +1,6 @@
 /**
- * @pre  {o} est de type {Mesure}
+ * Retourne une description de la mesure.
+ * @pre -
  * @post retourne un {String} de la forme 
  * Pression : press Pa ; Temperature : temp C
  */

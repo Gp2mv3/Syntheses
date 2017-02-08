@@ -1,4 +1,3 @@
-local
    fun {Prems N Dec}
       if Dec >= N then true
       elseif (N mod Dec) == 0 then false
@@ -10,4 +9,3 @@ in
    else
       {Prems N 2}
    end
-end

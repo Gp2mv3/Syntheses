@@ -6,7 +6,7 @@ public void sauvegarde(String fileName) {
             pw.printf("%d:%f\n", m.getPression(), m.getTemperature());
     } catch(IOException e) {
         System.err.println("Erreur lors de l'ecriture du fichier");
-        System.exit(1);
+        System.exit(-1);
     } finally {
         if(pw != null)
             pw.close();
