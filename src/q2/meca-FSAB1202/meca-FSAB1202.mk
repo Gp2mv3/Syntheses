@@ -1,2 +1,4 @@
-COURSE=meca-FSAB1202
+NAME=meca
+OPTION=FSAB
+CODE=1202
 include ../../q2.mk

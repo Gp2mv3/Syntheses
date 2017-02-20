@@ -1,8 +1,8 @@
 /**
  * @pre  m != null
- * @post memorise dans la station meteo la mesure m. Decale toutes
- *       les mesures memorisees vers l'indice suivant et 
- *       elimine la derniere.
+ * @post mémorise dans la station météo la mesure m. Décale toutes
+ *       les mesures mémorisées vers l'indice suivant et
+ *       élimine la dernière.
  */
 public void addMesure(MesureEtendue m)
 

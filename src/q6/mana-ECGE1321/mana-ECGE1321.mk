@@ -1,2 +1,4 @@
-COURSE=mana-ECGE1321
+NAME=mana
+OPTION=ECGE
+CODE=1321
 include $(BASE_DIR)../../q6.mk

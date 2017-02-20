@@ -1,3 +1,3 @@
 SOL=none
-MINMAJ=
+MINMAJ=All
 include ../Mars.mk

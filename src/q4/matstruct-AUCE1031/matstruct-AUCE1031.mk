@@ -1,2 +1,4 @@
-COURSE=matstruct-AUCE1031
+NAME=matstruct
+OPTION=AUCE
+CODE=1031
 include $(BASE_DIR)../../q4.mk
