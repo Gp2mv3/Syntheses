@@ -1,2 +1,2 @@
 YEAR=2016
-include ../../../exam.mk
+include ../../../test.mk
