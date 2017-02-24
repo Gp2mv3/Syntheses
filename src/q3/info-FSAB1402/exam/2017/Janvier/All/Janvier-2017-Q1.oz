@@ -11,7 +11,7 @@ end
 fun{Apex LL}
    local
       N={Length LL}
-      fun{Check1 LL M} %Vérifie si {Incorpore L_k L_{k-1}} (0<=k<=M)
+      fun{Check1 LL M} %Verifie si {Incorpore L_k L_{k-1}} (0<=k<=M)
 	 if M==0 then true
 	 else
 	    if {Incorpore {Nth LL M+1} {Nth LL M}} then  {Check1 LL M-1}
@@ -19,7 +19,7 @@ fun{Apex LL}
 	    end
 	 end
       end
-      fun{Check2 LL M} %Vérifie si {Incorpore L_{k-1} L_k} (M<k<=N-1)
+      fun{Check2 LL M} %Verifie si {Incorpore L_{k-1} L_k} (M<k<=N-1)
 	 if M==N-1 then true
 	 else
 	    if {Incorpore {Nth LL M+1} {Nth LL M+2}} then  {Check2 LL M+1}
@@ -27,8 +27,8 @@ fun{Apex LL}
 	    end
 	 end
       end
-      fun{ApexAux LL Q Res} % Vérifie si L_Q est un apex 
-	 if Q==N then       % Res est l'apex déjà trouvé (nil sinon)
+      fun{ApexAux LL Q Res} % Verifie si L_Q est un apex 
+	 if Q==N then       % Res est l'apex deja trouve (nil sinon)
 	    if Res==nil then false
 	    else Res
 	    end
