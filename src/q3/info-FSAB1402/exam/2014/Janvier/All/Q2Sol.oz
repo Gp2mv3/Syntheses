@@ -8,7 +8,7 @@ local Nil Cons MMap ML1 ML2 N Fun T1 T2 T3 T4 M1 M2 M3 I1 I2 I3 in
    
    Cons = proc{$ A B R}
 	     local T in
-		T = A|B
+		T = '|'(A B)
 		{NewCell T R}
 	     end
 	  end
@@ -16,11 +16,11 @@ local Nil Cons MMap ML1 ML2 N Fun T1 T2 T3 T4 M1 M2 M3 I1 I2 I3 in
 	     local T1 T2 T3 in
 		T1 = @ML
 		case T1
-		of H|MT then
+		of '|'(H MT) then
 		   {F H T2}
 		   {MMap MT F T3}
 		   {Cons T2 T3 R}
-		[] nil then
+		else 
 		   {Nil R}
 		end
 	     end
