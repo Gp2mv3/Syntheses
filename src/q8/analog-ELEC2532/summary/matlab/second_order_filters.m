@@ -23,7 +23,8 @@ for i = 1:length(zeta)
     legend_labels{i} = sprintf('\\zeta = %5.3f', zeta(i));
 end
 
-figure()
+fig = figure()
+set(fig, 'Position', [0 0 600 250])
 h = semilogx (w ,20*log10(mag));
 set(h ,'LineWidth', 2.0);
 grid on;
@@ -36,7 +37,8 @@ legend(legend_labels);
 matlab2tikz('../figures/2nd_order_filter_mag.tex')
 close all;
 
-figure()
+fig = figure()
+set(fig, 'Position', [0 0 600 250])
 h = semilogx(w, phs);
 set(h ,'LineWidth', 2.0);
 grid on;
@@ -49,7 +51,8 @@ legend(legend_labels);
 matlab2tikz('../figures/2nd_order_filter_phase.tex')
 close all;
 
-figure()
+fig = figure()
+set(fig, 'Position', [0 0 600 250])
 h = plot(t, steps);
 set(h ,'LineWidth', 2.0);
 grid on;
