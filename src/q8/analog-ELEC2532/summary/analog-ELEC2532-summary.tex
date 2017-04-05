@@ -754,7 +754,7 @@ In this also interesting to note that
 \begin{myrem}
     Note that a switched-capacitor has the effect of \emph{sampling} the
     voltage at its input. We thus need to pay attention to aliasing to 
-    avoid, for example, folding noise in our baseband.!
+    avoid, for example, folding noise in our baseband!
 \end{myrem}
 
 \begin{figure}[ht]
@@ -788,7 +788,164 @@ In this also interesting to note that
     \label{fig:switched-capacitor}
 \end{figure}
 
-\part{Voltage references}
+\part{Voltage and current references}
+Ideally, we would like voltage and current references to be as independent as
+possible from
+\begin{enumerate}
+    \item the supply voltage $V_{CC}$ ;
+    \item the temperature $T$.
+\end{enumerate}
+This part aims evaluating the performance of different architectures of
+voltage and current references.
+
+The reference for this part is~\cite[section~4.4]{gray}.
+
+\section{Current reference}
+\subsection{$V_{CC}$ reference}
+\subsubsection{Current mirror}
+The left part of figure~\ref{fig:current-mirror-widlar} shows an NPN current
+mirror. This simple circuit produces a current $I_{OUT}$ given by
+\[ I_{OUT} \approx I_{IN} = \frac{V_{CC}-V_{BE,1}}{R}. \]
+Let's compute the sensitivity of $I_{OUT}$ to $V_{CC}$. Starting from the
+definition of sensitivity, we have
+\[ S^{I_{OUT}}_{V_{CC}} = \fpart{I_{OUT}}{V_{CC}}\frac{V_{CC}}{I_{OUT}} = \frac{V_{CC}}
+{V_{CC}-V_{BE,1}} \approx 1 \]
+where the last step step assumes $V_{CC} \gg V_{BE,1}$. We see that the output
+current of the mirror current is strongly dependent from the supply voltage: the
+sensitivity to $V_{CC}$ is 100\%. A good current reference should have a sensitivity
+to the supply voltage in the order of 1\%.
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture} \draw
+        (0,0) to[Tnpn, name=q1, mirror, l=$Q_1$] (0,2)
+        (q1.C) to[R, l=$R$, i<_=$I_{IN}$] ($(q1.C)+(0,2)$) node[vcc] {$V_{CC}$}
+        (q1.E) node[ground] {}
+        (q1.B) |- (q1.C)
+
+        (2,0) to[Tnpn, name=q2, l=$Q_2$] (2,2)
+        (q2.B) -- (q1.B)
+        (q2.E) node[ground] {}
+        ($(q2.C)+(0,0.5)$) to[short, i=$I_{OUT}$] (q2.C)
+
+        (6,0) to[Tnpn, name=r1, mirror, l=$Q_1$] (6,2)
+        (r1.C) to[R, l=$R_1$, i<_=$I_{IN}$] ($(r1.C)+(0,2)$) node[vcc] {$V_{CC}$}
+        (r1.E) node[ground] {}
+        (r1.B) |- (r1.C)
+
+        (8,0) to[Tnpn, name=r2, l=$Q_2$] (8,2)
+        (r2.B) -- (r1.B)
+        (r2.E) to[R, l=$R_2$] ($(r2.E)-(0,2)$) node[ground] {}
+        ($(r2.C)+(0,0.5)$) to[short, i=$I_{OUT}$] (r2.C)
+        ;
+    \end{tikzpicture}
+    \caption{On the left, a simple BJT current source. On the right, a Widlar
+    source. Note that these circuits can also be implemented using MOS transistors.}
+    \label{fig:current-mirror-widlar}
+\end{figure}
+
+\subsubsection{Widlar source}
+A Widlar source (see the right part of figure~\ref{fig:current-mirror-widlar})
+improves the supply voltage sensitivity of its output current.
+$I_{OUT}$ is given by\footnote{This is easy to derive knowing that the collector current
+$I_C = I_s(e^{V_{BE}/V_T}-1) \approx I_se^{V_{BE}/V_T}$.}
+\[ I_{OUT} \approx \frac{V_T}{R_2}\ln\frac{I_{IN}}{I_{OUT}}. \]
+To compute $S^{I_{OUT}}_{V_{CC}}$, we take the derivative with respect to $V_{CC}$
+of each side of the above equation
+\[
+    \fpart{I_{OUT}}{V_{CC}} = \frac{V_T}{R_2}\fpart{}{V_{CC}}\left(\ln{
+    \frac{I_{IN}}{I_{OUT}}}\right).
+\]
+Developing this expression leads to
+\[ S^{I_{OUT}}_{V_{CC}} = \frac{1}{1+\frac{I_{OUT}R_2}{V_T}}S^{I_{IN}}_{V_{CC}} \]
+where $S^{I_{IN}}_{V_{CC}} \approx 1$.
+\begin{myexem}
+    Consider a Widlar source with $I_{IN} = \SI{1}{\milli\ampere}$, $I_{OUT} =
+    \SI{5}{\micro\ampere}$ and $R_2 = \SI{27.4}{\kilo\ohm}$. In this case,
+    $S^{I_{OUT}}_{V_{CC}} \approx 0.16$, this is already 6 times better than the
+    basic current mirror. Generally speaking, a Widlar source is 5 to 10 times
+    less sensitive to supply voltage than a current mirror.
+\end{myexem}
+
+\subsection{Other voltage standards}
+Even though Widlar current sources offer better performance than simple current
+mirrors in term of current sensitivity to supply voltage, they are still not adequate
+for many types of analog circuits. Much lower sensitivity can be obtained by causing
+the bias currents in the circuits to depend on a voltage standard other than the
+supply voltage, for example, on $V_{BE}$ or $V_{TH}$, $V_T$ or the breakdown
+voltage of a Zener diode. Each of these standards can be used to reduce supply
+sensitivity. The drawback of the three first afermentioned standards, however, is
+that they are temperature dependent:
+\begin{itemize}
+    \item $V_{BE}$ and $V_{TH}$ have a temperature coefficient of $\approx 1-\SI{2}
+    {\milli\volt\per\degree}$ ;
+    \item $V_T$ has a temperature coefficient of $k/q \approx \SI{86}{\micro\volt\per
+    \degree}$.
+\end{itemize}
+The Zener diode has the disavantage that at least 7 to \SI{10}{\volt} of supply
+voltage are required because standard integrated-circuit processes produce a
+minimum breakdown voltage of about \SI{6}{\volt}.
+
+\subsubsection{$V_{BE}$ or $V_{TH}$ reference}
+The schematic of a base-emitter referenced current source is presented in
+figure~\ref{fig:vbe-ref-current-source}. Assuming that transistor $Q_2$
+supply enough current into $R_2$ so that a current flow in $Q_1$, we have
+\[ V_{BE,1} = V_T\ln{\frac{I_{IN}}{I_{S1}}}. \]
+If we neglect base currents, $I_{OUT}$ is equal to the current flowing through
+$R_2$, that is
+\[ I_{OUT} = \frac{V_{BE,1}}{R_2} = \frac{V_T}{R_2}\ln{\frac{I_{IN}}{I_{S1}}}. \]
+Again, differentiating w.r.t $V_{CC}$ on both sides and rearranging a bit, we get
+\[ S^{I_{OUT}}_{V_{CC}} = \frac{V_T}{I_{OUT}R_2}S^{I_{IN}}_{V_{CC}}
+= \frac{V_T}{V_{BE(on)}}S^{I_{OUT}}_{V_{CC}}. \]
+Assuming that $V_{CC} \gg 2V_{BE(on)}$, we have again that $S^{I_{OUT}}_{V_{CC}}
+\approx 1$. With $V_{BE(on)} = \SI{0.7}{\volt}$,
+\[ S^{I_{OUT}}_{V_{CC}} \approx 0.037 \]
+which is again more than 4 times better than what we had with Widlar sources.
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture} \draw
+        (0,0) to[Tnpn, name=r1, mirror, l=$Q_1$] (0,2)
+        (r1.C) to[R, l=$R_1$, i<=$I_{IN}$] ($(r1.C)+(0,3)$) node[vcc] {$V_{CC}$}
+        (r1.E) -- (0,-1) -- (1,-1) node[ground] -- (2,-1)
+        to[R, l=$R_2$] (2,1)
+        (r1.B) -- (2,1)
+        to[Tnpn, name=r2, l=$Q_2$] (2,3)
+        (r2.B) -- ($(r1.C)+(0,0.22)$)
+        ($(r2.C)+(0,0.5)$) to[short, i=$I_{OUT}$] (r2.C)
+        ;
+    \end{tikzpicture}
+    \caption{Base-emitter referenced current source. The same circuit can be
+    implemented using MOS transistors (in this case it's called a threshold-referenced
+    current course.}
+    \label{fig:vbe-ref-current-source}
+\end{figure}
+
+\subsubsection{$V_{BE}$ or $V_{TH}$ self-biasing reference}
+Power supply sensitivity can be greatly reduced by the use of self-biasing
+circuits. The principle behind this technique is illustrated in
+figure~\ref{fig:self-biasing-principle}. In a nutshell, the idea is to put
+two constraints on the currents:
+\begin{enumerate}
+    \item Assuming the current mirror has unity gain, $I_{IN} = I_{OUT}$ ;
+    \item The current source puts another constraints on $I_{IN}$ and
+    $I_{OUT}$ of the same for as the one imposed by the base-emitter reference
+    current source for example.
+\end{enumerate}
+The operating point must then be at the intersection of the two constraints
+(see right part of figure~\ref{fig:self-biasing-principle}). There always
+exists two possible operating point, a ideally unstable one when no current
+is flowing in the circuit (point $B$) and a stable one (point $A$). In
+practice, however, point $B$ is not unstable and the start-up circuit must
+be used to avoid the circuit to stay at this point.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/self-biasing-principle.png}
+    \caption{Principle of a self-biased reference and determination of the
+    operating point.}
+    \label{fig:self-biasing-principle}
+\end{figure}
 
 \part{DAC}
 
