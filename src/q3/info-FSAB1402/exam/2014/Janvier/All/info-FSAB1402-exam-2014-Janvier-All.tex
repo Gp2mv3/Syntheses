@@ -1,0 +1,195 @@
+\documentclass[fr]{../../../../../../eplexam}
+\usepackage{../../../info-FSAB1402-exam}
+
+\usepackage{../../../../../../eplcode}
+
+\DeclareMathOperator{\pgcd}{PGCD}
+
+\hypertitle[']{Informatique}{3}{FSAB}{1402}{2014}{Janvier}
+{Louis Devillez \and Grégoire van Oldeneel}
+{Peter Van Roy}
+
+\lstset{language={Oz},morekeywords={for,do}}
+
+\newcommand{\st}{\mathrm{ST}}
+\newcommand{\ce}{\mathrm{CE}}
+\newcommand{\mozart}{Mozart}
+
+\section{Question 1 : Programmation déclarative (5 pts)}
+Pour cette question il faut écrire un programme déclaratif. Pour que le programme soit lisible, il est impératif de suivre les deux consignes suivantes:
+\begin{itemize}
+	\item Toute fonction ou procédure doit être accompagnée par sa spécification: une explication précise des arguments donnés et du résultat calculé.
+	\item Chaque fonction ou procédure récursive doit réaliser une seule boucle. Si on fait plusieurs boucles dans une même fonction, le nombre d'arguments augmente beaucoup au moins deux  arguments en plus par boucle) et le corps de la fonction devient beaucoup plus compliqué (il y a une masse de conditionnels (\lstinline|if| et \lstinline|case|) imbriqués)
+\end{itemize}
+
+Chaque absence de spécification et chaque boucle en trop dans une fonction donnera lieu à une pénalité d'un point (sur 5). Voici le programme qu'il faut écrire:
+\begin{itemize}
+	\item Beaucoup de vous connaissent la fonction \lstinline|Flatten|, qui transforme une liste imbriquée en une liste plate (sans élément qui est une liste). Pour cette question vous allez définir une fonction qui fait l'inverse.
+	\item Définissez la fonction \lstinline|Unflatten|. L'appel \lstinline|{Unflatten L}| avec une liste $L = [a_0\ a_1\ \ldots\ a_{n-1}]$ dont les éléments sont des entiers ou des atomes, renvoie une nouvelle liste \lstinline|M| qui peut contenir des listes. La transformation de \lstinline|L| en \lstinline|M| se fait dans l'ordre des éléments de \lstinline|L| et suit les trois règles suivantes:
+	\begin{enumerate}
+		\item La sous séquence $k\ a_1\ a_2 \ldots _k$ est en transformée en $[a_1\ a_2 \ldots a_k]$. Ici, k est un entier non-négatif qui donne le nombre d'éléments consécutifs à traiter.
+		\item L'atome a est transformé en a (il est inchangé)
+		\item Les trois règles sont appliquées récursivement. C'est-à-dire, la même transformation est faite pour chaque sous-séquence $a_1\ a_2 \ldots a_k$
+	\end{enumerate}
+	\item Voici quelques exemples d'exécution:
+	\subitem \lstinline|{Unflatten [a b c]}| renvoie \lstinline|[a b c]|.
+	\subitem \lstinline|{Unflatten [a 2 b c d]}| renvoie \lstinline|[a [b c] d]|.
+	\subitem \lstinline|{Unflatten [a 5 b 2 c d e i o p]}| renvoie \lstinline|[a [b [c d] e] i o p]|.
+	\subitem \lstinline|{Unflatten [3 2 1 a]}| renvoie \lstinline|[[[[a]]]]|.
+\end{itemize}
+	N'hésitez pas à définir des fonctions auxiliaires pour simplifier au maximum vos définitions. Pour chaque fonction auxiliaire il faut donner la spécification. Si vos fonctions auxiliaires ne font pas partie du système Mozart vous devez donner leurs définitions dans votre réponse.
+	Faites attention à ce que chaque fonction et procédure soit déclarative et récursive terminale (aucune cellule ne sera tolérée !). Essayez de les définir la plus simplement possible et de les écrire avec une belle indentation pour faciliter la lecture. Attention à la syntaxe ! Toute erreur de syntaxe sera sévèrement pénalisée.
+
+\begin{solution}
+
+		\lstinputlisting{Jan2014.oz}
+
+\end{solution}
+
+\section{Question 2 : Sémantique (5 pts)}
+Voici un petit programme:
+
+	\lstinputlisting{Q2.oz}
+
+Ce programme montre comment implémenter des listes qui peuvent être modifiée avec l'affectation multiple. Répondez aux questions suivantes:
+\begin{itemize}
+	\item Qu'est-ce qui est affiché quand on exécute ce programme ?
+	\item Donnez la traduction de ce programme en langage noyau. Attention à donner une traduction complète !
+	\item Donnez les environnements contextuels des quatre procédures dans cette traduction.
+	\item Donnez quelques pas d'exécution de la machine abstraite pour bien montrer les choses suivantes:
+	\subitem La création, la lecture et l'affectation d'une cellule.
+	\subitem La définition et l'appel d'une procédure. Qu'est est l'environnement juste avant chaque appel et l'environnement quand on est à l'intérieur de la procédure juste avant l'exécution de son corps ?
+	\item Bonus. La fonction \lstinline|MMap| n'est pas récursive terminale. Est-ce que vous pouvez la modifier pour la rendre récursive terminale.
+\end{itemize}
+
+\begin{solution}
+	\begin{enumerate}
+		\item 
+		\begin{lstlisting}
+75
+		\end{lstlisting}
+		\item
+	\lstinputlisting{Q2Sol.oz}
+		\item Environnement contextuel:
+		\subitem Nil :$\{ \}$
+		\subitem Cons :$\{ \}$
+		\subitem MMap :$\{MMap \rightarrow mmap,Cons \rightarrow cons,Nil \rightarrow nil \}$
+		\subitem Fun :$\{N \rightarrow n \}$
+		
+		\item Machine abstraite (attention il faut utiliser le code donné, ici ce n'est qu'un exemple)
+		\begin{enumerate}
+			\item
+			
+			
+			$(\{[(\{NewCell\ A\ C\},\{A \rightarrow a,X \rightarrow x,C \rightarrow c\}),\dots ]\},\{a = 1,c,x\},\{\})$
+			
+			$(\{(X = @C +1,\{A \rightarrow a,C \rightarrow c,X \rightarrow x\})\dots ]\},\{a = 1,c = \xi,x\},\{c:a\})$
+			
+			$(\{[(C := X,\{A \rightarrow a,C \rightarrow c,X\rightarrow x\})\dots ]\},\{a = 1,c = \xi,x =2\},\{c:a\})$
+			
+			$(\{[\dots ]\},\{a = 1,c = \xi,x =2\},\{c:x\})$
+			
+			\item
+			$(\{[(F1 = proc\{\$\text{ }X\text{ }R\}R = A + X end,\{A \rightarrow a,F1 \rightarrow f1, B \rightarrow b \}),\dots ]\},\{a = 1,f1\},\{\})$
+			
+			$(\{[(\{F1\text{ }10\text{ }B\},\{A \rightarrow a,F1 \rightarrow f1,B \rightarrow b\}),\dots ]\},\{a = 1,f1 = (proc\{\$\text{ }X\text{ }R\}R = A + X end, \{A \rightarrow a\}),b\},\{\})$
+			
+			$(\{[\dots ]\},\{a = 1,f1 = (proc\{\$\text{ }X\text{ }R\}R= A + X end, \{A \rightarrow a\}),b = 11\},\{\})$
+			
+			\item
+				\lstinputlisting{Q2Bonus.oz}
+	\end{enumerate}
+\end{enumerate}
+\end{solution}
+
+\section{Question 3 : Concepts (5 pts)}
+Définissez chacun des concepts suivants avec le plus de précision possible. Pour chaque structure de donnée expliquez l'ensemble d'opérations de base soutenues par la structure. Pour chaque concept donnez un fragment de programme qui montre le concept à bon escient.
+\begin{itemize}
+	\item La complexité temporelle avec la notation grand O
+	\item Un arbre binaire ordonné. Dans ta définition, donnez la règle de grammaire qui définit un arbre binaire.
+	\item La portée d'une occurrence d'un identificateur
+	\item Un environnement contextuel
+	\item Le non-déterminisme
+\end{itemize}
+
+\begin{solution}
+	\begin{itemize}
+		\item Complexité temporelle avec la notation grand O: On dit que la complexité temporelle est $O(g(n))$ si il existe C appartenant à R tel que: $ f(n) \leq Cg(n)$. C'est-à-dire que g(n) est une approximation pessimiste de f(n)p à une facteur près. C'est la complexité du pire cas.
+		
+		Exemple:
+\begin{lstlisting}
+declare
+fun{CreateL N}
+   local
+      fun{Cl N Acc}
+         if N == 0 then Acc
+         else {Cl N-1 N|Acc}
+         end
+      end
+   in
+      {Cl N nil}
+   end
+end
+{Browse {CreateL 10}}
+\end{lstlisting}
+est de complexité $O(n)$
+\item Arbre binaire ordonné:
+Un arbre est composé d'un nœud (record) ou d'une feuille (leaf). Dans un arbre binaire, chaque nœud possède 2 branches. L'arbre est dit ordonné si, pour chaque nœud, la clef du sous arbre de gauche(respectivement droite) est inférieur (respectivement supérieur) à la clef du noeud.
+
+Grammaire:
+\begin{lstlisting}
+<Tree> ::= leaf
+         |tree(<Value>1 <Value>2 <Tree>1 <Tree>2 )
+\end{lstlisting}
+
+Exemple:
+\begin{lstlisting}
+declare
+Tree=btree(key:7 value:7 left:btree(key:5 value:5 right:leaf left:leaf)
+			 right:btree(key:8 value:8 right:leaf left:leaf)
+  	  )
+\end{lstlisting}
+
+\item Portée d'une occurrence d'un identificateur: C'est la région de programme dans laquelle l'identificateur est lié à une certaine variable. Elle peut être contrôlée par l'instruction \lstinline|local <x> in <s> end|. Dans ce cas, la portée est dite lexicale ou statique.
+
+Exemple:
+\begin{lstlisting}
+local X in
+   X=1
+   local X in X = 2 {Browse X} end
+   {Browse X}
+end
+\end{lstlisting}
+
+
+\item Environnement contextuel d'une procédure: Identificateurs utilisés dans le corps de la procédure qui ne sont pas des arguments formels de la procédure et qui ne sont pas non plus définis dans le corps de la procédure.
+
+Exemple:
+\begin{lstlisting}
+declare
+proc {Count N} %(a)
+   local
+      proc {CountFrom I}
+         if I=<N then {Browse I} {CountFrom I+1} end
+      end
+   in
+      {CountFrom 1}
+   end
+end
+\end{lstlisting}
+
+L'environnement contextuel de \lstinline|CountFrom| est $\{N \rightarrow n\}$
+
+\item: Non-déterminisme: propriété d'un programme qui peut renvoyer des résultats différents pour des exécutions avec les mêmes paramètres. Le non déterminisme est présent lorsque le système fait des choix lors de l'exécution même lorsque les résultats sont les mêmes.
+
+Exemple:
+\begin{lstlisting}
+declare
+X={NewCell 0}
+thread X:=1 end
+thread X:=2 end
+{Browse @X}
+\end{lstlisting}
+	\end{itemize}
+\end{solution}
+\end{document}

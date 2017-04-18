@@ -75,7 +75,7 @@ function subdirectory {
 function mk {
     mk=$dir/$name.mk
     if ! [ -f $mk ]; then
-        sed "s/quadri/$quadri/g; s/name/$name/g" ./templates/mk.mk >> $mk
+        sed "s/quadri/$quadri/g; s/name/$short/g; s/option/$option/g; s/code/$code/g" ./templates/mk.mk >> $mk
     fi
 }
 
@@ -180,7 +180,10 @@ sigle=$3
 code=$4
 dir="src/q$1/$2-$3$4"
 quadri=$1
-name=$2-$3$4
+short=$2
+option=$3
+code=$4
+name=$short-$option$code
 ext=$5
 sol=$6
 year=$7

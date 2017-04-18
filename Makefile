@@ -4,7 +4,7 @@ all:
 
 # same but also copy to the destination
 release:
-	cd src; smartcp -v -qq -x "make all" config.yml
+	cd src; python3 ~/git/smartcp/smartcp.py --google-drive -v -qq -x "make all" -s quadri=2 config.yml
 
 # run make clean for all synthèse
 clean:
