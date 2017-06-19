@@ -28,11 +28,13 @@
 \usepackage{qtree}
 
 \hypertitle{Secure Electronic Circuits and Systems}{8}{ELEC}{2760}
-{Benoît Legat}
+{Benoît Legat \and Gaëtan Cassiers}
 {François-Xavier Standaert}
 
 \paragraph{Discussion link}
 \url{http://www.forum-epl.be/viewtopic.php?t=13109}
+
+\part{Notes}
 
 \section{Introduction}
 \paragraph{Discussion link}
@@ -303,6 +305,7 @@ we can get the input and output of each S-box and attack it to find the part of 
 SR becomes $8 \cdot 2^6$.
 
 \subsubsection{Attack on DES with no key schedule}
+\label{sec:slide-attack}
 If the same key was used for each round, we could use a slide attack.
 Let $N_R$ be the number of rounds, $k$ be the same key used for each round and $R_k$ be one round (i.e. $\DES_k(x) = R_k^{N_R}(x)$).
 
@@ -996,5 +999,271 @@ We see that on the contrary to slide channels attacks, here we like diffusion.
 %
 % In space, duplicate circuits and compare.
 % But if error is done at comparison ? :/
+
+\part{Final Quizz}
+
+\section{Lecture 2}
+\subsection{Q3 Express $Adv^{CBC}_A$ in function of $Adv_A^{1PRG}$
+    if the only possible attack considered by the adversary is a collision attack.
+Can you say CBC is a secure encryption mode? Why?}
+Assuming each block is independent, the probability of a collision (ie two outputs of the
+PRP are the same) is approximately $q^2/2^{n+1}$ (birthday attack), for $q$ blocks.
+Such a collision allows to recover the XOR of two plaintext blocks.
+
+Since this attack has a success probability that is a negligible function of $n$
+(when $q$ is a polynomial function of $n$), it is not a threat to the security of the
+CBC mode.
+
+\subsection{Q4 Express $Adv_1^{PRP}$ in function of $Adv^{1PRF}_A$
+based on Luby-Rackoff theorem. Is the bound tight (i.e. is there an attack matching this bound)?}
+For an attack whith $q$ choosen plaintexts and a PRF over $n$ bits (thus PRP over $2n$ bits):
+\[Adv_A^{PRP} \le 3 Adv_A^{1PRF} + \frac{q^2}{2^{n+1}}\]
+This bound is tight: the part $3 Adv_A^{1PRF}$ corresponds to the independent attacks against
+the 3 PRFs.
+The part $\frac{q^2}{2^{n+1}}$ corresponds to a simple chosen plaintext collision attack:
+let the plaintexts $(x_i, y)_{i=1,...,q}$ be encrypted (the second part of the plaintext is constant.
+The input of the first PRF $f_1$ are thus constant. If there is a collision on the second PRF,
+ie $f_2(x_i \oplus f_1(y)) = f_2(x_j \oplus f_1(y))$ for some $i \neq j$, then the first halves of the
+outputs are the same, and the XOR of the second halves of the outputs is equal to the XOR of the
+first halves of the inputs.
+
+The probability that such a collision on the output occurs for a Luby-Rackoff PRP is thus $q^2/2^{n+1}$
+(probability of birthday style collision on the input of $f_2$ for random $x_i$). For a true RP the collision
+probability is much lower (but hard to estimate, for a RF it would be $q^2/2^{2n+1}$).
+
+\subsection{Q6 Describe an attack against 2DES in less than $2^57$ time. How to avoid it?}
+Meet-in-the-middle attack. To avoid: use 3DES, either with 3 keys of two keys
+(eg. $E_{k_1}(D_{k_2}(E_{k_1}(\cdot)))$).
+
+\subsection{Q7 Explain how to attack one DES round (simplified to 32-bit round keys and 4-bit bijective
+S-boxes). Give the attack complexity. How would this complexity approximately scale (in
+the worst-case) if two DES round have to be attacked?}
+
+For one round, the known-plaintext attack is direct: when the inverse S-Box is known (it take $2^4$ to compute it),
+the bijective permutation (P)/S-Box at the end can be inverted. The permutation E can be applied to the input, and the
+intermediate results are XORed to find the subkey.
+
+For two rounds, since we have a Feistel network, the attack to recover the second subkey is the same, and the attack
+to recover the first subkey is almost the same (there is a first XOR needed to find the output of the DES PRF).
+
+The complexity of these attack have the same order of magnitude as the complexity of encryption.
+
+\subsection{Q8 Explain the concept of slide attack. Is a block cipher susceptible to this attack a PRP?}
+See section \ref{sec:slide-attack}. In the strict sense, since the complexity of the slide attack
+is exponential ($2^{n/2}$), this attack does not allow to build a distinguisher that breaks the PRP property.
+However, this attack reduces significantly the security since usually the best attack against a block cipher is
+expected to be $\mathcal{O}(2^n)$.
+
+\section{Lecture 3}
+\subsection{Q1 Give a proof of the piling-up lemma.}
+Pilling-up lemma:
+\[Pr[X_1 \oplus ... \oplus X_n = 0] =
+\frac{1}{2} + 2^{n-1} \prod_{i=1}^n \left(Pr[X_i=0] - \frac{1}{2}\right)\]
+
+For $n=1$, this is trivially true. Let $Y_n = X_1 \oplus ... \oplus X_{n-1}$.
+By induction,
+\[Pr[Y_n = 0] = \frac{1}{2} + 2^{n-2}\prod_{i=1}^{n-1} \left(Pr[X_i=0] - \frac{1}{2}\right).\]
+Then,
+\begin{align*}
+    Pr[Y_n \oplus X_n = 0] &= Pr[Y_n = 0, X_n = 0] + Pr[Y_n = 1, X_n = 1] \\
+                           &= \frac{1}{2} + 2\left(Pr[X_n = 0] - \frac{1}{2}\right)
+    \left(Pr[Y_n = 0] - \frac{1}{2}\right) \\
+    &= \frac{1}{2} + 2^{n-1}\prod_{i=1}^n \left(Pr[X_i = 0] - \frac{1}{2}\right).
+\end{align*}
+
+\subsection{Q2. Explain why a linear permutation cannot be a good block cipher.}
+
+Let $(x_1, x_2, ..., x_n)$ a basis of ${0,1}^n$. If the output of the linear permutation
+is known for all the elements of the basis: $y_i = F(x_i)$, $F(x)$ is known for any $x$:
+let $x = \sum_{i=1}^n a_i x_i$, then $F(x) = \sum_{i=1}^n a_i y_i$.
+
+\subsection{Q4. Why does the AES block cipher start/end with a key addition?}
+
+The operations of AES that are not key addition are public bijections.
+If AES were $A(B_k(C(\cdot)))$, any attack against $B_k$ could
+easily be turned into an attack against AES by applying $A$, $C$
+or their inverses where needed.
+The operations $A$ and $C$ bring thus no security benefit.
+
+\subsection{Q5. Why does the AES block cipher have no MixColumns operation in its last round?}
+
+It does not change the security: since $MC$ is linear,
+$K_n \oplus MC(x) = MC(MC^{-1}(K_n) \oplus x)$.
+Then the outer $MC$ can be removed by any attacker.
+
+\subsection{Q6. Is AES k (AES k (x)) stronger than AES k (x) from the linear cryptanalysis point-of-view?}
+
+No. The LCB decreases exponentially with the number of rounds, but the ELB does not due to the
+linear hull effect.
+Since the maximum LCB of AES reduced to four rounds is $2^{-75}$, it is expected that the ELB for
+full AES (10 rounds) is close to a minimum LB possible for a 128 bits permutation.
+
+\subsection{Q7. Explain the wide-trail strategy, its application to the AES and the bounds that can
+be obtained for 4 AES rounds against linear cryptanalysis. What are the main (theoretical)
+limitations of this strategy (and how to mitigate them)?}
+
+Wide trail strategy: have low biases in reasonably-sized S-Boxes, and use diffusion layers to have
+many active S-Boxes for each characteristic. For AES, there are at least 25 active S-Boxes active for
+any 4 round characteristic. The ELB of and S-Box is $>le 2^-3$, thus the LCB of any 4-round characteristic
+is at most $2^{-75}$. (Thus an attack has a data complexity of $2^{150}$.)
+
+This strategy is limited by presence of multiple characteritics for the same input-output mask:
+the linear hull. The total ELB is thus thus sum of the LCB for all the characteristics of the
+linear hull, and not the maximum LCB. The LCB is also estimated by assuming independence between biases.
+
+Increasing the number of round is a way to reduce the LB up to some point (usually when the
+LB is close to the minimum possible for a permutation: $2^{-n}$).
+
+\subsection{Q8. Why are the various representations of the AES components relevant from an imple-
+mentation point-of-view and from a physical security point-of-view?}
+
+Representations:
+\begin{itemize}
+    \item elements of $GF(8)$, $GF(32)$: mathematical properties useful for proofs
+        (eg. MDS property of MC), and map to efficient representation on HW, and 
+        particularly on general purpose CPUs (bytes, and words for 32-bits machines).
+    \item S-Box: Lookup table (efficiency) or affine transformation of multiplicative
+        inverse in GF(8) (structure, no backdoor) or logic equations (bitslicing,
+        masked implementations).
+\end{itemize}
+
+\section{Lecture 4}
+
+\subsection{Q1. What is the activity factor of a block cipher implementation (after some rounds)?}
+
+The activity factor is 0.5, because after some rounds the value should be uncorrelated with the input,
+and all the values are equiprobable for random inputs (since each intermediate value is a permutation
+of the input for a fixed key).
+The sum of two bit values (that should be uncorrelated between each other) is thus equiprobably 0 or 1.
+
+\subsection{Q2. Describe the structure of an FPGA and detail an exemplary slice with 4-bit LUTs.}
+
+An FPGA is made of programmable logic blocks, possibly specialized hardware (RAM, multipliers, CPUs, etc.),
+and programmable routing between these elements.
+The logic blocks (aka slices) usually contain programmable look-up tables (usually n-bit input, 1 bit output),
+multiplexers, registers, connected by programmable routing. There may be other elements, like arithmetic logic,
+etc.
+
+For example: 2 4-bit LUT, 1 MUX, 2 flip-flops.
+
+\subsection{Q3. Explain the difference between the minimum memory cost and the concrete implemen-
+tation cost of an S-box and discuss its relevance in a performance evaluation.}
+
+The minimum memory cost of an S-Box is the total size of memory used by the implementation
+that has LUTs of optimal sizes, that are optimally routed.
+In actual FPGAs, the LUTs may not have the optimal size so the implementation cost may be higher.
+This can lead to a larger number of slices used in such an FPGA.
+
+\subsection{Q5. Can you exploit pipelining to implement the CBC mode of operation? Why?}
+For encryption, CBC is a serial mode: the ciphertext of the previous block must be known to begin the
+encryption of the following block, since $c_i = BC_k(c_{i-1} \oplus p_i)$.
+Pipelining being a form of parallel computation, it can not be used with CBC, except if
+multiple independent streams of data have to be encrypted.
+
+For decryption, there is no such dependence (since $p_i = BC^{-1}_k(c_i) \oplus c_{i-1}$),
+so pipelining can be exploited.
+
+\section{Lecture 5}
+
+\subsection{Q1. In order to minimize the energy consumption of an implementation, would you select
+a more serial (e.g. 8-bit) or a more parallel (e.g. 32-bit) architecture?}
+
+Since energy consumption is mostly proportional to the number of transistors (and thus
+to architecture number of bits), 4 times more parallel implementation leads to lower
+energy consumption iff it needs (more than) 4 times less clock cycles than the serial implementation.
+
+With SW implementation, on 32 bits architectures, T tables lead to a cost of around 2 instructions
+per byte and ber round (of which 1 memory lookup)
+for AES.
+(Also more 16 times memory used, which increases memory power consumption.)
+On 8 bit architecture, 2 mem lookup, order of 5 other instructions per byte and per round.
+
+There is thus no clear advantage for one or the other implementation here.
+
+\subsection{Q2. Discuss the interest of moving an S-box in RAM in a software block cipher implemen-
+tation (under reasonable assumptions on the elementary operation’s cost).}
+
+There are three operations to consider:
+\begin{itemize}
+    \item RAM read ($RAM_r$ cycles)
+    \item ROM read ($ROM_r$ cycles)
+    \item RAM write ($RAM_w$ cycles)
+\end{itemize}
+
+We consider only encryption.
+For a 8-bit implementation that uses a LUT for xtime implementation,
+there are $2\cdot 16\cdot 10 = 320$ memory accesses per block encryption.
+The gain of using tables in RAM is thus $320 n_{blocks} (ROM_r - RAM_r)$
+cycles.
+
+The size of the two lookup tables is 512 bytes. The cost of transferring them
+to RAM is thus $512 (ROM_r + RAM_w)$ cycles.
+
+It is thus interesting to use RAM if
+\[ n_blocks > 512/320 \frac{ROM_r + RAM_w}{ROM_r - RAM_r}.\]
+
+If $ROM_r = 5$ and $RAM_r = RAM_w = 3$, we have $n_{blocks} > 7.4$.
+
+\subsection{Q3. Assuming a 64-bit ALU, what is the maximum number of gates per output bit which
+makes a bitslice implementation of an 8-bit S-box interesting from the performance point of
+view (under reasonable assumptions on the elementary operation’s cost)?}
+
+cost per s-box operation: $8 n_{gates} / 64$, vs 3 for RAM access => $n_{gates} < 24$.
+
+\subsection{Q4. Estimate the implementation cost of the xtime function implemented as a table (in
+cycles and memory) and as Boolean operations (in cycles and code size).}
+
+On 8-bit processor:
+
+LUT: 256 bytes memory, 3 cycles.
+
+Boolean operation: left shift + substract carry out from 0x0 + mask with 0x1b + XOR,
+needs around 6 cycles (implementation with data independent instruction flow).
+memory: none (1 register), but increased codesize.
+
+\subsection{Q5. Detail the T-table technique for the combined implementation of the AES S-box and
+MixColumns layers. Estimate its cycle count and memory cost?}
+
+\[
+\begin{pmatrix}y_0\\ y_1\\ y_2\\ y_3\end{pmatrix}
+    \begin{pmatrix}
+        02 & 03 & 01 & 01 \\
+        01 & 02 & 03 & 01 \\
+        01 & 01 & 02 & 03 \\
+        03 & 01 & 01 & 02 
+    \end{pmatrix}
+\begin{pmatrix}x_0\\ x_1\\ x_2\\ x_3\end{pmatrix}
+    =
+\begin{pmatrix}02\\ 01\\ 01\\ 03\end{pmatrix} SB(x_0) +
+\begin{pmatrix}03\\ 02\\ 01\\ 01\end{pmatrix} SB(x_1) + ...
+    = T_0(x_0) + T_1(x1) + ...
+\]
+where $T_i$ tables are 4 tables with 256 entries of 32 bits.
+The memory cost is thus \SI{4}{kiB}, and and the cycle count
+is 16 memory accesses plus 12 XOR for the complete layer of SB + MC of
+one round.
+
+\section{Lecture 6}
+
+\subsection{Q3. For an exemplary block cipher architecture (in hardware or software) and using the
+abstractions of Lectures 4 and 5, estimate the security level of an implementation based its
+“algorithmic noise” and given a “physical noise” level. What can you conclude from such
+estimations regarding the use of noise as an implementation security parameter?}
+
+Let $L$ the leakage, $M_k$ the modelled leakage, $N_a$ the algorithmic noise and
+$N_p$ the physical noise. We have $L = M_k + N_a + N_p$. We compute
+$\rho(L, M_k) = \rho(L, M_k+N_a), \rho(M_k+N_a, M_k)$, where $\rho{M_k+N_a, M_k} = \sqrt{m/n}$,
+where $n$ is the architecture number of bits and $m$ is the number of bits predicted by the model.
+Since the data complexity $N$ is proportional to $1/\rho(L, M_k)^2$
+(we try to distinguish between the correlation for the correct key $k$ and the
+distribution for a wrong key $k'$, assuming $\rho(L, M_{k'}) = 0$), it is proportional to $n$ (for fixed $m$),
+which means that algorithmic noise is not a good security parameter (complexity for the adversary
+is only proportional and not exponential in the security parameter $n$).
+
+Assuming independent
+$M_k+N_a$ and $N_p$, let $\sigma_a^2$ the variance of $M_k+N_a$ and $\sigma_p^2$ the
+variance of $N_p$, we have $\rho(L, M_k+N_a) = \sigma_a / \sigma_p = \sqrt{SNR_p}$,
+where $SNR_p$ is the pysical SNR. We have thus $N \propto SNR_p$, which means that
+physical noise is not a good security parameter.
 
 \end{document}
