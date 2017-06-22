@@ -112,7 +112,7 @@
 % avec comme valeur par défaut `e `
 \DeclareDocumentCommand{\basehypertitle}{ O{e } m m m m m m m O{} }{
 
-{\renewcommand{\and}{\unskip, }
+{\renewcommand{\and}{, }
 \hypersetup{pdfauthor={#6},
             pdftitle={#8 #2 Q#3 - L#4#5},
             pdfsubject={#2}}
