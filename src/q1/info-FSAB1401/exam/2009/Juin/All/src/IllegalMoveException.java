@@ -5,10 +5,8 @@
  * @version May 2009
  */
 
-public class IllegalMoveException extends Exception
-{
-	public IllegalMoveException(String msg)
-	{
+public class IllegalMoveException extends Exception {
+	public IllegalMoveException(String msg) {
 		super(msg);
 	}
 }

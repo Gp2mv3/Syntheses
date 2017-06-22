@@ -5,14 +5,16 @@ import java.io.*;
  * Classe principale de contrôle du jeu
  *
  * @author O. Bonaventure, Ch. Pecheur and J-M Vlaeminck
+ * @version June 2017
  */
 
-public class GameController
-{
+public class GameController {
+
 	/**
 	 * Fichier pour sauver une partie de puissance 4
 	 */
 	private static final String FILENAME = "puissance4.dat";
+
 	/**
 	 * Taille d'une ligne gagnante
 	 */
@@ -24,8 +26,7 @@ public class GameController
 	 * @pre -
 	 * @post Une partie complète a été jouée
 	 */
-	public static void main(String[] args)
-	{
+	public static void main(String[] args) {
 		play(new UndoableGame(), System.in, System.out);
 	}
 
@@ -83,8 +84,7 @@ public class GameController
 	 *      avec save()
 	 * @post Retourne le jeu lu.
 	 */
-	public static UndoableGame load(String fileName)
-	{
+	public static UndoableGame load(String fileName) {
 		BufferedReader reader = null;
 		try {
 			reader = new BufferedReader(new FileReader(fileName));
@@ -124,9 +124,8 @@ public class GameController
 	 *      utilisé par les joueurs
 	 * @post Une partie complète a été jouée
 	 */
-	public static void play(UndoableGame game, InputStream input, PrintStream output)
+	public static void play(UndoableGame game, InputStream input, PrintStream output) {
 	// Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
-	{
 		/*
 		 * Le programme commence par expliquer les règles du jeu, ainsi que les différentes commandes accessibles aux utilisateurs.
 		 * Il propose ensuite à l'utilisateur de commencer une nouvelle partie, de continuer une partie existante, ou de quitter.
@@ -292,8 +291,7 @@ public class GameController
 	/*
 	 * Méthodes auxiliaires pour la méthode précédente.
 	 */
-	private static void showTurnCommands(PrintStream output)
-	{
+	private static void showTurnCommands(PrintStream output) {
 		output.println("Les commandes accessibles à chaque tour sont :");
 		output.println(" - h : afficher la liste des commandes accessibles. Vous pouvez de nouveau effectuer l'un des commandes listées.");
 		output.println(" - q : arrêter le jeu actuel ; il y a match nul. Impossible d'annuler cette action.");
@@ -303,8 +301,8 @@ public class GameController
 		output.println(" - un nombre : le numéro de la colonne dans lequel vous voulez mettre votre jeton. Vous devrez encore appuyer sur n et ENTER pour laisser l'autre jouer.");
 		output.println("Si la commande n'est aucune des précédentes, ou que la colonne spécifiée est vide, le programme renouvelle sa demande.");
 	}
-	private static void showGrid(UndoableGame g, PrintStream output)
-	{
+
+	private static void showGrid(UndoableGame g, PrintStream output) {
 		int width = g.getWidth();
 		int height = g.getHeight();
 		for (int j = 0; j <= (width / 10); j++) {
@@ -335,6 +333,7 @@ public class GameController
 		}
 		output.println("\n");
 	}
+
 	/*
 	 * Retourne :
 	 * {-2, 0} si undo.
@@ -342,8 +341,7 @@ public class GameController
 	 * {-16,0} si quitter le jeu.
 	 * {c,  l} si colonne et ligne valides ; aura aussi appliqué le coup précisé par cette position et par {token}.
 	 */
-	private static int[] getTurnCommand(UndoableGame game, InputStream input, PrintStream output, int maxwidth, Token token, boolean hasPlayed)
-	{
+	private static int[] getTurnCommand(UndoableGame game, InputStream input, PrintStream output, int maxwidth, Token token, boolean hasPlayed) {
 		String s;
 		Scanner sc = new Scanner(input);
 		do {

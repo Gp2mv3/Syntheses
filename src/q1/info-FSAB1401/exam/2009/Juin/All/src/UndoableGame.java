@@ -2,11 +2,10 @@
  * Un jeu puissance 4 étendu, qui mémorise les coups joués et permet de revenir en arrière (undo).
  *
  * @author O. Bonaventure and Ch. Pecheur
- * @version May 2009
+ * @version Dec. 2016
  */
 
-public class UndoableGame extends SimpleGame
-{
+public class UndoableGame extends SimpleGame {
 	private MoveStack stack; // pile des coups joués.
 
 	/**
@@ -15,8 +14,7 @@ public class UndoableGame extends SimpleGame
 	 * @pre - (voir superclasse)
 	 * @post Construit un jeu de largeur w et de hauteur h
 	 */
-	public UndoableGame(int w, int h)
-	{
+	public UndoableGame(int w, int h) {
 		super(w, h);
 		stack = new MoveStack();
 	}
@@ -27,8 +25,7 @@ public class UndoableGame extends SimpleGame
 	 * @pre -
 	 * @post Construit un jeu de taille standard
 	 */
-	public UndoableGame()
-	{
+	public UndoableGame() {
 		this(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 	}
 
@@ -40,8 +37,7 @@ public class UndoableGame extends SimpleGame
 	 * @pre p n'est pas un pion vide et c est un indice valide
 	 * @post Si la colonne c n'est pas pleine, ajoute un pion dans la colonne c, mémorise le coup et retourne la ligne à laquelle le pion a été placé ; sinon, lance une IllegalMoveException
 	 */
-	public int add(Token p, int c) throws IllegalMoveException
-	{
+	public int add(Token p, int c) throws IllegalMoveException {
 		int r = super.add(p, c);
 		stack.push(new Move(p, c));
 		return r;
@@ -54,9 +50,8 @@ public class UndoableGame extends SimpleGame
 	 * @post Si au moins un coup a été joué, annule l'effet de ce coup.
 	 *       Sinon, lance un IllegalMoveException
 	 */
-	public void undo() throws IllegalMoveException
+	public void undo() throws IllegalMoveException {
 	// Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
-	{
 		Move m = stack.pop();
 		if (m == null)
 			throw new IllegalMoveException("Aucun mouvement à annuler");
@@ -67,8 +62,7 @@ public class UndoableGame extends SimpleGame
 	 * @pre -
 	 * @post Retourne la liste des coups joués, dans l'ordre chronologique
 	 */
-	Move[] getMoves()
-	{
+	Move[] getMoves() {
 		return stack.getAll();
 	}
 }

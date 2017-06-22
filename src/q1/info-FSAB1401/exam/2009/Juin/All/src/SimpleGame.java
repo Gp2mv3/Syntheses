@@ -9,12 +9,12 @@
  * l'indice de ligne de la première case libre, au-dessus de tous les pions déjà
  * joués dans cette colonne.
  *
- * @author O. Bonaventure and Ch. Pecheur
- * @version Dec. 2015
+ * @author O. Bonaventure, Ch. Pecheur and J-M Vlaeminck
+ * @version June 2017
  */
 
-public class SimpleGame
-{
+public class SimpleGame {
+
 	public static final int DEFAULT_WIDTH = 7; // largeur par défaut
 	public static final int DEFAULT_HEIGHT = 6; // hauteur par défaut
 	private int width; // largeur du tableau de jeu
@@ -35,8 +35,7 @@ public class SimpleGame
 	 * @pre w > 4, h > 4
 	 * @post Un jeu initial de w colonne et h lignes est créé, dont toutes les cases contiennent le jeton Token.EMPTY
 	 */
-	public SimpleGame(int w, int h)
-	{
+	public SimpleGame(int w, int h) {
 		this.width = w;
 		this.height = h;
 		this.grid = new Token[width][height];
@@ -55,8 +54,7 @@ public class SimpleGame
 	 * @pre -
 	 * @post Un jeu initial de taille standard est créé
 	 */
-	public SimpleGame()
-	{
+	public SimpleGame() {
 		this(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 	}
 
@@ -64,8 +62,7 @@ public class SimpleGame
 	 * @pre -
 	 * @post Retourne le nombre de colonnes du jeu
 	 */
-	public int getWidth()
-	{
+	public int getWidth() {
 		return width;
 	}
 
@@ -73,8 +70,7 @@ public class SimpleGame
 	 * @pre -
 	 * @post Retourne le nombre de lignes du jeu
 	 */
-	public int getHeight()
-	{
+	public int getHeight() {
 		return height;
 	}
 
@@ -82,21 +78,19 @@ public class SimpleGame
 	 * @pre 0 <= l < width && 0 <= h < height
 	 * @post Retourne le pion de coordonnées (l, h)
 	 */
-	public Token getToken(int l, int h)
-	{
+	public Token getToken(int l, int h) {
 		return grid[l][h];
 	}
 
 	///// QUESTION 3 /////
-	
+
 	/**
 	 * Ajoute un pion p dans la colonne c
 	 *
 	 * @pre p n'est pas un pion vide et c esr un indice de colonne valide
 	 * @post Si la colonne c n'est pas pleine, le pion a été ajouté dans la colonne et retourne l'indice de la ligne à laquelle le pion a été placé ; sinon, lance une IllegalMoveException
 	 */
-	public int add(Token p, int c) throws IllegalMoveException
-	{
+	public int add(Token p, int c) throws IllegalMoveException {
 		if (firstFreeCell[c] == height) {
 			throw new IllegalMoveException("La colonne c est pleine.");
 		} else {
@@ -120,9 +114,8 @@ public class SimpleGame
 	 * @post Enlève et retourne le jeton au sommet de la colonne c.
 	 *       Si la colonne est vide, retourne Token.EMPTY
 	 */
-	public Token clear(int c)
+	public Token clear(int c) {
 	// Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
-	{
 		if (firstFreeCell[c] == 0)
 			return Token.EMPTY;
 		else {
@@ -138,8 +131,7 @@ public class SimpleGame
 	 * @pre -
 	 * @post Retourne true ssi les coordonnées (x, y) sont dans la grille de jeu
 	 */
-	public boolean isValidCoord(int x, int y)
-	{
+	public boolean isValidCoord(int x, int y) {
 		return (0 <= x && x < width) && (0 <= y && y < height);
 	}
 
@@ -147,12 +139,10 @@ public class SimpleGame
 	 * Taille de la plus longue ligne de pions en un point donné
 	 *
 	 * @pre (x0, y0) coordonnées d'une case de jeu valide
-	 * @post Retourne la taille de la plus grande ligne de pions de même couleur
-	 *       passant par (x0, y0)
+	 * @post Retourne la taille de la plus grande ligne de pions de même couleur passant par (x0, y0)
 	 */
-	public int lineSize(int x0, int y0)
+	public int lineSize(int x0, int y0) {
 	// Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
-	{
 		/*
 		 * Algorithme : pour chaque direction (horizontale, diagonale directe, verticale, diagonale innverse), on parcourt chaque case, dans les deux sens, jusqu'à rencontrer une case qui n'est pas de la même couleur. On fait la somme dans les deux sens, et on compare avec le maximum actuel.
 		 */

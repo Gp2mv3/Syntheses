@@ -3,17 +3,15 @@
  * Implémenté sous la forme d'une structure simplement chainée.
  *
  * @author O. Bonaventure, Ch. Pecheur and J-M Vlaeminck
- * @version Dec 2015
+ * @version June 2017
  */
 
-public class MoveStack
-{
+public class MoveStack {
 
 	/**
 	 * Noeud interne de la pile
 	 */
-	private class Node
-	{
+	private class Node {
 		public Move move;
 		public Node next;
 	}
@@ -23,8 +21,7 @@ public class MoveStack
 	 * @pre -
 	 * @post Crée une pile vide
 	 */
-	public MoveStack()
-	{
+	public MoveStack() {
 		top = null;
 	}
 
@@ -48,9 +45,8 @@ public class MoveStack
 	 * @pre -
 	 * @post Retourne le dernier coup joué
 	 */
-	public Move top()
+	public Move top() {
 	// Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
-	{
 		if (top == null)
 			return null;
 		else
@@ -59,13 +55,12 @@ public class MoveStack
 
 	/**
 	 * Supprime le dernier coup
-	 * 
+	 *
 	 * @pre -
 	 * @post Le dernier coup joué est retourné et supprimé de la pile
 	 */
-	public Move pop()
+	public Move pop() {
 	// Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
-	{
 		if (top == null)
 			return null;
 		else {
@@ -104,9 +99,8 @@ public class MoveStack
 	 * @pre -
 	 * @post Retourne le nombre de couprs dans la pile
 	 */
-	public int size()
+	public int size() {
 	// Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
-	{
 		int s = 0;
 		for (Node runner = top; runner != null; runner = runner.next, s++) {}
 		// Tout le parcours en un seul for !
@@ -119,9 +113,8 @@ public class MoveStack
 	 * @pre -
 	 * @post Retourn true ssi la pile est vide
 	 */
-	public boolean isEmpty()
+	public boolean isEmpty() {
 	// Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
-	{
 		return (top == null);
 		// alternative : regarder si size() == 0
 	}

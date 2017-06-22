@@ -5,8 +5,8 @@
  * @version May 2009
  */
 
-public class Token
-{
+public class Token {
+
 	public static final Token YELLOW = new Token("J",  "Jaune"); // jeton jaune
 	public static final Token RED    = new Token("R",  "Rouge"); // jeton rouge
 	public static final Token EMPTY  = new Token("-", "(vide)"); // case vide
@@ -21,8 +21,7 @@ public class Token
 	 * @pre s.length == 1
 	 * @post un pion de nom n et symbole s est créé
 	 */
-	private Token(String s, String n)
-	{
+	private Token(String s, String n) {
 		this.symbol = s;
 		this.name = n;
 	}
@@ -31,8 +30,7 @@ public class Token
 	 * @pre -
 	 * @post Retourne le symbole du pion
 	 */
-	public String toString()
-	{
+	public String toString() {
 		return symbol;
 	}
 
@@ -40,8 +38,7 @@ public class Token
 	 * @pre -
 	 * @post Retourne le nom du pion
 	 */
-	public String getName()
-	{
+	public String getName() {
 		return name;
 	}
 
@@ -49,12 +46,10 @@ public class Token
 	 * Retourne un pion de symbole donné
 	 *
 	 * @pre -
-	 * @post retourne le pion dont le symbole est s, ou null si le jeton
-	 *       n'existe pas
+	 * @post retourne le pion dont le symbole est s, ou null si le jeton n'existe pas
 	 */
-	public static Token fromString(String s)
+	public static Token fromString(String s) {
 	// Code non fourni à l'examen. Ce code a été rajouté pour permettre à la classe de compiler.
-	{
 		for (int i = 0; i < ALL_TOKENS.length; i++) {
 			if (ALL_TOKENS[i].toString().equals(s)) {
 				return ALL_TOKENS[i];
@@ -63,3 +58,4 @@ public class Token
 		return null;
 	}
 }
+
