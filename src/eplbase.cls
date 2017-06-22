@@ -112,6 +112,17 @@
 % avec comme valeur par défaut `e `
 \DeclareDocumentCommand{\basehypertitle}{ O{e } m m m m m m m O{} }{
 
+% About \epltype-commands :
+% \epltypesingular refers to the name of the type of the document
+% \Epltype should be the same, but with an Uppercase letter at the beginning, as it is used for the title of the document
+% \epltypeplural should be used if the plural of the type name cannot be constructed by appending 's' at the end. Currently, it is unused
+% \epltypepluralonly est utilisé pour indiquer que le type de document ne devrait être utilisé qu'au pluriel, et que les verbes doivent donc s'accorder au pluriel. L'exemple parfait est notes. Probablement useless en anglais.
+% \epltypegender est utilisé pour accorder les adjectifs en français.
+% \epltypedefadj est utilisé pour spécifier le déterminant défini.
+
+% Default plural
+\ifthenelse{\isundefined{\epltypeplural}}{\newcommand{\epltypeplural}{\epltypesingular{}s}}{}
+
 {\renewcommand{\and}{, }
 \hypersetup{pdfauthor={#6},
             pdftitle={#8 #2 Q#3 - L#4#5},
@@ -139,12 +150,20 @@
    \IfLanguageName{english}
    {It has been written by the aforementioned authors with the help of all other students,
    yours is therefore welcome as well.
+   \ifthenelse{\isundefined{\isepleval}}{%
    It is always possible to improve it,
-   it is even more true if the course has changed because the \epltype{} must be updated accordingly.
+   it is even more true if the course has changed because
+   the \epltypesingular{} must be updated accordingly.}
+   {It is always possible to improve it, by completing missing statements or solutions.}
    The source code and a link to the latest version of the pdf can be found at the following address}
    {Il est écrit par les auteurs susnommés avec l'aide de tous
    les autres étudiants, la vôtre est donc la bienvenue.
-   Il y a toujours moyen de l'améliorer, surtout si le cours change car la \epltype{} doit alors être mise à jour en conséquence.
+   \ifthenelse{\isundefined{\isepleval}}{%
+   Il y a toujours moyen de l'améliorer,
+   surtout si le cours change car \epltypedefadj{}\epltypesingular{}
+   \ifthenelse{\isundefined{\epltypepluralonly}}{doit}{doivent}
+   alors être mis\epltypegender{} à jour en conséquence.}
+   {Il y a toujours moyen de l'améliorer, en complétant les énoncés ou les solutions manquantes.}
    On peut retrouver le code source et un lien vers la dernière version du pdf à l'adresse suivante}
    \begin{center}
      \url{https://github.com/Gp2mv3/Syntheses}.
@@ -153,7 +172,7 @@
    {You can also find there the content of the \texttt{README} file which contains
    more information, you are invited to read it.}
    {On y trouve aussi le contenu du \texttt{README} qui contient de plus
-   amples informations, vous êtes invité à le lire.}
+   amples informations, vous êtes invités à le lire.}
 
    \IfLanguageName{english}
    {It is written on it that questions, error reports,
@@ -180,25 +199,25 @@
      \url{https://github.com/Gp2mv3/Syntheses/wiki}
    \end{center}
    \IfLanguageName{english}
-   {like the status of the \epltype{}s for each course}
-   {comme le statut des \epltype{}s pour chaque cours}
+   {like the status of the documents for each course}
+   {comme le statut des documents pour chaque cours}
    \begin{center}
      \url{https://github.com/Gp2mv3/Syntheses/wiki/Status}
    \end{center}
    \IfLanguageName{english}
-   {you can notice that there is still a lot missing,
+   {You can notice that there is still a lot missing,
    your help is welcome.}
-   {vous pouvez d'ailleurs remarquer qu'il en manque encore beaucoup,
+   {Vous pouvez d'ailleurs remarquer qu'il en manque encore beaucoup,
    votre aide est la bienvenue.}
 
    \IfLanguageName{english}
    {To contribute to the bug tracker or the wiki,
    you just have to create an account on GitHub.
-   To interact with the source code of the \epltype{}s,
+   To interact with the source code of the documents,
    you will have to install}
    {Pour contribuer au bug tracker et au wiki, il vous suffira de
    créer un compte sur GitHub.
-   Pour interagir avec le code des \epltype{}s,
+   Pour interagir avec le code des documents,
    il vous faudra installer}
    \LaTeX.
    \IfLanguageName{english}
