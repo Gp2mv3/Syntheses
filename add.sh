@@ -8,9 +8,12 @@
 
 args=("$@")
 nbr_arg=5
-section=( "summary" "notes" "exam" "exercises" )
+section=( "summary" "notes" "exam" "test" "exercises" )
 sols="only none both"
-months="Janvier Mars Juin Août Novembre"
+exammonths="Janvier Juin Août"
+testmonths="Février Mars Avril Mai Septembre Octobre Novembre Décembre"
+# On ne peut juste pas avoir de tests pendant les mois d'examen (blocus l'empêche), ni pendant les vacances d'été.
+# months="Janvier Mars Juin Août Novembre" # Backward compatibility
 minmajs="Mineure Majeure All"
 size_titre=20
 
@@ -40,7 +43,7 @@ function subdirectory {
     fulldir="$dir/$1"
     mkdir -p "$fulldir"
 
-    if [ $1 == exam ]; then
+    if [ $1 == exam ] || [ $1 == test ]; then
       if ! [ -f "$fulldir/$1.mk" ]; then
         sed "s/name/$name/g; s/type/$1/g" ./templates/exam.mk >> "$fulldir/$1.mk"
       fi
@@ -118,7 +121,7 @@ if [ $# -lt $nbr_arg ] ||  [ $1 = "--help" ]; then
     e.g: bash add.sh 1      math  FSAB  1201 exercises only
     e.g: bash add.sh 1      info  FSAB  1401 exam      both 2015 Juin  All
 
-    where repertory is summary, notes, exam, exercises or all
+    where repertory is summary, notes, exam, test, exercises or all
           sol       is only: only contains the solution
                        none: only contains the statement
                        both: contains both"
@@ -146,7 +149,7 @@ if [ ${#args[1]} -gt $size_titre ]; then
 fi
 
 if valid_section $5 ; then
-    echo "Please choice summary, notes, exam, exercises or all"
+    echo "Please choose summary, notes, exam, test, exercises or all"
     error=true
 fi
 
@@ -155,9 +158,18 @@ if ! contains "${sols}" $6; then
     error=true
 fi
 
-if ! contains "${months}" $8; then
-    echo "Please choose the month among \`\`${months}''. If you feel one is missing let us know. You chose \`\`$8''."
-    error=true
+if [ $5 = exam ]; then
+    if ! contains "${exammonths}" $8; then
+        echo "Please choose the month among \`\`${exammonths}''. If you feel one is missing, let us know. You chose \`\`$8''."
+        error=true
+    fi
+fi
+
+if [ $5 = test ]; then
+    if ! contains "${testmonths}" $8; then
+        echo "Please choose the month among \`\`${testmonths}''. If you feel one is missing, let us know. You chose \`\`$8''."
+        error=true
+    fi
 fi
 
 if ! contains "${minmajs}" $9; then
