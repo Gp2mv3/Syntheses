@@ -1226,12 +1226,571 @@ On voit aussi qu'ils sont tous attachés au processus bash.
 
 \subsection{Exercices}
 
-%--------------------------------------S10-------------------------------------
-\section{Les signaux, les sémaphores nommés et le partage de fichiers} %10
+\question{1}
+Consultez la page de manuel de chmod(1) ou d’autres sources pour déterminer
+la signification des bits de permissions lorsqu’ils sont associés à un répertoire.
+Expliquez notamment à quoi sert le bit d’exécution sur un répertoire.
+
+\begin{solution}
+\begin{itemize}
+\item r : est-il possible d'afficher le contenu du répertoire ?
+
+\item w : est-il possible de renommer, créer ou supprimer un fichier dans ce répertoire, ou de modifier les attributs du répertoire ?
+
+\item x : est-il possible d'ouvrir ce répertoire ?
+Avec chmod, il y a aussi le "bit" X qui permet de ne viser que ce bit de permission sur les répertoires.
+Par exemple, \lstinline|chmod -R u-x, u+X|
+
+\item s : \emph{Set User ID} ou \emph{Set Group ID} : en remplacement du bit d'exécution de l'utilisateur ou du groupe.
+Lors de la création d'un fichier par un utilisateur 1, celui-ci aura comme propriétaire le propriétaire du dossier (utilisateur 2), et non celui du créateur, 1.
+Lors de la création d'un sous-dossier, celui-ci héritera de cette permission, et de ce propriétaire.
+C'est un peu compliqué, et c'est expliqué extrêmement mal dans le manuel (comprendre : c'est complet mais illisible) ;
+je vous encourage à recherche sur Google et Wikipedia de plus amples informations.
+
+\item t : est-ce que les fichiers et dossiers contenus à l'intérieur peuvent être supprimés ou renommés par les autres utilisateurs que ceux du groupe ou du propriétaire (ex : /tmp/).
+S'il y est, ce n'est pas le cas.
+\end{itemize}
+\end{solution}
+
+\question{2}
+Quelles sont les permissions associées à votre répertoire de login ?
+Ces permissions permettent-elles à d’autres étudiants d’accéder à vos fichiers ?
+Si oui, utilisez chmod(1) pour supprimer cette autorisation de lecture par défaut dans votre répertoire.
+
+\begin{solution}
+Désormais, 700 : je peux y entrer, mais personne d'autre. Logique en fait.
+\footnote{On se souviendra du seul utilisateur de 2017 qui avait ses bits de permissions à 744.}
+\end{solution}
+
+\question{3}
+Comment feriez-vous en utilisant chmod(1) pour créer un répertoire dans lequel vous pouvez lire et écrire, tout étudiant peut lire mais aucun membre du staff (à part l’administrateur système bien entendu) ne peut lire ?
+
+\begin{solution}
+\begin{lstlisting}
+mkdir folder % 755
+chmod 640 folder
+\end{lstlisting}
+\end{solution}
+
+\question{4}
+Le répertoire /tmp est particulier car il est destiné à pouvoir contenir des fichiers de n’importe quel utilisateur.
+Pouvez-vous expliquer les permissions utilisées pour ce répertoire ?
+
+\begin{solution}
+Le 't' indique que le répertoire n'autorise pas les autres utilisateurs à supprimer ou renommer des fichiers ou des dossiers d'un utilisateur.
+Pratique pour éviter de voir son travail perdu.
+\end{solution}
+
+\question{5}
+La commande lsof(8) permet de lister les fichiers ouverts par un processus.
+A votre avis, comment cette commande fonctionne-t-elle ?
+
+\begin{solution}
+Elle regarde dans le dossier spécial /proc/[pid]/fd pour chaque processus, la liste des file descriptors et donc des fichiers ouverts.
+\end{solution}
+
+\question{6}
+Lorsqu’un exécutable est lancé avec execve(2), il hérite des descripteurs de fichiers qui étaient ouverts dans le processus qui a exécuté execve(2).
+Comment feriez-vous en utilisant uniquement l’appel système open(2) pour déterminer combien de descripteurs de fichiers étaient ouverts au démarrage de votre programme ?
+
+\begin{solution}
+Comme les descripteurs de fichier sont attribués séquentiellement, on peut appeler open(), récupérer sa valeur de retour et soustraire 1.
+En particulier, sachant que 0, 1 et 2 sont associés à l'entrée standard, la sortie standard et la sortie d'erreurs standard, recevoir comme valeur de retour 3 indique qu'aucun fichier n'a précédemment été ouvert.
+
+(C'est la réponse officielle des tuteurs ;
+évidemment, si le processus parent s'est amusé à ouvrir pleins de fichiers puis à fermer le premier fichier ouvert,
+open(2) renverra quand même l'ancien descripteur de ce fichier, alors qu'il reste d'autres fichiers ouverts.
+Parfois, les réponses ne sont pas correcte.)
+\end{solution}
+
+\question{7}
+Est-il possible dans un processus d’exécuter \lstinline|int fd1 = open("f",O\_RDWR)| ;
+et juste après \lstinline|int fd2 = open("f",O\_RDONLY);| ?
+Si oui, quelles seront les valeurs des descripteurs de fichiers retournés lors des appels système.
+Si non, quelles seront les valeurs de errno?
+
+\begin{solution}
+C'est parfaitement possible.
+En pratique, le premier file descriptor référera à un open file object sur lequel on peut lire et écrire,
+et le deuxième file descriptor référera à un autre open file object, avec ses propres propriétés et son propre file offset, sur lequel on ne pourra que lire.
+Les deux descripteurs de fichier seront évidemment différents.
+\end{solution}
+
+\question{8}
+Dans un shell, on exécute la commande \lstinline|/bin/echo "1234" > ./test.txt|.
+Quels sont les appels systèmes effectués par le shell avant l’exécution de /bin/echo ?
+
+\begin{solution}
+Déjà, le shell se fork.
+
+Dans le fils, on ferme le file descriptor correspondant à stdout, on ouvre le fichier 'test.txt'
+(logiquement, le file descriptor renvoyé sera 1, correspondant à la sortie standard).
+
+(Alternative : ouvrir le fichier 'test.txt' dans un file descriptor fdtest,
+puis dupliquer avec dup2 : \lstinline|dup2(fdtest, STDOUT_FILENO)|
+(STDOUT\_FILENO est d'abord fermé, puis devient une copie de fdtest)
+(dup2 renvoie STDOUT\_FILENO comme nouveau file descriptor, ou -1 s'il y a une erreur).)
+
+Enfin, appel à execve : le processus va alors croire qu'il écrit sur le terminal, dans stdout, alors qu'il écrit dans un fichier.
+\end{solution}
+
+\question{9}
+Dans un shell, on exécute la commande \lstinline|./a.out < in.txt > out.txt|.
+Quelles sont les appels systèmes qui doivent être exécutés par le shell pour lancer cet exécutable comme demandé par l’utilisateur ?
+
+\begin{solution}
+Similaire à la Q8 :
+\begin{lstlisting}
+int pid = fork();
+if (pid < 0)
+exit(EXIT_FAILURE);
+else if (pid == 0) {
+	// fils
+	if (close(STDIN_FILENO))
+	_exit(EXIT_FAILURE);
+	int fdin = open("in.txt", O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR); // logiquement, c'est 0
+	if (fdin == -1)
+	_exit(EXIT_FAILURE);
+	if (close(STDOUT_FILENO))
+	_exit(EXIT_FAILURE);
+	int fdout = open("out.txt", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR); // logiquement, c'est 1
+	if (fdout == -1)
+	_exit(EXIT_FAILURE);
+	execve("a.out", {"a.out", NULL}, NULL);
+	_exit(EXIT_FAILURE); // normalement, on n'arrive jamais ici
+} else {
+	int status = 0;
+	waitpid(pid, &status, 0);
+}
+\end{lstlisting}
+\end{solution}
+
+\question{10}
+Dans un shell, on exécute la commande \lstinline$cat < in.txt | grep sinf1252$.
+Quelles sont les appels systèmes qui doivent être exécutés par le shell pour lancer cette commande comme demandé par l’utilisateur ?
+
+\begin{solution}
+\begin{lstlisting}
+fork(); // pour créer le processus qui va effectuer grep
+\end{lstlisting}
+dans le père :
+\begin{lstlisting}
+waitpid(fils); // on attend donc celui qui va faire grep.
+\end{lstlisting}
+
+Dans le fils :
+\begin{lstlisting}
+int fd1[2];
+pipe(fd1); // crée le pipe entre les deux processus
+fork()
+\end{lstlisting}
+
+Dans le fils du fils :
+\begin{lstlisting}
+close(fd1[0]); // fermer le côté lecture, vu qu'on va écrire
+close(STDIN_FILENO)
+int fdin1 = open("in.txt", O_RDONLY | O_CREAT); // vu que STDIN_FILENO a été fermé, ça vaut désormais 0, l'entrée standard.
+int fdout1 = dup2(fd1[1], STDOUT_FILENO); // ferme STDOUT_FILENO dans ce processus, et le remplace par le côté écriture du pipe.
+execve("/bin/cat", {"cat", NULL}, NULL); // appel à cat, même si tout ce qu'il va faire c'est piper l'entrée standard à la sortie standard.
+\end{lstlisting}
+
+Dans le père du fils (l'ancien fils, en fait) : (dernier à s'exécuter)
+\begin{lstlisting}
+close(fd1[1]); // fermer le côté écriture, vu qu'on va lire
+// STDOUT_FILENO reste ouvert, et c'est le nôtre.
+int fdin2 = dup2(fd1[0], STDIN_FILENO); // ferme STDIN_FILENO dans ce processus, et le remplace par le côté lecture du pipe.
+execve("/usr/bin/grep", {"grep", "lsinf1252", NULL}, NULL);
+\end{lstlisting}
+\end{solution}
+
+\question{11}
+Dans un shel bash(1), lorsque l’on suffixe une commande avec 2>\&1,
+le shell redirige la sortie d’erreur standard vers la sortie standard.
+Quels sont les appels systèmes utilisés par le shell pour réussir cette redirection ?
+
+\begin{solution}
+Syntaxe : \lstinline|commande > out.txt 2>&1| ou \lstinline$commande 2>&1 | grep$
+si l'on veut afficher tout le contenu sur la sortie standard, par exemple pour chainer.
+
+\begin{lstlisting}
+fork();
+int fdout("out.txt", O_WRONLY | O_CREAT | O_TRUNC, ...); // version avec redirection dans un fichier.
+int fdout1 = dup2(fdout, STDOUT_FILENO);
+int fderr1 = dup2(fdout, STDERR_FILENO);
+execve("commande", {NULL}, NULL);
+\end{lstlisting}
+\end{solution}
+
+\question{12}
+Comment se comporte l’appel système write(2) lorsque le disque sur lequel on souhaite écrire des données est plein ?
+Peut-on distinguer cette erreur d’un problème d’écriture sur le disque ?
+
+\begin{solution}
+L'appel échoue avec le code d'erreur ENOSPC dans errno.
+\end{solution}
+
+\question{13}
+A quoi sert l’appel système sync(2) ?
+
+\begin{solution}
+sync force l'écriture sur disque de toutes les données présentes dans les buffer du système d'exploitation.
+
+Très utile quand on utilise des clés USB ou autre, qui peuvent être débranchées inopinément.
+
+Néanmoins, rien ne garantit que les données ont bien été écrites sur le support de stockage, si celui-ci a un grand cache de donnée et reporte que tout va bien.
+\end{solution}
+
+\question{14}
+Le programme \href{https://sites.uclouvain.be/SystInfo/notes/Exercices/html/_downloads/writeperf.c}{/Programmes/src/writeperf.c}
+permet de tester les performances des écritures dans write sur un système de fichiers.
+Compilez-le et exécutez le avec différents tailles de buffers passés à write(2).
+Mesurez le temps d’exécution avec la commande time(1posix) et comparez le temps qu’il faut pour écrire 100MB en blocs de 1 MB ou en blocs de 1 KB.
+Faites de même en activant la synchronisation avec le paramètre -s.
+
+\begin{solution}
+De manière assez logique, plus on réduit la taille du buffer, plus il y a d'appels systèmes et plus le processus met du temps à écrire.
+
+Activer sync force l'écriture sur disque, et bypasse le buffer du système d'exploitation : ça ralentit encore plus pour des petits blocs de données.
+\end{solution}
+
+
+
+% //====================================================\\
+% ||                         S10                        ||
+% \\====================================================//
+
+\section{Les signaux, les sémaphores nommés et le partage de fichiers}
+
+Cette séance d'APE a été effectuée pendant l'année 2016--2017 en S12 au lieu de S10.
+Le contenu de cette APE se réfère à la semaine 10 sur le site des exercices.
+
 \subsection{QCM}
+\TODO
 
 \subsection{Exercices}
 
+\question{1}
+En utilisant signal(2), écrivez une fonction C \lstinline|sig_ignored| qui prend comme argument un numéro de signal et retourne \lstinline|true| si le signal passé en argument est ignoré par le processus et \lstinline|false| sinon.
+
+\begin{solution}
+Le code suivant effectue cette tâche :
+\begin{lstlisting}
+typedef void (*sighandler_t)(int); // écrire en début de fichier pour permettre d'utiliser le type de donnée sighandler_t
+
+bool sig_ignored(int signum)
+{
+	sighandler_t ret = signal(signum, SIG_DFL);
+	if (ret == SIG_ERR)
+		exit(EXIT_FAILURE);
+	// ret contient l'ancien signal handler. Du coup, on le remet. Soit ça reste SIG_DFL, soit ça restore
+	sighandler_t ret2 = signal(signum, ret);
+	if (ret2 == SIG_ERR)
+		exit(EXIT_FAILURE);
+	return ret == SIG_IGN; // est-ce qu'on avait SIG_IGN avant ?
+}
+
+\end{lstlisting}
+
+L'appel signal renvoie l'ancien handler.
+On peut donc se permettre de temporairement remplacer le handler actuel par SIG\_DFL avec signal()
+(pas SIG\_IGN car ça a des conséquences fâcheuses),
+récupérer le handler actuel (enfin, l'ancien, mais en fait c'est celui que l'on recherche),
+prier pour qu'il n'y ait aucun traitement de signal pendant ce temps là,
+puis de nouveau appeler signal() pour remplacer le SIG\_DFL par l'"ancien" handler (en vrai, celui de départ),
+et donc vérifier que ce qu'on reçoit soit bien SIG\_DFL.
+On peut alors comparer le handler de départ à SIG\_IGN.
+
+Note au niveau des signaux : par défaut, très peu de signaux sont ignorés (voire même aucun) :
+ils apparaissent tous comme étant SIG\_DFL, même ceux qui ont le comportement SIG\_IGN.
+La fonction va donc uniquement retourner les signaux ayant changé le handler vers l'ignorage (ou l'ignoration).
+
+Autre petit soucis, affecter SIG\_IGN à un signal dont le comportement par défaut est similaire à SIG\_IGN n'est pas équivalent à lui affecter SIG\_DFL, et l'inverse est aussi vrai.
+En effet, ces signaux ne sont pas vraiment \og ignorés \fg{} : c'est le système d'exploitation qui gère leur comportement,
+et c'est lorsqu'on demande de changer de comportement que le signal devient ignoré.
+Par exemple, SIGCHLD va par défaut être ignoré (au sens, pas de crash ou d'appel de fonction ou de blocage),
+et les enfants qui se terminent sans être attendus deviennent automatiquement des zombies.
+Si maintenant on ignore explicitement le signal, alors dans ce cas, les processus fils se termineront immédiatement, et il ne sera plus possible de les attendre (vu qu'ils seront morts) ;
+pire, il n'est même plus possible d'attendre ses enfants, car ils se terminent directement, et waitpid échoue avec un code d'erreur ECHILD.
+\end{solution}
+
+\question{2}
+A votre avis, pourquoi le système d’exploitation refuse-t-il l’exécution de la ligne \lstinline|signal(SIGKILL,SIG_IGN)| ?
+
+\begin{solution}
+Le signal SIGKILL ne peut pas être ignoré par le processus ; il le tue obligatoirement.
+\end{solution}
+
+\question{3}
+Sachant qu’en tapant Ctrl-C durant l’exécution d’un processus le shell envoie un signal SIGINT à ce processus,
+comment feriez-vous pour qu’un de vos programmes puisse survivre à Ctrl-C ?
+
+\begin{solution}
+On définit un signal handler pour SIGINT, du type :
+\begin{lstlisting}
+sighandler_t err = signal(SIGINT, survivre);
+if (err == SIGERR)
+	perror("signal"), exit(EXIT_FAILURE);
+\end{lstlisting}
+avec
+\begin{lstlisting}
+void survivre(int signum, sighandler_t handler) {
+	// vide
+}
+\end{lstlisting}
+Dans ce cas, le signal va être complètement désactivé.
+Point négatif, il est fort probable qu'un SIGKILL s'ensuive par impatience de l'utilisateur\dots
+
+Autre possibilité :
+\begin{lstlisting}
+sihandler_t err = signal(SIGINT, SIG_IGN);
+\end{lstlisting}
+\end{solution}
+
+\question{4}
+Le programme \href{https://sites.uclouvain.be/SystInfo/notes/Exercices/html/_downloads/alarm.c}{/Programmes/src/alarm.c}
+que nous avons utilisé pour illustrer l’appel système alarm(2) contient une condition de course (\emph{race condition} mal traduit) qui peut dans certains cas empêcher l’interruption de l’appel système read(2).
+Un étudiant propose de résoudre ce problème en utilisant une variable modifiée par la fonction de traitement de SIGALRM.
+Que pensez-vous du programme
+\href{https://sites.uclouvain.be/SystInfo/notes/Exercices/html/_downloads/alarm3.c}{/Programmes/src/alarm3.c} ?
+
+\begin{solution}
+Il faut utiliser un jump au lieu d'une condition if sur le booléen.
+
+Il est possible que le système, très chargé, nous fasse attendre entre l'appel à alarm et l'appel à read, suffisamment longtemps que pour que le signal soit délivré avant l'appel à read, que le handler s'exécute (incorrectement), et que le read se lance alors, attendant l'utilisateur, et ne pouvant plus être interrompu par un signal.
+
+Première solution (du syllabus) : il faut empêcher l'exécution de read si l'alarme a déjà été reçue. Pour cela, on utilise un sigsetjmp encadrant les deux appels systèmes, et on utilise un siglongjmp dans le handler.
+Quand on exécute pour la première fois le bloc de sigsetjmp, l'alarme n'a nécessairement pas encore eu lieu, et donc on enregistre l'alarme et on commence la lecture.
+Si à un moment donné on se retrouve de nouveau dans l'instruction sigsetjmp, ce sera nécessairement à la suite de l'appel à siglongjmp(env, 1), et donc l'alarme aura expirée et on n'aura pas à enregistrer une nouvelle alarme ou à commencer la lecture.
+
+L'utilisation de la variable expired dans le code de alarm3.c, ne résout rien :
+il est tout à fait possible que le processus soit mis en pause entre la vérification du if et l'appel à read, et donc que le read s'exécute après que le signal ait été délivré.
+En fait, il est vraiment nécessaire que le programme repasse dans cette portion de code comprise entre alarm et read inclus tous les deux :
+il faut en effet pouvoir ne pas exécuter read si jamais l'alarme se déclenche, mais il est possible qu'elle arrive avant l'appel à read.
+Avec les sigjmp, le cas d'une interruption à mi-chemin fait que read n'est pas exécuté.
+
+Petite note : en fait, il est tout à fait possible que le programme plante pour une raison extérieure.
+En effet, si quelqu'un d'extérieur envoie un signal SIGALRM à notre processus, juste après que l'on ait enregistré le handler, et juste avant qu'on exécute sigsetjmp, alors le handler sera appelé, et siglongjmp plantera car le buffer d'environnement n'aura pas encore été initialisé.
+Mais bon, on peut considérer cela comme un acharnement à provoquer un bug plutôt qu'un bug réel.
+
+Autre petite note : siginterrupt permet de gérer le redémarrage automatique ou non de certains appels systèmes lors de l'arrivée d'un signal.
+Ici, on désactive le redémarrage des appels systèmes après récupération d'un signal.
+\end{solution}
+
+\question{5}
+La page de manuel signal(7) définit les signaux suivants :
+\begin{itemize}
+	\item SIGSYS
+	\item SIGPIPE
+\end{itemize}
+Expliquez dans quels cas ces deux signaux peuvent être générés et délivrés à un processus.
+
+\begin{solution}
+SIGSYS : Ca n'arrive jamais pour libc, mais ça peut arriver pour des bibliothèques externes :
+par exemple, les appels systèmes, vu qu'ils ne contrôlent pas les arguments.
+Ca peut arriver aussi si on appelle directement les appels systèmes avec syscall.
+
+SIGPIPE :
+\begin{itemize}
+	\item Perte de la connexion, et on envoie des données inutiles. Dans le cas d'un réseau.
+
+	Exemple : ssh
+	\item Crash d'un processus fils, ou d'un processus en aval du flux de données : par exemple crash du processus lancé par le bash.
+
+	Exemple : cat file.txt | ./buggy : si buggy se crash dès le début, la redirection de cat va planter pour lui éviter du travail inutile.
+\end{itemize}
+A noter que le signal n'est envoyé que si le file descriptor correspondant au pipe en lecture est fermé chez tout le monde : le père et le fils.
+Tant que le fils ne s'exécute pas, son file discriptor reste ouvert, peu importe le temps d'attente.
+SIGPIPE n'est envoyé que lorsque les deux ferment le descripteur, ou que le dernier descripteur plante avec son processus.
+\end{solution}
+
+\question{6}
+Unix définit un signal SIGCHLD qui est envoyé lorsqu’un fils se termine.
+Quel est l’intérêt d’un tel signal pour le processus père?
+
+\begin{solution}
+SIGCHLD : utilisé par wait et waitpid par exemple.
+Permet d'être réveillé lorsque un processus fils décède.
+\end{solution}
+
+\question{7}
+Un processus a exécuté une fonction de traitement du signal SIGUSR1 et une autre fonction pour traiter le signal SIGUSR2.
+La fonction qui traite SIGUSR1 est une fonction assez complexe qui prend des centaines d’instructions.
+Que se passe-t-il si pendant que le processus est en train de traiter le signal SIGUSR1, un autre processus lui envoie :
+\begin{itemize}
+	\item SIGUSR1
+	\item SIGUSR2
+\end{itemize}
+
+\begin{solution}
+SIGUSR1 : Le signal va être ignoré.
+
+SIGUSR2 : Le traitement du signal SIGUSR1 va être interrompu, il va traiter SIGUSR2, puis il va revenir à SIGUSR1.
+
+Conclusion, lorsqu'on écrit une routine de traitement de signal, il faut avoir en tête que plusieurs routines de traitement de signaux peuvent être exécutées simultanément, et que l'on est en train d'ignorer d'autres signaux.
+\end{solution}
+
+\question{8}
+Considérons la fonction de gestion des signaux suivante :
+\begin{lstlisting}
+static void sig_handler(int signum) {
+	char *msg="Reçu signal \n";
+	write(STDERR_FILENO,msg,strlen(msg));
+}
+\end{lstlisting}
+Cette fonction utilise l’appel système write(2) qui peut modifier la variable errno en cas d’erreur.
+Modifiez-la de façon à ce que toute modification à errno n’affecte pas l’utilisation de errno dans le programme en cours d’exécution.
+
+\begin{solution}
+Déjà, faire un write dans un \emph{signal handler} est une mauvaise idée :
+ça va prendre beaucoup trop de temps.
+
+Or, errno risque d'être modifié par le write.
+Mais aussi par une autre fonction.
+
+Donc, on doit copier errno avant d'exécuter write, puis réaffecter errno.
+
+Le code ressemble donc à:
+\begin{lstlisting}
+static void sig_handler(int signum)
+{
+	char *msg = "Reçu signal.\n";
+	int errnobackup = errno;
+	if (write(STDOUT_FILENO, msg, strlen(msg)+1) == -1)
+		perror("write"), exit(EXIT_FAILURE);
+	errno = errnobackup;
+}
+\end{lstlisting}
+\end{solution}
+
+\question{9}
+Dans les programmes
+\href{https://sites.uclouvain.be/SystInfo/notes/Exercices/html/_downloads/process-sem-before.c}{/Programmes/src/process-sem-before.c} et
+\href{https://sites.uclouvain.be/SystInfo/notes/Exercices/html/_downloads/process-sem-after.c}{/Programmes/src/process-sem-after.c},
+on a choisi de créer le sémaphore dans un processus avec sem\_open(3) et de le supprimer avec sem\_unlink(3) dans un autre processus.
+Est-ce possible de créer et supprimer le sémaphore dans le même processus ?
+
+\begin{solution}
+Si tu peux le faire sur des processus différents, pourquoi tu pourrais pas le faire sur toi-même ? Hein ?% Ducon.
+% C'était presque la réponse officielle du tuteur, quoiqu'un peu moins colorée.
+
+Faut juste faire attention que lorsqu'on appelle sem\_unlink, le sémaphore ne peut plus être ouvert par un autre processus (mais il reste ouvert chez tout ceux qui l'ont déjà).
+Donc il faut appeler sem\_unlink après que tous les processus qui pourraient en avoir besoin l'aient ouvert.
+Par exemple, on l'ouvre, puis on fork tous les processus, puis on attend qu'ils l'aient tous ouvert (on pourrait par exemple leur demander de poster sur ce sémaphore), puis on unlink.
+Si les processus ne partagent pas de lien de parenté, c'est un peu plus compliqué.
+\end{solution}
+
+\question{10}
+Un processus P ouvre le fichier fichier avec l’appel système open(2). Celui-ci est associé au descripteur fd. Ensuite, le processus utilise fork(2) pour créer un processus fils.
+\begin{itemize}
+	\item représenter les open-file objects utilisés
+	\item le père et le fils peuvent-ils lire sur fd ?
+	\item le processus fils utilise l’appel système chmod(2) pour rendre le fichier inaccessible en écriture et lecture. Après cette opération, le père et le fils peuvent-ils lire sur fd ?
+	\item le père ferme le descripteur fd. Après cette opération, le père et le fils peuvent-ils lire sur fd ?
+	\item le fils exécute unlink(2) sur le fichier. Après cette opération, le père et le fils peuvent-ils lire sur fd ?
+\end{itemize}
+
+\begin{solution}
+\begin{itemize}
+	\item L'open file object (file description, qui contient entre autre l'offset) est stocké dans le noyau, et est donc partagé, offset compris (du moins s'il a été ouvert dans un père ; deux processus différents ouvrant le même fichier auront bien des open file objects différents). Les deux file descriptors sont de simples entiers, chaque processus a son propre entier, mais ils valent la même chose.
+	\item Les deux processus peuvent lire sur fd (du moins si on l'a demandé dans open).
+	\item Ca ne fait rien : ils l'ont déjà ouvert (open) avant, les permissions ne sont plus vérifiées par la suite.
+	\item Le père ne peut plus (vu que son fd est invalide pour son processus), le fils oui (c'est son fd, même s'il partage le file description).
+	\item Unlink va supprimer le fichier du disque, mais uniquement après que tous les processus l'ont fermé. Donc, le père n'y a pas accès, le fils non plus (il appelle d'abord close), et donc le fichier est probablement supprimé. Si le père n'avait pas closé avant, il aurait néanmoins toujours eu accès au fichier, mais le fils pas non plus.
+\end{itemize}
+\end{solution}
+
+\question{11}
+Même question que ci-dessus, mais en remplaçant le fichier par un sémaphore nommé et open(2) par sem\_open(3) ?
+
+\begin{solution}
+Très similaire. L'exercice est laissé au lecteur.
+
+Alley, on est gentil :
+\begin{itemize}
+	\item Les sémaphores sont aussi dans le noyau.
+	\item Toute personne l'ayant ouvert peut le modifier, et ils sont conservés par fork.
+	\item Il n'y a pas de chmod pour les sémaphores, si ? %FIXME
+	\item Le père ne peut plus se servir du sémaphore, le fils oui.
+	\item Lorsque le fils fermera son sémaphore, celui-ci sera supprimé du système. En attendant, il persiste en mémoire, pouvant être utilisé par tous les processus l'ayant ouvert avant l'appel à unlink.
+\end{itemize}
+
+%TODO vérifier quand même, Jereminet (pourquoi ce pseudo) dit que lors d'un appel à close les deux sont affectés, et que l'appel à unlink entraine aussi close.
+\end{solution}
+
+\question{12}
+Le programme \href{https://sites.uclouvain.be/SystInfo/notes/Exercices/html/_downloads/miniprojet.c}{/Programmes/src/miniprojet.c}
+utilise des sémaphores nommés pour synchroniser la production/consommation entre deux processus.
+Le processus père crée le fichier my\_file.txt y écrit une valeur.
+Le processus fils est chargé de lire la donnée présente dans le fichier et l’affiche à la console.
+Ce programme tourne à l’infini et donc il faut l’arrêter avec la commande Ctrl-C.
+Malheureusement dans ce cas les sémaphores nommés ne sont pas supprimés correctement.
+Après avoir terminé le programme avec Ctrl-C vous verrez qu’il reste des sémaphores dans /dev/shm/.
+
+Comment modifier ce programme pour gérer la terminaison correcte des processus lors de la pression sur Ctrl-C.
+Pour ce faire, vous devez modifier le programme de façon à ce qu’il libère toutes les ressources allouées avant de se terminer.
+Ceci peut se faire en traitant le signal envoyé au processus par le shell lorsque l’utilisateur presse Ctrl-C.
+
+\begin{solution}
+Pour cela, il faut définir un \emph{signal handler} :
+\begin{lstlisting}
+void abandonner(int signum)
+{
+	if (signum == SIGINT) {
+		int err = sem_close(writesem);
+		if (err != 0)
+			exit(EXIT_FAILURE);
+		err = sem_close(readsem);
+		if (err != 0)
+			exit(EXIT_FAILURE);
+		err = close(file);
+		if (err != 0)
+			exit(EXIT_FAILURE);
+	}
+	printf("Fermé pour cause de SIGINT\n");
+	exit(EXIT_FAILURE);
+}
+\end{lstlisting}
+et modifier la main :
+\begin{lstlisting}
+sighandler_t handler_ret = signal(SIGINT, abandonner);
+if (handler_ret == SIG_ERR)
+	perror("signal"), exit(EXIT_FAILURE);
+int pid, ret = 0;
+
+/* Open file */
+file = open("my_file.txt", O_RDWR | O_CREAT | O_TRUNC, 0644);
+/* ... */
+/* Create the shared read semaphore. */
+readsem = sem_open("minireader", O_CREAT, S_IRUSR | S_IWUSR, 0);
+/* ... */
+if (sem_unlink("minireader") < 0) {
+	ret = 1;
+	goto err_unlink1; // très peu probable
+}
+
+/* Create the shared write semaphore.
+ * Init to 1, because the producer can directly write a value. */
+writesem = sem_open("miniwriter", O_CREAT, S_IRUSR | S_IWUSR, 1);
+/* ... */
+if (sem_unlink("miniwriter") < 0) {
+	ret = 1;
+	goto err_unlink2; // très peu probable
+}
+/* ... */
+err_fork:
+err_unlink2:
+	sem_close(writesem);
+err_write:
+err_unlink1:
+	sem_close(readsem);
+/* ... */
+\end{lstlisting}
+% FIXME d'après ce que j'ai testé, ça a l'air de marcher, mais je ne suis pas sûr que ce code élimine tous les corner cases. Il y avait notamment un signal handler qui fermait les sémaphores, et deux sleep(10) pour la synchronisation.
+\end{solution}
+
+
+
+%TODO mettre à jour
 %--------------------------------------S11-------------------------------------
 \section{La mémoire virtuelle et les fichiers mappés en mémoire}
 
@@ -1344,4 +1903,143 @@ Le contenu de cette APE se réfère à la semaine 12 sur le site des exercices.
 \TODO
 
 \subsection{Exercices}
+
+\question{1}
+L’appel système shmget(2) supporte également le drapeau IPC\_EXCL en plus du drapeau IPC\_CREAT.
+Expliquez à quoi ce drapeau peut servir et dans quel cas il peut être utile.
+
+\begin{solution}
+Utilité de IPC\_CREAT : créer la nouvelle clé si elle n'existe pas ;
+sans ce drapeau, si la clé n'existe pas, l'appel échoue.
+
+Utilité de IPC\_EXCL : fait échouer l'appel système si la clé existe déjà ;
+assure que l'appel crée la clé. Il faut spécifier IPC\_CREATE aussi.
+\end{solution}
+
+\question{2}
+Un processus père ouvre un segment de mémoire partagée avec l’appel système \lstinline$shmget(key, 4096, IPC_CREAT | S_IRUSR | S_IWUSR )$.
+Un de ses processus fils peut-il exécuter \lstinline$shmget(key, 4096, S_IRUSR)$ ?
+Si oui, ce processus peut-il ensuite attacher cette page en utilisant :
+\begin{itemize}
+	\item \lstinline|shmat(shm_id, NULL, SHM_RDONLY)|
+	\item \lstinline|shmat(shm_id, NULL, SHM_EXEC)|
+\end{itemize}
+
+\begin{solution}
+
+Parent : \lstinline$shmget(key, 4096, IPC_CREAT | S_IRUSR | S_IWUSR)$
+
+Fils : \lstinline$shmget(key, 4096, S_IRUSR)$
+
+Permissions sur la page pour le parent : $600$
+
+Permissions sur la page pour le fils : $400 (==600 \& 400)$
+% FIXME je ne sais pas d'où vient ce 600. Ce n'est pas l'umask, donc qu'est-ce que c'est ?
+
+Les deux appels réussissent.
+
+Est-ce que l'appel \lstinline$shmat(shm_id, NULL, SHM_RDONLY)$ va réussir ?
+
+Oui, ça réussit car les permissions demandées sont en accord.
+
+Ensuite : \lstinline$shmat(shm_id, NULL, SHM_EXEC)$ ?
+
+Là, l'appel ne va pas réussir, car la page n'a pas le bit d'exécution.
+\end{solution}
+
+\question{3}
+Lorsque l’on utilise l’appel système shmat(2) avec \lstinline|NULL| comme deuxième argument, le système d’exploitation choisit l’adresse à laquelle le segment de mémoire va être attaché.
+Cela pose des difficultés si l’on veut stocker des pointeurs en mémoire partagée.
+Un étudiant propose de d’abord allouer la zone mémoire avec malloc(3) et d’ensuite attacher le segment de mémoire à cet endroit.
+Il a réalisé un test avec un processus père et son fils et les deux segments de mémoire partagée se retrouvent à la même adresse.
+Il en conclut que cela permet de résoudre le problème. Qu’en pensez-vous ?
+
+\begin{solution}
+\lstinline$shmat(shm_id, NULL, ...)$
+
+Avec \lstinline|NULL|, le kernel choisit l'endroit où placer la zone mémoire.
+
+Maintenant, que faire si on veut partager une structure déjà existante ?
+
+On peut remplacer \lstinline|NULL| par l'adresse de la structure dans le père ; le kernel pourra faire en sorte que cette structure soit partagée (même si ça a de fortes chances de planter).
+Après un fork, le processus fils aura, dans son espace d'adressage, la même zone de mémoire partagée, et donc les deux processus pourront communiquer via cette zone de mémoire partagée, tout en pouvant utiliser des pointeurs.
+%On se propose de remplacer \lstinline|NULL| par l'adresse mémoire de la structure dans le père, et de laisser le kernel choisir la zone mémoire pour le fils (donc fatalement la bonne zone mémoire).
+
+Si on fait le test, on se rend compte que ça marche. Du coup, est-ce qu'on a résolu notre problème ?
+
+Réponse : non. Rien ne garantit que le kernel parviendra toujours à attacher la zone de mémoire partagée à l'endroit demandée,
+surtout si l'adresse mémoire renvoyée par malloc et donc demandée n'est pas un multiple de la taille d'une page, ce qui arrive en pratique très fréquemment.
+
+De même, il est impossible de partager de la sorte de la mémoire entre deux processus qui n'ont pas de relation familiale directe :
+la zone de mémoire partagée sera probablement à une autre adresse.
+
+Un dernier problème se passe lorsqu'on détruit la zone de mémoire partagée (via shmdt ou via munmap) :
+la zone de mémoire disparait alors de l'espace d'adressage, y compris la structure.
+Il faut donc désallouer celle-ci avant de supprimer la zone de mémoire partagée.
+
+Pour pouvoir utiliser des pointeurs dans une zone de mémoire partagée, le mieux est d'utiliser des \og offset\fg{}, à savoir ne retenir que le décalage par rapport au début de la zone mémoire.
+
+La question suivante élabore cela plus en détail.
+\end{solution}
+
+\question{4}
+Deux processus utilisent un segment de mémoire partagée et doivent se partager une liste chaînée.
+Comment implémenteriez-vous cette liste simplement chaînée de façon à ce qu’elle puisse être utilisée dans cette mémoire partagée.
+On supposera que le segment de mémoire partagée est toujours plus grand que la zone mémoire nécessaire au stockage de la liste.
+
+\begin{solution}
+L'idée : ne pas stocker les pointeurs vers des adresse virtuelles, mais les pointeurs moins l'adresse du début de la zone mémoire : adresses relatives.
+
+Ca marche tant que tous les éléments de la liste chainée soient dans la même page, dans la même zone de mémoire partagée.
+A partir du moment où la liste va passer sur une deuxième page, ça va foirer.
+% FIXME je ne sais plus pourquoi je parlais de pages, alors que c'est sûrement juste des segments de mémoire.
+
+Autre option : on peut stocker non pas des \og offset\fg{} mais des \og numéro d'allocation de la page + offset dans cette page\fg{},
+et quasimment réimplémenter un système de mémoire virtuelle. C'est évidemment peu pratique.
+
+(TODO : tenter d'implémenter ça. Juste pour le plaisir.)
+
+L'utilisateur voulant utiliser une structure chainée avec des pointeurs doit donc se poser une question fondamentale :
+quel est l'intérêt de faire une liste chainée si c'est pour quand même avoir une mémoire contigüe dans laquelle la liste est stockée et avoir une limite de taille ?
+\end{solution}
+
+\question{5}
+Le livre \cite{Kerrisk2010} contient de nombreux exemples de programmes permettant de manipuler les segments de mémoire partagée.
+Compilez les programmes \lstinline|svshm_create|, \lstinline|svshm_attach| et \lstinline|svshm_rm| pour créer, attacher et supprimer un segment de mémoire partagée.
+Les commandes ipcs(1) et ipcrm(1) permettent de visualiser et supprimer les segments de mémoire partagée.
+Pensez à utiliser ces commandes pour vérifier que vous n’avez pas laissé de segment de mémoire partagée qui traine.
+
+\begin{solution}
+\lstinline|svshm_create| permet de créer un nouveau segment de mémoire partagée, et on constate les choses suivantes :
+\begin{itemize}
+	\item Avec -c, crée la zone. Si -c n'est pas mis, plante si elle n'existe pas (équivalent de IPC\_CREATE)
+	\item Avec -x en plus (ou même uniquement), si la clé existe déjà, ça plante (équivalent de IPC\_EXCL)
+	\item On peut bien entendu en créer plusieurs, et à peu près comme on veut.
+\end{itemize}
+
+\lstinline|svshm_attach| permet d'ajouter des segments déjà déclarés (sinon ça plante). On constate que :
+\begin{itemize}
+	\item On peut ajouter plusieurs fois le même segment partagé.
+	\item Mettre une position non multiple de $4096$ (la taille des pages) fait planter.
+	      Il faut utiliser r dans ce cas.
+	\item Mettre une position déjà affectée (même via r) va aussi planter.
+	\item L'argument R n'a pas été observé, vu que le programme de test ne fait rien d'autre qu'attacher la page.
+	      Un programme externe verrait qu'elle est en lecture seule.
+\end{itemize}
+
+\lstinline|svshm_rm| permet de supprimer le segment du shmid donné.
+C'est à peu près la même commande que ipcrm(1).
+
+Petit test : en lançant deux programmes, qui utilisent chacun le même segment de mémoire partagé,
+puis en supprimant ce segment alors que les programmes sont en cours d'exécution,
+on constate que le segment reste en mémoire, mais avec un "DEST" à côté (sa destruction est planifiée),
+que les deux autres programmes continuent de tourner, et que le segment n'est libéré que lorsque les deux programmes s'achèvent.
+Après ce moment, il n'est plus possible de réutiliser ces segments de données partagées (on ne peut plus s'y attacher) ; en effet, ils sont supprimés.
+Encore mieux, tant que le segment est en mémoire, même s'il est marqué de DEST, un nouveau processus peut toujours attacher cette zone de mémoire partagée ;
+tant qu'il existe à cause d'un autre processus qui l'a attaché, le segment existe et il est possible de s'en servir
+(comportement assez différent des fichiers et des sémaphores).
+\end{solution}
+
+\biblio
+
 \end{document}
