@@ -1280,7 +1280,7 @@ Expliquez notamment à quoi sert le bit d’exécution sur un répertoire.
 \item w : est-il possible de renommer, créer ou supprimer un fichier dans ce répertoire, ou de modifier les attributs du répertoire ?
 
 \item x : est-il possible d'ouvrir ce répertoire ?
-Avec \manpage{chmod}{1}, il y a aussi le "bit" X qui permet de ne viser que ce bit de permission sur les répertoires.
+Avec \manpage{chmod}{1}, il y a aussi le \og bit\fg{} X qui permet de ne viser que ce bit de permission sur les répertoires.
 Par exemple, \cmdline{chmod -R u-x, u+X}
 
 \item s : \emph{Set User ID} ou \emph{Set Group ID} : en remplacement du bit d'exécution de l'utilisateur ou du groupe.
@@ -1860,57 +1860,217 @@ Considérons le disque dur ST31500341AS dont les caractéristiques techniques so
 
 Comment atteint-il les 300MB/s ? La mémoire cache. Seulement, quand on dépasse les 32MB du cache, ça ne marche plus.
 \end{solution}
+%7200 tours/minutes * 63 secteurs/pistes * 512 bytes/secteur * 1 piste / 60 secondes/minute = 3870720 bytes/seconde
+%Comment atteint-il les 300MB/s ? La mémoire cache. Seulement, quand on dépasse les 32MB du cache, ça ne marche plus.
 
 \question{2}
+Considérons un ordinateur utilisant des pages de 1024 bytes et des adresses virtuelles encodées sur 13 bits et des adresses réelles également sur 13 bits. La table des pages actuellement utilisée est la suivante :
+
+\begin{center}
+\begin{tabular}{rrr}
+	\toprule
+	Indice	&	Validité	&	Adresse	\\ [0pt] % LaTeX et tabular cassent les couilles en interprétant [111] comme étant accouplé au \\ et indiquant l'interligne. On spécifie donc un interligne de 0pt comme ça il ferme sa gueule.
+	\midrule \relax % Il y a aussi un \\ dans \midrule, mais on ne peut pas le désactiver ; du coup on \relax, ce qui force à ne plus parser le [111] comme faisant partie du \\
+	[111]	&	true		&	001		\\ [0pt]
+	[110]	&	true		&	000		\\ [0pt]
+	[101]	&	true		&	111		\\ [0pt]
+	[100]	&	false		&			\\ [0pt]
+	[011]	&	true		&	011		\\ [0pt]
+	[010]	&	false		&			\\ [0pt]
+	[001]	&	true		&	010		\\ [0pt]
+	[000]	&	true		&	100		\\ [0pt]
+	\bottomrule
+\end{tabular}
+\end{center}
+
+Sur base de cette table des pages, déterminez si les adresses suivantes correspondent à des données se trouvant en mémoire et le cas échéant l’adresse physique correspondante :
+\begin{itemize}
+	\item 1100110111010
+	\item 0110000110010
+	\item 0000010010001
+	\item 1000010001001
+	\item 0000000000000
+\end{itemize}
+
+\begin{solution}
 Indice : bits de poids fort
 il ne faut changer que les 3 premiers bits car c'est pas page que c'est mis dans la mémoire 
 1024 valeurs : 2\^10 10 bits pour représenter (0010010001) => offset dans la page puis on doit juste savoir où elle se trouve dans la mémoire réelle (3 bits)
 \begin{enumerate}
-    \item Première : 1100110111010 => 0000110111010
-    \item Deuxième : 0110000110010 => 0110000110010 Rq : Rien n'empêche que les adresses soient les mê mais ce sont 2 notions différentes 
-    \item Troisième : 0000010010001 => 1000010010001
-    \item Quatrième : 1000010001001 => faute de table des pages 
-    \item Cinquième : 0000000000000 (représente NULL) => 1000010010001
+	\item Première : 1100110111010 => 0000110111010
+	\item Deuxième : 0110000110010 => 0110000110010 Rq : Rien n'empêche que les adresses soient les mê mais ce sont 2 notions différentes
+	\item Troisième : 0000010010001 => 1000010010001
+	\item Quatrième : 1000010001001 => faute de table des pages
+	\item Cinquième : 0000000000000 (représente NULL) => 1000010010001
 \end{enumerate}
+\end{solution}
+%110 - 0110111010 => 000 - 0110111010 valide
+%011 - 0000110010 => 011 - 0000110010 valide
+%000 - 0010010001 => 100 - 0010010001 valide
+%100 - 0010001001 : la page est marquée comme invalide, et donc l'adresse n'est pas en mémoire RAM.
+%000 - 0000000000 => 100 - 0000000000 valide
 
 \question{3}
+Un processus est chargé en mémoire.
+L’output de /proc/pid/maps est le suivant :
+\begin{lstlisting}
+08047000-080f5000 r-xp 00000000 08:01 553302     /bin/bash
+080f5000-080fa000 rw-p 000ae000 08:01 553302     /bin/bash
+09047000-09107000 rw-p 09047000 00:00 0          [heap]
+bffaa000-bffbf000 rw-p bffe9000 00:00 0          [stack]
+\end{lstlisting}
+En supposant que la mémoire RAM était initialement vide et que le processus a été chargé à partir de l’adresse 0x00000000 en mémoire physique, construisez la table des pages de ce processus si il utilise des pages de 4 KBytes.
+
+\begin{solution}
 Les deux zones mémoires : texte et variables (une où on peut lire et l'autre lire/écrire)
 4 KB : $2^{12}$ = $16^3$ est la taille des pages. En hexadécimal, l'offset est représenté sur 3 caractères hexadecimaux. Les adresses virtuelles sont représentées sur 32 bits (8x4).
 
-08047000 : 
-5 premiers chiffres = indice (numero) de page 
-3 derniers chiffres = offset dans la page 
-L'indice que le l'on nous donne : nombre trop grand (32 bits) alors qu'en vrai l'indice est sur 20 bits 
+08047000 :
+5 premiers chiffres = indice (numero) de page
+3 derniers chiffres = offset dans la page
+L'indice que le l'on nous donne : nombre trop grand (32 bits) alors qu'en vrai l'indice est sur 20 bits
 
-2ème colonne : intervalle (range), il faudrait rajouter toutes les adresses entre! 
+2ème colonne : intervalle (range), il faudrait rajouter toutes les adresses entre!
 
-Il y a 2 types d'adresse réelles en pratique : voir manpage proc, fichier maps. Quelle est la différence /e/ adresses de bin/bash et celles du heap/stack? 
-On ne fait pas l'offset de la même manière : 
+Il y a 2 types d'adresse réelles en pratique : voir manpage proc, fichier maps. Quelle est la différence /e/ adresses de bin/bash et celles du heap/stack?
+On ne fait pas l'offset de la même manière :
 offset du device alors que qd on charge dans un fichier, on fait à partir de l'offset d'un fichier (début)
+\end{solution}
+%Faire attention à l'inode et au device : l'offset dépend de l'hardware sur lequel il est stocké.
+%La page est de 4KiB, donc 12 bits, donc se représente avec 3 chiffres hexadécimaux (c'est pour ça qu'il y a autant de zéros).
+%8 chiffres hexadécimaux = 32 bits = 4GiB virtuel et 4GiB physique
+%
+%-----------------------------------------------------------------------
+%Indice | Val. | Adresse | RWXP | Notes
+%-----------------------------------------------------------------------
+%08047 |  T   | 00000   | r-xp | Début su segment code
+%08048 |  T   | 00001   | r-xp |
+%08049 |  T   | 00002   | r-xp |
+%0804a |  T   | 00003   | r-xp |
+%..... .  ..  . .....   . .... .
+%08050 |  T   | 00009   | r-xp |
+%..... .  ..  . .....   . .... .
+%080f0 |  T   | 000a9   | r-xp |
+%080f1 |  T   | 000aa   | r-xp |
+%080f2 |  T   | 000ab   | r-xp |
+%080f3 |  T   | 000ac   | r-xp |
+%080f4 |  T   | 000ad   | r-xp | Fin du segment code
+%080f5 |  T   | 000ae   | rw-p | Début du segment data
+%080f6 |  T   | 000af   | rw-p |
+%080f7 |  T   | 000b0   | rw-p |
+%080f8 |  T   | 000b1   | rw-p |
+%080f9 |  T   | 000b2   | rw-p | Fin du segment data
+%080fa |  F   | ------  | ---- | Invalide
+%..... .  ..  . .....   . .... .
+%09046 |  F   | ------  | ---- | Invalide
+%09047 |  T   | 09047   | rw-p | Début du heap
+%09048 |  T   | 09048   | rw-p |
+%..... .  ..  . .....   . .... .
+%09106 |  T   | 09106   | rw-p | Fin du heap
+%09107 |  F   | ------  | ---- | Invalide
+%..... .  ..  . .....   . .... .
+%bffa9 |  F   | ------  | ---- | Invalide
+%bffaa |  T   | bffe9   | rw-p | Début (enfin, fin) du stack
+%..... .  ..  . .....   . .... .
+%bffbe |  T   | bfffd   | rw-p | Fin (enfin, début) du stack
+%bffbf |  F   | -----   | ---- | Invalide
+%..... .  ..  . .....   . .... .
+%fffff |  F   | ------  | ---- | Fin de l'espace d'adressage ; invalide
+%-----------------------------------------------------------------------
 
 \question{4}
-Un ordinateur utilise de la mémoire virtuelle avec des adresses virtuelles sur 32 bits et des adresses physique sur 26 bits. Sa mémoire virtuelle est découpée en pages de 4 KBytes. Si chaque entrée de la table des pages occupe 32 bits, quelle est la zone mémoire occupée par la table des pages ? Le nombre de lignes dans la table des pages varie-t-il si les adresses physiques passent à 32 bits ou 36 bits ?
+Un ordinateur utilise de la mémoire virtuelle avec des adresses virtuelles sur 32 bits et des adresses physique sur 26 bits.
+Sa mémoire virtuelle est découpée en pages de 4 KBytes.
+Si chaque entrée de la table des pages occupe 32 bits, quelle est la zone mémoire occupée par la table des pages ?
+Le nombre de lignes dans la table des pages varie-t-il si les adresses physiques passent à 32 bits ou 36 bits ?
 
-2\^20 = nombre de pages que notre processus peut avoir en mémoire virtuelle 
-4KB : 12 bytes 
-Le nombre de lignes est fonction de la taille des pages et de la taille de l'adresse ! 
+\begin{solution}
+$2^{20}$ = nombre de pages que notre processus peut avoir en mémoire virtuelle
+4KB : 12 bytes
+Le nombre de lignes est fonction de la taille des pages et de la taille de l'adresse !
 
-Il y a 2\^20 lignes (1 million) si on prend de 32 bits 
+Il y a $2^{20}$ lignes (1 million) si on prend de 32 bits
 4 millions de bites = 4 MB
 
-Il y a 2\^20 lignes si on prend 36 bits => cela ne change rien car dpd de la taille de l'adresse virtuelle et pas physique, ce qui change potentiellement, c'est la taille de la ligne! MAIS le nombre de lignes ne change pas. 
+Il y a $2^{20}$ lignes si on prend 36 bits => cela ne change rien car dpd de la taille de l'adresse virtuelle et pas physique, ce qui change potentiellement, c'est la taille de la ligne! MAIS le nombre de lignes ne change pas.
 
-(2\^20 = approx à 1 million car 2\^10 = 1024)
+($2^{20}$ = approx à 1 million car $2^{10}=1024$)
+\end{solution}
+%Page : 12 bits
+%Indice de la page virtuelle : 32-12 = 20 bits
+%Indice de la page physique  : 26-12 = 14 bits
+%Total table des pages : 2^20 lignes contenant chacune 32 bits donc 4 octets donc 2 bits supplémentaires-> 2^22 octets occupés donc 4MiB
+%Les adresses physiques ne changent pas le nombre de lignes de la table des pages, juste l'occupation mémoire de chaque ligne : éventuellement 3 bits supplémentaires donc on passerait à 8MiB
+%(Pour le moment, il faut 14 bits pour l'adresse + 7 bits spéciaux = 21 bits qu'on a arrondi à 32 bits.
+%Passage à 32 bits physiques : 20 bits pour l'adresse + 7 bits spéciaux = 27 bits qu'on peut arrondir à 32 bits.
+%Passage à 36 bits physiques : 24 bits pour l'adresse + 7 = 31 bits qu'on peut encore faire tenir dans 32 bits normalement.)
 
 \question{5}
-Un ordi dispose de 32 GBytes (10\^12) de mémoire RAM. Il utilise des adresses virtuelles de 64 bits et des pages de 4 KBytes (10\^3). Combien de lignes doit contenir sa table des pages 
+Un ordi dispose de 32 GBytes de mémoire RAM.
+Il utilise des adresses virtuelles de 64 bits et des pages de 4 KBytes.
+Combien de lignes doit contenir sa table des pages ?
 
-2\^52 (car 64-12 = 52) entrées : naïvement (4 millions de milliards)
-La table des pages est dans la mémoire RAM en général. On ne peut pas charger à tout moment l'ensemble des pages dans le processeur. SI entrée pas dans le TLT, va dans la RAM pour aller chercher. 
+\begin{solution}
+$2^{52}$ (car $64-12 = 52$) entrées : naïvement (4 millions de milliards)
+La table des pages est dans la mémoire RAM en général. On ne peut pas charger à tout moment l'ensemble des pages dans le processeur. SI entrée pas dans le TLT, va dans la RAM pour aller chercher.
 
-2\^20 pages et page de 20KB : quantité de mémoire réelle adressable possible est de 2\^32 (1 milliard) x 2\^2  = 4 milliards. On sait adresser 4GB avec cette situation ! 
+$2^{20}$ pages et page de 20KB : quantité de mémoire réelle adressable possible est de $2^{30}$ (1 milliard) x $2^{2}$  = 4 milliards. On sait adresser 4GB avec cette situation !
 
-Avec techniques actuelles, on sait stocker 2\^23 lignes. Car il faut 8x plus de mémoire, (32 GB) multiplier par 2\^3 \\
+Avec techniques actuelles, on sait stocker $2^{23}$ lignes. Car il faut 8x plus de mémoire, (32 GB) multiplier par $2^3$.
+\end{solution}
+%Page : 12 bits
+%Indice de la page virtuelle : 64-12 = 52 bits
+%Indice de la page physique :  35-12 = 23 bits
+%Nombre de lignes de la table des pages : 2^52
+%Une ligne de la table des pages : par exemple, 8 bytes même si on peut réduire (on verra que ça n'a pas d'impact).
+%Donc, comme les adresses sont en 64 bits, la table des pages a une occupation de 2^52 * 2^3 = 2^55 octets occupés
+%En pratique évidemment, on ne fait pas ça comme ça. Mais c'est out of scope du cours actuel.
+%Si on faisait avec les adresse physiques : 2^23 * 2^3 = 64MiB
+
+\question{6}
+Comparez les performances du programme \sourcelink{/Theorie/MemoireVirtuelle/src/ }{cp2.c} avec l’utilitaire \manpage{cp}{1} standard de Linux.
+
+\begin{solution}
+En théorie, pour des petits fichiers, cp2 est plus rapide que cp. Pour des (très grands) fichiers, le fait qu'il faille stocker en RAM le fichier pour ensuite le dupliquer est un handicap, et devient un poil plus lent.
+
+Après lecture sur Internet : en fait, c'est quasi l'inverse. \manpage{mmap}{2} a l'avantage de ne jamais charger des données inutiles, mais prend du temps (\emph{page fault}) quand on a besoin des données la première fois. \manpage{read}{2}/\manpage{write}{2} a lui besoin de lire le fichier séquentiellement, mais comme on peut choisir la taille et donc le buffer, ça peut parfois être plus rapide que \manpage{mmap}{2} pour de très petits fichiers, ainsi que pour de très gros fichiers avec peu de RAM.
+\end{solution}
+
+\question{7}
+Un programme construit en mémoire un gros tableau contenant 10 millions d’entiers.
+Initialisez ce tableau avec des entiers ayant des valeurs croissante.
+Pour sauvegarder le fichier sur disque, trois solutions s’offrent à vous :
+\begin{itemize}
+	\item écrire directement les entiers sur disque sous forme binaire en utilisant l’appel système \manpage{write}{2} en passant un pointeur vers chaque entier à cet appel système ;
+	\item écrire les entiers sur disque sous forme d’un fichier texte avec un entier par ligne ;
+	\item écrire les entiers directement sur disque, mais en utilisant \manpage{mmap}{2} plutôt que \manpage{write}{2}.
+\end{itemize}
+Dans les salles informatiques, vous pouvez stocker les données dans trois répertoires qui risquent d’avoir des performances différentes :
+\begin{itemize}
+	\item votre répertoire de login qui est accessible depuis un serveur de fichiers ;
+	\item le répertoire \filepath{/tmp} qui sous Linux est en général stocké directement en mémoire RAM;
+	\item une clé USB
+\end{itemize}
+
+Écrivez un programme qui permet de comparer les performances de ces trois méthodes permettant d’écrire sur disque sur les trois dispositifs de stockage.
+Quelle est la solution la plus rapide et pourquoi (pensez à utiliser \manpage{fsync}{2} ou \manpage{msync}{2} pour forcer le système à écrire vos données sur disque à la fin de l’exécution de votre programme).
+
+\begin{solution}
+De manière assez évidente, \manpage{printf}{3} est le plus lent à cause de son buffer et de sa manie à écrire dès qu'il y a des retours à la ligne.
+
+Le plus rapide reste \manpage{mmap}{2}, et non \manpage{read}{2}.
+En tout cas dans une machine virtuelle.
+Dans WSL (le bash Ubuntu dans Windows 10\footnote{Oui, je m'en sers. Oui, c'est mal. Pardonnez-moi.}),
+\manpage{printf}{3} prend un temps démentiel (3m50s), \manpage{write}{2} est un poil plus lent,
+et \manpage{mmap}{2} reste le plus rapide. Sur SSD, du moins.
+\end{solution}
+
+\question{8}
+Écrivez un programme similaire au précédent mais qui permet de comparer les performances en lecture.
+Utilisez \manpage{fscanf}{3} par exemple pour lire les données du fichier texte.
+
+\nosolution
+
 \question{9}
 .git permet de connaitre les infos sur le document git. 
 \begin{lstlisting}
