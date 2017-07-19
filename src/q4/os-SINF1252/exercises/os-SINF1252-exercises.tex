@@ -1894,8 +1894,6 @@ Considérons le disque dur ST31500341AS dont les caractéristiques techniques so
 
 Comment atteint-il les 300MB/s ? La mémoire cache. Seulement, quand on dépasse les 32MB du cache, ça ne marche plus.
 \end{solution}
-%7200 tours/minutes * 63 secteurs/pistes * 512 bytes/secteur * 1 piste / 60 secondes/minute = 3870720 bytes/seconde
-%Comment atteint-il les 300MB/s ? La mémoire cache. Seulement, quand on dépasse les 32MB du cache, ça ne marche plus.
 
 \question{2}
 Considérons un ordinateur utilisant des pages de 1024 bytes et des adresses virtuelles encodées sur 13 bits et des adresses réelles également sur 13 bits. La table des pages actuellement utilisée est la suivante :
@@ -1927,26 +1925,23 @@ Sur base de cette table des pages, déterminez si les adresses suivantes corresp
 \end{itemize}
 
 \begin{solution}
-Indice : bits de poids fort
-il ne faut changer que les 3 premiers bits car c'est pas page que c'est mis dans la mémoire 
-1024 valeurs : 2\^10 10 bits pour représenter (0010010001) => offset dans la page puis on doit juste savoir où elle se trouve dans la mémoire réelle (3 bits)
+Comme les pages contiennent $1024=2^{10}$ bytes, l'offset dans une page est codée sur $10$ bits,
+et comme les deux adresses font chacune $13$ bits, l'indice d'une page est codée sur $3$ bits
+(et il y a donc $8$ entrées dans la table des pages).
+Dès lors, pour passer des adresses virtuelles aux adresses physiques, il suffit de remplacer les $3$ premiers bits de l'adresse virtuelle par les $3$ bits correspondants dans la table des pages.
+
 \begin{enumerate}
-	\item Première : 1100110111010 => 0000110111010
-	\item Deuxième : 0110000110010 => 0110000110010 Rq : Rien n'empêche que les adresses soient les mê mais ce sont 2 notions différentes
-	\item Troisième : 0000010010001 => 1000010010001
-	\item Quatrième : 1000010001001 => faute de table des pages
-	\item Cinquième : 0000000000000 (représente NULL) => 1000010010001
+	\item \verb|110 - 0110111010| $\Rightarrow$ \verb|000 - 0110111010| valide.
+	\item \verb|011 - 0000110010| $\Rightarrow$ \verb|011 - 0000110010| valide. Le hasard fait que les deux adresses sont les mêmes, ce qui est évidemment une coïncidence.
+	\item \verb|000 - 0010010001| $\Rightarrow$ \verb|100 - 0010010001| valide.
+	\item \verb|1000010001001| $\Rightarrow$ invalide ; la page n'est pas en mémoire RAM, et on a une \emph{page fault} : il est possible que la page existe sur le disque, ou qu'elle n'existe pas, auquel cas l'adresse est erronée.
+	\item \verb|000 - 0000000000| (représente \lstinline|NULL|) $\Rightarrow$ \verb|100 - 0010010001| valide.
 \end{enumerate}
 \end{solution}
-%110 - 0110111010 => 000 - 0110111010 valide
-%011 - 0000110010 => 011 - 0000110010 valide
-%000 - 0010010001 => 100 - 0010010001 valide
-%100 - 0010001001 : la page est marquée comme invalide, et donc l'adresse n'est pas en mémoire RAM.
-%000 - 0000000000 => 100 - 0000000000 valide
 
 \question{3}
 Un processus est chargé en mémoire.
-L’output de /proc/pid/maps est le suivant :
+L’output de \filepath{/proc/[pid]/maps} est le suivant :
 \begin{lstlisting}
 08047000-080f5000 r-xp 00000000 08:01 553302     /bin/bash
 080f5000-080fa000 rw-p 000ae000 08:01 553302     /bin/bash
@@ -1956,61 +1951,86 @@ bffaa000-bffbf000 rw-p bffe9000 00:00 0          [stack]
 En supposant que la mémoire RAM était initialement vide et que le processus a été chargé à partir de l’adresse 0x00000000 en mémoire physique, construisez la table des pages de ce processus si il utilise des pages de 4 KBytes.
 
 \begin{solution}
-Les deux zones mémoires : texte et variables (une où on peut lire et l'autre lire/écrire)
-4 KB : $2^{12}$ = $16^3$ est la taille des pages. En hexadécimal, l'offset est représenté sur 3 caractères hexadecimaux. Les adresses virtuelles sont représentées sur 32 bits (8x4).
+Faire attention à l'inode et au device : l'offset dépend de l'hardware sur lequel il est stocké.
 
-08047000 :
-5 premiers chiffres = indice (numero) de page
-3 derniers chiffres = offset dans la page
-L'indice que le l'on nous donne : nombre trop grand (32 bits) alors qu'en vrai l'indice est sur 20 bits
+La page est de 4KiB, donc 12 bits, donc se représente avec 3 chiffres hexadécimaux
+(un chiffre hexadécimal = 4 chiffres binaires) (c'est pour ça qu'il y a autant de zéros).
 
-2ème colonne : intervalle (range), il faudrait rajouter toutes les adresses entre!
+8 chiffres hexadécimaux pour chacun des deux types d'adresses = 32 bits = 4GiB virtuel et 4GiB physique.
+L'indice de page est donc codé sur 5 chiffres hexadécimaux, ou 20 bits.
+
+Il faut bien faire attention que \filepath{/proc/[PID]/maps} ne donne jamais d'adresse physique de la mémoire vive !
+L'information peut être trouvé en déchiffrant le fichier \filepath{/proc/[PID]/pagemap}, qui est un fichier binaire un peu spécial.
+
+Les premières et deuxièmes colonnes indiquent l'intervalle d'indice des pages virtuelles pour lequel cette entrée est valable.
+
+La troisième colonne (rwxp) indique les permissions sur cette zone mémoire.
+
+La quatrième colonne indique l'offset de lecture du fichier (ou du device) par rapport au début.
+
+Les cinquième et sixième colonnes indiquent le numéro d'identification du device.
+C'est un peu complexe. En général, \verb|00:00| indique la mémoire vive.
+
+La sixième colonne indique l'inode du fichier sur le device, ou 0 s'il n'y a pas d'inode associé.
+C'est le cas du segment des données non initialisées, ainsi que de la mémoire vive si le device est \verb|00:00|.
+
+La septième et dernière colonne donne le chemin d'accès vers le fichier mappé en mémoire.
+Il y a aussi des pseudo-chemins d'accès, comme \verb|[heap]| (le tas), \verb|[stack]| (la pile du thread principal),
+\verb|[stack:986]| (la pile du thread ayant comme \emph{thread ID} 986), \verb|[vdso]|
+(\emph{virtual dynamically linked shared object}, l'endroit où sont situés une partie des appels systèmes fréquents ; sort du cadre du cours, regardez la manpage si vous voulez avoir plus de détail).
+
+\begin{center}
+\begin{tabular}{ccccl} %FIXME avec des lignes ce serait mieux, mais booktabs les rend super moche
+\toprule
+Indice virtuel	& Validité	&	Indice physique	&	rwxp	&	Notes \\
+\midrule
+\texttt{08047}	&	T		&	\texttt{00000}	&	r-xp	&	Début du segment code et du fichier	\\
+\texttt{08048}	&	T		&	\texttt{00001}	&	r-xp	&	\\
+\texttt{08049}	&	T		&	\texttt{00002}	&	r-xp	&	\\
+\dots	&	\dots	&	\dots	&	\dots	&	\\
+\texttt{080f3}	&	T		&	\texttt{000ac}	&	r-xp	&	\\
+\texttt{080f4}	&	T		&	\texttt{000ad}	&	r-xp	&	Fin du segment code	\\
+\texttt{080f5}	&	T		&	\texttt{000ae}	&	rw-p	&	Début du segment data	\\
+\texttt{080f6}	&	T		&	\texttt{000af}	&	rw-p	&	\\
+\texttt{080f7}	&	T		&	\texttt{000b0}	&	rw-p	&	\\
+\texttt{080f8}	&	T		&	\texttt{000b1}	&	rw-p	&	\\
+\texttt{080f9}	&	T		&	\texttt{000b2}	&	rw-p	&	Fin du segment data et du fichier	\\
+\texttt{080fa}	&	F		&	-----	&	-----	&	Invalide	\\
+\dots	&	\dots	&	\dots	&	\dots	&	\\
+\texttt{09046}	&	F		&	-----	&	-----	&	Invalide	\\
+\texttt{09047}	&	T		&	\texttt{09047}	&	rw-p	&	Début du heap	\\
+\texttt{09048}	&	T		&	\texttt{09048}	&	rw-p	&	\\
+\dots	&	\dots	&	\dots	&	\dots	&	\\
+\texttt{09106}	&	T		&	\texttt{09106}	&	rw-p	&	Fin du heap	\\
+\texttt{09107}	&	T		&	-----	&	-----	&	Invalide	\\
+\dots	&	\dots	&	\dots	&	\dots	&	\\
+\texttt{bffa9}	&	F		&	-----	&	-----	&	Invalide	\\
+\texttt{bffaa}	&	T		&	\texttt{bffe9}	&	rw-p	&	Début (enfin, fin) du stack	\\
+\dots	&	\dots	&	\dots	&	\dots	&	\\
+\texttt{bffbe}	&	T		&	\texttt{bfffd}	&	rw-p	&	Fin (enfin, début) du stack	\\
+\texttt{bffbf}	&	F		&	-----	&	-----	&	Invalide	\\
+\dots	&	\dots	&	\dots	&	\dots	&	\\
+\texttt{fffff}	&	F		&	-----	&	-----	&	Fin de l'espace d'adressage ; invalide	\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Dans le cas du segment code et du segment des données initialisées, le contenu du fichier est recopié tel quel dans la mémoire vive, ce qui explique pourquoi les adresses physiques sont identiques aux offsets de lecture du fichier.
+A partir des données non initialisées, ce n'est plus le cas :
+normalement, l'offset devrait avoir $0$ pour tout ce qui est en mémoire vive.
+Pour une raison étrange, l'énoncé indique des valeurs non nulles.
+Nous avons dès lors remis ces valeurs, en considérant qu'il s'agit des adresses physiques,
+même si ce n'est probablement pas le cas
+(l'énoncé dit que le programme a été chargé dans une mémoire vive initialement vide, donc les différents blocs devraient être contigus).
+%FIXME du coup
+
+Prenons la première adresse, Ox08047000 : les 5 premiers chiffres donnent l'indice (numéro) de page, les 3 derniers chiffres donnent offset dans la page.
+Dans la table des pages, on nous donne une adresse virtuelle complète, ce qui signifie que les 3 derniers chiffres (qui valent toujours 0) doivent être ignorés.
 
 Il y a 2 types d'adresse réelles en pratique : voir manpage proc, fichier maps. Quelle est la différence /e/ adresses de bin/bash et celles du heap/stack?
 On ne fait pas l'offset de la même manière :
 offset du device alors que qd on charge dans un fichier, on fait à partir de l'offset d'un fichier (début)
 \end{solution}
-%Faire attention à l'inode et au device : l'offset dépend de l'hardware sur lequel il est stocké.
-%La page est de 4KiB, donc 12 bits, donc se représente avec 3 chiffres hexadécimaux (c'est pour ça qu'il y a autant de zéros).
-%8 chiffres hexadécimaux = 32 bits = 4GiB virtuel et 4GiB physique
-%
-%-----------------------------------------------------------------------
-%Indice | Val. | Adresse | RWXP | Notes
-%-----------------------------------------------------------------------
-%08047 |  T   | 00000   | r-xp | Début su segment code
-%08048 |  T   | 00001   | r-xp |
-%08049 |  T   | 00002   | r-xp |
-%0804a |  T   | 00003   | r-xp |
-%..... .  ..  . .....   . .... .
-%08050 |  T   | 00009   | r-xp |
-%..... .  ..  . .....   . .... .
-%080f0 |  T   | 000a9   | r-xp |
-%080f1 |  T   | 000aa   | r-xp |
-%080f2 |  T   | 000ab   | r-xp |
-%080f3 |  T   | 000ac   | r-xp |
-%080f4 |  T   | 000ad   | r-xp | Fin du segment code
-%080f5 |  T   | 000ae   | rw-p | Début du segment data
-%080f6 |  T   | 000af   | rw-p |
-%080f7 |  T   | 000b0   | rw-p |
-%080f8 |  T   | 000b1   | rw-p |
-%080f9 |  T   | 000b2   | rw-p | Fin du segment data
-%080fa |  F   | ------  | ---- | Invalide
-%..... .  ..  . .....   . .... .
-%09046 |  F   | ------  | ---- | Invalide
-%09047 |  T   | 09047   | rw-p | Début du heap
-%09048 |  T   | 09048   | rw-p |
-%..... .  ..  . .....   . .... .
-%09106 |  T   | 09106   | rw-p | Fin du heap
-%09107 |  F   | ------  | ---- | Invalide
-%..... .  ..  . .....   . .... .
-%bffa9 |  F   | ------  | ---- | Invalide
-%bffaa |  T   | bffe9   | rw-p | Début (enfin, fin) du stack
-%..... .  ..  . .....   . .... .
-%bffbe |  T   | bfffd   | rw-p | Fin (enfin, début) du stack
-%bffbf |  F   | -----   | ---- | Invalide
-%..... .  ..  . .....   . .... .
-%fffff |  F   | ------  | ---- | Fin de l'espace d'adressage ; invalide
-%-----------------------------------------------------------------------
 
 \question{4}
 Un ordinateur utilise de la mémoire virtuelle avec des adresses virtuelles sur 32 bits et des adresses physique sur 26 bits.
