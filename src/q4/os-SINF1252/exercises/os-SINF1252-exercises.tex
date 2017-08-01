@@ -673,6 +673,154 @@ void free_list(node *list)
 \subsection{QCM}
 \TODO
 \subsection{Exercices}
+\question{1}
+Le principe de localité est un principe très important pour comprendre les performances de programmes qui accèdent beaucoup à la mémoire.
+Considérons tout d’abord un programme qui doit initialiser une grande zone mémoire obtenue via \manpage{malloc}{3}.
+
+\begin{itemize}
+	\item Écrivez en C une fonction d’initialisation de cette zone mémoire à la valeur $1252$ qui profite de la localité spatiale.
+	\item Ecrivez en C une fonction d’initialisation de cette zone mémoire qui ne profite pas du tout de la localité spatiale.
+	\item Comparez les performances des deux programmes que vous avez écrit. Si nécessaire, désactivez l’optimisation du compilateur.
+\end{itemize}
+
+\begin{solution}
+Pour profiter de la localité spatiale, il suffit de bêtement passer d'une case à une autre de manière séquentielle.
+\begin{lstlisting}
+#define SIZE 100*1000*1000
+int *tab = (int*) malloc(SIZE * sizeof(int));
+for (int i = 0; i < SIZE; i++)
+	tab[i] = 1252;
+\end{lstlisting}
+Pour ne pas profiter de la localité spatiale, il faut essayer d'accéder à chaque case de manière à peu près aléatoire,
+par exemple en accédant à chaque multiple de $1000003$ (la taille d'une mémoire cache L3 est de l'ordre du MiB),
+afin d'obliger le processeur à recharger les données depuis la mémoire. Par exemple,
+\begin{lstlisting}
+#define SIZE 100*1000*1000
+int *tab = (int*) malloc(SIZE * sizeof(int));
+for (int i = 0, j = 0; i < SIZE; i++, j += 1000003, j %= SIZE)
+	tab[j] = 1252;
+\end{lstlisting}
+va bien prendre plus de temps (environ deux fois plus).
+\end{solution}
+
+\question{2}
+Un programmeur doit manipuler des tableaux contenant $100.000.000$ éléments.
+Chaque élément du tableau contient un nombre réel et une chaîne contenant 40 caractères.
+Une opération très courante à effectuer est de calculer la somme de tous les éléments du tableau.
+A votre avis, quelles seront les performances des deux implémentations suivantes de ce programme :
+\begin{itemize}
+	\item Le tableau est implémenté comme un tableau contenant $100.000.000$ structures avec dans chaque structure un \lstinline|float| et un \lstinline|char c[40]|.
+	\item Le tableau est implémenté comme deux tableaux distincts. Le premier contient tous les \lstinline|float| et le second toutes les chaînes de caractères.
+\end{itemize}
+
+\begin{solution}
+Comme l'objectif principal du programme est le calcul de la somme de tous les éléments du tableau, il est plus efficace de stocker tous les nombres dans un tableau dédié, et donc les chaines de caractères dans un autre tableau.
+De la sorte, les données utiles restent plus souvent ensemble, et le cache peut contenir bien plus de nombres à la fois, et il y a moins de cache fault.
+\end{solution}
+
+\question{3}
+Un programmeur propose deux fonctions différentes pour calculer la somme des éléments d’un tableau à deux dimensions.
+Intégrez ces fonctions dans un programme afin d’en mesurer les performances avec \manpage{gettimeofday}{2}.
+Quelle est la variante la plus rapide et pourquoi ?
+\begin{lstlisting}
+#define SIZE 10000
+
+int matrix[SIZE][SIZE];
+
+int sum() {
+	int sum=0;
+	for(int i=0;i<SIZE;i++) {
+		for(int j=0;j<SIZE;j++) {
+			sum+=matrix[i][j];
+		}
+	}
+	return sum;
+}
+
+int sum2() {
+	int sum=0;
+	for(int i=0;i<SIZE;i++) {
+		for(int j=0;j<SIZE;j++) {
+			sum+=matrix[j][i];
+		}
+	}
+	return sum;
+}
+\end{lstlisting}
+
+\begin{solution}
+Les tableaux sont stockés lignes par lignes.
+Cela signifie que les éléments \lstinline|matrix[i][j]| et \lstinline|matrix[i][j+1]| sont adjacents, à l'inverse des éléments \lstinline|matrix[i][j]| et \lstinline|matrix[i+1][j]|.
+Par conséquent, la première fonction parcourt la matrice dans l'ordre de la mémoire, tandis que la deuxième passe de ligne en ligne, et nécessite de remplacer le cache presqu'à chaque accès mémoire.
+En faisant les tests, on constate que la première variante est presque 5 fois plus rapide.
+\end{solution}
+
+\question{4}
+Dans le cours théorique, nous avons parlé des instructions \lstinline|set| qui permettent de fixer la valeur d’un byte d’un registre en fonction de la valeur des drapeaux du registre \lstinline|eflags|.
+Comment feriez-vous pour compiler en assembleur la ligne \lstinline|b=(a>0)| sans utilisez cette instruction et en sachant que les valeurs de a et b sont initialement dans les registres \lstinline|%eax| et \lstinline|%ecx|.
+Pour répondre à cette question, écrivez d’abord un code en C semblable au code ci-dessous :
+\begin{lstlisting}
+if ( condition)
+{ b=1; }
+else
+{ b=0; }
+\end{lstlisting}
+
+\nosolution % flemme
+
+\question{5}
+Avec le compilateur gcc, il est aussi possible de compiler du code assembleur directement dans une programme C.
+Cette fonctionnalité est intéressante si vous voulez tester de petites fonctions écrites en langage assembleur.
+Ainsi, une fonction baptisée \lstinline|rien| et qui ne fait absolument rien peut s’écrire comme suit:
+\begin{lstlisting}
+extern void rien();  // indique au compilateur que la fonction est externe
+
+__asm__(
+"rien:\n"
+"   ret\n"
+);
+\end{lstlisting}
+En utilisant l’assembleur [IA32], écrivez les instructions assembleur qui permettent d’implémenter une fonction qui ne prend aucun argument et retourne toujours l’entier 1.
+
+De la même façon, écrivez la fonction \lstinline|add| qui prend deux arguments de type int et retourne la somme de ces deux arguments.
+
+\nosolution
+
+\question{6}
+Considérons une fraction de la mémoire représentée dans le tableau ci-dessous.
+
+\begin{center}
+	\begin{tabular}{ll}
+		\toprule
+		Adresse	&	Valeur	\\
+		\midrule
+		0x0C	&	0x00	\\
+		0x08	&	0xFF	\\
+		0x04	&	0x02	\\
+		0x00	&	0x01	\\
+		\bottomrule
+	\end{tabular}
+\end{center}
+
+Si \lstinline|%esp| contient initialement la valeur 0x0C et que \lstinline|%eax| et \lstinline|%ebx| contiennent respectivement 0x02 et 0x03, que deviennent cette mémoire et les registres durant l’exécution de :
+\begin{lstlisting}
+pushl %eax
+pushl %ebx
+popl %ecx
+\end{lstlisting}
+
+\nosolution
+
+\question{7}
+En C, il n’est pas rare de voir dans certains programmes que la valeur de retour de certaines fonctions est ignorée.
+C’est une mauvaise pratique qui peut donner lieu à pas mal de problèmes.
+Connaissant la façon dont la valeur de retour d’une fonction \lstinline|int f()| est gérée en assembleur,
+expliquez ce qu’il se passe en pratique lorsque la valeur de retour de \lstinline|f| n’est pas sauvegardée.
+
+\begin{solution}
+La valeur de retour d'une fonction est stockée dans le registre \lstinline|%eax|.
+Avec certains compilateurs (buggés) et certaines optimisations agressives, il est possible que cette valeur interfère avec celle utilisée par la fonction appelante, provoquant des bugs.
+\end{solution}
 
 %--------------------------------------S5--------------------------------------
 \section{Compléments de C et utilisation de plusieurs threads} %5
@@ -2039,25 +2187,26 @@ Si chaque entrée de la table des pages occupe 32 bits, quelle est la zone mémo
 Le nombre de lignes dans la table des pages varie-t-il si les adresses physiques passent à 32 bits ou 36 bits ?
 
 \begin{solution}
-$2^{20}$ = nombre de pages que notre processus peut avoir en mémoire virtuelle
-4KB : 12 bytes
-Le nombre de lignes est fonction de la taille des pages et de la taille de l'adresse !
+Offset dans une page : 12 bits.
 
-Il y a $2^{20}$ lignes (1 million) si on prend de 32 bits
-4 millions de bites = 4 MB
+Indice de la page virtuelle : 32-12 = 20 bits
 
-Il y a $2^{20}$ lignes si on prend 36 bits => cela ne change rien car dpd de la taille de l'adresse virtuelle et pas physique, ce qui change potentiellement, c'est la taille de la ligne! MAIS le nombre de lignes ne change pas.
+Indice de la page physique  : 26-12 = 14 bits
 
-($2^{20}$ = approx à 1 million car $2^{10}=1024$)
+Total table des pages : $2^{20}$ lignes contenant chacune 32 bits donc 4 octets donc 2 bits supplémentaires $\Rightarrow 2^{22}$ octets occupés donc 4MiB.
+
+Les adresses physiques ne changent pas le nombre de lignes de la table des pages, juste l'occupation mémoire de chaque ligne :
+éventuellement 3 bits supplémentaires donc on passerait à 8MiB.
+
+(Pour le moment, il faut 14 bits pour l'adresse + 7 bits spéciaux (3 bits de permissions, bit de \emph{copy-on-write}, bit de validité, bit de référence, bit de modification, et sans doute d'autres) = 21 bits qu'on a arrondi à 32 bits.
+\begin{itemize}
+	\item Passage à 32 bits physiques : 20 bits pour l'adresse + 7 bits spéciaux = 27 bits qu'on peut arrondir à 32 bits.
+	\item Passage à 36 bits physiques (pour un système ayant 64GiB de RAM ; ça se faisait chez Intel avec la \emph{Physical Address Extension}) : 24 bits pour l'adresse + 7 = 31 bits qu'on peut encore faire tenir dans 32 bits normalement.
+\end{itemize}
+)
+
+%4 millions de bites = 4 MB % lol
 \end{solution}
-%Page : 12 bits
-%Indice de la page virtuelle : 32-12 = 20 bits
-%Indice de la page physique  : 26-12 = 14 bits
-%Total table des pages : 2^20 lignes contenant chacune 32 bits donc 4 octets donc 2 bits supplémentaires-> 2^22 octets occupés donc 4MiB
-%Les adresses physiques ne changent pas le nombre de lignes de la table des pages, juste l'occupation mémoire de chaque ligne : éventuellement 3 bits supplémentaires donc on passerait à 8MiB
-%(Pour le moment, il faut 14 bits pour l'adresse + 7 bits spéciaux = 21 bits qu'on a arrondi à 32 bits.
-%Passage à 32 bits physiques : 20 bits pour l'adresse + 7 bits spéciaux = 27 bits qu'on peut arrondir à 32 bits.
-%Passage à 36 bits physiques : 24 bits pour l'adresse + 7 = 31 bits qu'on peut encore faire tenir dans 32 bits normalement.)
 
 \question{5}
 Un ordi dispose de 32 GBytes de mémoire RAM.
@@ -2065,21 +2214,27 @@ Il utilise des adresses virtuelles de 64 bits et des pages de 4 KBytes.
 Combien de lignes doit contenir sa table des pages ?
 
 \begin{solution}
-$2^{52}$ (car $64-12 = 52$) entrées : naïvement (4 millions de milliards)
-La table des pages est dans la mémoire RAM en général. On ne peut pas charger à tout moment l'ensemble des pages dans le processeur. SI entrée pas dans le TLT, va dans la RAM pour aller chercher.
+Page : 12 bits.
+
+Indice de la page virtuelle : $64 - 12 = 52$ bits.
+
+Indice de la page physique : $35 - 12 = 23$ bits.
+
+Nombre de lignes de la table des pages : $2^{52}$.
+
+En supposant qu'une ligne de la table des pages nécessite $8$ bytes pour stocker toutes les informations, comme les adresses sont en 6' bits, la table des pages a une occupation mémoire de $2^{52} \cdot 2^3 = 2^{55}$ octets.
+
+En pratique évidemment, on ne fait pas comme ça.
+Généralement, il y a plusieurs niveaux dans la table des pages, chacune étant une \og table des sous-tables \fg{}.
+Par exemple, avec deux niveaux, comme pour l'architecture ARM, il est possible que certains sous-tables de niveau 2 soient totalement absentes de la mémoire vive.
+Pour l'architecture x86-64 par exemple, 16 bits des adresses virtuelles sont inutilisées, ce qui fait qu'il n'y a que 36 bits pour l'indice d'une page virtuelle.
+Ces 36 bits sont séparés en 4 groupes de 9 (4 niveaux), qui ne sont pas toujours pleins, et qui évitent de remplir inutilement la mémoire avec des entrées vides.
+Évidemment, cela implique aussi plus d'accès à la mémoire vive (vu qu'il y a plus de niveaux), et un TLB encore plus chargé, et donc encore moins susceptible de contenir la bonne information.
 
 $2^{20}$ pages et page de 20KB : quantité de mémoire réelle adressable possible est de $2^{30}$ (1 milliard) x $2^{2}$  = 4 milliards. On sait adresser 4GB avec cette situation !
 
 Avec techniques actuelles, on sait stocker $2^{23}$ lignes. Car il faut 8x plus de mémoire, (32 GB) multiplier par $2^3$.
 \end{solution}
-%Page : 12 bits
-%Indice de la page virtuelle : 64-12 = 52 bits
-%Indice de la page physique :  35-12 = 23 bits
-%Nombre de lignes de la table des pages : 2^52
-%Une ligne de la table des pages : par exemple, 8 bytes même si on peut réduire (on verra que ça n'a pas d'impact).
-%Donc, comme les adresses sont en 64 bits, la table des pages a une occupation de 2^52 * 2^3 = 2^55 octets occupés
-%En pratique évidemment, on ne fait pas ça comme ça. Mais c'est out of scope du cours actuel.
-%Si on faisait avec les adresse physiques : 2^23 * 2^3 = 64MiB
 
 \question{6}
 Comparez les performances du programme \sourcelink{/Theorie/MemoireVirtuelle/src/ }{cp2.c} avec l’utilitaire \manpage{cp}{1} standard de Linux.
