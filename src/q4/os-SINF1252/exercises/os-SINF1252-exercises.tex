@@ -371,7 +371,9 @@ or \textit{realloc()}. If the area pointed to was moved, a \textit{free(ptr)} is
 \question{2}
 Dans la fonction \lstinline|push| du programme de manipulation d’une pile \sourcelink{/../Theorie/C/S3-src/}{stack.c}, faut-il remplacer l’appel à \manpage{malloc}{3} par un appel à \manpage{calloc}{3} ?
 
-\nosolution
+\begin{solution}
+Non, vu qu'on initialise la zone mémoire juste après l'avoir allouée (on initialise les différents champs).
+\end{solution}
 
 \question{3}
 \begin{sloppypar}
@@ -382,7 +384,24 @@ Serait-il possible d’écrire une fonction \lstinline|push| ayant comme prototy
 Qu’est-ce qui changerait dans ce cas ?
 \end{sloppypar}
 
-\nosolution
+\begin{solution}
+Comme on n'utilise plus un pointeur, la structure \lstinline|fraction| va être copiée sur la pile (la nôtre, pas celle de la mémoire) lors de l'appel de la fonction,
+ce qui fait que la vie de la structure stockée dans la pile sera différente de celle utilisée comme argument lors de l'appel de fonction.
+Il faut alors bien faire gaffe, au sein de la fonction, que l'argument passé en paramètre est sur la pile (celle de la mémoire, pas la nôtre), et donc qu'on ne peut pas stocker dans un n\oe{}ud un pointeur sur cette structure !
+Il faut copier cette fraction dans le n\oe{}ud, ou allouer une autre fraction sur le tas.
+Par exemple,
+\begin{lstlisting}
+void push(struct fraction_t f)
+{
+	struct node_t *n = malloc(sizeof(struct node_t));
+	if (n == NULL)
+		exit(EXIT_FAILURE);
+	n->data = f; // copie de la fraction depuis la pile mémoire dans la zone de données allouée sur le tas.
+	n->next = stack;
+	stack = n;
+}
+\end{lstlisting}
+\end{solution}
 
 \question{4}
 Les fonctions \lstinline|push| et \lstinline|pop| définies dans l’exemple de manipulation d’une pile \sourcelink{/../Theorie/C/S3-src/}{stack.c} utilisent une pile qui est définie par un pointeur qui est une variable globale.
@@ -394,7 +413,12 @@ Leurs prototypes deviendraient :
 	\item \lstinline|struct fraction_t * pop(struct node_t *);|
 \end{itemize}
 
-\nosolution
+\begin{solution}
+Tel que proposé, ce n'est pas possible. En effet, la pile est définie comme étant un \lstinline|struct node_t*|, un pointeur sur un n\oe{}ud.
+Pour avoir un pointeur vers la pile (pour pouvoir la modifier), il faut donc prendre en paramètre un \lstinline|struct node_t**|.
+Une autre manière de voir les choses est que pour ajouter un élément, il faut changer le pointeur qui pointe vers le premier élément, c'est-à-dire la pile elle-même ;
+il faut donc avoir un pointeur vers le pointeur pour pouvoir faire quelque chose.
+\end{solution}
 
 \question{5}
 En C, on peut définir des tableaux à deux dimensions avec une déclaration comme \lstinline|int a[3][3]|;.
@@ -486,7 +510,13 @@ Quel sont les avantages et désavantages d’utiliser cet attribut ?
 Dans quel cas est-il intéressant de l’utiliser ?
 
 \begin{solution}
-En plus de la manpage, une autre réponse intéressante vient de StackOverflow (source : \url{https://stackoverflow.com/a/4306269}).
+Cet attribut permet de forcer gcc à condenser la structure, en collant les différentes éléments de la structure les uns contre les autres.
+En effet, par défaut, gcc va aligner les différents champs de la structure sur des multiples de la taille des entiers sur le système (généralement 32 bits, ou 4 bytes).
+Sur la majorité des systèmes, il est en effet bien plus rapide d'accéder à des variables alignées qu'à des variables qui ne le sont pas, même s'il s'agit de simples \lstinline|char| ou \lstinline|short|.
+Le principal avantage est de réduire les trous et donc, la consommation mémoire, par exemple sur des systèmes embarqués.
+Malheureusement, cet attribut n'est pas portable (ça ne fait pas partie du standard C), et il peut réduire les performances sur certaines plateformes.
+
+En bonus, une réponse complète de Stack Overflow (source : \url{https://stackoverflow.com/a/4306269}).
 
 \begin{quotation}
 Padding \href{http://en.wikipedia.org/wiki/Data\_structure\_alignment}{aligns} structure members to "natural" address boundaries - say, int members would have offsets, which are \lstinline|mod(4) == 0| on 32-bit platform. Padding is on by default. It inserts the following "gaps" into your first structure:
@@ -527,7 +557,23 @@ void main(void)
 }
 \end{lstlisting}
 
-\nosolution
+\begin{solution}
+On constate différentes choses, sur une version plus complète du programme :
+\begin{itemize}
+	\item Les fonctions utilisées dans le programme sont situées dans le très bas de la mémoire (par exemple $0x40057d$).
+	\item Les variables globales sont situées dans des zones moins basses ($0x60103c$), et les variables globales non initialisées sont situées un peu plus haut ($0x601044$).
+	\item Les variables allouées sur le tas (avec \manpage{malloc}{3}) sont situées encore plus haut, mais toujours relativement bas par rapport à l'espace total d'adressage.
+	\item Les variables locales (déclarées dans les fonctions, dans les arguments des fonctions, et dans les fonctions appelées par des fonctions) sont situées dans la zone haute de la mémoire, à des adresses du type $0x7ffc40299da8$ (environ à $2^{47}$ bytes du début).
+	On peut aussi constater que les adresses utilisées par les variables locales sont plus basses (de quelques bytes) dans les fonctions appelées que dans la fonction appelante ; cela deviendra plus clair après la séance 4.
+\end{itemize}
+
+Deux choses frappent :
+\begin{itemize}
+	\item Apparemment, le haut de la mémoire indique que l'ordinateur possède $2^{47}$ bytes de mémoire, soit 128 TiB de mémoire vive, au lieu des 2GiB réels. Clairement, il y a quelque chose qui cloche\dots
+	\item Apparemment, pour tous les programmes, les adresses sont environ aux mêmes endroits, et cela même si on exécute plusieurs instances du même programme en même temps. On dirait que les zones mémoire se chevauchent, ce qui n'est évidemment pas possible\dots
+\end{itemize}
+La réponse à ces deux remarques attendra la séance sur la mémoire virtuelle\dots
+\end{solution}
 
 \question{9}
 Un étudiant a fait l’implémentation d’un sous-ensemble des fonctions définies dans string.h, mais il rencontre quelques problèmes avec son code \sourcelink{/Programmes/src/}{string.c}.
