@@ -338,6 +338,10 @@ int strcasecmp(const char *s1, const char *s2) {
 \subsection{Questions}
 
 \question{1}
+Expliquez la différence entre \manpage{malloc}{3} et \manpage{calloc}{3}.
+D’après vous, quel appel sera le plus lent ?
+
+\begin{solution}
 \begin{description}
 \item[void *calloc(size\_t nmemb, size\_t size);] allocates memory for an array of
 \textit{nmemb} elements of size bytes each and returns a pointer to the allocated
@@ -361,115 +365,42 @@ NULL, then the call is equivalent to \textit{free(ptr)}. Unless \textit{ptr} is 
 it must have been returned by an earlier call to \textit{malloc()}, \textit{calloc()}
 or \textit{realloc()}. If the area pointed to was moved, a \textit{free(ptr)} is done.
 \end{description}
-\textit{calloc()} est plus lent que \textit{malloc()}.
+\lstinline{calloc()} est plus lent que \lstinline{malloc()}.
+\end{solution}
 
-\question{2} \TODO
-\begin{lstlisting}
-/**************************************
- * stack.c
- *
- * Programme d'exemple implementant un stack comme structure
- * chainee
- *
- **************************************/
+\question{2}
+Dans la fonction \lstinline|push| du programme de manipulation d’une pile \sourcelink{/../Theorie/C/S3-src/}{stack.c}, faut-il remplacer l’appel à \manpage{malloc}{3} par un appel à \manpage{calloc}{3} ?
 
-#include <stdio.h>
-#include <stdlib.h>
-
-typedef struct fraction_t {
-  int num;
-  int den;
-} fraction;
-
-///AAA
-typedef struct node_t
-{
-  struct fraction_t *data;
-  struct node_t *next;
-} node;
-
-struct node_t *stack; // sommet de la pile
-
-// ajoute un element au sommet de la pile
-void push(struct fraction_t *f)
-{
-  struct node_t *n;
-  n=(struct node_t *)malloc(sizeof(struct node_t));
-  if(n==NULL)
-    exit(EXIT_FAILURE);
-  n->data = f;
-  n->next = stack;
-  stack = n;
-}
-// retire l'element au sommet de la pile
-struct fraction_t * pop()
-{
-  if(stack==NULL)
-    return NULL;
-  // else
-  struct fraction_t *r;
-  struct node_t *removed=stack;
-  r=stack->data;
-  stack=stack->next;
-  free(removed);
-  return (r);
-}
-
-///BBB
-
-// affiche le contenu de la pile
-void display()
-{
-  struct node_t *t;
-  t = stack;
-  while(t!=NULL) {
-    if(t->data!=NULL) {
-      printf("Item at addr %p  :  Fraction %d/%d   Next %p\n",t,t->data->num,t->data->den,t->next);
-    }
-    else {
-      printf("Bas du stack %p\n",t);
-    }
-    t=t->next;
-  }
-}
-
-// exemple
-int main(int argc, char *argv[]) {
-
-  struct fraction_t demi={1,2};
-  struct fraction_t tiers={1,3};
-  struct fraction_t quart={1,4};
-  struct fraction_t zero={0,1};
-
-  // initialisation
-  stack = (struct node_t *)malloc(sizeof(struct node_t));
-  stack->next=NULL;
-  stack->data=NULL;
-
-  display();
-  push(&zero);
-  display(); %splay()
-  push(&demi);
-  push(&tiers);
-  push(&quart);
-  display();
-
-  struct fraction_t *f=pop();
-  if(f!=NULL)
-    printf("Popped : %d/%d\n",f->num,f->den);
-
-  return(EXIT_SUCCESS);
-}
-///CCC
-\end{lstlisting}
+\nosolution
 
 \question{3}
-\TODO
+\begin{sloppypar}
+Le prototype de la fonction \lstinline|push| du programme de manipulation d’une pile
+\sourcelink{/../Theorie/C/S3-src/}{stack.c}, est
+\lstinline|void push(struct fraction_t *)|.
+Serait-il possible d’écrire une fonction \lstinline|push| ayant comme prototype \lstinline|void push(struct fraction_t)| ?
+Qu’est-ce qui changerait dans ce cas ?
+\end{sloppypar}
+
+\nosolution
 
 \question{4}
-\TODO
+Les fonctions \lstinline|push| et \lstinline|pop| définies dans l’exemple de manipulation d’une pile \sourcelink{/../Theorie/C/S3-src/}{stack.c} utilisent une pile qui est définie par un pointeur qui est une variable globale.
+Est-il possible de réécrire ces fonctions de façon à ce qu’elles prennent comme argument un pointeur vers la pile ?
+Leurs prototypes deviendraient :
+
+\begin{itemize}
+	\item \lstinline|void push(struct node_t *, struct fraction_t *);|
+	\item \lstinline|struct fraction_t * pop(struct node_t *);|
+\end{itemize}
+
+\nosolution
 
 \question{5}
+En C, on peut définir des tableaux à deux dimensions avec une déclaration comme \lstinline|int a[3][3]|;.
+Ecrivez un petit programme qui utilise des pointeurs pour déterminer si un tel tableau à deux dimensions est stocké ligne par ligne ou colonne par colonne.
+
+\begin{solution}
 \begin{lstlisting}
 int main()
 {
@@ -480,9 +411,24 @@ int main()
     return 0;
 }
 \end{lstlisting}
-Le programme affiche \textit{1,2,3,4,5,6,7,8,9}. Conclusion : le tableau \textit{a} est stocké ligne par ligne.
+Le programme affiche \textit{1,2,3,4,5,6,7,8,9}. Conclusion : le tableau \lstinline{a} est stocké ligne par ligne.
+\end{solution}
 
 \question{6}
+Considérons la structure suivante:
+\begin{lstlisting}
+typedef struct {
+	char c;
+	long l;
+	short s;
+} test_t;
+\end{lstlisting}
+Combien de bytes seront utilisés en mémoire pour représenter cette structure?
+Représentez graphiquement la position en mémoire de chaque élément (utilisez \manpage{printf}{3} et \%p),
+observez-vous des trous ? Expliquez.
+Serait-il possible d’utiliser moins de bytes pour représenter cette structure ? Si oui, comment ?
+
+\begin{solution}
 \begin{lstlisting}
 int main()
 {
@@ -518,7 +464,8 @@ int main()
     return 0;
 }
 \end{lstlisting}
-Le code ci-dessus affiche ceci : 0028FF14, 0028FF18, 0028FF1C.\\
+Le code ci-dessus affiche ceci : 0028FF14, 0028FF18, 0028FF1C.
+
 Un moyen de réduire cette taille est d'écrire la structure ainsi :
 \begin{lstlisting}
 typedef struct
@@ -529,34 +476,78 @@ typedef struct
 } test_t;
 \end{lstlisting}
 Elle n'occupe maintenant plus que 8 bytes en mémoire.
+\end{solution}
 
 \question{7}
-\url{http://sites.uclouvain.be/SystInfo/manpages/man1/gcc.1.html}\\
-\url{http://stackoverflow.com/questions/4306186/structure-padding-and-packing}
-\begin{figure}[H]
-\centering
-\includegraphics[width=14cm]{packed.PNG}
-\end{figure}
+Expliquez à quoi sert l’attribut packed des structures dans \manpage{gcc}{1} (regardez la manpage).
+Appliquez cet attribut à la structure de l’exercice précédent.
+Qu’observez-vous comme différence ?
+Quel sont les avantages et désavantages d’utiliser cet attribut ?
+Dans quel cas est-il intéressant de l’utiliser ?
+
+\begin{solution}
+En plus de la manpage, une autre réponse intéressante vient de StackOverflow (source : \url{https://stackoverflow.com/a/4306269}).
+
+\begin{quotation}
+Padding \href{http://en.wikipedia.org/wiki/Data\_structure\_alignment}{aligns} structure members to "natural" address boundaries - say, int members would have offsets, which are \lstinline|mod(4) == 0| on 32-bit platform. Padding is on by default. It inserts the following "gaps" into your first structure:
+\begin{lstlisting}
+struct mystruct_A {
+char a;
+char gap_0[3]; /* inserted by compiler: for alignment of b */
+int b;
+char c;
+char gap_1[3]; /* -"-: for alignment of the whole struct in an array */
+} x;
+\end{lstlisting}
+Packing, on the other hand prevents compiler from doing padding - this has to be explicitly requested - under GCC it's \lstinline|__attribute__((__packed__))|, so the following:
+\begin{lstlisting}
+struct __attribute__((__packed__)) mystruct_A {
+char a;
+int b;
+char c;
+};
+\end{lstlisting}
+would produce structure of size 6 on a 32-bit architecture.
+
+A note though - unaligned memory access is slower on architectures that allow it (like x86 and amd64), and is explicitly prohibited on strict alignment architectures like SPARC.
+\end{quotation}
+\end{solution}
 
 \question{8}
+Exécutez plusieurs fois le code suivant. Expliquez les différents résultats obtenus.
 \begin{lstlisting}
 int global;
 void main(void)
 {
-        int local;
-        int *ptr1 = (int *)malloc(sizeof(*ptr1));
-        int *ptr2 = (int *)malloc(sizeof(*ptr2));
+	int local;
+	int *ptr1 = (int *)malloc(sizeof(*ptr1));
+	int *ptr2 = (int *)malloc(sizeof(*ptr2));
 
-        printf("global %p loc %p p1 %p p2 %p\n", &global, &local, ptr1, ptr2);
+	printf("global %p loc %p p1 %p p2 %p\n", &global, &local, ptr1, ptr2);
 }
 \end{lstlisting}
-\TODO
+
+\nosolution
 
 \question{9}
-\TODO
+Un étudiant a fait l’implémentation d’un sous-ensemble des fonctions définies dans string.h, mais il rencontre quelques problèmes avec son code \sourcelink{/Programmes/src/}{string.c}.
+Utilisez gdb (\url{http://sites.uclouvain.be/SystInfo/notes/Outils/html/gdb.html}) pour corriger son code.
+Utilisez le flag \cmdline{-g} de gcc pour ajouter les informations de debug dans votre exécutable.
+Pour rappel, voici quelques commandes importantes de gdb :
+\begin{itemize}
+	\item \cmdline{run [ARGS]} permet de lancer l’execution du programme avec les arguments ARGS si spécifiés.
+	\item \cmdline{break string.c:9} met un point d’arrêt à la ligne 9 du fichier string.c
+	\item \cmdline{next} permet d’executer la ligne courante et de s’arrêter à la ligne suivante
+	\item \cmdline{print var} affiche la valeur de la variable var
+	\item \cmdline{backtrace} affiche la pile d’appel des fonctions courantes
+	\item \cmdline{quit} quitte gdb
+\end{itemize}
+
+\nosolution
 
 \question{10}
 \ingi{Listes chaînées: concepts de base}{https://inginious.info.ucl.ac.be/course/LSINF1252/linked_lists_1}
+\begin{solution}
 \begin{lstlisting}
 typedef struct node {
   int value;
@@ -629,6 +620,31 @@ void free_list(node *list)
     }
 }
 \end{lstlisting}
+\end{solution}
+
+\question{11}
+Vous travaillez sur un programme qui doit manipuler des vecteurs.
+Afin de pouvoir supporter des vecteurs de taille quelconque, vous décidez de réimplémenter ces vecteurs vous même en utilisant des pointeurs.
+Votre programme définit la structure \lstinline|struct vector_t| et les fonctions ci-dessous.
+Implémentez ces fonctions sans jamais utiliser la notation des tableaux en C ([ et ]).
+\begin{lstlisting}
+struct vector_t {
+	int size;
+	float *v;
+};
+// initialise le vecteur à la valeur du réel
+struct vector_t * init(int, float) ;
+// récupère le nième élément
+float get(struct vector_t *, int) ;
+// fixe la valeur du nième élément
+void set(struct vector_t *, int , float);
+// supprime un vecteur
+void destroy(struct vector_t *);
+\end{lstlisting}
+
+\nosolution
+
+
 
 %--------------------------------------S4--------------------------------------
 \section{Organisation des ordinateurs et étude de cas : IA32} %4
