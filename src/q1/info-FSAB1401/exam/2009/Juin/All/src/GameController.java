@@ -71,9 +71,7 @@ public class GameController {
 		if (pw.checkError()) {
 			System.err.println("Erreur lors de la sauvegarde de la partie dans le fichier " + fileName + ".");
 		}
-		try {
-			pw.close();
-		} catch (IOException e) {}
+		pw.close();
 	}
 
 	/**
