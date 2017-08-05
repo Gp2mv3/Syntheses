@@ -41,14 +41,17 @@
 \LoadClass[a4paper]{article}
 \fi%
 
-\RequirePackage[utf8x]{inputenc}
+% utf8x requires ucs package, which is quasi-obsolete and conflicts with biblatex. See https://tex.stackexchange.com/questions/13067/utf8x-vs-utf8-inputenc
+\RequirePackage[utf8]{inputenc}
 \RequirePackage[T1]{fontenc}
 \RequirePackage{lmodern}
+\RequirePackage{textcomp} % Allows the use of more symbols, like inline degree
 
+% You may need to load the polutonikogreek option of babel if you want to use \textgreek{} to include Greek text, as utf8 doesn't provide them out of the box (utf8x did).
 \RequirePackage{babel}
 \RequirePackage{iflang}
-
 \RequirePackage{ifthen}
+
 \RequirePackage{url}
 \RequirePackage{xparse}
 
