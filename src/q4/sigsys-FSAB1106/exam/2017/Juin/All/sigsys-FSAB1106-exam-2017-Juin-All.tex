@@ -2,6 +2,7 @@
 \usepackage{amsmath}
 \usepackage{tikz}
 \usepackage{enumitem}
+\usepackage{physics} % pour avoir Re et Im au lieu de R et I en fraktur, pour les parties réelles et imaginaires.
 
 \newcommand{\rang}{\mathrm{rang}}
 
@@ -51,31 +52,276 @@ Rappelons que, pour un système réel, la partie réelle de la fonction de trans
 \section{LV2}
 On s'intéresse à la transformée de Fourier discrète (TFD) d'un vecteur $X$ de taille $N = 8$ comprenant les échantillons d'un signal $x[n]$ \emph{réel}, pour $n = 0, \dots, N-1$.
 
-La TFD produit un vecteur $Y = [Y[0], \dots, Y[N-1]]^T$
+La TFD produit un vecteur $X = [X[0], \dots, X[N-1]]^T$
 \begin{enumerate}[label=(\alph*)]
-	\item Sachant que la période d'échantillonnage du signal temporel est $T$, quelles sont les positions des échantillons $Y[k]$ (en fréquences vraies, c-à-d en hertz) ? Justifier.
+	\item Sachant que la période d'échantillonnage du signal temporel est $T$, quelles sont les positions des échantillons $X[k]$ (en fréquences vraies, c-à-d en hertz) ? Justifier.
 	\item Sachant que le signal $x[n]$ de départ est réel, quelles sont les propriétés ou liens dont bénéficient les coefficients $X[k]$ des produits ?
+	\item On définit le signal $y[n] = (-1)^n x[n]$. Que vaut la DFT $Y[k]$ de $y[n]$, en fonction de $X[k]$ ?
 \end{enumerate}
 
 Remarque : l'énoncé de cette question est incomplet, notamment la démonstration qu'il fallait faire.
 
-\nosolution
+\begin{solution}
+\begin{enumerate}[label=(\alph*)]
+	\item TODO
+	\item TODO ; pas assez clair.
+
+	La partie réelle est coefficients $X[k]$ est un signal pair, et la partie imaginaire est un signal impair.
+	\item En reprenant la définition, et en se souvenant que $N = 8$ est pair,
+	\begin{align*}
+	Y[k] &= \sum_{n=0}^{N-1} y[n] e^{- \frac{2 \pi j k n}{N}} \\
+	&= \sum_{n=0}^{N-1} x[n] (-1)^n e^{- \frac{2 \pi j k n}{N}} \\
+	&= \sum_{n=0}^{N-1} x[n] e^{- \pi j N} e^{- \frac{2 \pi j k n}{N}} \\
+	&= \sum_{n=0}^{N-1} x[n] e^{- \pi j n} e^{- \frac{2 \pi j k n + \pi j N n}{N}} \\
+	&= \sum_{n=0}^{N-1} x[n] e^{- \pi j n} e^{- \frac{2 \pi j (k + \frac{N}{2}) n}{N}} \\
+	&= X \left[ k + \frac{N}{2} \right] \\
+	\end{align*}
+	On a simplement décalé la DFT de $N/2$.
+\end{enumerate}
+\end{solution}
 
 \section{LV3}
 On génère un signal périodique $x(t) = \sin (2 \pi f_0 t)$. Ce signal est d'abord échantillonné par un échantillonneur\footnote{Sans blague ?} qui fonctionne à la fréquence $f_e$. Ensuite, le résultat de l'échantillonnage est interpolé par un filtre réel, fonctionnant en temps continu de type passe-bas (?) idéal et de fréquence de coupure $f_e/2$ (il laisse donc passer toutes les fréquences $f$ telles que $\abs{f} \le f_e/2$).%FIXME < ou <= ?
 Le schéma complet est décrit ci-dessous.
-%\begin{center}
-%	\begin{tikzpicture}
-%	%TODO
-%	\end{tikzpicture}
-%\end{center}
+\begin{center}
+	\begin{tikzpicture}
+	\draw (0, 0) node[left] {$x(t) = \sin (2 \pi f_0 t)$};
+	\draw[thick, ->, >=latex] (0, 0) -- (1, 0);
+	\draw[thick] (1, -0.8) rectangle (4, 0.8);
+	\draw[thick] (1.5, -0.3) -- (2, -0.3) -- (2.5, 0.4);
+	\draw[thick] (2.7, -0.3) -- (3.5, -0.3);
+	\draw (2.5, -1.3) node[] {$f_e$};
+	\draw[thick, ->, >=latex] (4, 0) -- (5, 0);
+	\draw[thick] (5, -0.8) rectangle (8, 0.8);
+	\draw (5.2, 0) node[right] {filtre passe-bas};
+	\draw[thick, ->, >=latex] (8, 0) -- (9, 0) node[right] {$y(t)$};
+	\end{tikzpicture}
+\end{center}
 \begin{enumerate}[label=(\alph*)]
 	\item Représentez graphiquement le spectre du signal obtenu en sortie du filtre analogique lorsque $f_0 = f_e/4$. Justifiez.
 	\item Pareil lorsque $f_0 = 7f_e/8$. Justifiez.
 	\item Représentez graphiquement le spectre du signal obtenu en sortie du filtre analogique lorsque, à $f_e$ fixé, on augmente $f_0$ de $0$ jusque $3f_e/2$. Justifiez.
 \end{enumerate}
 
-\nosolution
+\begin{solution}
+L'échantillonnage va provoquer une réplication, tous les $f_e$ (ou $\omega_e = 2 \pi f_e$), du spectre du signal de départ. Le filtre passe-bas va ensuite éliminer l'ensemble de ce spectre qui se trouve en dehors de l'intervalle $[-f_e/2, f_e/2]$ ; cela va éliminer une partie des réplicants, mais va peut-être aussi éliminer une partie du spectre du signal de départ, ou va laisser des réplicants.
+
+Sur l'ensemble des figures qui suivent, le spectre du signal en sortie de l'échantillonneur est indiqué en traitillés verts, et le spectre du signal en sortie du filtre passe-bas est indiqué en traits continus verts.
+Le spectre original (transformée de Fourier appliquée à un signal périodique) est indiqué par des traits bleus, ainsi que sur la figure ci-dessous.
+Enfin, la zone grise indique l'ensemble des fréquences qui sont acceptées par le filtre passe-bas.
+
+Celui-ci est d'ailleurs
+\[ X(j\omega) = \frac{\pi}{j} \delta(\omega - 2\pi f_0) - \frac{\pi}{j} \delta(\omega + 2 \pi f_0) \]
+et chacun des spectres resteront d'ailleurs purement imaginaires, sans partie réelle, qui ne sera donc pas représentée.
+
+Lors de l'examen, seul le spectre en sortie du filtre passe-bas était demandé ; les autres spectres 
+\begin{center}
+\begin{tikzpicture}
+\draw[thick, ->, >=latex] (-3, 0) -- (3, 0) node[below right] {$f$};
+\draw[thick, ->, >=latex] (0, -2) -- (0, 2) node[above right] {$X(jf)$};
+\draw[thick, Green, ->, >=stealth] (1, 0) -- (1, 1.5);
+\draw (1, 0) node[below] {$f_0$};
+\draw[thick, Green, ->, >=stealth] (-1, 0) -- (-1, -1.5);
+\draw (-1, 0) node[above] {$-f_0$};
+\draw (0.1, 1.5) -- (-0.1, 1.5) node[left] {$\frac{\pi}{j}\pi$};
+\end{tikzpicture}
+\end{center}
+
+\begin{enumerate}[label=(\alph*)]
+	\item Lorsque $f_0 = f_e/4$, l'hypothèse du théorème d'échantillonnage est satisfaite (la fréquence d'échantillonnage $f_e$ est strictement supérieure au double de la fréquence $f_0$), et donc le signal de départ peut être reconstruit à partir du signal en sortie du filtre passe-bas ; il n'y a pas de repli spectral.
+	\begin{center}
+	\begin{tikzpicture}[x=1.5cm, y=0.5cm]
+	% Une unité TikZ horizontale = un multiple de f_e (fréquence d'échantillonnage, 2*limites du filtre passe-bas)
+	% Une unité TikZ verticale = un multiple de f_e (fréquence d'échantillonnage, le facteur par lequel est multiplié chacune des répliques du signal périodique quand on l'échantillonne).
+	% Axes
+	\draw[thick, ->, >=latex] (-3, 0) -- (3, 0) node[below right] {$f$};
+	\draw[thick, ->, >=latex] (0, -4) -- (0, 4) node[above right] {$\Im(X(jf))$};
+	\draw (0.1, 3.14) -- (-0.1, 3.14) (0, 3.14) node[above left] {$\frac{\pi}{j}f_e$};
+	\draw (-0.1, -3.14) -- (0.1, -3.14) (0, -3.14) node[below right] {$\frac{-\pi}{j}f_e$};
+	% Zone du filtre
+	\draw[thin, dotted, Gray] (-0.5, -4) -- (-0.5, 4);
+	\draw[thin, dotted, Gray] (0.5, -4) -- (0.5, 4);
+	\fill[gray, opacity=0.1] (-0.5, -4) rectangle (0.5, 4);
+	%\draw (-0.5, 0) node[below left] {$-\frac{f_e}{2}$};
+	%\draw (0.5, 0) node[above right] {$\frac{f_e}{2}$};
+	% Impulsions, groupées par réplique.
+	\draw[thin, Green, dashed, -latex] (-2.25, 0) -- (-2.25, -3.14);
+	\draw[thin, Green, dashed, -latex] (-1.75, 0) -- (-1.75, 3.14);
+	\draw[thin, Green, dashed, -latex] (-1.25, 0) -- (-1.25, -3.14);
+	\draw[thin, Green, dashed, -latex] (-0.75, 0) -- (-0.75, 3.14);
+	\draw[thin, blue, -latex] (-0.25, 0) -- (-0.25, -3.14);
+	\draw[thin, blue, -latex] (0.25, 0) -- (0.25, 3.14);
+	\draw[thin, Green, dashed, -latex] (0.75, 0) -- (0.75, -3.14);
+	\draw[thin, Green, dashed, -latex] (1.25, 0) -- (1.25, 3.14);
+	\draw[thin, Green, dashed, -latex] (1.75, 0) -- (1.75, -3.14);
+	\draw[thin, Green, dashed, -latex] (2.25, 0) -- (2.25, 3.14);
+	% Coordonnées
+	\draw (-0.25, 0) node[above] {$-\frac{f_e}{4}$};
+	\draw (0.25, 0) node[below] {$\frac{f_e}{4}$};
+	\draw (0.75, 0) node[above] {$\frac{3f_e}{4}$};
+	\draw (1.25, 0) node[below] {$\frac{5f_e}{4}$};
+	\end{tikzpicture}
+	\end{center}
+	\item Cette fois, l'hypothèse du théorème de Shannon n'est plus satisfaite, et il y a repli spectral ; après le filtre passe-bas, il est impossible de reconstituer le signal de départ. En fait, le signal s'est transformée, par \emph{aliasing}, en $y(t) = -\sin (2 \pi f_e / 8)$.
+	\begin{center}
+	\begin{tikzpicture}[x=1.5cm, y=0.5cm]
+	% Axes
+	\draw[thick, ->, >=latex] (-3, 0) -- (3, 0) node[below right] {$f$};
+	\draw[thick, ->, >=latex] (0, -4) -- (0, 4) node[above right] {$\Im(X(jf))$};
+	\draw (0.1, 3.14) -- (-0.1, 3.14) (0, 3.14) node[above left] {$\frac{\pi}{j}f_e$};
+	\draw (-0.1, -3.14) -- (0.1, -3.14) (0, -3.14) node[below right] {$\frac{-\pi}{j}f_e$};
+	% Zone du filtre
+	\draw[thin, dotted, Gray] (-0.5, -4) -- (-0.5, 4);
+	\draw[thin, dotted, Gray] (0.5, -4) -- (0.5, 4);
+	\fill[gray, opacity=0.1] (-0.5, -4) rectangle (0.5, 4);
+	%\draw (-0.5, 0) node[below left] {$-\frac{f_e}{2}$};
+	%\draw (0.5, 0) node[above right] {$\frac{f_e}{2}$};
+	% Impulsions, groupées par réplique.
+	\draw[thin, Green, dashed, -latex] (-2.125, 0) -- (-2.125, 3.14);
+	\draw[thin, Green, dashed, -latex] (-2.875, 0) -- (-2.875, -3.14);
+	\draw[thin, Green, dashed, -latex] (-1.125, 0) -- (-1.125, 3.14);
+	\draw[thin, Green, dashed, -latex] (-1.875, 0) -- (-1.875, -3.14);
+	\draw[thin, Green, -latex] (-0.125, 0) -- (-0.125, 3.14);
+	\draw[thin, dashed, blue, -latex] (-0.875, 0) -- (-0.875, -3.14);
+	\draw[thin, dashed, blue, -latex] (0.875, 0) -- (0.875, 3.14);
+	\draw[thin, Green, -latex] (0.125, 0) -- (0.125, -3.14);
+	\draw[thin, Green, dashed, -latex] (1.875, 0) -- (1.875, 3.14);
+	\draw[thin, Green, dashed, -latex] (1.125, 0) -- (1.125, -3.14);
+	\draw[thin, Green, dashed, -latex] (2.875, 0) -- (2.875, 3.14);
+	\draw[thin, Green, dashed, -latex] (2.125, 0) -- (2.125, -3.14);
+	% Coordonnées
+	\draw (-0.875, 0) node[above] {$-\frac{7f_e}{8}$};
+	\draw (0.875, 0) node[below] {$\frac{7f_e}{8}$};
+	\draw (0.125, 0) node[above] {$\frac{f_e}{8}$};
+	\draw (1.875, 0) node[below] {$\frac{15f_e}{8}$};
+	\end{tikzpicture}
+	\end{center}
+	\item Pour $0 < f_0 < f_e/2$, le spectre du signal $x(t)$ ne subit aucun repli spectral, et ressort indemne du filtre passe-bas.
+	% TODO insérer figure
+	\begin{center}
+	\begin{tikzpicture}[x=1.5cm, y=0.5cm]
+	% Axes
+	\draw[thick, ->, >=latex] (-3, 0) -- (3, 0) node[below right] {$f$};
+	\draw[thick, ->, >=latex] (0, -4) -- (0, 4) node[above right] {$\Im(X(jf))$};
+	% Zone du filtre
+	\draw[thin, dotted, Gray] (-0.5, -4) -- (-0.5, 4);
+	\draw[thin, dotted, Gray] (0.5, -4) -- (0.5, 4);
+	\fill[gray, opacity=0.1] (-0.5, -4) rectangle (0.5, 4);
+	%\draw (-0.5, 0) node[below left] {$-\frac{f_e}{2}$};
+	%\draw (0.5, 0) node[above right] {$\frac{f_e}{2}$};
+	% Impulsions, groupées par réplique.
+	\draw[thin, Green, dashed, -latex] (-2.25, 0) -- (-2.25, -3.14);
+	\draw[thin, Green, dashed, -latex] (-1.75, 0) -- (-1.75, 3.14);
+
+	\draw[thin, Green, dashed, -latex] (-1.25, 0) -- (-1.25, -3.14);
+	\draw[thin, -latex] (-1.3, -2) -- (-1.5, -2);
+	\draw[thin, Green, dashed, -latex] (-0.75, 0) -- (-0.75, 3.14);
+	\draw[thin, -latex] (-0.7, 2) -- (-0.5, 2);
+
+	\draw[thin, blue, -latex] (-0.25, 0) -- (-0.25, -3.14);
+	\draw[thin, -latex] (-0.3, -2) -- (-0.5, -2);
+	\draw[thin, blue, -latex] (0.25, 0) -- (0.25, 3.14);
+	\draw[thin, -latex] (0.3, 2) -- (0.5, 2);
+
+	\draw[thin, Green, dashed, -latex] (0.75, 0) -- (0.75, -3.14);
+	\draw[thin, -latex] (0.7, -2) -- (0.5, -2);
+	\draw[thin, Green, dashed, -latex] (1.25, 0) -- (1.25, 3.14);
+	\draw[thin, -latex] (1.3, 2) -- (1.5, 2);
+
+	\draw[thin, Green, dashed, -latex] (1.75, 0) -- (1.75, -3.14);
+	\draw[thin, Green, dashed, -latex] (2.25, 0) -- (2.25, 3.14);
+	\end{tikzpicture}
+	\end{center}
+
+	Pour $f_0 = f_e/2$, les deltas se superposent parfaitement, et s'annulent ; le spectre du signal disparait en sortie de l'échantillonneur (ce qui est logique, le signal étant nul à chaque échantillon), et donc le signal en sortie du filtre passe-bas est nul.
+
+	Pour $f_e/2 < f_0 < f_e$, il y a repli spectral, le spectre du signal original sortant de la fenêtre du filtre passe-bas, et les diracs des répliques adjacentes entrant dans la fenêtre. Le signal en sortie du filtre passe-bas n'est plus le même que le signal de départ, et la fréquence de ce signal diminue (les diracs sortant du filtre se rapprochent de $0$).\footnote{En notant $f_1$ la fréquence de ce signal, on peut en fait constater que $f_1 = f_e - f_0$.}
+	% TODO insérer figure
+	\begin{center}
+	\begin{tikzpicture}[x=1.5cm, y=0.5cm]
+	% Axes
+	\draw[thick, ->, >=latex] (-3, 0) -- (3, 0) node[below right] {$f$};
+	\draw[thick, ->, >=latex] (0, -4) -- (0, 4) node[above right] {$\Im(X(jf))$};
+	% Zone du filtre
+	\draw[thin, dotted, Gray] (-0.5, -4) -- (-0.5, 4);
+	\draw[thin, dotted, Gray] (0.5, -4) -- (0.5, 4);
+	\fill[gray, opacity=0.1] (-0.5, -4) rectangle (0.5, 4);
+	%\draw (-0.5, 0) node[below left] {$-\frac{f_e}{2}$};
+	%\draw (0.5, 0) node[above right] {$\frac{f_e}{2}$};
+	% Impulsions, groupées par réplique.
+	\draw[thin, Green, dashed, -latex] (-1.25, 0) -- (-1.25, 3.14);
+
+	\draw[thin, Green, dashed, -latex] (-1.75, 0) -- (-1.75, -3.14);
+	\draw[thin, -latex] (-1.8, -2) -- (-2, -2);
+	\draw[thin, Green, -latex] (-0.25, 0) -- (-0.25, 3.14);
+	\draw[thin, -latex] (-0.2, 2) -- (0, 2);
+
+	\draw[thin, dashed, blue, -latex] (-0.75, 0) -- (-0.75, -3.14);
+	\draw[thin, -latex] (-0.8, -2) -- (-1, -2);
+	\draw[thin, dashed, blue, -latex] (0.75, 0) -- (0.75, 3.14);
+	\draw[thin, -latex] (0.8, 2) -- (1, 2);
+
+	\draw[thin, Green, -latex] (0.25, 0) -- (0.25, -3.14);
+	\draw (0.25, 0) node[above] {$f_1$};
+	\draw[thin, -latex] (0.2, -2) -- (0, -2);
+	\draw[thin, Green, dashed, -latex] (1.75, 0) -- (1.75, 3.14);
+	\draw[thin, -latex] (1.8, 2) -- (2, 2);
+
+	\draw[thin, Green, dashed, -latex] (1.25, 0) -- (1.25, -3.14);
+	\end{tikzpicture}
+	\end{center}
+
+	Pour $f_0 = f_e$, le signal ressortant de l'échantillonneur est de nouveau nul, pour les mêmes raisons que $f_0 = f_e/2$.
+
+	Pour $f_e < f_0 < 3f_e/2$, il y a toujours repli spectral, mais les diracs des répliques s'éloignent de $0$, et la fréquence du signal de sortie\footnote{Égal à $f_2 = f_0 - f_e$} augmente.
+	% TODO insérer figure
+	\begin{center}
+	\begin{tikzpicture}[x=1.5cm, y=0.5cm]
+	% Axes
+	\draw[thick, ->, >=latex] (-3, 0) -- (3, 0) node[below right] {$f$};
+	\draw[thick, ->, >=latex] (0, -4) -- (0, 4) node[above right] {$\Im(X(jf))$};
+	% Zone du filtre
+	\draw[thin, dotted, Gray] (-0.5, -4) -- (-0.5, 4);
+	\draw[thin, dotted, Gray] (0.5, -4) -- (0.5, 4);
+	\fill[gray, opacity=0.1] (-0.5, -4) rectangle (0.5, 4);
+	%\draw (-0.5, 0) node[below left] {$-\frac{f_e}{2}$};
+	%\draw (0.5, 0) node[above right] {$\frac{f_e}{2}$};
+	% Impulsions, groupées par réplique.
+	\draw[thin, Green, dashed, -latex] (-1.75, 0) -- (-1.75, 3.14);
+	\draw[thin, Green, dashed, -latex] (-0.75, 0) -- (-0.75, 3.14);
+
+	\draw[thin, Green, dashed, -latex] (-2.25, 0) -- (-2.25, -3.14);
+	\draw[thin, -latex] (-2.3, -2) -- (-2.5, -2);
+	\draw[thin, Green, -latex] (0.25, 0) -- (0.25, 3.14);
+	\draw[thin, -latex] (0.3, 2) -- (0.5, 2);
+	\draw (0.25, 0) node[below] {$f_2$};
+
+	\draw[thin, dashed, blue, -latex] (-1.25, 0) -- (-1.25, -3.14);
+	\draw[thin, -latex] (-1.3, -2) -- (-1.5, -2);
+	\draw[thin, dashed, blue, -latex] (1.25, 0) -- (1.25, 3.14);
+	\draw[thin, -latex] (1.3, 2) -- (1.5, 2);
+
+	\draw[thin, Green, -latex] (-0.25, 0) -- (-0.25, -3.14);
+	\draw[thin, -latex] (-0.3, -2) -- (-0.5, -2);
+	\draw[thin, Green, dashed, -latex] (2.25, 0) -- (2.25, 3.14);
+	\draw[thin, -latex] (2.3, 2) -- (2.5, 2);
+
+	\draw[thin, Green, dashed, -latex] (0.75, 0) -- (0.75, -3.14);
+	\draw[thin, Green, dashed, -latex] (1.75, 0) -- (1.75, -3.14);
+	\end{tikzpicture}
+	\end{center}
+\end{enumerate}
+%\begin{tikzpicture}
+%\draw [thick,-latex](-4.5,0) -- (4.5,0);
+%\draw [thick,-latex] (0,-1) -- (0,3);
+%\draw [domain=-4.2:4.2,samples =200] plot(\x,{1.5+sin(80*\x)});
+%\foreach \r in {-4,...,4}
+%{
+%	\draw [-latex] (\r,0)	-- (\r,{1.5+sin(\r*80)});
+%}
+%\draw (1,0) node[below]{T/2};
+%\end{tikzpicture}
+\end{solution}
 
 \section{VW1}
 On considère un système causal décrit par la fonction de transfert
@@ -202,7 +448,7 @@ y[n] &= \begin{pmatrix} 1 & 0 & 1 \end{pmatrix} q[n] \\
 	\end{align*}
 	Il est dès lors possible d'appliquer la transformée en $z$ inverse (le $z^{-1}$ décalant l'inverse d'une unité dans le temps), ce qui donne
 	\[ h[n] = \left(\frac{1}{2}\right)^{n-1} u[n-1] \]
-	\item La fonction de transfert n'a plus qu'un seul pôle, en $\frac{1}{2}$ : le système est donc BIBO-stable, les instabilités internes ne se voient pas.
+	\item La fonction de transfert n'a plus qu'un seul pôle, en $\frac{1}{2}$, au sein du cercle : le système est donc BIBO-stable, les instabilités internes ne se voient pas.
 \end{enumerate}
 \end{solution}
 
