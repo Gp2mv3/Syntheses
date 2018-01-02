@@ -26,12 +26,12 @@ local C MC in
 			W3 = W1+W2
 			D := W3
 		     end
-		  end
+		  end % proc P1
 	       {MC2 P1 C}
-	    end
+	    end % local P1
 	    R1 = @D
-	 end
-      end
+	 end % local D MC2
+      end % proc MC
    local R2 in
       {MC C R2}
       {Browse R2}
