@@ -2,12 +2,16 @@
 \usepackage{../../../info-FSAB1402-exam}
 
 \usepackage{../../../../../../eplcode}
+\usepackage{enumitem}
 
 \DeclareMathOperator{\pgcd}{PGCD}
 
 \hypertitle[']{Informatique}{3}{FSAB}{1402}{2013}{Janvier}
-{Philippe Verbist}
+{Philippe Verbist \and Jean-Martin Vlaeminck}
 {Peter Van Roy}
+%[\paragraph{Remerciement}
+%Remerciement à l'ensemble du local du PCUR06 pour avoir participé à la résolution de l'exercice de sémantique, et pour avoir révélé les différentes petites erreurs que je commettais !]
+% TODO FIXME ce paragraphe devrait être affiché sur la première page, mais il y a un bug dans epleval.cls qui vire l'argument optionnel.
 
 
 \lstset{language={Oz},morekeywords={for,do}}
@@ -24,15 +28,148 @@
 
 \newpage
 \section{}
+% TODO
+\begin{solution}
 \lstinputlisting{2013-01-1.oz}
+\end{solution}
 
 \section{}
+Voici un petit programme :\footnote{Remerciement à l'ensemble du local du PCUR06 pour avoir participé à la résolution de l'exercice de sémantique, et pour avoir révélé les différentes petites erreurs que je commettais !}
+\lstinputlisting{Q2-statement.oz}
+
+\begin{enumerate}[label=(\alph*)]
+	\item Qu'est-ce qui est affiché quand on exécute ce programme ?
+	\item Donnez la traduction de ce programme en langage noyau. Attention à donner une traduction complète !
+	\item Donnez les environnements contextuels des trois procédures dans cette traduction.
+	\item Donnez quelques pas d’exécution de la machine abstraite pour bien montrer les choses suivantes :
+	\begin{enumerate}
+		\item La création, la lecture et l'affectation d'une cellule.
+		\item La définition et l'appel d'une procédure. Quel est l'environnement contextuel juste avant chaque appel et l'environnement quand on est à l'intérieur de la procédure, juste avant l'exécution de son corps ?
+	\end{enumerate}
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}[label=(\alph*)]
+	\item Le programme affiche 1. Il s'agit du contenu de la cellule D, et non le contenu de la cellule C, qui vaut 11 à la fin du programme.
+	\item \lstinputlisting{Q2-sol.oz}
+	\item Les environnements sont
+	\[ CE_{mc} = \{ C \rightarrow c, \texttt{NewCell} \rightarrow nc \} \]
+	\[ CE_{mc2} = \emptyset \]
+	\[ CE_{p1} = \{ \} \]
+	\item Exécutons le programme pas par pas. Les étapes à fournir à l'examen sont indiquées comme telles. Dans ce qui suit, on définit l'opération d'adjonction de deux ensembles $A$ et $B$, notée $A+B$, de la manière suivante :
+	\begin{itemize}
+		\item Pour tout identificateur $\langle x \rangle \in A$ et $\langle x \rangle \in B$ commun aux deux ensembles, $A+B$ contient uniquement le mapping venant de l'ensemble $B$.
+		\item Pour tous les autres identificateurs, ils se retrouvent tels quels dans $A+B$.
+	\end{itemize}
+	Il s'agit d'une union avec remplacement des anciennes valeurs.
+
+	\begin{enumerate}[label=\arabic*.]
+		\newcommand{\procc}[1]{\texttt{proc \{\$ #1\}}}
+		\newcommand{\End}{\texttt{end}}
+
+		\item
+		\[ \bigg( \big[ (<l1-l39>, E_1=\{ \texttt{Browse} \rightarrow browse, \texttt{NewCell} \rightarrow nc, \dots \}) \big], \]
+		\[ \sigma_1 = \big\{ browse = (\procc{X} \dots \End, CE_{browse}), nc = (\procc{A R} \dots \End, CE_{nc}) \big\}, \mu_1 = \emptyset \bigg) \]
+		État initial du programme.
+
+		\item
+		\[ \bigg( \big[ (<l2-l38>, E_2=E_1 + \{ \texttt{MC} \rightarrow mc, \texttt{C} \rightarrow c \} ) \big], \sigma_2 = \sigma_1 + \big\{ mc, c \big\}, \mu_1 \bigg) \]
+		Exécution du local.
+
+		\item
+		\[ \bigg( \big[ (<l2-l5>, E_2), (<l6-l38>, E_2) \big], \sigma_2, \mu_1 \bigg) \]
+		Composition d'instruction. Ne l'oubliez pas à l'examen !
+
+		\item
+		\[ \bigg( \big[ (<l3-l4>, E_3=E_2 + \{ \texttt{Zero} \rightarrow z \}), (<l6-l38>, E_2) \big], \sigma_3 = \sigma_2 + \big\{ z \big\}, \mu_1 \bigg) \]
+		Exécution du local.
+
+		\item \emph{Avant la création d'une cellule}
+		\[ \bigg( \big[ (\texttt{\{NewCell Zero C\}}, E_3), (<l6-l38>, E_2) \big], \sigma_4 = \sigma_2 + \big\{ z=0 \big\}, \mu_1 \bigg) \]
+		Composition d'instructions suivie par une création de valeur pour affecter $z$.
+
+		\item \emph{Après la création d'une cellule}
+		\[ \bigg( \big[(<l6-l38>, E_2) \big], \sigma_5 = \sigma_4 + \big\{ c = \gamma \big\}, \mu_2 = \mu_1 + \{ c\colon z \} \bigg) \]
+		La cellule a été créée et est affectée au nom $\gamma$, et a comme contenu $z=0$.
+
+		\item \emph{Avant la déclaration d'une procédure}
+		\[ \bigg( \big[ (<l6-l34>, E_2), (<l35-l38>, E_2) \big], \sigma_5, \mu_2 \bigg) \]
+		Composition d'instruction.
+
+		\item \emph{Après la déclaration d'une procédure}
+		\[ \bigg( \big[ (<l35-l38>, E_2) \big], \sigma_6 = \sigma_5 + \big\{ mc = (\procc{E R1} <l7-l33> \End, CE_{mc}) \big\}, \mu_2 \bigg) \]
+		La procédure capture dans l'environnement contextuel $CE_{mc}$ les identificateurs libres (non déclarés dans la procédure ni dans ses arguments) \texttt{C} et \texttt{NewCell}, qui sont dans l'environnement $E_2$. \texttt{MC} n'est pas capturé car il n'est pas requis dans le code de MC.
+
+		\item \emph{Avant l'appel d'une procédure}
+		\[ \bigg( \big[ (<l36>, E_4 = E_2 + \{ \texttt{R2} \rightarrow r2 \}), (<l37>, E_4) \big], \sigma_7 = \sigma_6 + \big\{ r2 \big\}, \mu_2 \bigg) \]
+		Exécution du local et déclaration de la variable \texttt{R2} (ce qui crée l'environnement $E_4$), et composition d'instruction pour séparer les lignes 36 et 37.
+
+		\item Après l'appel d'une procédure.
+		\[ \bigg( \big[ (<l7-l33>, E_5 = \{ \texttt{E} \rightarrow c, \texttt{R1} \rightarrow r2, \texttt{C} \rightarrow c, \texttt{NewCell} \rightarrow nc \}), (<l37>, E_4) \big], \sigma_7, \mu_2 \bigg) \]
+		L'environnement $E_5$ est construit de la façon suivante :
+		\begin{itemize}
+			\item L'argument \texttt{E} de $mc$ correspond à l'identificateur \texttt{C} qui référence $c$, donc on ajoute $\texttt{E} \rightarrow c$ à l'environnement $E_5$.
+			\item L'argument \texttt{R1} de $mc$ correspond à l'identificateur \texttt{R2} lors de l'appel, qui référence $r2$, donc on ajoute $\texttt{R1} \rightarrow r2$ à $E_5$.
+			\item On ajoute l'environnement contextuel $CE_{mc}$ de la procédure, qui ajoute $\texttt{C} \rightarrow c$ et $\texttt{NewCell} \rightarrow nc$ à $E_5$.
+			\item Le reste de l'environnement $E_4$ n'est pas utilisé, notamment $\texttt{MC} \rightarrow mc$. Le mapping $\texttt{C} \rightarrow c$ de $E_4$ n'est pas non plus utilisé, même s'il se retrouve quand même dans $E_5$ par le biais de l'environnement contextuel. Ca peut poser problème si on va trop vite, y compris pour le tuteur.
+		\end{itemize}
+
+		\item On saute quelques étapes pour se retrouver à l'étape avant la lecture d'une cellule.
+		%\[ \bigg( \big[ (<l8-l32>, E_6 = E_5 + \{ \texttt{D} \rightarrow d, \texttt{MC2} \rightarrow mc2 \}), (<l37>, E_4) \big], \sigma_7 + \big\{ mc2, d \big\}, \mu_2 \bigg) \]
+		%\[ \bigg( \big[ (<l8-l11>, E_6), (<l12-l32>, E_6 = E_5 + \{ \texttt{D} \rightarrow d, \texttt{MC2} \rightarrow mc2 \}), (<l37>, E_4) \big], \sigma_7 + \big\{ mc2, d \big\}, \mu_2 \bigg) \]
+		%\[ \bigg( \big[ (<l12-l14, E_6), (<l15-l32>, E_6 = E_5 + \{ \texttt{D} \rightarrow d, \texttt{MC2} \rightarrow mc2 \}), (<l37>, E_4) \big], \sigma_7 + \big\{ mc2, d=\delta, one=1 \big\}, \mu_3 = \mu_2 + \big\{ d\colon one \big\} \bigg) \]
+		%\[ \bigg( \big[ (<l15-l20>, E_6), (<l21-l32>, E_6 = E_5 + \{ \texttt{D} \rightarrow d, \texttt{MC2} \rightarrow mc2 \}), (<l37>, E_4) \big], \sigma_7 + \big\{ mc2=(\procc{P C} <l13> \End, \emptyset), d=\delta, one=1 \big\}, \mu_3 = \mu_2 + \big\{ d\colon one \big\} \bigg) \]
+		%\[ \bigg( \big[ (<l16-l19>, E_8 = E_6 + \{ \texttt{V1} \rightarrow v1, \texttt{V2} \rightarrow v2, \texttt{V3} \rightarrow v3 \})(<l21-l32>, E_6 = E_5 + \{ \texttt{D} \rightarrow d, \texttt{MC2} \rightarrow mc2 \}), (<l37>, E_4) \big], \sigma_7 + \big\{ mc2=(\procc{P C} <l13> \End, \emptyset), d=\delta, one=1, v1, v2, v3 \big\}, \mu_3 = \mu_2 + \big\{ d\colon one \big\} \bigg) \]
+		\[ \left( \begin{bmatrix}
+		(<l17-l19>, E_8 = E_6 + \{ \texttt{V1} \rightarrow v1, \texttt{V2} \rightarrow v2, \texttt{V3} \rightarrow v3 \}), \\
+		(<l21-l32>, E_6 = E_5 + \{ \texttt{D} \rightarrow d, \texttt{MC2} \rightarrow mc2 \}), \\
+		(<l37>, E_4)
+		\end{bmatrix}, \right. \]
+		\[ \left. \sigma_8 = \sigma_7 + \big\{ mc2=(\procc{P C} <l13> \End, \emptyset), d=\delta, one=1, v1=1, v2, v3 \big\}, \mu_3 = \mu_2 + \big\{ d\colon one \big\} \right) \]
+		Exécution du local et création de \texttt{D} et \texttt{MC2} ($E_6$). Composition d'instruction. Exécution du \texttt{local One in} ($E_7$). Composition. Création de valeur avec \texttt{One=1}. Création de la cellule $d=\delta$. Composition. Création de la valeur procédurale de $\texttt{MC2} \rightarrow mc2$. Composition d'instruction. Déclarations de 3 variables avec local ($E_8$). Composition. Création de valeur \texttt{V1 = 1}.
+
+		\item Avant la lecture d'une cellule
+		\[ \left( \begin{bmatrix}
+		(\texttt{V2=@E}, E_8), \\
+		(<l18-l19>, E_8), \\
+		(<l21-l32>, E_6), \\
+		(<l37>, E_4)
+		\end{bmatrix}, \sigma_8 = \big\{ v2, one=1, z=0, c=\gamma, \dots \big\}, \mu_3 = \big\{ c\colon z, d\colon one \big\} \right) \]
+		Composition.
+
+		\item Après la lecture d'une cellule
+		\[ \bigg( \big[ (<l18-l19>, E_8), (<l21-l32>, E_6), (<l37>, E_4) \big], \sigma_9 = \sigma_8 + \big\{ v2=0 \big\}, \mu_3 \bigg) \]
+		Lecture d'une cellule. L'identificateur \texttt{E} réfère à la cellule $c$, dont le contenu est la variable $z$, qui vaut $0$. Par conséquent, la variable $v2$ (référencée par \texttt{V2}) est donc affecté à la valeur de $z$, c'est-à-dire $0$\footnote{On pourrait penser que le store contiendra plutôt $v2=z$, car il s'agit d'une liaison entre variable. En pratique, lors d'un \emph{variable-value binding}, la machine abstraite va donner la valeur à toutes les variables de l'ensemble d'équivalence (les variables qui sont liées entre elles, mais pas à une valeur), et déconstruire l'ensemble d'équivalence.}.
+
+		\item Avant l'affectation d'une cellule
+		\[ \bigg( \big[ (\texttt{E:=V3}, E_8), (<l21-l32>, E_6), (<l37>, E_4) \big], \sigma_{10} = \sigma_9 + \big\{ v3=1 \big\}, \mu_3 \bigg) \]
+		Composition, exécution de la somme et donc création de valeur pour $v3$.
+
+		\item Après l'affectation d'une cellule
+		\[ \bigg( \big[ (<l21-l32>, E_6), (<l37>, E_4) \big], \sigma_{10}, \mu_4 = \mu_3 + \big\{ c:v3 \big\} = \big\{ c:v3, d:one \big\} \bigg) \]
+		Il est important de noter que $c$ ne contient pas directement la valeur $1$ de $v3$.
+
+		\item Après cela, il n'est plus nécessaire d'exécuter un quelconque pas d'exécution pour l'examen : toutes les questions ont été satisfaites. Si le c\oe{}ur vous en dit, voici ce qu'il se passe ensuite.
+
+		Composition. Déclaration de \texttt{P1}. Composition. Création de la valeur procédurale des lignes 23 à 27, affectée dans $p1$. Appel de la procédure $mc2$ : la ligne 13 est sur la pile sémantique, avec $C$ qui réfère à $c$, et $P$ qui réfère à $p1$. Appel de la procédure $p1$ : les lignes 23 à 27 sont sur la pile sémantique, avec $D$ qui réfère à $c$. Exécution des lignes 23 à 27, qui se terminent en mettant dans la cellule $d$ une variable $w3=11$. Exécution de la ligne 32, à savoir lecture d'une cellule, et liaison entre $\texttt{R1}\rightarrow r2$ et $one$. Enfin, exécution du Browse, qui affiche le contenu de $r2$, à savoir $one=1$.
+	\end{enumerate}
+	L'exécution du programme permet de comprendre pourquoi $D$ n'a pas l'air modifié : la cellule $D$ de la ligne 8 du code d'origine réfère à la cellule $c$ lors de l'exécution.
+\end{enumerate}
+\end{solution}
 
 
 \section{}
+Définissez chacun des concepts suivants avec le plus de précision possible. Attention à donner la définition du concept en informatique. Pour chaque structure de donnée expliquez l’ensemble d’opérations de base soutenues par la structure. Pour chaque concept de langage donnez un fragment de programme qui utilise le concept à bon escient.
+\begin{itemize}
+	\item Arbre binaire. Donnez la règle de grammaire qui définit un arbre binaire.
+	\item Liste. Donnez la règle de grammaire qui définit une liste.
+	\item Dictionnaire.
+	\item Portée d'une occurrence d'un identificateur;
+	\item Environnement contextuel.
+\end{itemize}
 
-
-
-
+\begin{solution}
+	Consultez l'une des nombres listes de définitions présentes dans le Drive :).
+\end{solution}
 
 \end{document}
