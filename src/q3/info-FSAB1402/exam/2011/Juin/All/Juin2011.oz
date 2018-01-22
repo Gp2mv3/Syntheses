@@ -5,19 +5,9 @@ fun{Claque4 L}
    else nil
    end
 end
-fun{ClaqueK K L}
-   local Boucle C in
-      fun{Boucle N A}
-	 if N == 0 then A
-	 else {Boucle N-1 {List.nth L K-N+1}|A}
-	 end
-      end
-      
-      if {List.length L $} < K then nil
-      else
-	 C = {ClaqueK K {List.drop L K $}}
-	 {Boucle K C}
-      end
+fun {ClaqueK K L}
+   if {List.length L} >= K then {Append {List.reverse {List.take L K}} {ClaqueK K {List.drop L K}}}
+   else nil
    end
 end
 
