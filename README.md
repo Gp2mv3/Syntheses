@@ -50,7 +50,7 @@ Vous pouvez copier les synthèses automatiquement vers leur destination à l'aid
 [`smartcp`](https://github.com/blegat/smartcp).
 Vous pouvez trouver une explication sur l'écriture du fichier dans le lien de `smartcp`.
 
-[pdf-url]: https://drive.google.com/drive/folders/0B5WS2yn5sWqDZFFibHM2d0lQVEE?usp=sharing
+[pdf-url]: https://uclouvain-my.sharepoint.com/:f:/g/personal/pverbist_oasis_uclouvain_be/ElZP_ep3eAtMsNkXcBLj0vYB7CZpoJ-UzQu7pzHV6xGMYw
 [doc-url]: https://drive.google.com/file/d/0B1axlYz3_XXKRzdGVWdGdUZ6UGs/view?usp=sharing
 [chat-url]: https://gitter.im/Gp2mv3/Syntheses?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [forum-url]: http://forum-epl.be
