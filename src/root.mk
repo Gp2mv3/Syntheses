@@ -67,7 +67,10 @@ $(MAIN_NAME_SOL).pdf: $(MAIN_NAME).tex
 
 clean: cleanaux
 	latexmk -C
-	$(RM) *.pdf
+# $(RM) *.pdf
+
+kleenex: cleanaux
+	# Just for the fun of it.
 
 cleanaux:
 	latexmk -c
