@@ -65,10 +65,13 @@ $(MAIN_NAME_SOL).pdf: $(MAIN_NAME).tex
 	  -enable-write18 '\def\Sol{true} \input{%S}'" \
 	  -use-make $(MAIN_NAME).tex -jobname=$(MAIN_NAME_SOL)
 
+clean: cleanaux
+	latexmk -C
+	$(RM) *.pdf
 
-clean:
-	latexmk -CA
-	$(RM) *.aux *.fdb_latexmk *.log *.out *.pdf *.bbl
+cleanaux:
+	latexmk -c
+	$(RM) *.aux *.fdb_latexmk *.log *.out *.bbl
 
 show: $(FULL)
 	$(PDFVIEWER) $(FULL) 2> /dev/null &
