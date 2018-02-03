@@ -1,5 +1,5 @@
 NAME=grh
-OPTION=LSMG
-CODE=2004
-QUADRI=7
+OPTION=FSA
+CODE=2210
+QUADRI=8
 include ../../../root.mk

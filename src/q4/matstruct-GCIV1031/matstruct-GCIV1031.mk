@@ -1,4 +1,4 @@
 NAME=matstruct
-OPTION=AUCE
+OPTION=GCIV
 CODE=1031
 include $(BASE_DIR)../../q4.mk
