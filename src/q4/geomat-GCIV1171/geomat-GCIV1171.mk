@@ -1,4 +1,4 @@
 NAME=geomat
-OPTION=AUCE
+OPTION=GCIV
 CODE=1171
 include ../../q4.mk
