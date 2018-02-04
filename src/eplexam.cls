@@ -14,6 +14,14 @@
 
 \LoadClassWithOptions{../../../../../../epleval}
 
-\IfLanguageName{english}{\newcommand{\Epltype}{Exam}\newcommand{\epltype}{exam}}{\newcommand{\Epltype}{Examen}\newcommand{\epltype}{examen}}
+\IfLanguageName{english}{
+\newcommand{\Epltype}{Exam}
+\newcommand{\epltypesingular}{exam}
+}{% else IfLanguageName{english}
+\newcommand{\Epltype}{Examen}
+\newcommand{\epltypesingular}{examen} % version au singulier
+\newcommand{\epltypedefadj}{l'} % adjectif défini à utiliser au singulier
+\newcommand{\epltypegender}{} % marque du genre ; masculin donc rien
+}% end else IfLanguageName{english}
 
 \endinput
