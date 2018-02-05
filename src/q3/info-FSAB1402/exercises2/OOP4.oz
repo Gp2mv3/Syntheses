@@ -40,19 +40,14 @@ fun {Palindrome Xs}
    end
 
    fun {Check}
-      local A B C in
-	 {S isEmpty(A)}
-	 if A then true
+      if {S isEmpty($)} then true
+      else
+	 if {S first($)} == {S last($)} then
+	    {S removeFirst}
+	    {S removeLast}
+	    {Check}
 	 else
-	    {S first(B)}
-	    {S last(C)}
-	    if B == C then
-	       {S removeFirst}
-	       {S removeLast}
-	       {Check}
-	    else
-	       false
-	    end
+	    false
 	 end
       end
    end
