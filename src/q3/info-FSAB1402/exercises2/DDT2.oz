@@ -21,14 +21,11 @@ in
    end
 end
 fun {NotPrime S S2}
-   case S of H|T then
-      case S2 of X|Y then
-	 if X == H then {NotPrime T Y}
-	 elseif X < H then {NotPrime S Y}
-	 else H|{NotPrime T S2}
-	 end
-      else S
+   case S#S2 of (H|T)#(X|Y) then
+      if X == H then {NotPrime T Y}
+      elseif X < H then {NotPrime S Y}
+      else H|{NotPrime T S2}
       end
-   else nil
+   else S
    end
 end
