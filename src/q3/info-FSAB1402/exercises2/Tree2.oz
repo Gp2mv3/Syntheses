@@ -1,9 +1,10 @@
 fun {FromListToTree L}
    fun {Add V Tree}
-      case Tree of btree(1:X left:L right:R) then if V<X then btree(1:X right:R left:{Add V L})
-						  elseif V>X then btree(1:X right:{Add V R} left:L)
-						  else Tree
-						  end
+      case Tree of btree(1:X left:L right:R) then
+	 if V<X then btree(1:X right:R left:{Add V L})
+	 elseif V>X then btree(1:X right:{Add V R} left:L)
+	 else Tree
+	 end
       else btree(1:V left:leaf right:leaf)
       end
    end
