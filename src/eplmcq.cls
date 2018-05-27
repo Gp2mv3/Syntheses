@@ -3,7 +3,18 @@
 
 \LoadClassWithOptions{../../../eplbase}
 
-\IfLanguageName{english}{\newcommand{\epltype}{MCQ}}{\newcommand{\epltype}{QCM}}
+\IfLanguageName{english}{
+\newcommand{\Epltype}{MCQ}
+\newcommand{\epltypesingular}{MCQ}
+}{% else IfLanguageName{english}
+\newcommand{\Epltype}{QCM}
+\newcommand{\epltypesingular}{QCM} % version au singulier
+\newcommand{\epltypedefadj}{le } % adjectif défini à utiliser au singulier
+\newcommand{\epltypegender}{} % marque du genre ; masculin donc rien
+\newcommand{\epltypeplural}{QCM} % version au pluriel
+% Dans ce cas-ci, il ne faut pas déclarer \epltypepluralonly, car le soucis est que la marque du pluriel est dans l'abbréviation.
+}% end else IfLanguageName{english}
+
 \newcommand{\hypertitle}[7][e ]{%
 \basehypertitle[#1]{#2}{#3}{#4}{#5}{#6}{#7}{\IfLanguageName{english}{MCQ}{QCM}}}
 

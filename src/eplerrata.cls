@@ -3,7 +3,16 @@
 
 \LoadClassWithOptions{../../../eplbase}
 
-\newcommand{\epltype}{errata}
+% Le nom du document est commun aux deux langues
+\newcommand{\Epltype}{Errata}
+\newcommand{\epltypesingular}{errata} % version au singulier
+\IfLanguageName{english}{
+% nothing to do
+}{
+\newcommand{\epltypedefadj}{l'} % adjectif défini à utiliser au singulier
+\newcommand{\epltypegender}{} % marque du genre ; masculin donc rien
+}
+
 \newcommand{\hypertitle}[7][e ]{%
 \basehypertitle[#1]{#2}{#3}{#4}{#5}{#6}{#7}{Errata}}
 
