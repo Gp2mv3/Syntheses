@@ -1,13 +1,15 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{eplexam}[2015/01/14 EPL exam class]
-
+\newcommand{\isepleval}{} % indique que la classe hérite de epleval (enfin, quasi)
 \DeclareOption{en}{
   \PassOptionsToClass{\CurrentOption}{../../../../../eplbase}
-  \newcommand{\epltype}{Exam}
+  \newcommand{\epltypesingular}{Exam}
 }
 \DeclareOption{fr}{
   \PassOptionsToClass{\CurrentOption}{../../../../../eplbase}
-  \newcommand{\epltype}{Examen}
+  \newcommand{\epltypesingular}{Examen} % version au singulier
+  \newcommand{\epltypedefadj}{l'} % adjectif défini à utiliser au singulier
+  \newcommand{\epltypegender}{} % marque du genre ; masculin donc rien
 }
 
 \newcounter{eplargc}
@@ -27,6 +29,8 @@
 }
 
 \ProcessOptions\relax
+
+\typeout{You should rather use eplexam.cls instead.}
 
 \RequirePackage{ifthen}
 

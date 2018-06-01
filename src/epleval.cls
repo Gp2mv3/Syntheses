@@ -12,6 +12,7 @@
 \RequirePackage{ifthen}
 
 \LoadClass{../../../../../../eplbase}
+\newcommand{\isepleval}{} % indique que la classe hérite de epleval
 
 \newcommand{\hypertitle}[9][e ]{%
 \basehypertitle[#1]{#2}{#3}{#4}{#5}{#8}{#9}{\Epltype{} \IfLanguageName{english}{of}{de} #7 #6}}

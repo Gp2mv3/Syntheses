@@ -28,7 +28,7 @@ fun {MulN Ass}
       end
    end
 
-   fun {Increment ListOfPos PosToInc} %returne une liste avec les nouvelles positions
+   fun {Increment ListOfPos PosToInc} % retourne une liste avec les nouvelles positions
       fun {IncrementAux ListOfValues ListOfPosAux Pos}
 	 case ListOfValues#ListOfPosAux of (H1|T1)#(H2|T2) then
 	    if Pos==1 andthen H2 < {Length H1} then
