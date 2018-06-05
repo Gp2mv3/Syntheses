@@ -155,7 +155,7 @@
    yours is therefore welcome as well.
    \ifthenelse{\isundefined{\isepleval}}{%
    It is always possible to improve it,
-   it is even more true if the course has changed because
+   even more so if the course has changed in which case
    the \epltypesingular{} must be updated accordingly.}
    {It is always possible to improve it, by completing missing statements or solutions.}
    The source code and a link to the latest version of the pdf can be found at the following address}
@@ -172,14 +172,14 @@
      \url{https://github.com/Gp2mv3/Syntheses}.
    \end{center}
    \IfLanguageName{english}
-   {You can also find there the content of the \texttt{README} file which contains
-   more information, you are invited to read it.}
+   {There, you can also find the content of the \texttt{README} file which contains
+   more information. You are invited to read it.}
    {On y trouve aussi le contenu du \texttt{README} qui contient de plus
    amples informations, vous êtes invités à le lire.}
 
    \IfLanguageName{english}
-   {It is written on it that questions, error reports,
-   improvement suggestions or any discussion about the project
+   {It is indicated there that questions, error reports,
+   improvement suggestions or any discussion concerning the project
    are to be submitted at the following address}
    {Il y est indiqué que les questions, signalements d'erreurs,
    suggestions d'améliorations ou quelque discussion que ce soit
@@ -208,7 +208,7 @@
      \url{https://github.com/Gp2mv3/Syntheses/wiki/Status}
    \end{center}
    \IfLanguageName{english}
-   {You can notice that there is still a lot missing,
+   {You will have noticed that there are still a lot missing ones,
    your help is welcome.}
    {Vous pouvez d'ailleurs remarquer qu'il en manque encore beaucoup,
    votre aide est la bienvenue.}
@@ -230,9 +230,9 @@
    vous devrez utiliser}
    \texttt{git}.
    \IfLanguageName{english}
-   {If it is a problem,
+   {If that constitutes a problem,
    we are of course open to contributions sent by mail
-   or any other mean.}
+   or any other means.}
    {Si cela pose problème,
    nous sommes évidemment ouverts à des contributeurs envoyant leurs
    changements par mail ou par n'importe quel autre moyen.}
@@ -244,10 +244,10 @@
         \paragraph{License} \IfLanguageName{english}
         {This work is licensed under the Creative Commons Attribution 4.0 Unported License.
             To view a copy of this license, visit \url{http://creativecommons.org/licenses/by/4.0/},
-        or look into the github repository (see above).}
+        or look into the GitHub repository (see above).}
         {Ce travail est disponible sous license Creative Commons Attribution 4.0 Unported.
             Une copie de cette license est disponible sur \url{http://creativecommons.org/licenses/by/4.0/},
-        ou dans le dépot github (voir ci-dessus).}
+        ou dans le dépot GitHub (voir ci-dessus).}
     }{}
 \end{titlepage}
 }{}
