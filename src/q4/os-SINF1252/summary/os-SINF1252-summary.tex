@@ -5,6 +5,7 @@
 \usepackage{graphicx}
 \usepackage{tabularx}
 \usepackage{enumerate}
+\DeclareMathOperator{\xor}{\oplus}
 
 \usepackage{../../../eplcode}
 \usepackage{../../../eplunits}
@@ -36,7 +37,7 @@ int *i = &n;
 printf("%d == n\n", *i, n); // imprime 0 == 0
 \end{lstlisting}
 On doit aussi donner ce vers quoi pointe l'adresse (ici, un \lstinline|int|)
-pour permettre au compilateur d'effectuer de l'arithmétique de pointeur.
+pour permettre au compilateur d'effectuer de l'arithmétique des pointeurs.
 En effet, lorsqu'on fait
 \begin{lstlisting}
 int *p = 0x10;
@@ -47,14 +48,14 @@ p++;
 
 Par convention, \lstinline|NULL| est la valeur d'un pointeur qui
 ne pointe pas encore vers de la mémoire allouée.
-Il donc mieux toujours donner cette valeur à un pointeur qui ne pointe
+Il vaut donc mieux toujours donner cette valeur à un pointeur qui ne pointe
 pas vers quelque chose de telle sorte que
 \begin{lstlisting}
 if (p != NULL) {
   free(p);
 }
 \end{lstlisting}
-ne libère jamais de la mémoire non-allouée
+ne libère jamais de la mémoire non allouée.
 
 \subsection{Le heap}
 Les pointeurs permettent aussi de s'allouer de la mémoire dans la \emph{heap}.
@@ -70,14 +71,14 @@ elle risque d'être remplie et \lstinline|malloc| renverra alors
 \lstinline|NULL|.
 \lstinline|malloc| renvoie un pointeur de type \lstinline|void*|
 pour rester générique.
-Il faut le caster dans le type voulu.
+Il vaut mieux ne pas le caster dans le type voulu, car cette conversion est implicite.
 \begin{lstlisting}
 int n;
 printf("Combien voulez-vous de int (%d bytes par int) ? : ",
        sizeof(int));
 scanf("%d", &n);
 // On s'alloue n int consecutifs dans la heap
-int *p = (int*) malloc(n * sizeof(int));
+int *p = malloc(n * sizeof(int));
 if (p == NULL) {
   // n est negatif, nul ou trop grand
   printf("Vous avez ete un peut trop optimiste il me semble :)\n");
@@ -99,19 +100,19 @@ Il existe aussi la fonction \lstinline|calloc| qui contrairement à
 met tous les bytes à 0 de manière très efficace.
 \begin{lstlisting}
 #define N 42
-int *p = (int*) malloc(N * sizeof(int));
+int *p = malloc(N * sizeof(int));
 for (int i = 0; i < N; i++) {
   p[i] = 0;
 }
 // est plus lent que
-int *p = (int*) calloc(N, sizeof(int));
+int *p = calloc(N, sizeof(int));
 \end{lstlisting}
 
 \section{Structures}
-On peut créer des structures qui des une sorte de classes sans méthodes.
+On peut créer des structures qui sont une sorte de classes sans méthodes.
 On accède aux éléments à l'aide de \lstinline|.|, \lstinline|a.b|
 est l'élément au label \lstinline|b| dans la variable \lstinline|a|.
-On a un raccourcis pour \lstinline|(*a).b| qui est \lstinline|a->b|.
+On a un raccourci pour \lstinline|(*a).b| qui est \lstinline|a->b|.
 \begin{lstlisting}
 struct point {
   int x;
@@ -125,7 +126,7 @@ int main () {
   struct point d;
   d.x = 1;
   d.y = 2;
-  struct point *triangle = (struct point *) malloc(3 * sizeof(struct point));
+  struct point *triangle = malloc(3 * sizeof(struct point));
   printf("Before\n");
   for (int i = 0; i < 3; i++) {
     triangle[i].x = i;
@@ -162,7 +163,7 @@ void foo () {
   printf("%d\n", n); // affiche 1
 }
 \end{lstlisting}
-comme on fait un passage par valeur,
+Comme on fait un passage par valeur,
 \lstinline|a| vaut 0 et changer \lstinline|a| ne change pas \lstinline|n|.
 Par contre, \lstinline|b| contient l'adresse de \lstinline|n| donc modifier
 \lstinline|*b| modifie bien \lstinline|n|.
@@ -171,20 +172,20 @@ il faut passer l'adresse de la variable qui doit stocker le résultat.
 
 \section{Opérateurs}
 \subsection{Opérateurs logiques}
-Les opérateurs de bits s'exécutent sur chaque bits.
+Les opérateurs de bits s'exécutent sur chaque bit.
 On a
 \begin{center}
   \begin{tabular}{cccc}
     \clang{} bit & \clang{} \lstinline|bool| & Logique & Appelation\\
-    \& & \&\& & $\land$ & and\\
-    | & || & $\lor$ & or\\
-    $\hat{}$ &  & $\oplus$ & xor
+    \& & \&\& & $\land$ & AND\\
+    | & || & $\lor$ & OR\\
+    $\hat{}$ &  & $\xor$ & XOR
   \end{tabular}
 \end{center}
 
 \section{Portée des variables}
-En \clang{}, il n'y a pas de classe,
-les variables sont soient \emph{locales}, soient \emph{globales}.
+En \clang{}, il n'y a pas de classes,
+les variables sont soit \emph{locales}, soit \emph{globales}.
 
 \subsection{Variables globales}
 Les variables globales sont initialisées à 0 ou NULL pour les pointeurs.
@@ -195,7 +196,7 @@ Elles sont déclarées à l'extérieur de toute fonction.
 Elles ne sont pas initialisées.
 Elles sont visibles uniquement à l'intérieur de la fonction à l'intérieur
 de laquelle elles sont créées.
-Si elles ont le même nom qu'une variable globales,
+Si elles ont le même nom qu'une variable globale,
 la variable globale ne sera pas disponible à l'intérieur de la fonction.
 Contrairement aux variables globales, ces variables ne sont pas
 initialisées.
@@ -203,7 +204,7 @@ initialisées.
 \subsection{Variables de boucle}
 À partir de la norme \clang99,
 on peut déclarer des variables à l'intérieur
-de n'importe quel bloc
+de n'importe quel bloc.
 \begin{lstlisting}
 int main () {
   {
@@ -230,12 +231,12 @@ int main () {
 
 \section{Types de données}
 \subsection{Nombres entiers}
-Les nombres sont limités par le nombre de bits qui sont utilisés pour les représentés en mémoire.
-Il y deux types de nombres entiers : Les nombres entiers \textbf{signés} (\texttt{int}) et les nombres entiers \textbf{non-signés} (\texttt{unsigned int}).
+Les nombres sont limités par le nombre de bits qui sont utilisés pour les représenter en mémoire.
+Il y deux types de nombres entiers : Les nombres entiers \textbf{signés} (\texttt{int}) et les nombres entiers \textbf{non signés} (\texttt{unsigned int}).
 \\
-Par convention le bit le plus à gauche est appelé le \textbf{bit de poids fort} tandis que celui le plus à droite, est le \textbf{bit de poids faible}.
+Par convention, le bit le plus à gauche est appelé le \textbf{bit de poids fort} tandis que celui le plus à droite, est le \textbf{bit de poids faible}.
 \\\\
-Plusieurs représentations de séquence de bits existent : \\
+Plusieurs représentations de séquences de bits existent : \\
 \begin{tabular}{l||l|c|c|l}
   \textbf{Représentation} &  & \textbf{Base} & \textbf{Plage} & \textbf{Exemple} \\
   \hline \hline \textbf{Binaire} & Représente 1 bit & 2 & [0-1] & \texttt{0b1111011} \\
@@ -245,30 +246,30 @@ Plusieurs représentations de séquence de bits existent : \\
   \hline
 \end{tabular} \\
 \begin{footnotesize}
-  \textbf{Attention} : Lorsqu'on écrit un nombre commençant par un 0, le compilateur C le prendra comme étant en notation octale ! Donc \texttt{0123==123} renverra \texttt{false}, en effet, \texttt{\textbf{0}123} représente le nombre décimal \texttt{83}.
+  \textbf{Attention} : Lorsqu'on écrit un nombre commençant par un 0, le compilateur \clang{} le prendra comme étant en notation octale ! Donc \texttt{0123==123} renverra \texttt{false}, en effet, \texttt{\textbf{0}123} représente le nombre décimal \texttt{83}.
 
 \end{footnotesize}
-Afin de connaître la taille en mémoire d'un type de donnée en C, il faut utiliser \texttt{sizeof}.
-\texttt{sizeof} renvoit le nombre d'\textbf{octet} (=8 bits)
+Afin de connaître la taille en mémoire d'un type de donnée en \clang{}, il faut utiliser \texttt{sizeof}.
+\texttt{sizeof} renvoit le nombre d'\textbf{octets} (1 octet correspond à 8 bits).
 
 \subsubsection{Nombres entiers signés}
-Plusieurs manière existe pour représenter un nombre entier signé.
-La première, consiste à utiliser le bit le plus à gauche afin de représenter le signe : $$ (-1)^{b_{n-1}} \times \sum_{i=0}^{n-2} b_i \times 2^i$$
-En pratique, cette notation n'est que très peut utiliser car elle rend l'implémentation des circuits électroniques de calcul plus compliquée et qu'elle permet de représentée la valeur zéro de deux manière différentes : \texttt{00…00} et \texttt{10…00}
+Plusieurs manières existent pour représenter un nombre entier signé.
+La première consiste à utiliser le bit le plus à gauche afin de représenter le signe : $$ (-1)^{b_{n-1}} \times \sum_{i=0}^{n-2} b_i \times 2^i$$
+En pratique, cette notation n'est que très peut utilisée car elle rend l'implémentation des circuits électroniques de calcul plus compliquée et elle permet de représenter la valeur zéro de deux manière différentes : \texttt{00…00} et \texttt{10…00}
 
 La représentation la plus courante est de sortir de la somme le bit de poids fort et de le multiplier par -1 :
 $$ -(b_{n-1}) \times 2^{n-1} +  \sum_{i=0}^{n-2} b_i \times 2^i$$
-De cette manière, il n'y a qu'une représentation pour le \texttt{0} (lorsque tout les bits valent \texttt{0}); par contre il existe toujours un nombre entier négatif qui n'a pas d'équivalent positif.
+De cette manière, il n'y a qu'une représentation pour le \texttt{0} (lorsque tous les bits valent \texttt{0}); par contre, il existe toujours un nombre entier négatif qui n'a pas d'équivalent positif.
 
 Un nombre \texttt{short} par exemple est représenté sur 16 bits, il peut donc représenter les nombres compris entre $-2^{15}$ et $2^{15} - 1$, c'est à dire les nombres entiers $\in [-32768, 32767]$.
 
 
-Attention : Le langage C ne prévoit aucun mécanisme d'exception qui permettrait au programmeur de détecter qu'on dépasse l'intervalle autorisé pour un type de variable.
+Attention : Le langage \clang{} ne prévoit aucun mécanisme d'exception qui permettrait au programmeur de détecter qu'on dépasse l'intervalle autorisé pour un type de variable.
 Il faut donc choisir le type de variable (\texttt{short}, \texttt{int}, \texttt{long}, \texttt{long long},...) judicieusement en fonction de l'application et être sûr qu'on ne dépasse pas l'intervalle.
 
 \subsection{Nombres réels}
-Pour un nombre réels sur 32 bits (resp 64 bits) on a : seeeeeeeemmmmmmmmmmmmmmmmmmmmmmm avec $s$ le signe sur 1 bit, $e$ l'exposant sur 8 bits (resp 11) et $m$ la fraction (ou mantise) sur 23 bits (resp 52)
-$$(-1)^s\times(1+\sum^{23}_{i=1} m_i 2^{-i})\times 2^{e-E_{max}})$$
+Pour un nombre réel sur 32 bits (resp. 64 bits) on a : $seeeeeeeemmmmmmmmmmmmmmmmmmmmmmm$ avec $s$ le signe sur 1 bit, $e$ l'exposant sur 8 bits (resp. 11) et $m$ la fraction (ou mantisse) sur 23 bits (resp. 52) :
+$$\phantom{.} (-1)^s\times(1+\sum^{23}_{i=1} m_i 2^{-i})\times 2^{e-E_{max}}).$$
 Il est intéressant de noter que
 \begin{itemize}
   \item une représentation en virgule flottante sur $n$ bits ne permet jamais de représenter plus de $2^n$ nombres réels différents.
@@ -277,7 +278,7 @@ Il est intéressant de noter que
 \end{itemize}
 
 \subsection{Les tableaux}
-En C, les tableaux permettent d'agréger des données d'un même type.
+En \clang{}, les tableaux permettent d'agréger des données d'un même type.
 Exemple :
 \begin{lstlisting}
 #define N 10
@@ -286,42 +287,42 @@ int matriceC[N][N];
 int matriceR[N][2*N];
 \end{lstlisting}
 
-Attention : il n'est pas possible de récupérer la taille d'un tableau à partir de la variable (ex Java : coord1.length).
+Attention : il n'est pas possible de récupérer la taille d'un tableau à partir de la variable (ex \java{} : \texttt{coord1.length}).
 Il faut donc toujours passer cette information en plus du tableau (ex : \texttt{main(\textbf{int argc} , ...)}).
 
 \subsection{Caractères et chaînes de caractères}
 \subsubsection{Caractères}
-Les caractères peuvent être encodé de plusieurs selon plusieurs représentations :
+Les caractères peuvent être encodés selon plusieurs représentations :
 \begin{itemize}
   \item \textbf{ASCII} : 7 bits - mais représenté sur 8 bits.
-    Par exemple "A" est 0b01000001.
-  \item \textbf{ISO-8859} : 8 bits
+    Par exemple : "A" est \texttt{0b01000001}.
+  \item \textbf{ISO-8859} : 8 bits.
   \item \textbf{Unicode} : Permet de représenter tous les caractères connus de toutes les langues.
-    Utilise plus que 8 bits par caractères.
+    Utilise plus que 8 bits par caractère.
 \end{itemize}
-La fonction \texttt{toupper} prend un \texttt{int} comme argument et traite l'information en fonction du type d'encodage qui a été défini\footnote{Avec \texttt{setlocale}, voir \texttt{locale}}.
+La fonction \texttt{toupper} prend un \texttt{int} comme argument et traite l'information en fonction du type d'encodage qui a été défini\footnote{Avec \texttt{setlocale}, voir \texttt{locale}.}.
 
 Dans la suite du cours, nous supposerons qu'un caractère est toujours représentable en utilisant le type \texttt{char} permettant de stocker un octet.
 
 \subsubsection{Chaîne de caractères}
-En C, les chaînes de caractères sont représentées sous forme de tableau de caractères (\texttt{char}).
-Le dernier caractère d'une chaîne de caractère en C est par convention le caractère \texttt{$\backslash$0}.
-Il faut faire attention à ne jamais le "dépasser" car le C n'a pas de mécanisme d'exception et donc aller trop loin dans le tableau ne produira pas d'exception du type \texttt{ArrayOutOfBoundException} mais un résultat imprévisible.
+En \clang{}, les chaînes de caractères sont représentées sous forme de tableaux de caractères (\texttt{char}).
+Le dernier caractère d'une chaîne de caractères en \clang{} est par convention le caractère \texttt{'$\backslash$0'}.
+Il faut faire attention à ne jamais le ``dépasser'' car le \clang{} n'a pas de mécanisme d'exception et donc aller trop loin dans le tableau ne produira pas d'exception du type \texttt{ArrayOutOfBoundException} comme en \java{} mais un résultat imprévisible.
 
 
 \subsection{Les pointeurs}
 Un \textbf{pointeur} est définit comme étant une variable content l'adresse d'une autre variable.
 \begin{lstlisting}
-int i=1;				//entier
-int *ptr_i;				//pointeur vers un entier
+int i=1;				// entier
+int *ptr_i;				// pointeur vers un entier
 
-ptr_i=&i;				//initialisation du pointeur, a l'adresse de i
-*ptr_i = *(ptr_i)+1252;	//Changement du contenu de la memoire pointe par ptr_i
+ptr_i=&i;				// initialisation du pointeur, a l'adresse de i
+*ptr_i = *(ptr_i)+1252;	// changement du contenu de la memoire pointee par ptr_i
 \end{lstlisting}
 
 \subsection{Les structures}
-C Les structures permettent de définir des données plus complexes.
-La langage C permet la définition de structures qui combinent différents types de données simples ou structurés.
+En \clang{}, les structures permettent de définir des données plus complexes.
+La langage \clang{} permet la définition de structures qui combinent différents types de données simples ou structurés.
 Les structures permettent de facilement regrouper des données qui sont logiquement reliées entre elles et doivent être manipulées en même temps.
 \begin{lstlisting}
 // Definition d'une structure
@@ -330,13 +331,13 @@ struct student {
   char prenom [ 2 0 ] ;
   char nom [ 3 0 ] ;
 };
-// Declaration + Initialization
+// Declaration + Initialisation
 struct student linus = { 1 , "Linus" , "Torvalds" } ;
 struct student richard = { .matricule = 2 , .prenom = "Richard" , .nom = "Stallman" } ;
 struct student evil;
 evil.noma = 3;
 evil.prenom = "Bill";
-evil.nom = "Gates ";
+evil.nom = "Gates";
 \end{lstlisting}
 
 
@@ -349,8 +350,8 @@ typedef struct student Etudiant;
 Entier matricule = 4;
 Etudiant mark = {matricule , "Mark" , "Shuttleworth" };
 \end{lstlisting}
-Les données d'une structure peuvent être accédée via l'opérateur "\texttt{.}" (point).
-Mais étant donnée que les pointeurs sont souvent utilisés lors de la manipulation de structures, une notation plus pratique que \texttt{(*ptr).elem} existe : \texttt{ptr->elem}.
+Les données d'une structure peuvent être accédées via l'opérateur "\texttt{.}" (point).
+Mais étant donné que les pointeurs sont souvent utilisés lors de la manipulation de structures, une notation plus pratique que \texttt{(*ptr).elem} existe : \texttt{ptr->elem}.
 \begin{lstlisting}
 //Avec l'operateur '.'
 printf("[%d] %s %s\n", mark.matricule, mark.nom, mark.prenom);
@@ -361,28 +362,28 @@ printf("[%d] %s %s\n" e->matricule, e->nom, e->prenom);
 printf("[%d] %s %s\n", (*e).matricule, (*e).nom, (*e).prenom);
 \end{lstlisting}
 
-\section{Compléments en langage C}
+\section{Compléments en langage \clang{}}
 \subsection{Les fonctions}
 \subsubsection{Déclaration \textit{vs} Définition}
 La \textbf{déclaration} d'une fonction (= sa signature) indique au compilateur le type (en cas de variables) ou les arguments et le type de la valeur de retour (en cas de fonctions).
-Toutes fonctions ou variables doivent être déclarée avant d'être utilisées.
-En règle général, on regroupe toutes les déclarations de fonctions à l'intérieur d'un \textbf{fichier header} dont le nom se termine par \texttt{.h}
+Toute fonction ou variable doit être déclarée avant d'être utilisée.
+En règle générale, on regroupe toutes les déclarations de fonction à l'intérieur d'un \textbf{fichier header} dont le nom se termine par \texttt{.h}
 
-La \textbf{définition} d'une fonction consiste en l'implémentation de la fonction déclarée, ou dans le cas d'une variable de son initialisation.
+La \textbf{définition} d'une fonction consiste en l'implémentation de la fonction déclarée, ou dans le cas d'une variable, de son initialisation.
 
 \subsubsection{Passage des paramètres}
-Le langage C utilise le \textbf{passage par valeur} des arguments.
+Le langage \clang{} utilise le \textbf{passage par valeur} des arguments.
 Lorsqu'une fonction est exécutée, elle reçoit les valeurs de ces arguments.
 Ces valeurs sont stockées dans une zone mémoire qui est locale à la fonction.
 Toute modification faite sur la valeur d'une variable à l'intérieur d'une fonction est donc locale à cette fonction.
-Attention néanmoins : Lorsqu'on passe un pointeur en argument on copie la valeur du pointeur (l'adresse d'une zone mémoire).
-Le contenu de zone mémoire pointée par le pointeur n'est pas copié, il est donc possible à la fonction de le modifier\footnote{Cette remarque s'applique également aux tableaux, puisqu'un tableau un en réalité un pointeur}!
-Par contre  si la fonction essaye de changer le pointeur lui même (pour qu'il pointe vers une autre zone mémoire) ce changement n'aura lieu que dans la fonction puisqu'il s'agit bien d'une copie du pointeur!
+Attention néanmoins : lorsqu'on passe un pointeur en argument on copie la valeur du pointeur (l'adresse d'une zone mémoire).
+Le contenu de la zone mémoire pointée par le pointeur n'est pas copié, il est donc possible à la fonction de le modifier\footnote{Cette remarque s'applique également aux tableaux, puisqu'un tableau est en réalité un pointeur (vers la première case du tableau).}!
+Par contre, si la fonction essaye de changer le pointeur lui même (pour qu'il pointe vers une autre zone mémoire) ce changement n'aura lieu que dans la fonction puisqu'il s'agit bien d'une copie du pointeur!
 
 
 \subsection{Manipulation de bits}
-Le langage C permet au programmeur de manipuler facilement les bits qui se trouves en mémoire.
-Pour cela, le langage C définit des expressions qui correspondent à la plupart des opérations de manipulation de bits que l'on retrouve dans les langages d'assemblage.
+Le langage \clang{} permet au programmeur de manipuler facilement les bits qui se trouvent en mémoire.
+Pour cela, le langage \clang{} définit des expressions qui correspondent à la plupart des opérations de manipulation de bits que l'on retrouve dans les langages d'assemblage.
 Les premières opérations sont les opérations logiques, elles sont résumées par le tableau \ref{table:opbin}.
 
 \begin{table}[!h]
@@ -391,14 +392,14 @@ Les premières opérations sont les opérations logiques, elles sont résumées 
       \hline
       \multirow{3}*{\textbf{A}} & \multirow{3}*{\textbf{B}} & \textit{négation} & \textit{conjonction logique} & \textit{disjonction logique} & \textit{ou exclusif} \\
                                 & & \textbf{NOT(A)} & \textbf{A AND B} & \textbf{A OR B} & \textbf{A XOR B} \\
-                                & & $\lnot A$ & $A \land B$ & $A \lor B$ & $A \oplus B$ \\
+                                & & $\lnot A$ & $A \land B$ & $A \lor B$ & $A \xor B$ \\
       \hline
       \hline 0 & 0 & \multirow{2}*{1} & 0 & 0 & 0 \\
       \cline{1-2}\cline{4-6} 0 & 1 &  & 0 & 1 & 1 \\
       \hline 1 & 0 & \multirow{2}*{0} & 0 & 1 & 1 \\
       \cline{1-2}\cline{4-6} 1 & 1 &  & 1 & 1 & 0 \\
       \hline \hline
-      \multicolumn{6}{|l|}{\textbf{Exemple en C : }} \\
+      \multicolumn{6}{|l|}{\textbf{Exemple en \clang{} : }} \\
       \multicolumn{6}{|l|}{
         \begin{minipage}{0.5\textwidth}
           \texttt{char a = 0b01110011;}\\
@@ -411,86 +412,85 @@ Les premières opérations sont les opérations logiques, elles sont résumées 
       \multicolumn{2}{|l|}{\textbf{Résultat}} & \texttt{0b10001100} & \texttt{0b00100001} & \texttt{0b01110111} & \texttt{0b01010110} \\
       \hline
     \end{tabular}
-    \caption{Récapitulatif des opérations}
+    \caption{Récapitulatif des opérations.}
     \label{table:opbin}
   \end{center}
 \end{table}
-\footnotetext{Il faut faire attention à ne pas confondre les opérateurs binaires logique \texttt{\&} et \texttt{|} avec les expressions logique \texttt{\&\&} et \texttt{||} !}
+\footnotetext{Il faut faire attention à ne pas confondre les opérateurs binaires logiques \texttt{\&} et \texttt{|} avec les expressions logiques \texttt{\&\&} et \texttt{||} !}
 
 
 Il est également important de mentionner les lois formulées par De Morgan qui peuvent se résumer par les équations suivantes :
 $$\lnot ( A \lor B) = \lnot A \land \lnot B \text{~~~~~~~et~~~~~~~} \lnot ( A \land B) = \lnot A \lor \lnot B$$
-Une des propriété intéressante de l'opération XOR est que $(A \oplus B) \oplus B = A$.
+Une des propriétés intéressantes de l'opération XOR est que $(A \xor B) \xor B = A$.
 Cette propriété est largement utilisée par les méthodes de chiffrement.
 
 \subsubsection{Décalage de bits}
-\paragraph{Bit-shift à gauche} $n$ bits sont déplacés de B vers la gauche en ajoutant des 0 à droite.
-En C : \texttt{a=n<<B}.
-\paragraph{Bit-shift à droite} $n$ bits sont déplacés de B vers la droite en ajoutant des 0 à gauche.
-En C : \texttt{a=n>>B}.
-Ces opérations de décalage permettent différentes manipulations de bits\footnote{Pour un exemple, voir \texttt{int2bin} à la page 33 du syllabus [PDF]}.
+\paragraph{Bit-shift à gauche} $n$ bits sont déplacés de \texttt{B} vers la gauche en ajoutant des 0 à droite.
+En \clang{} : \texttt{a = n<<B}.
+\paragraph{Bit-shift à droite} $n$ bits sont déplacés de \texttt{B} vers la droite en ajoutant des 0 à gauche.
+En \clang{} : \texttt{a = n>>B}.
+Ces opérations de décalage permettent différentes manipulations de bits\footnote{Pour un exemple, voir \texttt{int2bin} à la page 33 du syllabus [PDF].}.
 
 
-\subsection{typecast en C}
-Le langage C supporte des conversions implicites et explicites entre les différents types de données.
+\subsection{typecast en \clang{}}
+Le langage \clang{} supporte des conversions implicites et explicites entre les différents types de données.
 Ces conversions sont possibles entre les types primitifs et les pointeurs.
-C'est régulièrement utilisé par exemple pour transformer un pointeur \texttt{void *} retourné par \texttt{malloc} en un pointeur du bon type.
 
-Attention : Contrairement au compilateur Java, le compilateur C n'émet pas toujours de message de warning lors de l'utilisation de typecast qui risque d'engendrer une perte de précision.
+Attention : Contrairement au compilateur \java{}, le compilateur \clang{} n'émet pas toujours de message de \textit{warning} lors de l'utilisation de typecasts qui risquent d'engendrer une perte de précision. Un exemple de typecast implicite est celui fait par les fonctions \texttt{malloc}.
 
 \begin{lstlisting}[emph={unType,unAutreType,Etudiant},emphstyle={\color{blue}\bfseries}]
-//Exemple de typecast
+// Exemple de typecast explicite
 unType a = ... ;
 unAutreType b = (unAutreType) a;
 
-//Exemple concret
+// Exemple de typecast implicite
 Etudiant * e;
-e = (Etudiant*) malloc(sizeof(Etudiant));
+e = malloc(sizeof(Etudiant)); \\ Le typecast est implicite
 \end{lstlisting}
 
 
 
 \subsection{Les pointeurs}
-En C, il est possible de définir des pointeurs vers n'importe quel type d'information qui est manipulé par un programme C.
+En \clang{}, il est possible de définir des pointeurs vers n'importe quel type d'information qui est manipulé par un programme \clang{}.
 
 Il est ainsi possible d'avoir des pointeurs vers des fonctions.
 Cela peut être utile par exemple pour avoir une application qui propose différentes fonctions pour afficher (ou non) les informations de débogage.
 Ou encore pour utiliser la fonction \texttt{qsort} qui permet de trier un tableau de n'importe quel type d'information.
 Sa signature est la suivante : \\
-\texttt{\textbf{void} qsort(\textbf{void} *base, \textbf{size\_t} nel, \textbf{size\_t} width, \textbf{int} (*compar) (\textbf{const void} *, \textbf{const void} *))}
+\texttt{\textbf{void} qsort(\textbf{void} *base, \textbf{size\_t} nel, \textbf{size\_t} width, \textbf{int} (*compar) (\textbf{const void} *, \textbf{const void} *))}.
 Le quatrième argument est un pointeur vers la fonction qui permet de comparer deux élémets du tableau.
-Cette fonction retourne un entier négatif si son premier argument est inférieur au second et positif ou nul sinon. \\
+Cette fonction retourne un entier négatif si son premier argument est inférieur au second, nul si les deux éléments sont égaux et positif sinon. \\
 
 Il est également possible d'avoir des pointeurs vers des pointeurs.
-En pratique, on retrouves des pointeurs vers des pointeurs lorsqu'on doit manipuler des structures multidimensionnelles, mais aussi lorsqu'il faut qu'une fonction puisse modifier une adresse qu'elle a reçue en argument\footnote{Comme par exemple la fonction \texttt{strtol} de la librairie standard qui prend comme 2e argument un pointeur vers une pointeur (\texttt{endptr}) qui permet d'indiquer un pointeur vers le premier caractère en erreur en cas d'erreur de conversion (sinon il indiquera le caractère de fin de chaîne \texttt{\\0}).}.
+En pratique, on retrouve des pointeurs vers des pointeurs lorsqu'on doit manipuler des structures multidimensionnelles, mais aussi lorsqu'il faut qu'une fonction puisse modifier une adresse qu'elle a reçue en argument\footnote{Comme par exemple la fonction \texttt{strtol} de la librairie standard qui prend comme 2e argument un pointeur vers un pointeur (\texttt{endptr}) qui permet d'indiquer un pointeur vers le premier caractère en erreur en cas d'erreur de conversion (sinon il indiquera le caractère de fin de chaîne \texttt{'$\backslash$0'}).}.
 
-\subsection{Écriture de grands programme}
-Lors de l'écriture de grands programme, il est préférable de les découper en modules.
+\subsection{Écriture de grands programmes}
+Lors de l'écriture de grands programmes, il est préférable de les découper en modules.
 Chaque module contient des fonctions qui traitent d'un même type de problème et sont fortement couplées.
-Un module d'un programme C est en général décomposé en deux parties :
+Un module d'un programme \clang{} est en général composé en deux parties :
 \begin{itemize}
   \item Le \textit{fichier header} : Contient les définitions de certaines constantes et les signatures des fonctions exportées par ce module.
     Ce fichier est en quelque sorte un résumé du module, c'est son interface externe.
-    Il doit être inclus dans tout fichier qui utilise les fonctions du module\footnote{En pratique un fichier header ne peut être inclus qu'une seule fois.
-      Mais comme il se peut qu'un fichier header fasse appel à un autre, on utilise la règle de bonne pratique suivante : On ajoute une condition au préprocesseur avec \texttt{\#ifndef \_MON\_MODULE\_} suivit de \texttt{\#define \_MON\_MODULE\_} en début de fichier header.
+    Il doit être inclus dans tout fichier qui utilise les fonctions du module\footnote{En pratique un \textit{fichier header} ne peut être inclus qu'une seule fois.
+      Mais comme il se peut qu'un \textit{fichier header} fasse appel à un autre, on utilise la règle de bonne pratique suivante : on ajoute une condition au préprocesseur avec \texttt{\#ifndef \_MON\_MODULE\_} suivi de \texttt{\#define \_MON\_MODULE\_} en début de \textit{fichier header}.
     On termine la condition avec \texttt{\#endif} en fin de fichier.}.
     Ce fichier contient donc :
     \begin{itemize}
       \item Signatures des fonctions.
-        (Uniquement les fonctions qui sont destinées à être utilisées par des modules extérieures)
+        (Uniquement les fonctions qui sont destinées à être utilisées par des modules extérieurs.)
       \item Constantes qui sont utilisées à l'intérieur du module et doivent être visibles en dehors de celui-ci.
         Ces constantes peuvent être définie en utilisant des directives \texttt{\#define} du préprocesseur.
-      \item Variables globales qui doivent être accessible en dehors du module.
+      \item Variables globales qui doivent être accessibles en dehors du module.
     \end{itemize}
   \item Le fichier contenant le code du module.
 \end{itemize}
 
 Pour inclure des fichiers headers :
 \begin{itemize}
-  \item Soit il s'agit d'un module fournis par le système : \\
+  \item Soit il s'agit d'un module fourni par le système : \\
     \texttt{\#include <lemodule.h>}
   \item Soit il s'agit d'un module du programme (dans le même répertoire ou dans un répertoire définit en utilisant la variable d'environnement \texttt{GCC\_INCLUDE\_DIR} ou \texttt{CPATH}) : \\
-    \texttt{\#include "lemodule.h"}
+    \texttt{\#include "lemodule.h"}.
 \end{itemize}
 La procédure/ordre de compilation est expliqué dans le cours (page 90-91).
 
@@ -498,11 +498,11 @@ La procédure/ordre de compilation est expliqué dans le cours (page 90-91).
 \subsection{\texttt{static}}
 Le qualificateur \texttt{static} peut être utilisé dans différents cas :
 \begin{itemize}
-  \item Pour des variables définies en dehors d'un bloc dans un module : Dans ce cas, cette variable n'est accessible que par les fonctions du module.
-  \item Pour des variables définies à l'intérieur d'un bloc (par exemple dans une fonction) : Dans ce cas, cela indique que cette variable doit toujours se trouver à la même localisation en mémoire, quelque soit le moment où elle est appelée.
-    Ces variables sont placées par le compilateur dans le bas de la mémoire, avec les variables globales\footnote{Doit être utilisé avec beaucoup de précaution et bien documentées!}.
-    Un de leurs intérête est qu'elles ne sont initialisées qu'au lancement du programme et non pas à chaque invocation de la fonction dans laquelle elles sont définies.
-  \item Pour des fonctions : Lorsqu'une déclaration de fonction est précédée par le qualificateur \texttt{static}, cela indique que la fonction ne doit pas être visible en dehors du module dans lequel elle est définie.
+  \item Pour des variables définies en dehors d'un bloc dans un module : dans ce cas, cette variable n'est accessible que par les fonctions du module.
+  \item Pour des variables définies à l'intérieur d'un bloc (par exemple dans une fonction) : dans ce cas, cela indique que cette variable doit toujours se trouver à la même localisation en mémoire, quelque soit le moment où elle est appelée.
+    Ces variables sont placées par le compilateur dans le bas de la mémoire, avec les variables globales\footnote{Doit être utilisé avec beaucoup de précaution et bien documenté!}.
+    Un de leurs intérêts est qu'elles ne sont initialisées qu'au lancement du programme et non pas à chaque invocation de la fonction dans laquelle elles sont définies.
+  \item Pour des fonctions : lorsqu'une déclaration de fonction est précédée par le qualificateur \texttt{static}, cela indique que la fonction ne doit pas être visible en dehors du module dans lequel elle est définie.
 \end{itemize}
 
 \subsection{\texttt{extern}}
@@ -511,13 +511,13 @@ Le compilateur réserve une place pour cette variable dans la table des symboles
 
 
 \subsection{Traitement des erreurs}
-Pour certaines fonctions ou appels systèmes, il est parfois nécessaire de fournir à l'utilisateur plus d'information sur l'erreur qui s'est produite.
+Pour certaines fonctions ou appels système, il est parfois nécessaire de fournir à l'utilisateur plus d'information sur l'erreur qui s'est produite.
 La valeur de retour utilisée pour la plupart des fonctions de la librairie et appels système (souvent un \texttt{int} ou un pointeur), ne permet pas de fournir de l'information précise sur l'erreur qui s'est produite.
 
 Les systèmes Unix utilisent la variable globale \texttt{errno} pour résoudre ce problème et permettre à une fonction de la librairie ou un appel système qui a échoué de donner plus de détails sur les raisons de l'échec.
-Cette variable globale est définie dans \texttt{errno.h} qui doit être inclus par tout programme voulant tester ces codes d'erreur.
-La librairie standard fournit également les fonctions \texttt{perror} et \texttt{strerror} qui facilitent l'écriture de messages d'erreur compréhensible pour l'utilisateur. \\
-Attention : La valeur de \texttt{errno} n'est modifié qu'en cas d'échec, elle ne permet donc pas de savoir si une fonction a réussi ou non !
+Cette variable globale est définie dans le fichier \texttt{errno.h} qui doit être inclus par tout programme voulant tester ces codes d'erreur.
+La librairie standard fournit également les fonctions \texttt{perror} et \texttt{strerror} qui facilitent l'écriture de messages d'erreur compréhensibles pour l'utilisateur. \\
+Attention : La valeur de \texttt{errno} n'est modifiée qu'en cas d'échec, elle ne permet donc pas de savoir si une fonction a réussi ou non !
 
 
 
@@ -525,7 +525,7 @@ Attention : La valeur de \texttt{errno} n'est modifié qu'en cas d'échec, elle 
 \subsection{Déclarations et portées}
 La \textbf{portée} d'une variable peut être définie comme étant la partie du programme où la variable est accessible et où sa valeur peut être modifiée.
 
-En C, une variable a une \textbf{portée globale} lorsqu'elle est définie en dehors de toute définition de fonction.
+En \clang{}, une variable a une \textbf{portée globale} lorsqu'elle est définie en dehors de toute définition de fonction.
 Une telle variable est accessible dans toutes les fonctions présentes dans le fichier.
 Dans un fichier donné, il ne peut donc évidemment pas y avoir deux variables globales qui ont le même identifiant.
 Une variable définie dans un \textbf{bloc} a par contre une \textbf{portée locale} à ce bloc.
@@ -536,19 +536,19 @@ Lorsqu'un identifiant de variable locale est utilisé à plusieurs endroits dans
 En pratique, les variables globales doivent être utilisées de façon parcimonieuse et il faut limiter leur utilisation aux données qui doivent être partagées par plusieurs fonctions à l'intérieur d'un programme.
 Lorsqu'une variable globale a été définie, il est préférable de ne pas réutiliser son identifiant pour une variable locale.
 
-Les premières versions du langage C imposaient la définition de toutes les variables locales au début des blocs.
-Les standards récents [C99] autorisent la déclaration de variables juste avant leur première utilisation ($\approx$ comme en Java).
+Les premières versions du langage \clang{} imposaient la définition de toutes les variables locales au début des blocs.
+Les standards récents [\clang{}99] autorisent la déclaration de variables juste avant leur première utilisation (à peu près comme en \java{}).
 
 \subsubsection{Constantes}
-Les versions récentes de C [C99] permettent également de définir des variables dont la valeur sera constante durant toute l'exécution du programme.
-Pour ce faire il faut utiliser le mot clé \texttt{const} devant la déclaration de la variable ($\approx$ \texttt{final} en Java).
+Les versions récentes de \clang{} [\clang{}99] permettent également de définir des variables dont la valeur sera constante durant toute l'exécution du programme.
+Pour ce faire il faut utiliser le mot clé \texttt{const} devant la déclaration de la variable (l'équivalent de \texttt{final} en \java{}).
 
-Une autre façon de définir des constante est d'utiliser la macro \texttt{\#define} du préprocesseur qui permet de remplacer une chaîne de caractères par un nombre ou une autre chaîne de caractères.
+Une autre façon de définir des constantes est d'utiliser la macro \texttt{\#define} du préprocesseur qui permet de remplacer une chaîne de caractères par un nombre ou une autre chaîne de caractères.
 Mais les inconvénients par rapport à \texttt{const} sont :
 \begin{itemize}
-  \item Avec \texttt{const} il est possible de définir n'importe quel type de données en C, y compris des structures ou des pointeurs.
-    (Tandis qu'avec \texttt{\#define}, on ne peut définir que des nombres ou des chaînes de caractères.
-  \item Les variables déclarée avec \texttt{const} sont stockées en mémoire, il est donc possible d'obtenir l'adresse en mémoire (pour l'examiner via un debugger par exemple).
+  \item Avec \texttt{const} il est possible de définir n'importe quel type de donnée en \clang{}, y compris des structures ou des pointeurs.
+    (Tandis qu'avec \texttt{\#define}, on ne peut définir que des nombres ou des chaînes de caractères.)
+  \item Les variables déclarées avec \texttt{const} sont stockées en mémoire, il est donc possible d'obtenir l'adresse en mémoire (pour l'examiner via un \textit{debugger} par exemple).
 \end{itemize}
 
 
@@ -562,24 +562,24 @@ Mais les inconvénients par rapport à \texttt{const} sont :
 Lorsqu'un programme s'exécute sur un système Unix, la mémoire peut être vue comme étant divisée en 6 zones principales (figure~\ref{fig:mem}).
 \subsubsection{Le segment text}
 La première zone est appelée le \textbf{\textit{segment text}}.
-Elle est située dans la partie basse de la mémoire\footnote{Voir variable \textit{etext}}.
+Elle est située dans la partie basse de la mémoire\footnote{Voir variable \texttt{etext}.}.
 C'est dans cette zone que sont stockées toutes les instructions qui sont exécutées par le micro-processeur.
 Elle est généralement considérée par l'OS comme étant uniquement accessible en lecture\footnote{Donc si un programme essaye de modifier son \textit{segment text} il sera immédiatement interrompu par le système d'exploitation}.
-C'est dans le segment text q'un retrouvera les instructions de langage machine correspondant aux fonctions de calcul et d'affichage du programme.
-$\Rightarrow$ langage d'assemblage.
+C'est dans le \textit{segment text} qu'on retrouvera les instructions de langage machine correspondant aux fonctions de calcul et d'affichage du programme
+$\implies$ langage d'assemblage.
 
 \subsubsection{Le segment des données initialisées}
 La deuxième zone appelée \textbf{\textit{segment des données initialisées}} contient l'ensemble des données et chaînes de caractères qui sont utilisées dans le programme.
 Ce segment contient 2 types de données :
 \begin{itemize}
-  \item l'ensemble des variables globales qui sont explicitement initialisées par le programme ou initialisée à 0 par le compilateur.
+  \item l'ensemble des variables globales qui sont explicitement initialisées par le programme ou initialisée à 0 par le compilateur;
   \item les constantes et chaînes de caractères utilisées par le programme.
 \end{itemize}
 
-\subsubsection{Le segment des données non-initialisées}
-La troisième zone appelée \textbf{\textit{segment des données non-initialisées}} est réservée aux variables non initialisées.
+\subsubsection{Le segment des données non initialisées}
+La troisième zone appelée \textbf{\textit{segment des données non initialisées}} est réservée aux variables non initialisées.
 Cette zone en mémoire est initialisée à zéro par l'OS au démarrage du programme.
-C'est dans cette zone qu'on y stockera les valeurs de la variable \texttt{g} et des tableaux \texttt{array} et \texttt{msg} de l'exemple ci-dessous :
+C'est dans cette zone qu'on stockera les valeurs de la variable \texttt{g} et des tableaux \texttt{array} et \texttt{msg} de l'exemple ci-dessous :
 
 \begin{lstlisting}
 #define MSG_LEN 10
@@ -604,19 +604,18 @@ int main(int argc, char *argv[]) {
 \end{lstlisting}
 
 
-\paragraph{Initialisation des variables} En C, il faut être attentif a bien initialiser l'ensemble des variables utilisées dans un programme car le compilateur C est très permissif (contrairement au compilateur Java).
-Le compilateur C n'initialise pas les variables locales à zéro (pour un gain de performance), on ne peut donc pas faire d'hypothèse sur la valeur d'une variable non initialisée.
+\paragraph{Initialisation des variables} En \clang{}, il faut être attentif à bien initialiser l'ensemble des variables utilisées dans un programme car le compilateur \clang{} est très permissif (contrairement au compilateur \java{}).
+Le compilateur \clang{} n'initialise pas les variables locales à zéro (pour un gain de performance), on ne peut donc pas faire d'hypothèse sur la valeur d'une variable non initialisée.
 
 \subsubsection{Le tas (ou heap)}
 La quatrième zone de la mémoire est le \textbf{\textit{tas}} (ou \textit{heap}).
-Il s'agit d'une des deux zone dans laquelle un programme peut obtenir de la mémoire supplémentaire pour stocker de l'information.
-L'OS mémorise pour chaque processus en cours d'exécution, la limite supérieure de son \textit{heap}.
-Et permet à un processus de modifier la taille de son heap via les appels systèmes \texttt{brk} et \texttt{sbrk}.
-Ces deux appels systèmes sont rarement utilisé directement car ils se contentent uniquement de modifier la limite supérieure du heap sans fournir d'API permettant d'y allouer efficacement des blocs de mémoire\footnote{On peut néanmoins utiliser directement \texttt{brk} sous forme d'un appel à \texttt{sbrk(0)} de façon à connaître la limite supérieure actuelle du heap}.
+Il s'agit d'une des deux zones dans laquelle un programme peut obtenir de la mémoire supplémentaire pour stocker de l'information.
+L'OS mémorise pour chaque processus en cours d'exécution, la limite supérieure de son \textit{heap} et permet à un processus de modifier la taille de son \textit{heap} via les appels système \texttt{brk} et \texttt{sbrk}.
+Ces deux appels système sont rarement utilisés directement car ils se contentent uniquement de modifier la limite supérieure du \textit{heap} sans fournir d'API permettant d'y allouer efficacement des blocs de mémoire\footnote{On peut néanmoins utiliser directement \texttt{brk} sous forme d'un appel à \texttt{sbrk(0)} de façon à connaître la limite supérieure actuelle du \textit{heap}.}.
 
 \paragraph{\texttt{malloc} et \texttt{free}}
 
-En C, la plupart des processus allouent et libèrent de la mémoire en utilisant les fonctions \texttt{malloc} et \texttt{free} qui font partie de la librairie standard.
+En \clang{}, la plupart des processus allouent et libèrent de la mémoire en utilisant les fonctions \texttt{malloc} et \texttt{free} qui font partie de la librairie standard.
 
 La fonction \texttt{malloc} prend comme argument la taille (en bytes) de la zone mémoire à allouer.
 Cette taille doit être de type \texttt{size\_t}, il est important de toujours utiliser \texttt{sizeof} lors du calcul de la taille d'une zone mémoire à allouer.
@@ -624,23 +623,23 @@ Cette taille doit être de type \texttt{size\_t}, il est important de toujours u
 
 La fonction \texttt{free} permet quant à elle de libérer la mémoire qui a été allouée par \texttt{malloc}.
 Elle prend comme argument le pointeur dont la valeur a été initialisée par \texttt{malloc}.
-La valeur du pointeur n'est pas modifiée, mais après libération de la mémoire il n'est évidemment plus permit d'accéder aux données qui étaient stockées dans cette zone\footnote{Bien que le compilateur C ne génère pas de code permettant de vérifier automatiquement qu'un accès via un pointeur pointe ou non vers une zone mémoire qui est libre (pour des raisons de performance).}.
+La valeur du pointeur n'est pas modifiée, mais après libération de la mémoire il n'est évidemment plus permit d'accéder aux données qui étaient stockées dans cette zone\footnote{Bien que le compilateur \clang{} ne génère pas de code permettant de vérifier automatiquement qu'un accès via un pointeur pointe ou non vers une zone mémoire qui est libre (pour des raisons de performance).}.
 
 \texttt{malloc} et \texttt{free} sont fréquemment utilisés dans des programmes qui manipulent des structures de données dont la taille varie dans le temps.
-C'est le cas par exemple pour les différentes sortes de listes chaînées, les piles, les queues, les arbres,...
+C'est le cas par exemple pour les différentes sortes de listes chaînées, les piles, les \textit{queues}, les arbres,\dots
 
-Attention : Il ne faut pas compter sur les \texttt{free} implicite.
+Attention : Il ne faut pas compter sur les \texttt{free} implicites.
 Lorsqu'un programme se termine, via \texttt{return} dans la fonction \texttt{main} ou par un appel explicite à \texttt{exit}, l'OS libère tous les segments utilisés par le programme, le text, les données, le tas et la pile.
-Néanmoins, ne pas libérer la mémoire lorsqu'elle n'est plus utilisée est un problème courant qui est généralement baptisé \textit{memory leak}.
+Néanmoins, ne pas libérer la mémoire lorsqu'elle n'est plus utilisée est un problème courant qui est généralement baptisé \textit{memory leak} ou fuite de mémoire.
 Ce problème est particulièrement gênant pour les processus tels que les serveurs Internet qui ne se terminent pas ou des processus s'exécutant longtemps.
 Une petite erreur de programmation causant un \texttt{memory leak} peut après quelque temps consommer une grande partie de l'espace mémoire inutilement.
 Ce n'est pas acceptable !
 
 Il existe également d'autres fonctions que \texttt{malloc} et \texttt{free} dans la librairie standard.
-Citons \texttt{calloc} qui permet d'initialiser la mémoire à 0\footnote{Il est aussi possible d'initialiser la mémoire avec \texttt{memset} ou \texttt{bzero}}.
+Citons \texttt{calloc} qui permet d'initialiser la mémoire à 0\footnote{Il est aussi possible d'initialiser la mémoire avec \texttt{memset} ou \texttt{bzero}.}.
 
 \subsubsection{Les arguments et variables d'environnement}
-La zone situé dans le haut de la mémoire est une zone qui contient deux type de variables :
+La zone située dans le haut de la mémoire est une zone qui contient deux types de variables :
 \begin{itemize}
   \item Les arguments qui ont été passés via la ligne de commande.
     L'OS met dans \texttt{argc} le nombre d'arguments et place dans \texttt{char *argv[]} tous les arguments passés avec dans \texttt{argv[0]} le nom du programme qui est exécuté.
@@ -650,11 +649,11 @@ La zone situé dans le haut de la mémoire est une zone qui contient deux type d
 \paragraph{Les variables d'environnements}
 Ces variables sont généralement relatives à la configuration du système.
 Leurs valeurs sont définies par l'administrateur système ou l'utilisateur.
-De nombreuses variables d'environnement sont utilisées dans les système Umix.
+De nombreuses variables d'environnement sont utilisées dans les systèmes Unix.
 Elles servent à modifier le comportement de certains programmes.
 Voici quelques variables utiles\footnote{Il est possible de lister les définitions actuelles des variables d'environnement via la commande \texttt{printenv}.
   Les interpréteurs de commande tels que bash permettent de facilement modifier les valeurs de ces variables.
-La plupart d'entre elles sont initialisées par le système ou via les fichiers qui sont chargés automatiquement au démarrage de l'interpréteur comme le fichier \texttt{/etc/profile} et le fichier \texttt{.profile} du répertoire utilisateur.}
+La plupart d'entre elles sont initialisées par le système ou via les fichiers qui sont chargés automatiquement au démarrage de l'interpréteur comme le fichier \texttt{/etc/profile} et le fichier \texttt{.profile} du répertoire utilisateur.}.
 
 \noindent\begin{tabularx}{\textwidth}{|p{0.08\textwidth}|p{0.45\textwidth}|p{0.05\textwidth}p{0.1\textwidth}|p{0.185\textwidth}|}
   \hline
@@ -677,7 +676,7 @@ La plupart d'entre elles sont initialisées par le système ou via les fichiers 
   C'est dans ce répertoire qu'il peut stocker tous ses fichiers.
   & & & \texttt{/home/damien} \\
   \hline
-  \texttt{PRINTER} & Nom de l'imprimante par défaut qui est utilisé par \texttt{lp} & & & \\
+  \texttt{PRINTER} & Nom de l'imprimante par défaut qui est utilisée par \texttt{lp}. & & & \\
   \hline
   \texttt{PATH} & Contient la liste ordonnée des répertoires que le système parcourt pour trouver un programme à exécuter.
   Cette liste contient généralement les répertoires dans lesquels le système stocke les exécutables standards ainsi que des répertoires relatifs à des programmes spécialisés\footnote{Par exemple \texttt{/usr/lib/mozart/bin}}.
@@ -692,49 +691,48 @@ La librairie standard contient plusieurs fonctions qui permettent de manipuler l
     Retourne un pointeur \texttt{NULL} si la variable n'a pas été assignée.
   \item \texttt{unsetenv} permet de supprimer une variable de l'environnement du programme courant.
   \item \texttt{setenv} permet de modifier la valeur d'une variable d'environnement.
-    Cette fonction alloue de la mémoire pour stocker de nouvelles variable d'environnement et peut donc échouer (c'est à dire retourner un code différent de 0) s'il n'y a pas assez de mémoire disponible.
+    Cette fonction alloue de la mémoire pour stocker de nouvelles variables d'environnement et peut donc échouer (c'est-à-dire retourner un code différent de 0) s'il n'y a pas assez de mémoire disponible.
 \end{itemize}
 
-\subsubsection{La pile (ou stack)}
+\subsubsection{La pile (ou \textit{stack})}
 La \textbf{\textit{pile}} ou \textbf{\textit{stack}} est la dernière zone de mémoire utilisée par un processus.
 Cette zone est extrêmement importante car c'est dans cette zone que le processus va stocker l'ensemble des variables locales mais également les valeurs de retour de toutes les fonctions qui sont appelées.
-Cette zone est gérée comme une pile (d'où son nom) avec un fonctionnement de type LIFO (Last Input, First Output).
-À chaque fois qu'une fonction est appelée elle est placée sur la pile ainsi que ses arguments.
+Cette zone est gérée comme une pile (d'où son nom) avec un fonctionnement de type LIFO (\textit{Last In}, \textit{First Out}).
+À chaque fois qu'une fonction est appelée, elle est placée sur la pile ainsi que ses arguments.
 Les variables locales le sont également.
-Durant son exécution, une fonction accède donc à ses variables locales sur la pile sans interférer avec les variables locales de l'exécution des autres fonctions\footnote{Il peut s'agir de fonction différentes ou de la même fonction qui est en attente d'un résultat, par exemple dans le cas de fonctions récursives.}.
+Durant son exécution, une fonction accède donc à ses variables locales sur la pile sans interférer avec les variables locales de l'exécution des autres fonctions\footnote{Il peut s'agir de fonctions différentes ou de la même fonction qui est en attente d'un résultat, par exemple dans le cas de fonctions récursives.}.
 
-La pile joue un rôle essentiel lors de l'exécution de programmes en C puisque toutes les variables locales, y compris celles de la fonction \texttt{main} y sont stockées.
-La pile sert également à stocker l'adresse de retour des fonctions.
-Ce qui permet a une fonction de poursuivre correctement son exécution après avoir exécuter une autre fonction afin d'en récupérer la valeur de retour.
+La pile joue un rôle essentiel lors de l'exécution de programmes en \clang{} puisque toutes les variables locales, y compris celles de la fonction \texttt{main}, y sont stockées.
+La pile sert également à stocker l'adresse de retour des fonctions, ce qui permet a une fonction de poursuivre correctement son exécution après avoir exécuté une autre fonction afin d'en récupérer la valeur de retour.
 
-Le fonctionnement de la pile confirme la portée locale : Lorsqu'une variable est définie comme argument ou localement à une fonction \texttt{f}, elle n'est donc accessible que durant l'exécution de la fonction \texttt{f}.
+Le fonctionnement de la pile confirme la portée locale : lorsqu'une variable est définie comme argument ou localement à une fonction \texttt{f}, elle n'est donc accessible que durant l'exécution de la fonction \texttt{f}.
 
-De plus, comme le langage C utilise le passage par valeur, les valeurs des arguments d'une fonction sont copiée sur la pile avant de démarrer l'exécution de cette fonction.
+De plus, comme le langage \clang{} utilise le passage par valeur, les valeurs des arguments d'une fonction sont copiée sur la pile avant de démarrer l'exécution de cette fonction.
 Il est important d'en être conscient, par exemple si l'on doit passer des structures importantes a une fonction.
 Le choix de passer un pointeur vers la structure peut donc être plus judicieux (mais permet à la fonction de modifier le contenu de la structure dont le pointeur est passé en argument) afin de gagner en performance et en utilisation de mémoire.
 
 
 Certaines variantes de Unix et certains compilateurs permettent l'allocation de mémoire sur la pile via la fonction \texttt{alloca}.
-Néanmoins cette façon d'allouer de la mémoire sur la pile n'est pas portable et il est préférable de n'allouer de la mémoire que sur la tas en utilisant \texttt{malloc}.
+Néanmoins, cette façon d'allouer de la mémoire sur la pile n'est pas portable et il est préférable de n'allouer de la mémoire que sur le tas en utilisant \texttt{malloc}.
 
 En vue du fonctionnement de la pile il faut être attentif à ne jamais retourner l'adresse d'une variable locale.
-Cet erreur est signalé lors de la compilation par gcc sous la forme d'un warning : \texttt{warning : function return address of local variable}.
+Cette erreur est signalée lors de la compilation par \texttt{gcc} sous la forme d'un \textit{warning} : \texttt{warning : function return address of local variable}.
 
 
 \section{Organisation des ordinateurs}
 \begin{wrapfigure}{r}{0.3\textwidth}
   \vspace{-0.5cm}
   \includegraphics[width=0.3\textwidth]{vanNeumann}
-  \caption{\label{fig:vanNeumann}Modèle de von Neumann}
+  \caption{\label{fig:vanNeumann}Modèle de von Neumann.}
 \end{wrapfigure}
 
-Un des premiers principes fondateurs est le modèle d'architecture de \textit{von Neumann}\footnote{Introduit avec le développement des premiers ordinateurs durant la seconde guerre mondiale mais reste tout à fait valide aujourd'hui.} (Figure \ref{fig:vanNeumann}).
-La partie la plus intéressante de ce modèle organisé autour de 2 types de dispositifs :
+Un des premiers principes fondateurs est le modèle d'architecture de \textit{von Neumann}\footnote{Introduit avec le développement des premiers ordinateurs durant la Seconde Guerre mondiale mais reste tout à fait valable aujourd'hui.} (Figure \ref{fig:vanNeumann}).
+La partie la plus intéressante de ce modèle est organisée autour de 2 types de dispositifs :
 \begin{itemize}
-  \item L'unité centrale ou \textbf{\textit{processeur}} qui peut être décomposée en 2 partie :
+  \item L'unité centrale ou \textbf{\textit{processeur}} qui peut être décomposée en 2 parties :
     \begin{itemize}
-      \item L'unité de commande : Permet de charger, décoder et exécuter les instructions du programme qui sont stockées en mémoire.
-      \item L'unité arithmétique et logique : Regroupe les circuits électroniques qui permettent d'effectuer les opérations arithmétiques (addition, soustraction, division, ...) et logiques.
+      \item L'unité de commande : permet de charger, décoder et exécuter les instructions du programme qui sont stockées en mémoire.
+      \item L'unité arithmétique et logique : regroupe les circuits électroniques qui permettent d'effectuer les opérations arithmétiques (addition, soustraction, division,\dots) et logiques.
         C'est cette unité qui réalise les calculs proprement dits.
     \end{itemize}
   \item La \textbf{\textit{mémoire}} qui joue un double rôle :
@@ -746,18 +744,18 @@ La partie la plus intéressante de ce modèle organisé autour de 2 types de dis
 
 \subsection{La mémoire}
 \paragraph{Première approche} En première approximation, on peut considérer la mémoire comme étant un dispositif qui permet de stocker des données binaires.
-La mémoire est découpée en blocs de un octet.
+La mémoire est découpée en blocs d'un octet.
 Chacun de ces blocs est identifié par une adresse, qui est elle aussi représentée sous la forme d'un nombre binaire.
-Une mémoire que permet de stocker $2^k$ bytes de données utilisera au minimum $k$ bits pour représenter l'adresse d'une zone mémoire\footnote{Par exemple, une mémoire pouvant stocker 64 millions de bytes doit utiliser au moins 26 bits d'adresse}.
-En pratique, les processeurs des ordinateurs de bureau utilisent 32 ou 64 bits\footnote{D'ancien processeurs utilisaient 16 ou 20 bits d'adresse}.
+Une mémoire qui permet de stocker $2^k$ bytes de données utilisera au minimum $k$ bits pour représenter l'adresse d'une zone mémoire\footnote{Par exemple, une mémoire pouvant stocker 64 millions de bytes doit utiliser au moins 26 bits d'adresse.}.
+En pratique, les processeurs des ordinateurs de bureau utilisent 32 ou 64 bits\footnote{D'anciens processeurs utilisaient 16 ou 20 bits d'adresse.}.
 Ce nombre de bits utilisés pour représenter une adresse en mémoire limite la capacité totale de mémoire adressable par un processeur.
-Ainsi, un processeur qui utilise des adresses sur 32 bits n'est pas capable physiquement d'adresser plus de 4 GBytes de mémoire.
+Ainsi, un processeur qui utilise des adresses sur 32 bits n'est pas capable physiquement d'adresser plus de \SI{4}{\giga\byte} de mémoire.
 
 
 \begin{wrapfigure}{r}{0.5\textwidth}
   \vspace{-0.5cm}
   \includegraphics[width=0.5\textwidth]{mem2}
-  \caption{\label{fig:vanNeumann}Architecture d'un ordinateur actuel}
+  \caption{\label{fig:vanNeumann}Architecture d'un ordinateur actuel.}
 \end{wrapfigure}
 \paragraph{Approche complexe} En pratique, l'organisation d'un ordinateur actuel est plus complexe que le modèle de von Neumann.
 La figure \ref{fig:vanNeumann} présente de manière schématique l'organisation actuelle d'un ordinateur.
@@ -765,9 +763,9 @@ La figure \ref{fig:vanNeumann} présente de manière schématique l'organisation
 Le processeur est directement connecté à la mémoire via un \textbf{\textit{bus}} de communication rapide permettant des échanges de données et d'instructions efficaces entre la mémoire et le processeur.
 En plus du processeur et de la mémoire, un 3e dispositif, souvent appelé \textit{adaptateur de bus} est connecté au bus processeur-mémoire.
 Cet adaptateur permet au processeur d'accéder aux dispositifs de stockage ou aux dispositifs d'entrées-sorties tels que le clavier, la souris ou les cartes réseau.
-En pratique, cela se réalise en connectant les différents dispositifs à un autre bus de communication (PCI, SCSI,...) et en utilisant un adaptateur de bus qui est capable de traduire les commandes venant du processeur.
+En pratique, cela se réalise en connectant les différents dispositifs à un autre bus de communication (PCI, SCSI,\dots) et en utilisant un adaptateur de bus qui est capable de traduire les commandes venant du processeur.
 
-\subsubsection*{Mémoires SRAM, DRAM,...}
+\subsubsection*{Mémoires SRAM, DRAM,\dots}
 Les technologies les plus courantes pour la mémoire sont les \textit{SRAM} et les \textit{DRAM}.\\
 
 \noindent\begin{tabularx}{\textwidth}{|l|p{0.32\textwidth}|p{0.25\textwidth}|p{0.25\textwidth}|}
@@ -775,33 +773,33 @@ Les technologies les plus courantes pour la mémoire sont les \textit{SRAM} et l
   \textbf{Type} & \textbf{Description} & \textbf{Avantages} & \textbf{Inconvénients} \\
   \hline \hline
   \textit{SRAM} & L'information est stockée sous la forme d'un courant électrique qui passe ou ne passe pas à un endroit donné.
-  & Temps d'accès assez faible & grande consommation électrique ce qui empêche de développer des mémoires de grandes capacités \\
+  & Temps d'accès assez faible. & Grande consommation électrique, ce qui empêche de développer des mémoires de grande capacité. \\
   \hline
-  \textit{DRAM} & C'est la présence ou l'absence d'une charge ($\leq$ à quelques dizaine d'électrons) dans un condensateur qui représente la valeur 0 ou 1.
-  & Possible d'en construire de très grande taille : Jusqu'à 1 GByte par chip.
-  & Performances nettement moins bonne que les \textit{SRAM}. \\
+  \textit{DRAM} & C'est la présence ou l'absence d'une charge ($\leq$ à quelques dizaines d'électrons) dans un condensateur qui représente la valeur 0 ou 1.
+  & Possible d'en construire de très grande taille : jusqu'à \SI{1}{\giga \byte} par \textit{chip}.
+  & Performances nettement moins bonnes que les \textit{SRAM}. \\
   \hline
 \end{tabularx}
 ~\\
 
 En pratique, une mémoire \textit{DRAM} actuelle peut être vue comme étant équivalente à une grille.
-Les adresse peuvent donc être vues comme étant composée d'un numéro de ligne et d'un numéro de colonne.
+Les adresses peuvent donc être vues comme étant composées d'un numéro de ligne et d'un numéro de colonne.
 Ces deux opérations sont successives.
 Lorsque la mémoire a reçu la ligne et ensuite la colonne demandées, avant de pouvoir commencer le transfert de la donnée.
-Elles ont donc une latence élevée (par rapport au débit de transfert qui est élevée).
+Elles ont donc une latence élevée (par rapport au débit de transfert qui est élevé).
 Cela implique que dans une mémoire \textit{DRAM} il est plus rapide de lire ou d'écrire un bloc de 128 bits successifs que quatre blocs de 32 bits à des endroits différents en mémoire.
 
 
 \subsubsection*{Importance de la mémoire}
 Le processeur interagit en permanence avec la mémoire, que ce soit pour charger des données à traiter ou pour charger les instructions\footnote{Certains processeurs utilisent des instructions de taille fixe, par exemple chaque instruction est encodée sous la forme d'un mot de 32 bits.
   D'autres processeurs, comme ceux qui implémentent l'architecture IA32, utilisent des instructions qui sont encodées sous la forme d'un nombre variable de bytes.
-Mais cela n'a au final assez peu d'impact sur le développeur de programmes.}.
+Mais cela n'a au final qu'assez peu d'impact sur le développeur de programmes.}.
 Les données échangées (données et instructions) sont représentées sous la forme de nombres binaires.
-Il est important de prendre conscience de que le processeur doit en permanence charger des données et des instructions depuis la mémoire pour pouvoir exécuter un programme.
-Ces échanges peuvent donc avoir un impact sur la vitesse d'exécution comme nous le verrons plus tard
+Il est important de prendre conscience du fait que le processeur doit en permanence charger des données et des instructions depuis la mémoire pour pouvoir exécuter un programme.
+Ces échanges peuvent donc avoir un impact sur la vitesse d'exécution comme nous le verrons plus tard.
 
 \subsubsection*{Registre}
-Outre des unitées de calcul, un processeur contient plusieurs registres.
+Outre des unités de calcul, un processeur contient plusieurs registres.
 Un \textit{registre} est une zone de mémoire très rapide se trouvant sur le processeur.
 Sur les processeurs courants, cette zone de mémoire permet de stocker un mot de 32 bits ou un long mot de 64 bits.\footnote{Les premiers processeurs disposaient d'un registre unique appelé l'\textit{accumulateur}.
 Les processeurs actuels en ont généralement une dizaine ou quelques dizaines.}.
@@ -810,26 +808,25 @@ Les registres sont les mémoires les plus rapides qui sont disponibles sur un or
 Malheureusement, il sont en nombre très limité et il est impossible de faire fonctionner des programmes en utilisant uniquement des registres.
 
 \subsubsection*{Dilemme : Performance VS capacité / prix / faisabilité}
-Il serait préférable de pouvoir construire un ordinateur équipé uniquement de SRAM, mais au niveau de la capacité et du prix c'est impossible\footnote{sauf quelques cas rares d'applications spécifiques qui nécessitent de hautes performances et se contentent d'une capacité limitée}.
-Les ordinateurs actuels contiennent donc à la fois de la mémoire SRAM et de la mémoire DRAM.
-Avec les registres, les SRAM et les DRAM composent les 3 premiers niveaux de la \textit{hiérarchie de la mémoire}.
-Il est utile de voir comment cette hiérarchie de mémoire est organisée en pratique en évaluant les différentes alternatives\footnote{En 1980 ce n'était pas vraiment utile car la mémoire était nettement plus rapide que le processeur.
-  Mais à partir de 1990 on commence à voir cette tendance s'inverser et les mémoires deviennent un frein par rapport aux processeurs dont les performances se sont fortement améliorés.
+Il serait préférable de pouvoir construire un ordinateur équipé uniquement de \textit{SRAM}, mais au niveau de la capacité et du prix c'est impossible\footnote{Sauf dans quelques cas rares d'applications spécifiques qui nécessitent de hautes performances et se contentent d'une capacité limitée.}.
+Les ordinateurs actuels contiennent donc à la fois de la mémoire \textit{SRAM} et de la mémoire \textit{DRAM}.
+Avec les registres, les \textit{SRAM} et les \textit{DRAM} composent les 3 premiers niveaux de la \textit{hiérarchie de la mémoire}.
+Il est utile de voir comment cette hiérarchie de la mémoire est organisée en pratique en évaluant les différentes alternatives\footnote{En 1980 ce n'était pas vraiment utile car la mémoire était nettement plus rapide que le processeur, mais à partir de 1990 on commence à voir cette tendance s'inverser et les mémoires deviennent un frein par rapport aux processeurs dont les performances se sont fortement améliorées.
 Voir slides pour les graphes.}.
 
-\paragraph{1e solution : Répartition d'adresse entre SRAM et DRAM}
-Une première solution pour combiner la SRAM et la DRAM serait de réserver par exemple les adresses basses à la SRAM et les adresses hautes à la DRAM.
-Avec cette solution, le programme stocké dans la SRAM pourrait s'exécuter nettement plus rapidement que le programme stocké en DRAM.
-Il faudrait alors imaginer que l'OS fournissent des appels système permettant aux applications de demander à déplacer certaines parties du programme et des données en SRAM.
-Ce genre de solution obligerait chaque application à pouvoir déterminer quelles sont les données et les instructions à exécuter en mémoire SRAM pour obtenir de meilleur performance.
-Théoriquement c'est envisageable mais en pratique ça n'a que très peu de chance de fonctionner.
+\paragraph{1e solution : Répartition d'adresses entre \textit{SRAM} et \textit{DRAM}}
+Une première solution pour combiner la \textit{SRAM} et la \textit{DRAM} serait de réserver par exemple les adresses basses à la \textit{SRAM} et les adresses hautes à la \textit{DRAM}.
+Avec cette solution, le programme stocké dans la \textit{SRAM} pourrait s'exécuter nettement plus rapidement que le programme stocké en \textit{DRAM}.
+Il faudrait alors imaginer que l'OS fournisse des appels système permettant aux applications de demander à déplacer certaines parties du programme et des données en \textit{SRAM}.
+Ce genre de solution obligerait chaque application à pouvoir déterminer quelles sont les données et les instructions à exécuter en mémoire \textit{SRAM} pour obtenir de meilleures performances.
+Théoriquement, c'est envisageable, mais en pratique ça n'a que très peu de chance de fonctionner.
 
 
 \paragraph{2e solution : La mémoire cache}
 Une deuxième solution est d'utiliser le principe de la \textit{\textbf{mémoire cache}}.
-Une mémoire cache est une mémoire de faible capacité mais rapide qui est capable de stocker des données provenant de mémoire de plus grande capacité mais plus lente.
+Une mémoire cache est une mémoire de faible capacité mais rapide qui est capable de stocker des données provenant de mémoires de plus grande capacité mais plus lentes.
 Cette mémoire cache sert d'interface entre le processeur et la mémoire principale.
-Toutes demandes d'accès à la mémoire principale passent par la mémoire cache comme illustré ci-dessous : \\
+Toute demande d'accès à la mémoire principale passe par la mémoire cache comme illustré ci-dessous : \\
 \begin{center}
   \includegraphics[width=0.5\textwidth]{memcache1}
 \end{center}
@@ -837,58 +834,57 @@ Toutes demandes d'accès à la mémoire principale passent par la mémoire cache
 \subsubsection*{Mémoire cache}
 
 Ce système de mémoire cache est largement utilisé dans les systèmes informatiques afin d'améliorer les performances.
-En pratique les mémoires cache utilisent le \textit{\textbf{principe de localité}}.
+En pratique, les mémoires cache utilisent le \textit{\textbf{principe de localité}}.
 Il existe deux types de localité :
 \begin{itemize}
-  \item La \emph{localité temporelle} : Si un processeur accède à la mémoire à l'adresse $A$ à un instant $t$, il est fort probable qu'il y accédera encore dans les instants qui suivent\footnote{Exemple : Lors de l'exécution de boucles qui exécutent à de nombreuses reprises les mêmes instructions}.
-  \item La \emph{localité spatiale} : Si un programme a accédé à l'adresse $A$ à l'instant $t$, il est fort probable qu'il accédera aux adresses proches de $A$ comme $A+4$ ou $A-4$ dans les instants qui suivent\footnote{Exemple : Lorsqu'un programme traite un vecteur stocké en mémoire}.
+  \item La \emph{localité temporelle} : si un processeur accède à la mémoire à l'adresse $A$ à un instant $t$, il est fort probable qu'il y accédera encore dans les instants qui suivent\footnote{Exemple : lors de l'exécution de boucles qui exécutent à de nombreuses reprises les mêmes instructions.}.
+  \item La \emph{localité spatiale} : si un programme a accédé à l'adresse $A$ à l'instant $t$, il est fort probable qu'il accédera aux adresses proches de $A$ comme $A+4$ ou $A-4$ dans les instants qui suivent\footnote{Exemple : lorsqu'un programme traite un vecteur stocké en mémoire.}.
 \end{itemize}
 \begin{wrapfigure}{r}{0.4\textwidth}
   \vspace{-0.5cm}
   \includegraphics[width=0.45\textwidth]{memhierarchie}
-  \caption{\label{fig:memhierarchie}Hiérarchie de la mémoire}
+  \caption{\label{fig:memhierarchie}Hiérarchie de la mémoire.}
   \vspace{-0.5cm}
 \end{wrapfigure}
 
 Les mémoires caches exploitent ces principes de localité en stockant de façon transparente les instructions et les données les plus récemment utilisées.
-D'un point de vue physique, on peut voir le processeur comme étant connecté à la (ou les) mémoire(s) cache qui est elle-même connecté à la mémoire \textit{RAM}.\\
-
+D'un point de vue physique, on peut voir le processeur comme étant connecté à la (ou les) mémoire(s) cache qui est (sont) elle-même(s) connectée(s) à la mémoire \textit{RAM}.\\
 
 
 Les opérations de lecture en mémoire se déroulent généralement comme suit :
 \begin{enumerate}
   \item[1.] Le processeur a besoin de lire une donnée se trouvant a une adresse $A$.
     Il fournit donc cette adresse $A$ à la mémoire cache.
-  \item[2a.] Si la donnée correspondante à $A$ est présente en mémoire cache, celle-ci répond directement au processeur.
+  \item[2a.] Si la donnée correspondant à $A$ est présente en mémoire cache, celle-ci répond directement au processeur.
   \item[2b.] Sinon, la mémoire cache interroge la mémoire \textit{RAM}, se met à jour et ensuite fournit la donnée demandée au processeur.
 \end{enumerate}
 Ce mode de fonctionnement permet de profiter de la localité temporelle.
-Pour profiter de la localité spatiale, la plupart des caches se mettent à jour en chargeant directement une \textit{ligne de cache} qui peut compter jusqu'à quelques dizaines d'adresses en mémoire\footnote{Ce qui permet de profiter des mémoires \textit{DRAM} qui aujourd'hui sont souvent optimisées pour fournir des débits de transfert élevés pour de longs blocs consécutifs en mémoires.}.
+Pour profiter de la localité spatiale, la plupart des caches se mettent à jour en chargeant directement une \textit{ligne de cache} qui peut compter jusqu'à quelques dizaines d'adresses en mémoire\footnote{Ce qui permet de profiter des mémoires \textit{DRAM} qui aujourd'hui sont souvent optimisées pour fournir des débits de transfert élevés pour de longs blocs consécutifs en mémoire.}.
 
 \paragraph{Opération d'écriture} Pour les opérations d'écriture, la situation est plus compliquée.
 Si le processeur écrit l'information $x$ à l'adresse $A$ en mémoire, il faudrait idéalement que cette valeur soit écrite simultanément en mémoire cache et en mémoire \textit{RAM} de façon à s'assurer que la mémoire \textit{RAM} contient toujours des données à jour.
-Pour ce faire, analysons les stratégie :
+Pour ce faire, analysons les stratégies :
 \begin{itemize}
-  \item La stratégie d'écriture la plus simple est baptisée \emph{write through}.
+  \item la stratégie d'écriture la plus simple est baptisée \emph{write through}.
     Avec cette stratégie, toute demande d'écriture venant du processeur donne lieu à une écriture en mémoire cache et une écriture en mémoire \textit{RAM}.
     Cela garantit qu'à tout moment la mémoire cache et la mémoire \textit{RAM} contiennent la même information.
-    Malheureusement cette technique n'est pas performante et n'est donc pas acceptable !
-  \item L'alternative est d'utiliser la technique du \emph{write back}.
+    Malheureusement cette technique n'est pas performante et n'est donc pas acceptable;
+  \item l'alternative est d'utiliser la technique du \emph{write back}.
     Avec cette technique, toute écriture est faite en mémoire cache directement.
-    Ce qui permet d'obtenir de très bonne performance pour les opérations d'écritures.
-    La donnée n'est ré-écrite en mémoire \textit{RAM} que lorsqu'elle doit être retirée de la mémoire cache.
-    Cette ré-écriture est faite automatiquement par la mémoire cache.
+    Ce qui permet d'obtenir de très bonnes performances pour les opérations d'écriture.
+    La donnée n'est réécrite en mémoire \textit{RAM} que lorsqu'elle doit être retirée de la mémoire cache.
+    Cette réécriture est faite automatiquement par la mémoire cache.
     Pour la plupart des programmes, la gestion des opérations d'écriture est transparente.
     Il faut cependant être attentif à la technique d'écriture utilisée lorsque plusieurs dispositifs peuvent accéder directement à la mémoire \textit{RAM} sans passer par le processeur\footnote{C'est le cas notamment des cartes réseaux ou de certains contrôleurs de disque dur.
-      Pour des raisons de performances, ces dispositifs peuvent copier des données directement de la mémoire \textit{RAM} vers le réseau ou un disque dur.
-    Si une écriture de type \emph{write back} est utilisée, le système d'exploitation doit veiller à ce que les données qui ont été écrites par le processeur en cache aient bien été écrites également en mémoire \textit{RAM} avant d'autoriser la carte réseau ou le contrôleur de disque à effectuer un transfert.}.
+      Pour des raisons de performance, ces dispositifs peuvent copier des données directement de la mémoire \textit{RAM} vers le réseau ou un disque dur.
+    Si une écriture de type \emph{write back} est utilisée, le système d'exploitation doit veiller à ce que les données qui ont été écrites par le processeur en cache aient bien été écrites également en mémoire \textit{RAM} avant d'autoriser la carte réseau ou le contrôleur de disque dur à effectuer un transfert.}.
 \end{itemize}
 
 \section{Étude de cas : Architecture IA32}
-Cette architecture recouvere un grand nombre de variantes qui ont leur spécificités propre.
+Cette architecture recouvre un grand nombre de variantes qui ont leur spécificités propres.
 L'architecture IA32 est supportée par différents types de processeurs.
 Certains utilisent des registres et des bus de données de 32 bits.
-D'autres, plus récents utilisent des registres de 64 bits.
+D'autres, plus récents, utilisent des registres de 64 bits.
 Il y a des différences importantes entre ces deux architectures.
 Comme les processeurs récents supportent à la fois les modes 32 bits et 64 bits, nous nous limiterons à l'architecture 32 bits ici.
 
@@ -898,18 +894,18 @@ Un processeur IA32 dispose de huit registres génériques.
 Ceux-ci sont baptisés \texttt{EAX}, \texttt{EBX}, \texttt{ECX}, \texttt{EDX}, \texttt{EBP}, \texttt{ESI}, \texttt{EDI} et \texttt{ESP}.
 Ces registres peuvent stocker des données sous forme binaire.
 Dans l'architecture IA32, ils ont une taille de 32 bits.
-Cela implique que chaque registre peut contenir un nombre ou une adresse puisque les entiers (\texttt{int} en C) et les adresse (pointeurs \texttt{*} en C) sont tous les deux encodés sur 32 bits dans l'architecture IA32.
+Cela implique que chaque registre peut contenir un nombre ou une adresse puisque les entiers (\texttt{int} en \clang{}) et les adresses (pointeurs \texttt{*} en \clang{}) sont tous les deux encodés sur 32 bits dans l'architecture IA32.
 Cette capacité à stocker des données ou des adresses à l'intérieur d'un même registre est un des points clés de la flexibilité des microprocesseurs.
 
 
-\texttt{EBP} et \texttt{ESP} sont utilisés dans la gestion de la pile\footnote{Voir aussi la section \ref{manip_de_la_pile} à la page \pageref{manip_de_la_pile}}.
+\texttt{EBP} et \texttt{ESP} sont utilisés dans la gestion de la pile\footnote{Voir aussi la section \ref{manip_de_la_pile} à la page \pageref{manip_de_la_pile}.}.
 %TODO Comme nous le verrons plus tard...
 
 Tout processeur contient un registre spécial qui stocke à tout moment l'adresse de l'instruction courante en mémoire.
 Ce registre est souvent dénommé le \emph{compteur de programme} ou \emph{program counter} (PC).
 Dans l'architecture IA32, il s'agit du registre \texttt{EIP} qui stocke l'\emph{Instruction Pointer} qui joue ce rôle.
 Ce registre ne peut être utilisé pour effectuer des opérations arithmétiques.
-Il peut cependant être modifié par les instructions de saut et joue un rôle essentiel dans l'implémentation des instruction de contrôle.
+Il peut cependant être modifié par les instructions de saut et joue un rôle essentiel dans l'implémentation des instructions de contrôle.
 
 
 \begin{wraptable}{r}{0.4\textwidth}
@@ -918,20 +914,20 @@ Il peut cependant être modifié par les instructions de saut et joue un rôle e
     \multirow{2}*{\textbf{Type}} & \textbf{Taille} & \textbf{Suffixe} \\
                                  & \textbf{(bytes)} & \textbf{assembleur} \\
     \hline \hline
-    \texttt{char} & 1 & b \\
+    \texttt{char} & 1 & \texttt{b} \\
     \hline
-    \texttt{short} & 2 & w \\
+    \texttt{short} & 2 & \texttt{w} \\
     \hline
-    \texttt{int} & 4 & l \\
+    \texttt{int} & 4 & \texttt{l} \\
     \hline
-    \texttt{long int} & 4 & l \\
+    \texttt{long int} & 4 & \texttt{l} \\
     \hline
-    \texttt{void *} & 4 & l \\
+    \texttt{void *} & 4 & \texttt{l} \\
     \hline
   \end{tabular}
-  \caption{\label{table:ia32types}Types de données supportés par les processeurs IA32}
+  \caption{\label{table:ia32types}Types de données supportés par les processeurs IA32.}
 \end{wraptable}
-Outre ces registres génériques, les processeurs de la famille IA32 contiennent aussi des registres spécialisés pour manipuler les nombres en virgule flottante (\texttt{float} et \texttt{double})\footnote{Mais ça c'est hors matière de ce cours}.
+Outre ces registres génériques, les processeurs de la famille IA32 contiennent aussi des registres spécialisés pour manipuler les nombres en virgule flottante (\texttt{float} et \texttt{double})\footnote{Mais cela dépasse la matière de ce cours.}.
 Les processeurs IA32 contiennent également des drapeaux regroupés dans le registre \texttt{eflags}.
 Ceux-ci sont utilisés pour implémenter différents tests et comparaisons. \\
 
@@ -941,30 +937,31 @@ Les processeurs qui implémentent les spécifications IA32 supportent les types 
 Voyons maintenant les quelques instructions de l'architecture IA32 qui permettent de manipuler des nombres entiers.
 
 \subsection{Les instructions \texttt{mov}}
-Les instructions de la famille\footnote{On parle de famille d'instructions car il existe de nombreuses instructions de dpélacement en mémoire.
+Les instructions de la famille\footnote{On parle de famille d'instructions car il existe de nombreuses instructions de déplacement en mémoire.
   Les plus simples sont suffixées par un caractère qui indique le type de données transféré.
 Exemple : \texttt{movb} permet le transfert d'un byte tandis que \texttt{movl} permet le transfert d'un mot de 32 bits.} \texttt{mov} permettent de déplacer des données entre registres ou depuis la mémoire vers un registre ou d'un registre vers une zone mémoire.\\
+
 Syntaxe générale :
 \begin{lstlisting}[language={[x86masm]Assembler}]
 mov src, dest ; deplacement de src vers dest
 \end{lstlisting}
-Il existe une instruction de la famille \texttt{mov} pour chaque type de donnée pouvant être déplacée : \texttt{movb}, \texttt{movw} et \texttt{movl} qui permettent de déplacer respectivement : 1 byte, un mot de 16 bits, et un mot de 32 bits (voir table \ref{table:ia32types}).
+Il existe une instruction de la famille \texttt{mov} pour chaque type de donnée pouvant être déplacé : \texttt{movb}, \texttt{movw} et \texttt{movl} qui permettent de déplacer respectivement : 1 byte, un mot de 16 bits, et un mot de 32 bits (voir table \ref{table:ia32types}).
 \\
 
 En pratique, il y a plusieurs façons de spécifier chaque argument d'une instruction \texttt{mov}\footnote{Certains auteurs parlent alors de \emph{mode d'adressage} pour représenter ces différents types d'arguments même s'il ne s'agit pas toujours d'adresses.}.
-Les différents mode sont :
+Les différents modes sont :
 \begin{itemize}
-  \item Le mode \emph{registre} : Pour spécifier que la source et/ou la destination est un registre.
+  \item Le mode \emph{registre} : pour spécifier que la source et/ou la destination est un registre.
     Le nom du registre est alors préfixé par \texttt{\%}.
-  \item Le mode d'adressage \emph{immédiat} : Ne peut être utilisé que pour l'argument source.
+  \item Le mode d'adressage \emph{immédiat} : ne peut être utilisé que pour l'argument source.
     Il permet de placer une constante dans un registre, par exemple pour initialiser sa valeur.
     Il se reconnaît à l'utilisation du symbole \texttt{\$} comme préfixe de la constante.
-  \item Le mode d'adressage \emph{absolu} : Dans ce mode, l'un des arguments de l'instruction \texttt{mov} est une adresse en mémoire.
-  \item Le mode d'adressage \emph{indirect} : Au lieu de spécifier directement une adresse, on spécifie un registre dont la valeur est une adresse en mémoire ($\approx$ utilisation des pointeurs en langage C).
+  \item Le mode d'adressage \emph{absolu} : dans ce mode, l'un des arguments de l'instruction \texttt{mov} est une adresse en mémoire.
+  \item Le mode d'adressage \emph{indirect} : au lieu de spécifier directement une adresse, on spécifie un registre dont la valeur est une adresse en mémoire (à peu près pareil que utilisation des pointeurs en langage \clang{}).
     Il se reconnaît à l'utilisation des parenthèses autour du nom du registre source ou destination.
   \item Le mode avec une \emph{base} et un \emph{déplacement}.
     Ce mode peut être vu comme une extension du mode indirect.
-    Il permet de lire en mémoire à une adresse qui et obtenue en additionnant un entier positif ou négatif, à une adresse stockée dans un registre.
+    Il permet de lire en mémoire à une adresse qui est obtenue en additionnant un entier positif ou négatif à une adresse stockée dans un registre.
     Ce mode d'adressage joue un rôle important dans le fonctionnement de la pile.
 \end{itemize}
 
@@ -1000,35 +997,35 @@ movl -8(%eax), %ecx	; place la valeur se trouvant a l'adresse 0x00 (=0x08-8) dan
 ; le registre %ecx
 \end{lstlisting}
 %$
-L'architecture IA32 supporte encore d'autres modes d'adressage (non vu dans le cours).
-Une autre instruction permettant de déplacer de l'information est l'instruction \texttt{leal} (load effective address).
+L'architecture IA32 supporte encore d'autres modes d'adressage (non vus dans le cours).
+Une autre instruction permettant de déplacer de l'information est l'instruction \texttt{leal} (\textit{load effective address}).
 Cette instruction place dans le registre destination l'adresse de son argument source plutot que sa valeur.
 Par exemple : \texttt{leal 4(\%esp) \%edx} placera dans le registre \texttt{\%edx} l'adresse de son argument source, c'est-à-dire l'adresse contenue dans \texttt{\%esp+4}.
 
 \subsection{Les instructions arithmétiques et logiques}
-La 2e famille d'instructions importante sur un processeur sont les instructions qui permettent d'effectuer les opérations arithmétiques et logiques.
-Les instructions les plus simples sont celle qui prennent un seul argument :
+La 2e famille d'instructions importante sur un processeur contient les instructions qui permettent d'effectuer les opérations arithmétiques et logiques.
+Les instructions les plus simples sont celles qui prennent un seul argument :
 \begin{itemize}
   \item \texttt{inc} : incrémente d'une unité la valeur stockée dans le registre/l'adresse fournie en argument et sauvegarde le résultat de l'incrémentation au même endroit.
     Cette instruction peut être utilisée pour implémenter des compteurs de boucles.
   \item \texttt{dec} : même principe que \texttt{inc} mais pour décrémenter.
   \item \texttt{not} : applique l'opération logique \texttt{NOT} à son argument et stocke le résultat au même endroit.
 \end{itemize}
-De même que pour \texttt{mov}, il existe une variante de chaque instruction ci-dessus pour chaque type de données : \texttt{incb}, \texttt{incw}, \texttt{incl},...
-(voir de nouveau la table \ref{table:ia32types}).\\
+De même que pour \texttt{mov}, il existe une variante de chaque instruction ci-dessus pour chaque type de données : \texttt{incb}, \texttt{incw}, \texttt{incl},\dots
+(voir de nouveau la table \ref{table:ia32types}.)\\
 
 L'architecture IA32 supporte également des instructions arithmétiques et logiques prenant deux arguments :
 \begin{itemize}
-  \item \texttt{add} : Permet d'additionner deux nombres entiers.
+  \item \texttt{add} : permet d'additionner deux nombres entiers.
     Prend comme arguments une source et une destination et place dans la destination la somme de ses deux arguments.
-  \item \texttt{sub} : Permet de soustraire le premier argument du second.
+  \item \texttt{sub} : permet de soustraire le premier argument du second.
     Stocke le résultat dans le second.
-  \item \texttt{mul} : Permet de multiplier des nombres entiers non-signés.
-    (\texttt{imul} permet la multiplication de nombres signés)
-  \item \texttt{div} : Permet la division de nombres entiers non-signés.
-  \item \texttt{shl} (reps. \texttt{shr} : Permet de réaliser un décalage logique vers la gauche (resp. droite).
-  \item \texttt{xor} : Calcul le ou exclusif entre ses deux arguments et sauvegarde le résultat dans le second.
-  \item \texttt{and} : Calcul la conjonction logique entre ses deux arguments et sauvegarde le résultat dans le second.
+  \item \texttt{mul} : permet de multiplier des nombres entiers non signés.
+    (\texttt{imul} permet la multiplication de nombres signés.)
+  \item \texttt{div} : permet la division de nombres entiers non signés.
+  \item \texttt{shl} (resp. \texttt{shr} : permet de réaliser un décalage logique vers la gauche (resp. droite).
+  \item \texttt{xor} : calcule le ou exclusif (\texttt{XOR}) entre ses deux arguments et sauvegarde le résultat dans le second.
+  \item \texttt{and} : calcule la conjonction logique entre ses deux arguments et sauvegarde le résultat dans le second.
 \end{itemize}
 
 
@@ -1038,40 +1035,39 @@ Sur les processeurs IA32, les comparaisons utilisent des drapeaux qui sont mis �
 Ceux-ci sont regroupés dans le registre \texttt{eflags}.
 Les principaux drapeaux sont :
 \begin{itemize}
-  \item \emph{ZF} (Zero Flag) : Indique si le résultat de la dernière opération était zéro
-  \item \emph{SF} (Sign Flag) : Indique si le résultat de la dernière instruction était négatif.
-  \item \emph{CF} (Carry Flag) : Indique si le résultat de la dernière instruction arithmétique non signée nécessitait plus de 32 bits pour être stocké.
-  \item \emph{OF} (Overflow Flag) : Indique si le résultat de la dernière instruction arithmétique signée a provoqué un dépassement de capacité.
+  \item \emph{ZF} (\textit{Zero Flag}) : indique si le résultat de la dernière opération était zéro;
+  \item \emph{SF} (\textit{Sign Flag}) : indique si le résultat de la dernière instruction était négatif;
+  \item \emph{CF} (\textit{Carry Flag}) : indique si le résultat de la dernière instruction arithmétique non signée nécessitait plus de 32 bits pour être stocké;
+  \item \emph{OF} (\textit{Overflow Flag}) : indique si le résultat de la dernière instruction arithmétique signée a provoqué un dépassement de capacité.
 \end{itemize}
 
-Nous utiliserons principalement les drapeaux \textit{ZF} et \textit{SF} dans ce "chapitre".
-Ces drapeaux peuvent être fixés par les instructions arithmétiques standard, mais aussi par
+Nous utiliserons principalement les drapeaux \textit{ZF} et \textit{SF} dans ce ``chapitre''.
+Ces drapeaux peuvent être fixés par les instructions arithmétiques standard, mais aussi par :
 \begin{itemize}
-  \item \texttt{cmp} : Effectue l'équivalent d'une soustraction et met à jour les drapeaux \textit{CF} et \textit{SF} mais sans sauvegarder son résultat dans un registre.
-  \item \texttt{test} : Effectue une conjonction logique en mettant à jour les drapeaux mais sans sauvegarder son résultat.
+  \item \texttt{cmp} : effectue l'équivalent d'une soustraction et met à jour les drapeaux \textit{CF} et \textit{SF} mais sans sauvegarder son résultat dans un registre;
+  \item \texttt{test} : effectue une conjonction logique (\texttt{AND}) en mettant à jour les drapeaux mais sans sauvegarder son résultat.
 \end{itemize}
 
 Ces instructions de comparaison peuvent être utilisées avec les instructions \texttt{set} qui permettent de fixer la valeur d'un registre en fonction des valeurs de certains drapeaux du registre \texttt{eflags}.
 Chaque instruction \texttt{set} prend comme argument un registre.
 Pour des raisons historiques, ces instructions modifient uniquement les bits de poids faible du registre indiqué et non le registre complet.
 \begin{itemize}
-  \item \texttt{sete} : Met le registre argument à la valeur du drapeau \textit{ZF}.
-    Permet d'implémenter une égalité
-  \item \texttt{sets} : Met le registre argument à la valeur du drapeau \textit{SF}.
-  \item \texttt{setg} : Place dans le registre argument la valeur \texttt{\~{}SF \& \~{}ZF} (tout en prenant compte les dépassements éventuels avec \texttt{OF}).
+  \item \texttt{sete} : met le registre argument à la valeur du drapeau \textit{ZF}.
+    Permet d'implémenter une égalité.
+  \item \texttt{sets} : met le registre argument à la valeur du drapeau \textit{SF}.
+  \item \texttt{setg} : place dans le registre argument la valeur \texttt{\~{}SF \& \~{}ZF} (tout en prenant en compte les dépassements éventuels avec \texttt{OF}).
     Permet d'implémenter la condition \texttt{>}.
-  \item \texttt{setl} : Place dans le registre argument la valeur \texttt{SF} (tout en prenant compte les dépassements éventuels avec \texttt{OF}).
-    Permet d'implémenter la condition \texttt{<=}.
+  \item \texttt{setl} : place dans le registre argument la valeur \texttt{SF} (tout en prenant en compte les dépassements éventuels avec \texttt{OF}).
+    Permet d'implémenter la condition \texttt{$\leq$}.
 \end{itemize}
 
 \subsection{Les instructions sauts}
 Les instructions de saut sont des instructions de base pour tous les processeurs.
-Elles permettent de modifier la valeur du compteur de programme \texttt{\%epi} de façon à modifier l'ordre d'exécution des instructions.
+Elles permettent de modifier la valeur du compteur de programme \texttt{\%eip} de façon à modifier l'ordre d'exécution des instructions.
 Elles sont nécessaires pour implémenter les tests, les boucles et les appels de fonction.
-Les premiers langages de programmation et les langages tels que le BASIC ou FORTRAN disposent d'une construction similaire avec l'instruction \texttt{goto}.
-Cependant, l'utilisation de l'instruction \texttt{goto} dans des programmes de haut niveau rend souvent le code difficile à lire et de nombreux langages de programmation n'ont plus de \texttt{goto}\footnote{Le C permet encore l'utilisation de \texttt{goto} (contrairement à Java) mais son utilisation est fortement déconseillée !}.
+Les premiers langages de programmation et les langages tels que le BASIC ou le FORTRAN disposent d'une construction similaire avec l'instruction \texttt{goto}.
+Cependant, l'utilisation de l'instruction \texttt{goto} dans des programmes de haut niveau rend souvent le code difficile à lire et de nombreux langages de programmation n'ont plus de \texttt{goto}\footnote{Le \clang{} permet encore l'utilisation de \texttt{goto} (contrairement à \java{}) mais son utilisation est fortement déconseillée !}.
 Lors de l'exécution d'un \texttt{goto}, le programme saute directement à l'exécution de l'instruction qui suit le label indiqué.
-
 
 
 En assembleur, les instructions de saut sont inévitables.
@@ -1084,30 +1080,32 @@ Ainsi, l'instruction \texttt{jmp *\%eax} indique que l'exécution du programme d
 Il existe plusieurs variantes conditionnelles de l'instruction \texttt{jmp}.
 Ces variantes sont exécutées uniquement si la condition correspondante est vérifiée; les plus fréquentes sont :
 \begin{itemize}
-  \item \texttt{je} : saut si égal (teste \textit{ZF}).
-  \item \texttt{jne} : inverse de \texttt{je}.
-  \item \texttt{js} : saut si négatif (teste \textit{SF})
-  \item \texttt{jns} : inverse de \texttt{js}.
-  \item \texttt{jg} : saut si strictement supérieur (teste \textit{SF} et \textit{ZF} et prend en compte un overflow éventuel)
-  \item \texttt{jl} : inverse de \texttt{jg} (strictement inférieur)
-  \item \texttt{jge} : saut si supérieur ou égal (teste \textit{SF} et prend en compte un overflow éventuel)
+  \item \texttt{je} : saut si égal (teste \textit{ZF});
+  \item \texttt{jne} : inverse de \texttt{je};
+  \item \texttt{js} : saut si négatif (teste \textit{SF});
+  \item \texttt{jns} : inverse de \texttt{js};
+  \item \texttt{jg} : saut si strictement supérieur (teste \textit{SF} et \textit{ZF} et prend en compte un \textit{overflow} éventuel);
+  \item \texttt{jl} : inverse de \texttt{jg} (strictement inférieur);
+  \item \texttt{jge} : saut si supérieur ou égal (teste \textit{SF} et prend en compte un \textit{overflow} éventuel);
   \item \texttt{jle} : inverse de \textbf{jge}.
 \end{itemize}
+
 Ces variantes sont utilisées pour implémenter des expressions \texttt{if(condition)\{ ...
-\} else \{ ...\}} en C ou pour implémenter des boucle \texttt{while} par exemple.
+\} else \{ ...\}} en \clang{} ou pour implémenter des boucles \texttt{while} par exemple.
 
 \subsection{Manipulation de la pile}
 \label{manip_de_la_pile}
 Les instructions \texttt{mov} permettent de déplacer de l'information à n'importe quel endroit de la mémoire.
 À côté de ces instructions de déplacement, il y a des instructions qui sont spécialisées dans la manipulation de la pile.
-La pile, qui dans un processus Unix est stockée dans les adresses hautes est essentielle au bon fonctionnement des programmes.
-Par convention dans l'architecture IA32, l'adresse du sommet de la pile est toujours stockée dans le registre \texttt{\%esp}.
+La pile, qui dans un processus Unix est stockée dans les adresses hautes, est essentielle au bon fonctionnement des programmes.
+Par convention, dans l'architecture IA32, l'adresse du sommet de la pile est toujours stockée dans le registre \texttt{\%esp}.
 
 \begin{itemize}
-  \item \texttt{pushl \%reg} : Place le contenu du registre \texttt{\%reg} au sommet de la pile et décrémente dans le registre \texttt{\%esp} l'adresse du sommet de la pile de 4 unités.
-  \item \texttt{popl \%reg} : Retire le mot de 32 bits se trouvant au sommet de la pile, le sauvegarde dans le registre \texttt{\%reg} et incrémente dans le registre \texttt{\%reg} l'adresse du sommet de la pile de 4 unités.
+  \item \texttt{pushl \%reg} : place le contenu du registre \texttt{\%reg} au sommet de la pile et décrémente dans le registre \texttt{\%esp} l'adresse du sommet de la pile de 4 unités.
+  \item \texttt{popl \%reg} : retire le mot de 32 bits se trouvant au sommet de la pile, le sauvegarde dans le registre \texttt{\%reg} et incrémente dans le registre \texttt{\%reg} l'adresse du sommet de la pile de 4 unités.
 \end{itemize}
-(En pratique ces instructions de manipulation de pile pourraient être écrite un utilisant \texttt{subl}, \texttt{movl} et \texttt{addl}, voir p74).
+
+(En pratique, ces instructions de manipulation de pile pourraient être écrites en utilisant \texttt{subl}, \texttt{movl} et \texttt{addl}, voir p74 des notes de cours).
 
 \subsection{Les fonctions et procédures}
 Les fonctions et les procédures sont essentielles dans tout langage de programmation.
@@ -1115,44 +1113,48 @@ Une procédure est une fonction qui ne retourne pas de résultat.
 
 Une procédure est un ensemble d'instructions qui peuvent être appelées depuis n'importe quel endroit du programme.
 Généralement, une procédure est appelée depuis plusieurs endroits différents d'un programme.
-Considérons d'abord une procédure en C ne prenant aucun argument (\texttt{void uneProcedure()}) : \\
+Considérons d'abord une procédure en \clang{} ne prenant aucun argument (\texttt{void uneProcedure()}) : \\
 Le processeur doit transférer l'exécution du code à la première instruction de la procédure appelée.
 Cela se fait en associant une étiquette à chaque procédure qui correspond à l'adresse de la première instruction de cette procédure.
 Il est également nécessaire que la procédure puisse connaître l'adresse de l'instruction qui doit être exécutée à la fin de son exécution.
 Dans l'architecture IA32, cela se fait en utilisant la pile.
-Vu l'importance des appels de procédure et de fonctions, l'architecture IA32 contient 2 instructions dédicacées pour implémenter ces appels.
+Vu l'importance des appels de procédure et de fonction, l'architecture IA32 contient 2 instructions dédicacées pour implémenter ces appels :
 \begin{itemize}
-  \item \texttt{call} : Instruction de saut qui transfère l'exécution à l'adresse de l'étiquette passée en argument et en plus elle sauvegarde au sommet de la pile l'adresse de l'instruction qui la suit.
-    Elle est équivalent à une instruction \texttt{push} suivit d'une instruction \texttt{jmp}.
-  \item \texttt{ret} : Instruction de saut qui suppose que l'adresse de retour se trouve au sommet de la pile, retire cette adresse de la pile et fait un saut à cette adresse.
-    Elle est équivalent à une instruction \texttt{pop} suivit d'une instruction \texttt{jmp}.
+  \item \texttt{call} : instruction de saut qui transfère l'exécution à l'adresse de l'étiquette passée en argument et en plus sauvegarde au sommet de la pile l'adresse de l'instruction qui la suit.
+    Elle est équivalente à une instruction \texttt{push} suivie d'une instruction \texttt{jmp};
+  \item \texttt{ret} : instruction de saut qui suppose que l'adresse de retour se trouve au sommet de la pile, retire cette adresse de la pile et fait un saut à cette adresse.
+    Elle est équivalente à une instruction \texttt{pop} suivie d'une instruction \texttt{jmp}.
     Dans l'architecture IA32, le registre \texttt{\%esp} contient en permanence le sommet de la pile, il est donc utilisé par \texttt{call} et \texttt{ret}.
 \end{itemize}
-%TODO : Il y a une convention de l'architecture IA32 qui veut que les adresses de retour des procédures soient allignées sur des blocs de 16 bytes (voir page 76).
+
+La raison pour laquelle il faut à chaque fois qu'une procédure descende
+le sommet de la pile au début de son exécution et l'augmente à la
+fin est pour respecter une convention de l'architecture IA32 qui veut que les adresses de retour des procédures
+soient alignées sur des blocs de 16 bytes.
 
 Considérons maintenant une procédure qui prend un argument.
 Pour qu'une telle procédure puisse utiliser son argument,
 il faut que la procédure appelante puisse placer sa valeur à un endroit où la procédure appelée peut facilement y accéder.
 Dans l'architecture IA32, c'est la pile qui joue ce rôle et permet le passage des arguments.
-En C, les arguments sont passés par valeur et ce sera donc la valeur des arguments qui sera placée sur la pile.
+En \clang{}, les arguments sont passés par valeur et ce sera donc la valeur des arguments qui sera placée sur la pile.
 La fonction appelante sauvegarde également d'autres registres sur la pile avant l'appel de la fonction.
 Ces sauvegardes sont nécessaires car la fonction appelante ne sait pas quels registres seront modifiés par la fonction qu'elle appelle.
 Par convention, dans l'architecture IA32, ce sont les registres \texttt{\%eax}, \texttt{\%edx} et \texttt{\%ecx} qui sont sous la responsabilité de la procédure appelante.
 Une procédure appelée peut modifier sans limite les valeurs de ces registres.
-D'autre part les registres \texttt{\%ebx}, \texttt{\%edi} et \texttt{\%esi} sont sous la responsabilité de la procédure appelée et doivent être sauvé par celle-ci si elle désire les utiliser/modifier.
+D'autre part les registres \texttt{\%ebx}, \texttt{\%edi} et \texttt{\%esi} sont sous la responsabilité de la procédure appelée et doivent être sauvés par celle-ci si elle désire les utiliser/modifier.
 
 
-Une fonction - contrairement aux procédure - retourne un résultat.
-Pour ce faire il faut que la procédure appelante puisse savoir où aller
+Une fonction - contrairement aux procédures - retourne un résultat.
+Pour ce faire, il faut que la procédure appelante puisse savoir où aller
 chercher ce résultat après l'exécution de l'instruction \texttt{ret}.
 La valeur de retour d'une fonction est stockée par convention
 dans le registre \texttt{\%eax}.\\
 
-En vue du fonctionnement des appels de fonction en assembleur, on comprend aisément que l'utilisation de fonctions récursives en C à un coût important au niveau de la gestion de la pile.
-Ces appels récursifs doivent donc être réservés à des fonctions où l'appel récursif apporte une plus value claire et ne peux pas être réalisé par une fonction itérative.
+En vue du fonctionnement des appels de fonction en assembleur, on comprend aisément que l'utilisation de fonctions récursives en \clang{} a un coût important au niveau de la gestion de la pile.
+Ces appels récursifs doivent donc être réservés à des fonctions où l'appel récursif apporte une plus-value claire et ne peut pas être remplacé par une fonction itérative.
 
 \section{Les threads}
-(Voir évolution des performances des processeurs dans le cours page 95-98)
+(Voir évolution des performances des processeurs dans le cours pages 95-98.)
 
 La notion de thread d'exécution est très importante
 dans un système informatique.
@@ -1206,7 +1208,7 @@ Les fonctions importantes de cette librairie sont :
 \end{itemize}
 
 \subsubsection{Variables \texttt{volatile}}
-Normalement, dans un programme C, lorsqu'une variable est définie, ses accès sont contrôlés entièrement par le compilateur.
+Normalement, dans un programme \clang{}, lorsqu'une variable est définie, ses accès sont contrôlés entièrement par le compilateur.
 Si une variable est utilisée dans plusieurs calculs successifs, afin d'obtenir de bonne performance, il peut être utile de stocker sa valeur dans un registre durant le temps des calculs.
 Mais dans le cas où cette valeur pourrait être modifié par d'autres threads simultanément il peut être utile d'indiquer qu'il faut recharger sa valeur avant chaque calcul, cela se fait en utilisant le qualificatif \texttt{volatile} qui indique au compilateur qu'il doit recharger la variable de la mémoire chaque fois qu'elle est utilisée.
 (à utiliser avec précaution, voir partie sur les mutex etc.)
@@ -1278,7 +1280,7 @@ Afin d'éviter ce problème il faut utiliser la coordination entre threads.
 Le problème de l'exclusion mutuelle à été initialement proposé par Dijkstra (en 1965).
 Il peut être reformulé de la façon suivante pour un programme décomposé en threads : \\
 Considérons un programme à $N$ threads.
-Chaque threads est exécuté cycliquement et possède une section critique et une section non-critique.
+Chaque threads est exécuté cycliquement et possède une section critique et une section non critique.
 La durée d'exécution de chaque partie n'est pas connue et peut être différentes pour chaque thread.
 Le problème de l'exclusion mutuelle consiste à trouver un algorithme qui permet de garantir qu'il n'y aura jamais deux threads qui simultanément exécuteront les instructions de leur section critique.\\
 \\
@@ -1318,7 +1320,7 @@ Ces interruptions nécessitent un traitement rapide de la part de l'OS : C'est p
 Ces appels peuvent être exécutés directement ou via une fonction de la librairie\footnote{La section \texttt{2} du manuel décrits les appels systèmes, la section \texttt{3} décrit les fonctions de la librairie.}.
 
 \begin{itemize}
-  \item \textbf{Appel système non-bloquant} est un appel système que l'OS peut exécuter immédiatement.
+  \item \textbf{Appel système non bloquant} est un appel système que l'OS peut exécuter immédiatement.
     Ce type d'appel retourne en général une valeur qui fait partie de l'OS lui-même (par exemple \texttt{gettimeofday}).
   \item \textbf{Appel système bloquant} est un appel système dont le résultat ne peut pas toujours être fourni immédiatement (par exemple : lecture d'information en provenance de l'entrée standard).
     Dans ce cas le thread est mis en attente et aucune instruction de ce thread n'est exécuté tant que le résultat n'est pas connu.
@@ -1465,7 +1467,7 @@ Les mutex s'utilisent par l'intermédiaire de 2 fonctions :
 \end{itemize}
 
 
-En C, un mutex est représenté par une structure de donnée \texttt{pthread\_mutex\_t} qui est définie dans \texttt{pthread.h} et qu'il faut initialiser avec \texttt{pthread\_mutex\_init} et détruire avec \texttt{pthread\_mutex\_destroy} afin de libérer les ressources qui y sont associées.
+En \clang{}, un mutex est représenté par une structure de donnée \texttt{pthread\_mutex\_t} qui est définie dans \texttt{pthread.h} et qu'il faut initialiser avec \texttt{pthread\_mutex\_init} et détruire avec \texttt{pthread\_mutex\_destroy} afin de libérer les ressources qui y sont associées.
 
 Montrons que cette solution de mutex répond bien au problème de l'exclusion mutuelle.
 La propriété de sûreté est bien respecté puisqu'aucun thread ne pourra entrer dans sa section critique si un autre s'y trouve déjà (et 2 threads ne peuvent y rentrer en même temps).
@@ -1776,7 +1778,7 @@ Le kernel gère les processus et attribue un identifiant (de type \texttt{pid\_t
 Après l'appel de \texttt{fork}, les 2 processus partagent certaines ressources qui sont gérée par le kernel. Notamment \textit{stdin}, \textit{stdout} et \textit{stderr}. Il faut donc que des précaution soit prise afin que les écritures sur la sorties standard s'affiche correctement (par exemple). En réalité les fonctions telles que \texttt{printf} et \texttt{putchar} de la librairie standard utilisent l'appel système \texttt{write} qui est le seul permettant d'écrire sur un flux tel que \textit{stdout}. L'utilisation à outrance de cet appel système est coûteux pour les performances d'une application, c'est pourquoi, la librairie standard utilise un buffer dans laquelle elle stocke temporairement les données avant de les écrire en une fois via \texttt{write}\footnote{Ce buffer peut être contrôlé avec \texttt{setvbuff} et \texttt{setbuf}. Par exemple pour le désactiver : \texttt{setbuf(stdout, NULL}}. Il est possible de "vider"\footnote{C'est à dire de forcer l'écriture sur le flux concerné.} immédiatement le buffer en utilisant la fonction \texttt{\textbf{int} fflush(\textbf{FILE} *stream)}.
 
 \subsection{Fin d'un processus}
-Comme nous l'avons déjà vu, un programme C peut se terminer de 2 façons :
+Comme nous l'avons déjà vu, un programme \clang{} peut se terminer de 2 façons :
 \begin{itemize}
   \item par l'exécution de \texttt{return ...}  dans la fonction \texttt{main}.
   \item par un appel explicite à \texttt{exit(...)}
@@ -1793,7 +1795,7 @@ Pour exécuter un programme, il existe l'appel système \texttt{execve}. Celui-c
 
 Les valeurs retourné par un processus fils sont stockée sur 8 bits, la plus grande valeur positive est donc 127 (utilisé en cas d'erreur ?). \\
 
-En C, il existe des variantes à \texttt{execve} : \texttt{execl}, \texttt{execp}, \texttt{execle} et \texttt{execv}. Celle-ci diffèrent de \texttt{execve} par leur manière de spécifier les arguments. \\
+En \clang{}, il existe des variantes à \texttt{execve} : \texttt{execl}, \texttt{execp}, \texttt{execle} et \texttt{execv}. Celle-ci diffèrent de \texttt{execve} par leur manière de spécifier les arguments. \\
 La fonction \texttt{sytem} de la librairie permet d'exécuter une commande du shell directement depuis un programme.\\
 
 En plus des exécutable compilé, Unix et Linux supporte aussi l'exécution de \textit{programmes interprétés}. %Un \textbf{\textit{programme interprété}} est un programme écrit dans un langage qui doit être utilisé via un \textit{interpréteur}.
