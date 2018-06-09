@@ -1,0 +1,410 @@
+\documentclass[fr, license=none]{../../../../../../eplexam}
+
+\usepackage{../../../../../../eplcode}
+
+\lstset{language={C}}
+
+\hypertitle{Systèmes informatiques}{4}{SINF}{1252}{2016}{Juin}
+{Gilles Peiffer}
+{Olivier Bonaventure}
+
+% TODO : Partie théorique, vient avant la théorie (where are the questions though...).
+
+Le syllabus est accessible depuis l'URL \url{http://sites.uclouvain.be/SystInfo}.
+
+Les pages de manuel sont accessibles depuis les URLs suivants :
+\begin{itemize}
+     \item \url{http://sites.uclouvain.be/SystInfo/manpages/man1} (commandes);
+     \item \url{http://sites.uclouvain.be/SystInfo/manpages/man2} (appels systèmes);
+     \item \url{http://sites.uclouvain.be/SystInfo/manpages/man3} (fonctions librairies).
+\end{itemize}
+
+\section{Traduction de code assembleur}
+
+La fonction suivante a été écrite en assembleur.
+Traduisez-la en une version équivalente en \clang{}.
+Votre fonction doit nécessairement avoir comme nom \texttt{mp}.
+
+\begin{lstlisting}[language={[x86masm]Assembler}, emph={\$,\%,(,),movl,cmpl,addl,subl},emphstyle={\color{blue}\bfseries}]
+mp:
+    subl $8, %esp
+    movl 16(%esp), %edx
+    movl 12(%esp), %ecx
+    addl %ecx, %ecx
+    cmpl %edx,%ecx
+    jle mp1
+    movl %edx, %eax
+    addl $8, %esp
+    ret
+mp1: movl %ecx, %eax
+    addl $8, %esp
+    ret
+
+\end{lstlisting}
+
+\begin{solution}
+
+\begin{lstlisting}
+int mp(int c, int d)
+{
+    c += c;
+    if (d <= c)
+    {
+        return d;
+    }
+    else
+    {
+        return c;
+    }
+}
+
+\end{lstlisting}
+
+\end{solution}
+
+\section{\textit{Search and replace}}
+
+Implémentez la fonction \texttt{sr} dont les spécifications sont fournies ci-dessous.
+
+\begin{lstlisting}
+#include <sys/uio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <string.h>
+
+/*
+ * @pre filename!=NULL, src!=NULL, dst!=NULL, len >0
+ *      src et dst pointent vers des zones de taille len
+ *      le fichier filename a comme taille un multiple entier de len
+ * @post modifie le contenu du fichier filename en remplaçant
+ *       toutes les occurences des blocs de données src par dst.
+ *       Le fichier est supposé découpé en blocs de taille len
+ *       aux positions 0, len, 2*len, ...
+ *       retourne le nombre de blocs remplacés et -1 en cas d'erreur
+ *       Il est interdit d'utiliser mmap et vous devez utiliser malloc
+ *       pour allouer la mémoire dont vous avez besoin. Pour accéder au fichier, vous pouvez uniquement utiliser open, read, lseek, write et close.
+ */
+int sr(char *filename, char *src, char *dst, ssize_t len) {
+// insérez votre code ici sans terminer par }
+
+\end{lstlisting}
+
+\begin{solution}
+
+\begin{lstlisting}
+int fd = open(filename, O_RDWR);
+if (fd < 0)
+{
+    return -1;
+}
+
+char *buf = malloc(len);
+if (buf == NULL)
+{
+    close(fd);
+    return -1;
+}
+int count = 0;
+int r = read(fd, buf, len);
+if (r < 0)
+{
+    close(fd);
+    free(buf);
+    return -1;
+}
+while (r != 0)
+{
+    if (strncmp(src, buf, len) == 0)
+    {
+        lseek(fd, -len, SEEK_CUR);
+        if (write(fd, dst, len) < 0)
+        {
+            close(fd);
+            free(buf);
+            return -1;
+        }
+        ++count;
+    }
+    r = read(fd, buf, len);
+    if (r < 0)
+    {
+        close(fd);
+        free(buf);
+        return -1;
+    }
+}
+if (close(fd) < 0)
+{
+    free(buf);
+    return -1;
+}
+free(buf);
+return count;
+
+\end{lstlisting}
+
+\end{solution}
+
+\section{Redirection des flux de sortie et d'erreur standards}
+
+Implémentez la fonction \texttt{run\_redir} dont les spécifications sont fournies ci-dessous.
+Il est interdit d'utiliser la fonction \lstinline|system| de la librairie standard.
+
+\begin{lstlisting}
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+
+/*
+ * @pre prog!=NULL, argv!=NULL, file!=NULL
+ * execute le programme prog avec les arguments argv
+ * en redirigeant la sortie standard et l'erreur standard
+ * vers le fichier file. Retourne la valeur de retour
+ * du programme et -1 en cas d'erreur d'exécution du programme
+ * ou d'accès au fichier
+ */
+int run_redir(char *prog, char* argv[], char *file) {
+// insérez ici le code sans terminer par }
+
+\end{lstlisting}
+
+\begin{solution}
+
+\begin{lstlisting}
+int status;
+pid_t pid = fork();
+if (pid < 0)
+{
+    return -1;
+}
+if (pid == 0)
+{
+     // FILS
+     int fd = open(file, O_WRONLY|O_CREAT|O_TRUNC, 0600);
+     if(fd < 0)
+     {
+          exit(-1);
+     }
+     close(1); // On ferme la sortie standard
+     close(2); // On ferme la sortie d'erreur
+     if (dup2(fd, 1) < 0)
+     {
+          exit(-1);
+     }
+     if (dup2(fd, 2) < 0)
+     {
+          exit(-1);
+     }
+     char *env[] = {NULL};
+     execve(prog, argv, env);
+     exit(-1);
+}
+else
+{
+     // PERE
+     if (waitpid(pid, &status, 0) < 0)
+     {
+          return -1;
+     }
+     if (WIFEXITED(status))
+     {
+          if(WEXITSTATUS(status) == 0)
+          {
+               return 0;
+          }
+          return -1;
+     }
+     return -1;
+}
+
+\end{lstlisting}
+
+\end{solution}
+
+\section{\texttt{Arraylist}}
+
+Vous devez modifier une librairie qui implémente une \texttt{ArrayList}
+en y ajoutant une fonction. Cette \texttt{ArrayList} s'utilise comme suit
+
+\begin{lstlisting}
+int main(void) {
+     struct array_list *head = arraylist_init((size_t) 2, (size_t) sizeof(int));
+     int first = 5;
+     int second = 6;
+     int third = 7;
+     int tmp;
+
+     int ret;
+
+     if (!head)
+             return 0;
+
+     set_element(head, 0, (void *)&first);
+     set_element(head, 1, (void *)&second);
+
+     get_element(head, 1, (void *)&tmp);
+     // tmp contient 6
+     add_tail(head, (void *)&third);
+     get_element(head, 2, (void *)&tmp);
+     // tmp contient 7
+     printf("array-list size: %d element-size %d\n", get_size(head), get_elem_size(head));
+     // affiche array-list size: 3 element-size 4
+     array_list_destroy(head);
+     return 0;
+}
+
+\end{lstlisting}
+
+\begin{lstlisting}
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <semaphore.h>
+
+struct array_list {
+     char *content;
+     size_t size;
+     size_t elem_size;
+     sem_t mutex;
+};
+
+/* Initialize an array-list
+ *
+ * @return: Pointer to array_list on   success, NULL on error and errno is set.
+ */
+struct array_list *arraylist_init(size_t n_elem, size_t elem_size)
+{
+     struct array_list *alist= (struct array_list *)malloc(sizeof(*alist));
+
+     if (!alist)
+             return NULL;
+
+     alist->content = malloc(n_elem * elem_size);
+     if (!alist->content) {
+             free(alist);
+             return NULL;
+     }
+
+     if (sem_init(&alist->mutex, 0, 1)) {
+             free(alist->content);
+             free(alist);
+             return NULL;
+     }
+
+     alist->size = n_elem;
+     alist->elem_size = elem_size;
+
+     return alist;
+}
+
+/* Set the element 'elem' at position 'index' (indexes start at 0) inside the
+ * array-list
+ *
+ * @return: -1 on error, 0 on success.
+ */
+int set_element(struct array_list *alist, int index, void *elem)
+
+{
+     char *ptr;
+
+     if (index >= alist->size)
+             return -1;
+
+     if (sem_wait(&alist->mutex))
+             return -1;
+
+     ptr = alist->content + (index * alist->elem_size);
+     memcpy(ptr, elem, alist->elem_size);
+
+     if (sem_post(&alist->mutex))
+             return -1;
+
+     return 0;
+}
+
+
+/* Get the element at position 'index' of the array-list and copy it into 'elem'.
+ * It is exepected that 'elem' has a sufficiently large memory-region to
+ * hold the data.
+ *
+ * @return: -1 on error, 0 on success.
+ */
+int get_element(struct array_list *alist, int index, void *elem)
+// code non fourni
+
+/* Get the current size of the array-list */
+size_t get_size(struct array_list *alist)
+{
+       return alist->size;
+}
+
+/* Get the size of the elements of the   array-list */
+size_t get_elem_size(struct array_list *alist)
+{
+       return alist->elem_size;
+}
+
+/* Fully destroys the array-list. All elements will be lost */
+int array_list_destroy(struct array_list *alist)
+// code non fourni
+
+/* Expand the array-list by one element and put 'elem' at this place.
+ *
+ * @return: -1 on error, 0 on success
+ *
+ * Vous *devez* utiliser realloc dans cette fonction
+ */
+int add_tail(struct array_list *alist, void *elem)
+// question
+
+\end{lstlisting}
+
+\begin{solution}
+
+\begin{lstlisting}
+if (sem_wait(&alist->mutex))
+{
+    return -1;
+}
+
+(alist->size) = (alist->size)+1;
+char* tmp = realloc(alist->content, alist->size * alist->elem_size);
+
+if (!tmp)
+{ // si erreur de realloc
+    sem_post(&alist->mutex);
+    return -1;
+}
+else
+{
+    alist->content = tmp;
+}
+
+char *ptr;
+
+size_t inc = ((alist->size)-1) * (alist->elem_size);
+ptr = (alist->content+inc);
+
+memcpy(ptr, elem, alist->elem_size);
+
+if (sem_post(&alist->mutex))
+{
+     return -1;
+}
+
+return 0;
+
+\end{lstlisting}
+
+\end{solution}
+
+\end{document}
