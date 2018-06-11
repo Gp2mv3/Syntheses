@@ -1,18 +1,17 @@
 \documentclass[fr]{../../../../../../eplexam}
-\usepackage{listings}
 \usepackage{float}
 \usepackage{mathtools}
 \usepackage{tikz}
 \usepackage{enumitem}
-\usepackage{lipsum}
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{multicol}
 
 \usepackage{../../../../../../eplcode}
+\lstset{language={C}}
 
 \hypertitle{Systèmes informatiques}{4}{SINF}{1252}{2017}{Juin}
-{Quentin Dessain \and Gilles Peiffer}
+{Quentin Dessain \and Gilles Peiffer \and Thomas Reniers}
 {Olivier Bonaventure}
 
 
@@ -249,5 +248,92 @@ b = false;
 Cette solution ne provoque pas de \textit{deadlock}, de \textit{livelock} ni de violation de section critique et satisfait aux 3 critères de solution du problème de violation de section critique.
 
 \end{solution}
+
+Le syllabus est accessible depuis l'URL \url{http://sites.uclouvain.be/SystInfo}.
+
+\textbf{Les pages de manuel sont accessibles depuis les URLs suivants :}
+\begin{itemize}
+     \item \url{http://sites.uclouvain.be/SystInfo/manpages/man1} (commandes);
+     \item \url{http://sites.uclouvain.be/SystInfo/manpages/man2} (appels systèmes);
+     \item \url{http://sites.uclouvain.be/SystInfo/manpages/man3} (fonctions librairies).
+\end{itemize}
+
+\textbf{Attention:} veuillez utiliser la version \textbf{\html{}} du syllabus.
+
+\section{Insertion de données dans un fichier}
+
+Les fonctions \texttt{read} et \texttt{write} de lire et d'écrire
+des données dans un fichier. Certaines applications doivent parfois insérer
+des données dans un fichier à une position précise du fichier en décalant les données
+déjà présentes vers la fin du fichier.
+Vous devez écrire la fonction \texttt{insert}, dont les spécifications sont reprises
+ci-dessous en utilisant les appels système \texttt{read}, \texttt{write}, \texttt{open}, \texttt{close} et \texttt{lseek}.
+
+\begin{lstlisting}
+/*
+ * @pre fileName!=NULL, buf!=NULL, nbyte >0
+ * @post a inséreé dans le fichier filename les nbytes du buffers buf
+ *       à la position pos. Les bytes suivants dans le fichiers ont
+ *       étés décalées vers la fin du fichier
+ *       retourne le nombre de bytes écrites, -1 en cas d'erreur
+ */
+int insert(char *fileName, off_t pos, const void *buf, size_t nbyte) {
+\end{lstlisting}
+
+\begin{solution}
+
+\begin{lstlisting}
+int fd = open(fileName,O_RDWR);
+if(fd==-1)
+{
+    return -1;
+}
+off_t end = lseek(fd,0,SEEK_END);
+off_t offset = lseek(fd,pos,SEEK_SET);
+off_t toRead = end - offset;
+void* toWrite = malloc(toRead); if(toWrite==NULL){return -1;}
+if(offset==-1||end==-1)
+{
+    free(toWrite);
+    close(fd);
+    return -1;
+}
+ssize_t red = read(fd,toWrite,(size_t)toRead);
+if(red==-1)
+{
+    free(toWrite);
+    close(fd);
+    return -1;
+}
+offset = lseek(fd,pos,SEEK_SET);
+if(offset==-1)
+{
+    free(toWrite);
+    close(fd);
+    return -1;
+}
+ssize_t written = write(fd,buf,nbyte);
+if(written==-1)
+{
+    free(toWrite);
+    close(fd);
+    return -1;
+}
+ssize_t shift = write(fd,toWrite,(size_t)toRead);
+if(shift==-1)
+{
+    free(toWrite);
+    close(fd);
+    return -1;
+}
+free(toWrite);
+close(fd);
+return written;
+
+\end{lstlisting}
+
+\end{solution}
+
+% TODO Missing exercises.
 
 \end{document}
