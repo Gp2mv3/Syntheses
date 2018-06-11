@@ -3,7 +3,7 @@
 \usepackage{../../../eplunits}
 
 \hypertitle{Mod\`eles et m\'ethodes d'optimisation}{4}{INMA}{1702}
-{Beno\^it Legat}
+{Beno\^it Legat \and Gilles Peiffer}
 {Vincent Blondel et François Glineur}
 
 \newcommand{\libre}{\ensuremath{\textnormal{ libre}}}
@@ -20,6 +20,7 @@
 \newcommand{\rpm}{\sbox0{$1$}\sbox2{$\scriptstyle\pm$}
   \raise\dimexpr(\ht0-\ht2)/2\relax\box2 }
 \newcommand*\mean[1]{\bar{#1}}
+\usepackage{enumitem}
 
 \part{Convexité}
 \section{Convexité d'une fonction}
@@ -1285,6 +1286,7 @@ Dans le second cas, on peut par exemple
 Il s'agit d'une méthode pour un problème sans contraintes,
 avec un minimum d'hypothèses (la fonction doit être évaluable en tout point)
 qui cherche plutôt à améliorer qu'à optimiser.
+Elle est surtout utilisée pour un faible nombre de variables.
 
 Un simplexe dans $\Rn \equiv \textnormal{ ensemble de n + 1 points de } \Rn$.
 En 2D, ce sont les sommets d'un triangle.
@@ -1314,6 +1316,115 @@ Le choix le plus populaire en pratique consiste à prendre
 \begin{equation*}
      \rho = 1 \quad \chi = 2 \quad \gamma = \frac{1}{2} \quad \sigma = \frac{1}{2}.
 \end{equation*}
+
+\subsubsection{Algorithme}
+
+À l'itération $k$, en connaissant $\Delta^{(k)}$, on doit déterminer $\Delta^{(k+1)}$.
+Appelons $\bar{x}$ le centre de gravité des $n$ meilleurs sommets du simplexe :
+
+\begin{equation*}
+     \bar{x}^{(k)} = \frac{1}{n} \sum_{i = 1}^k x^{(k)}_i.
+\end{equation*}
+
+Pour la suite, on omet l'indice $^{(k)}$ afin alléger les notations.
+
+\begin{enumerate}
+     \item \strong{Réflexion}. On calcule le point de réflexion $x_{\textnormal{r}}$ selon
+     \begin{equation*}
+          x_{\textnormal{r}} = (1 + \rho) \bar{x} - \rho x_{n+1} \qquad f_{\textnormal{r}} = f(x_{\textnormal{r}}).
+     \end{equation*}
+     Si $f_1 \leq f_{\textnormal{r}} < f_n$, on accepte le point réfléchi et on termine l'itération.
+     On sort $x_{n+1}$ du simplexe et on le remplace par $x_{\textnormal{r}}$,
+     puis on réordonne les points.
+
+     \item \strong{Expansion}. Si $f_{\textnormal{r}} < f_1$, on calcule le point d'expansion $x_{\textnormal{e}}$ selon
+     \begin{equation*}
+          x_{\textnormal{e}} = (1 + \rho \chi) \bar{x} - \rho \chi x_{n+1} \qquad f_{\textnormal{e}} = f(x_{\textnormal{e}}).
+     \end{equation*}
+     Si $f_{\textnormal{e}} < f_{\textnormal{r}}$, on accepte $x_{\textnormal{e}}$,
+     sinon on accepte $x_{\textnormal{r}}$.
+     \item \strong{Contraction}. On a forcément $f_{\textnormal{r}} \geq f_n$.
+     \begin{enumerate}
+          \item Si $f_n \leq f_{\textnormal{r}} < f_{n+1}$, on effectue une contraction \strong{extérieure} : on calcule
+          \begin{equation*}
+               x_{\textnormal{c}} = (1 + \rho \gamma) \bar{x} - \rho \gamma x_{n+1} \qquad f_{\textnormal{c}} = f(x_{\textnormal{c}}).
+          \end{equation*}
+          Si $f_{\textnormal{c}} \leq f_{\textnormal{r}}$, on accepte $x_{\textnormal{c}}$,
+          sinon on passe au rétrécissement.
+          \item Si $f_{\textnormal{r}} \geq f_{n+1}$, on effectue une contraction \strong{intérieure} : on calcule
+          \begin{equation*}
+               x_{\textnormal{cc}} = (1 - \gamma) \bar{x} + \gamma x_{n+1} \qquad f_{\textnormal{cc}} = f(x_{\textnormal{cc}}).
+          \end{equation*}
+          Si $f_{\textnormal{cc}} < f_{\textnormal{n+1}}$,
+          on accepte $x_{\textnormal{cc}}$,
+          sinon on passe au rétrécissement.
+     \end{enumerate}
+     \item \strong{Rétrécissement}. On évalue $f$ aux points $v_i = x_1 + \sigma(x_i - x_1)$
+     pour $i = 2, 3,\dots,n+1$.
+     Le nouveau simplexe sera constitué des points
+     $x_1, v_2, v_3,\dots,v_{n+1}$ (à réordonner).
+     Cette étape est coûteuse mais rare en pratique.
+\end{enumerate}
+
+\begin{figure}[!h]
+     \centering
+     \includegraphics[width=0.3\textwidth]{neldermead.png}
+     \caption*{Visualisation des étapes de la méthode du simplexe de Nelder-Mead.}
+\end{figure}
+
+\subsubsection{Résultats théoriques}
+
+Les propriétés de la méthode sont assez faibles; il s'agit plus d'une heuristique
+qui fonctionne bien en pratique.
+
+On note par exemple que
+
+\begin{itemize}
+     \item pour une fonction strictement convexe à une variable, convergence vers le minimum global;
+     \item pour une fonction strictement convexe à deux variables,
+     convergence vers une valeur (pas nécessairement optimale) et donc il existe un simplexe
+     $\Delta^{(0)}$ qui converge vers un point qui n'est pas un minimum d'une certaine fonction $f$.
+\end{itemize}
+
+\section{Aperçu d'optimisation avec contraintes}
+
+On a le problème
+
+\begin{equation*}
+     \min_{x \in \Rn} f(x) \textnormal{ tel que } c_i(x) = 0 \textnormal{ pour } i \in \eqset \textnormal{ et } c_i(x) \geq 0 \textnormal{ pour } i \in \inset.
+\end{equation*}
+
+La plupart des méthodes sont basées sur la résolution
+répétée de sous-problèmes sans contraintes.
+
+Il y une myriade de méthodes pour cela.
+
+\begin{itemize}
+     \item \strong{Méthodes de pénalité}. On résout une série de problèmes non contraints
+     dépendant d'un paramètre $\mu > 0$ de plus en plus petit.
+     Par exemple, pour un problème avec uniquement des égalités :
+     \begin{equation*}
+          \min_{x \in \Rn} f(x) + \frac{1}{2\mu}\sum_{i \in \eqset} c_i^2(x).
+     \end{equation*}
+     \item \strong{Méthodes de pénalité exacte}. On résout un unique problème pour $\mu$ suffisament petit.
+     Par exemple, pour un problème avec uniquement des égalités :
+     \begin{equation*}
+          \min_{x \in \Rn} f(x) + \frac{1}{2\mu} \sum_{i \in \eqset} \abs{c_i(x)}.
+     \end{equation*}
+     Par contre, cette fonction n'est pas différentiable.
+     \item \strong{Méthode barrière}. On résout une série de problèmes non contraints dépendant d'un paramètre $\mu > 0$ de plus en plus petit.
+     Par exemple, pour un problème avec uniquement des inégalités :
+     \begin{equation*}
+          \min_{x \in \Rn} f(x) - \mu \sum_{i \in \inset} \log(c_i(x)).
+     \end{equation*}
+     \item \strong{Techniques basées sur l'approximation locale}. On approxime autour de l'itéré courant par un problème de \emph{sequential quadratic programming}.
+     \item \strong{Lagrangien augmenté}. On combine le Lagrangien avec une pénalité quadratique :
+     \begin{equation*}
+          \min \lagr_{\textnormal{A}}(x, \lambda, \mu) = f(x) - \sum_{i \in \eqset} \lambda_i c_i(x) + \frac{1}{2\mu} \sum_{j \in \eqset} c_j^2(x),
+     \end{equation*}
+     avec mises à jour successives de $\lambda$ et $\mu$.
+     \item \strong{Astuces}. On peut aussi reformuler, substituer, etc\dots
+\end{itemize}
 
 %     _
 %    / \   _ __  _ __   _____  _____
@@ -1365,9 +1476,9 @@ Le choix le plus populaire en pratique consiste à prendre
   suivant
   \begin{align*}
     \min \sum c_{ij} x_{ij}\\
-    \sum_j x_{ij} & \leq a_i & \forall i\\
-    \sum_j x_{ij} & \geq b_i & \forall i\\
-    x_{ij} & \leq 0 & \forall i,j
+    \sum_j x_{ij} & \leq a_i & \forall &i\\
+    \sum_j x_{ij} & \geq b_i & \forall &i\\
+    x_{ij} & \leq 0 & \forall &i,j
   \end{align*}
 
   L'ensemble des solutions admissibles est vide si
@@ -1378,13 +1489,13 @@ Le choix le plus populaire en pratique consiste à prendre
 On peut définir différentes normes :
 \begin{itemize}
   \item la norme $l^1$ définie par
-    \[ \phantom{;} \norm{x}_1 = \sum_i |\abs{x_i}; \]
+    \[ \phantom{;} \norm{x}_1 \coloneqq \sum_i \abs{x_i}; \]
   \item la norme $l^2$ définie par
-    \[ \phantom{;} \norm{x}_2 = \sqrt{\sum_i x_i^2}; \]
+    \[ \phantom{;} \norm{x}_2 \coloneqq \sqrt{\sum_i x_i^2}; \]
   \item la norme $l^p$ définie par
-    \[ \phantom{;} \norm{x}_p = \left(\sum_i x_i^p\right)^p; \]
+    \[ \phantom{;} \norm{x}_p \coloneqq \left(\sum_i \abs{x_i}^p\right)^{1/p}; \]
   \item la norme $l^\infty$ définie par
-    \[ \phantom{.} \norm{x}_\infty = \max_i |x_i|. \]
+    \[ \phantom{.} \norm{x}_\infty \coloneqq \max_i \abs{x_i}. \]
 \end{itemize}
 
 \section{Centre de Chebychev}
@@ -1397,7 +1508,7 @@ On peut définir différentes normes :
 \begin{myprop}
   La distance entre un point $x_0$ et
   un hyperplan $H$ défini par $H\equiv a^Tx = b$ est
-  \[ d(x_0, H) = \frac{\abs{b-a^Tx_0}}{\norm{a}} \]
+  \[ d(x_0, H) = \frac{\abs{b-a^Tx_0}}{\norm{a}}. \]
 \end{myprop}
 
 Soit un polyèdre $P = \{x\in\Rn \suchthat a_i^Tx \geq b_i\}$.
@@ -1406,7 +1517,7 @@ Supposons, sans perte de généralité, que $\norm{a_i} = 1$
   d(x, P) & = \min_i \frac{\abs{a_i^Tx - b_i}}{\norm{a_i}}\\
   \max_{x\in P} d(x, P)
   & = \max_{x\in P}\min_i \abs{a_i^Tx - b_i}\\
-  & = \max_{x\in P}\min_i a_i^Tx - b_i\\
+  & = \max_{x\in P}\min_i a_i^Tx - b_i.\\
 \end{align*}
 On a donc
 \begin{align*}
