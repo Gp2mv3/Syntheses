@@ -1,4 +1,4 @@
 NAME=os
 OPTION=SINF
 CODE=1252
-include ../../q4.mk
+include $(BASE_DIR)../../q4.mk
