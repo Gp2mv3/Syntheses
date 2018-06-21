@@ -16,7 +16,7 @@ Les `.pdf` des synthèses et correctifs dans leur dernière version sont disponi
 Ce README donne quelques premières indications
 quant à l'utilisation de ce repository.
 Pour de plus amples informations,
-voir le
+voir
 le document [How_to_Contribute][doc-url]
 ou le [wiki](https://github.com/Gp2mv3/Syntheses/wiki).
 
