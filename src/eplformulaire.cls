@@ -12,8 +12,8 @@
 \LoadClass{../../../eplbase}
 
 \IfLanguageName{english}{
-\newcommand{\Epltype}{Formulary}
-\newcommand{\epltypesingular}{formulary} % si quelqu'un connait la vraie traduction en anglais
+\newcommand{\Epltype}{Cheat sheet}
+\newcommand{\epltypesingular}{cheat sheet} % si quelqu'un connait la vraie traduction en anglais
 }{
 \newcommand{\Epltype}{Formulaire}
 \newcommand{\epltypesingular}{formulaire} % version au singulier
