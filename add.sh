@@ -10,7 +10,7 @@ args=("$@")
 nbr_arg=5
 section=( "summary" "notes" "exam" "test" "exercises" )
 sols="only none both"
-exammonths="Janvier Juin Août"
+exammonths="Janvier Juin Août Septembre"
 testmonths="Février Mars Avril Mai Septembre Octobre Novembre Décembre"
 # On ne peut juste pas avoir de tests pendant les mois d'examen (blocus l'empêche), ni pendant les vacances d'été.
 # months="Janvier Mars Juin Août Novembre" # Backward compatibility
