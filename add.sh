@@ -29,7 +29,7 @@ function subdirectory {
     if [ $1 == exam ] || [ $1 == test ]; then
       makef=Makefileexam
       fullname="$name-$1-$year-$month-$minmaj"
-      base=exam
+      base=exam 
     else
       if [ $1 == exercises ]; then
         makef=Makefileexercises
@@ -37,7 +37,7 @@ function subdirectory {
         makef=Makefile
       fi
       fullname="$name-$1"
-      base=tex
+      base=tex 
     fi
 
     fulldir="$dir/$1"
@@ -70,14 +70,21 @@ function subdirectory {
 
     import="epl$1"
 
+    if [ $quadri -lt 7 ]; then
+      language=fr
+    else 
+      language=en
+    fi 
+
     if ! [ -f "$fulldir/$1/$fullname.tex" ]; then
-        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g" ./templates/$base.tex > "$fulldir/$fullname.tex"
+        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g; s/language/$language/g" ./templates/$base.tex > "$fulldir/$fullname.tex"
     fi
 }
 
 function mk {
     mk=$dir/$name.mk
     if ! [ -f $mk ]; then
+	echo Create directory...
         sed "s/quadri/$quadri/g; s/name/$short/g; s/option/$option/g; s/code/$code/g" ./templates/mk.mk >> $mk
     fi
 }
@@ -203,7 +210,6 @@ month=$8
 minmaj=$9
 
 echo Starting:
-echo Create directory...
 
 mkdir -p $dir
 mk
