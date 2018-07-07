@@ -29,7 +29,7 @@ function subdirectory {
     if [ $1 == exam ] || [ $1 == test ]; then
       makef=Makefileexam
       fullname="$name-$1-$year-$month-$minmaj"
-      base=exam 
+      base=exam
     else
       if [ $1 == exercises ]; then
         makef=Makefileexercises
@@ -37,7 +37,7 @@ function subdirectory {
         makef=Makefile
       fi
       fullname="$name-$1"
-      base=tex 
+      base=tex
     fi
 
     fulldir="$dir/$1"
