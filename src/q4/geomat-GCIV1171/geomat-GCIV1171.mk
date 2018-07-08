@@ -1,4 +1,4 @@
 NAME=geomat
 OPTION=GCIV
 CODE=1171
-include ../../q4.mk
+include $(BASE_DIR)../../q4.mk
