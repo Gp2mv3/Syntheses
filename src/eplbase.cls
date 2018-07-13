@@ -7,7 +7,7 @@
 \ProvidesClass{eplbase}[2015/01/14 EPL summary class]
 
 \DeclareOption{en}{\PassOptionsToPackage{english}{babel}}
-\DeclareOption{fr}{\PassOptionsToPackage{frenchb}{babel}}
+\DeclareOption{fr}{\PassOptionsToPackage{french}{babel}}
 
 % If you want to compile without it
 \DeclareOption{skiptoc}{\newcommand{\skiptableofcontents}{}}
@@ -231,11 +231,10 @@
    \texttt{git}.
    \IfLanguageName{english}
    {If that constitutes a problem,
-   we are of course open to contributions sent by mail
-   or any other means.}
+   we are of course open to contributions sent by mail (to \href{mailto:contact.epldrive@gmail.com}{contact.epldrive@gmail.com}) or any other means.}
    {Si cela pose problème,
    nous sommes évidemment ouverts à des contributeurs envoyant leurs
-   changements par mail ou par n'importe quel autre moyen.}
+   changements par mail (à l'adresse \href{mailto:contact.epldrive@gmail.com}{contact.epldrive@gmail.com}) ou par n'importe quel autre moyen.}
 
    #9
 
