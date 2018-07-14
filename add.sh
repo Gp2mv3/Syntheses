@@ -10,7 +10,7 @@ args=("$@")
 nbr_arg=5
 section=( "summary" "notes" "exam" "test" "exercises" )
 sols="only none both"
-exammonths="Janvier Juin Août Septembre"
+exammonths="Janvier Juin Août"
 testmonths="Février Mars Avril Mai Septembre Octobre Novembre Décembre"
 # On ne peut juste pas avoir de tests pendant les mois d'examen (blocus l'empêche), ni pendant les vacances d'été.
 # months="Janvier Mars Juin Août Novembre" # Backward compatibility
@@ -131,7 +131,10 @@ if [ $# -lt $nbr_arg ] ||  [ $1 = "--help" ]; then
     where repertory is summary, notes, exam, test, exercises or all
           sol       is only: only contains the solution
                        none: only contains the statement
-                       both: contains both"
+                       both: contains both
+          month     is Janvier, Juin or Août (if exam)
+                       Février, Mars, Avril, Mai, Septembre, Octobre, Novembre or Décembre (if test)
+          minmaj    is Mineure, Majeure or All"
 
     exit
 fi
