@@ -173,22 +173,39 @@ if ! contains "${sols}" $6; then
 fi
 
 if [ $5 = exam ]; then
-    if ! contains "${exammonths}" $8; then
+    error=true
+    for s in ${exammonths}; do
+        if [ $8 = ${s} ]; then
+            error=false
+        fi
+    done
+    if $error; then
         echo "Please choose the month among \`\`${exammonths}''. If you feel one is missing, let us know. You chose \`\`$8''."
-        error=true
     fi
 fi
 
 if [ $5 = test ]; then
-    if ! contains "${testmonths}" $8; then
+    error=true
+    for s in ${testmonths}; do
+        if [ $8 = ${s} ]; then
+            error=false
+        fi
+    done
+    if $error; then
         echo "Please choose the month among \`\`${testmonths}''. If you feel one is missing, let us know. You chose \`\`$8''."
-        error=true
     fi
 fi
 
-if ! contains "${minmajs}" $9; then
-    echo "Please choose \`\`${minmajs}\'\'. You chose \`\`$9''."
+if [ $5 = test ] || [ $5 = exam ]; then
     error=true
+    for s in ${minmajs}; do
+        if [ $9 = ${s} ]; then
+            error=false
+        fi
+    done
+    if $error; then
+        echo "Please choose \`\`${minmajs}\'\'. You chose \`\`$9''."
+    fi
 fi
 
 if [ $error = true ]; then
