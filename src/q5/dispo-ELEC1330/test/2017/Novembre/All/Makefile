@@ -1,3 +1,3 @@
 SOL=both
-MINMAJ=Mineure
+MINMAJ=All
 include ../Novembre.mk
