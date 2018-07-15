@@ -77,7 +77,12 @@ function subdirectory {
     fi 
 
     if ! [ -f "$fulldir/$1/$fullname.tex" ]; then
-        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g; s/language/$language/g" ./templates/$base.tex > "$fulldir/$fullname.tex"
+    	if [ $minmaj = "All" ]; then
+    	    min=""
+    	else
+    	    min=" ("$minmaj")"
+    	fi
+        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g; s/language/$language/g; s/minmaj/$min/g;" ./templates/$base.tex > "$fulldir/$fullname.tex"
     fi
 }
 
@@ -204,7 +209,7 @@ if [ $5 = test ] || [ $5 = exam ]; then
         fi
     done
     if $error; then
-        echo "Please choose \`\`${minmajs}\'\'. You chose \`\`$9''."
+        echo "Please choose minmaj among \`\`${minmajs}''. You chose \`\`$9''."
     fi
 fi
 
