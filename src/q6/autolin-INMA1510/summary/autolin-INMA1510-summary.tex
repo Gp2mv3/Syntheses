@@ -19,7 +19,7 @@
 \usetikzlibrary{arrows,calc}
 
 \hypertitle{Automatique Linéaire}{6}{INMA}{1510}
-{Benoît Legat}
+{Benoît Legat \and Martin Braquet}
 {Denis Dochain}
 
 % http://me.berkeley.edu/~maxchen/_static/block_diagram_in_latex.pdf
@@ -771,6 +771,52 @@ Elle monte d'ailleurs beaucoup plus lentement que pour la \figuref{windup} grâc
 est négatif.
 Au final, lors $y(t) \geq r(t)$, l'intégrale est vide et $u$ ne sature plus, on repasse donc dans un système LTI et le système
 anti-emballement n'a plus d'effet.
+
+\section{Commande anticipatrice}
+On utilise une commande anticipatrice pour annuler la perturbation $v(t)$: $$U(s)=[R(s)-Y(s)]C_1(s)-V(s)C_2(s)$$
+
+On veut que $Y(s)$ ne dépende plus de $V(s)$: $Y(s)=\Omega(s)R(s)$ avec $\Omega(s)$ une fonction de transfert que l'on détermine au choix. En manipulant la relation, on obtient que 
+\[
+Y(s)=\frac{\Omega(s)}{1-\Omega(s)}[R(s)-Y(s)]
+\]
+    
+On sait aussi que $Y(s)=U(s)G(s)+V(s)H(s)$, donc 
+\[
+U(s)=\frac{Y(s)}{G(s)}-\frac{V(s)H(s)}{G(s)}=\frac{Y(s)}{G(s)}-\frac{H(s)}{G(s)}V(s)=\underbrace{\frac{1}{G(s)}\frac{\Omega(s)}{1-\Omega(s)}}_{C_1(s)}[R(s)-Y(s)]-\underbrace{\frac{H(s)}{G(s)}}_{C_2(s)}V(s)
+\]
+En choissisant ainsi ces valeurs pour $C_1(s)$ et $C_2(s)$, on annule totalement l'influence de la perturbation pour toute valeur de $v(t)$.
+
+\begin{figure}[!ht]
+  \centering
+  \begin{tikzpicture}[auto, node distance=2cm,>=latex']
+    \node [input, name=input] {};
+    \node [sum, right of=input] (sum) {};
+    \node [block, right of=input, node distance=4cm] (S) {$C_1(s)$};
+    \node [sum, right of=S, node distance=4cm] (sum3) {};
+    \node [block, right of=sum3, node distance=4cm] (G) {$G(s)$};
+    \node [sum, right of=G, node distance=2cm] (sum2) {};
+    \node [block, above of=sum2, node distance=1cm] (H) {$H(s)$};
+    \node [input, above of=H, name=pert, node distance=1.5cm] {};
+    \node [input, above of=H, name=bif2, node distance=1cm] {};
+    \node [input, above of=sum3, name=bif, node distance=2cm] {};
+    \node [block, right of=bif, node distance=2cm] (C2) {$C_2(s)$};
+    \node [output, right of=sum2] (output) {};
+    \node [below of=S] (feedback) {};
+    \draw [->] (input) -- node {$r(t)$} (sum);
+    \draw [->] (pert) -- node {$v(t)$} (H);
+    \draw [->] (H) -- (sum2);
+    \draw [->] (bif2) -- (C2);
+    \draw [->] (C2) -- (bif) -- node[pos=0.95] {$-$} (sum3);
+    \draw [->] (S) -- (sum3);
+    \draw [->] (sum3) -- node {$u(t)$} (G);
+    \draw [->] (sum) -- node {$e(t)$} (C);
+    \draw [->] (G) -- (sum2);
+    \draw [->] (sum2) -- node[name=y] {$y(t)$} (output);
+    \draw (y) |- ($(S)+(0,-1.5cm)$);
+    \draw [->] ($(S)+(0,-1.5cm)$) -| node[pos=0.95] {$-$} (sum);
+  \end{tikzpicture}
+  \caption{Schéma-block d'un système à commande anticipatrice.}
+\end{figure}
 
 \section{Matlab}
 Voici les commandes utiles sous Matlab
