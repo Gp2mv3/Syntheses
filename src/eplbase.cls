@@ -113,7 +113,7 @@
 
 % le `[e ]' rend le premier argument (#1) optionnel
 % avec comme valeur par défaut `e `
-\DeclareDocumentCommand{\basehypertitle}{ O{e } m m m m m m m m }{
+\DeclareDocumentCommand{\basehypertitle}{ O{e } m m m m m m m O{} }{
 
 % About \epltype-commands :
 % \epltypesingular refers to the name of the type of the document
@@ -132,9 +132,7 @@
             pdfsubject={#2}}
 }
 
-\ifthenelse{\equal{#8}{All}}{\def\MINMAJ{}}{\def\MINMAJ{ - {#8}}}
-
-\title{\IfLanguageName{english}{#9 of }{#9 d#1}#2 \\ Q#3 - L#4#5\MINMAJ}
+\title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 \\ Q#3 - L#4#5}
 \author{#6}
 
 \begin{document}
@@ -233,7 +231,8 @@
    \texttt{git}.
    \IfLanguageName{english}
    {If that constitutes a problem,
-   we are of course open to contributions sent by mail (to \href{mailto:contact.epldrive@gmail.com}{contact.epldrive@gmail.com}) or any other means.}
+   we are of course open to contributions sent by mail (to \href{mailto:contact.epldrive@gmail.com}{contact.epldrive@gmail.com})
+   or any other means.}
    {Si cela pose problème,
    nous sommes évidemment ouverts à des contributeurs envoyant leurs
    changements par mail (à l'adresse \href{mailto:contact.epldrive@gmail.com}{contact.epldrive@gmail.com}) ou par n'importe quel autre moyen.}

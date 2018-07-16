@@ -14,7 +14,9 @@
 \LoadClass{../../../../../../eplbase}
 \newcommand{\isepleval}{} % indique que la classe hérite de epleval
 
-\newcommand{\hypertitle}[9][e ]{%
+\ifdefined\Majmin
+
+  \newcommand{\hypertitle}[9][e ]{
   \def\ArgI{#1}
   \def\ArgII{#2}
   \def\ArgIII{#3}
@@ -22,18 +24,24 @@
   \def\ArgV{#5}
   \def\ArgVI{#6}
   \def\ArgVII{#7}
-  \def\ArgVIII{#8}
+  \ifthenelse{\equal{#8}{All}}{\def\ArgVIII{}}{\def\ArgVIII{ - #8}}
   \def\ArgIX{\string #9}
-  \BlahRelay
-}
-
-\newcommand\BlahRelay[1]{%
+  \BlahRelay}
+  
+  \newcommand\BlahRelay[1]{
   % argument 1-9 are now in
   %   \ArgI-\ArgIX
   % argument 10 is in
   %   #1
-  \basehypertitle[\ArgI]{\ArgII}{\ArgIII}{\ArgIV}{\ArgV}{\ArgIX}{#1}{\ArgVIII}{\Epltype{} \IfLanguageName{english}{of}{de} \ArgVII \space \ArgVI}
-}
+  \basehypertitle[\ArgI]{\ArgII}{\ArgIII}{\ArgIV}{\ArgV\ArgVIII}{\ArgIX}{#1}{\Epltype{} \IfLanguageName{english}{of}{de} \ArgVII \space \ArgVI}}
+  
+\else
+
+  \newcommand{\hypertitle}[9][e ]{%
+  \basehypertitle[#1]{#2}{#3}{#4}{#5}{#8}{#9}{\Epltype{} \IfLanguageName{english}{of}{de} #7 #6}
+  }
+
+\fi
 
 \ifthenelse{\isundefined{\Sol}}{\def\Sol{true}}{}
 
