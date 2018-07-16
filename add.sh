@@ -196,7 +196,7 @@ if [ $5 = test ]; then
     fi
 fi
 
-if [ $5 = test ] || [ $5 = exam ]; then
+if ([ $5 = test ] || [ $5 = exam ]) && ! $error; then
     error=true
     for s in ${minmajs}; do
         if [ $9 = ${s} ]; then
