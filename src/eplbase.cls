@@ -113,7 +113,7 @@
 
 % le `[e ]' rend le premier argument (#1) optionnel
 % avec comme valeur par défaut `e `
-\DeclareDocumentCommand{\basehypertitle}{ O{e } m m m m m m m O{} }{
+\DeclareDocumentCommand{\basehypertitle}{ O{e } m m m m m m m m }{
 
 % About \epltype-commands :
 % \epltypesingular refers to the name of the type of the document
@@ -132,7 +132,9 @@
             pdfsubject={#2}}
 }
 
-\title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 Q#3 - L#4#5}
+\ifthenelse{\equal{#8}{All}}{\def\MINMAJ{}}{\def\MINMAJ{ - {#8}}}
+
+\title{\IfLanguageName{english}{#9 of }{#9 d#1}#2 \\ Q#3 - L#4#5\MINMAJ}
 \author{#6}
 
 \begin{document}

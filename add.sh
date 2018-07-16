@@ -77,12 +77,7 @@ function subdirectory {
     fi 
 
     if ! [ -f "$fulldir/$1/$fullname.tex" ]; then
-    	if [ $minmaj = "All" ]; then
-    	    min=""
-    	else
-    	    min=" ("$minmaj")"
-    	fi
-        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g; s/language/$language/g; s/minmaj/$min/g;" ./templates/$base.tex > "$fulldir/$fullname.tex"
+        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g; s/language/$language/g; s/minmaj/$minmaj/g;" ./templates/$base.tex > "$fulldir/$fullname.tex"
     fi
 }
 
