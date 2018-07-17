@@ -141,7 +141,7 @@
 \title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 \\ Q#3 - L#4#5}
 \author{#6}
 
-\date{Dernière modification: \DATUM \vspace{0.5cm} \\ commit ID: \texttt{\small\href{https://github.com/Gp2mv3/Syntheses/commit/\COMMIT_ID}{\COMMIT_ID}}}
+\date{Compilation: \today \vspace{0.5cm} \\ Dernière modification: \DATUM \vspace{0.5cm} \\ commit ID: \texttt{\small\href{https://github.com/Gp2mv3/Syntheses/commit/\COMMIT_ID}{\COMMIT_ID}}}
 
 \begin{document}
 
@@ -254,7 +254,7 @@
         or look into the GitHub repository (see above).}
         {Ce travail est disponible sous license Creative Commons Attribution 4.0 Unported.
             Une copie de cette license est disponible sur \url{http://creativecommons.org/licenses/by/4.0/},
-        ou dans le dépot GitHub (voir ci-dessus).}
+        ou dans le dépôt GitHub (voir ci-dessus).}
     }{}
 \end{titlepage}
 }{}
