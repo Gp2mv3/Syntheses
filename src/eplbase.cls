@@ -143,7 +143,7 @@
 \title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 \\ Q#3 - L#4#5}
 \author{#6}
 
-\date{Compilation: \today \space (\currenttime) \vspace{0.5cm} \\ Dernière modification: \DATUM \vspace{0.5cm} \\ commit ID: \texttt{\small\href{https://github.com/Gp2mv3/Syntheses/commit/\COMMIT_ID}{\COMMIT_ID}}}
+\date{Compilation: \today \space (\currenttime) \vspace{0.5cm} \\ Dernière modification: \DATUM \vspace{0.5cm} \texttt{\small\href{https://github.com/Gp2mv3/Syntheses/commit/\COMMIT_ID}{\COMMIT_ID}}}
 
 \begin{document}
 
