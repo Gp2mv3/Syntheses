@@ -100,6 +100,12 @@
 \typeout{You have an old version of Tikz: \pgfversion, try to update some time ;)}
 \fi
 
+\ifdefined\DATUM
+\else
+    \def\DATUM{\today}
+    \def\COMMIT_ID{}
+\fi
+
 \RequirePackage{pdfpages}
 %\usepackage{subfig}
 % subfig is deprecated see
@@ -134,6 +140,8 @@
 
 \title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 \\ Q#3 - L#4#5}
 \author{#6}
+
+\date{\DATUM \vspace{0.5cm} \\ commit ID: \texttt{\small\COMMIT_ID}}
 
 \begin{document}
 
