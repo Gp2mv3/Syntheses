@@ -141,7 +141,7 @@
 \title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 \\ Q#3 - L#4#5}
 \author{#6}
 
-\date{\DATUM \vspace{0.5cm} \\ commit ID: \texttt{\small\COMMIT_ID}}
+\date{Dernière modification: \DATUM \vspace{0.5cm} \\ commit ID: \texttt{\small\COMMIT_ID}}
 
 \begin{document}
 
