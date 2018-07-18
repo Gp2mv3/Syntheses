@@ -103,28 +103,28 @@
 % Execute bash commands: be sure to have bashful.sty on your pc!
 \usepackage{bashful}
 
-\ifdefined\NOINFOS
-
-\def\DATUM{\today}
-\def\COMMIT_ID{}
-
-\else
+\ifdefined\COMMITINFOS
 
 \ifdefined\DATUM
 \else
 \bash[stdoutFile=\jobname-date.stdout]
-git log -n 1 --pretty=format:\%ai "$(basename $(ls *.stderr) .stderr).tex" | sed -r 's/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([^ ]+)/\3\/\2\/\1 (\4:\5\)/'
+echo $(git log -n 1 --pretty=format:\%ai "$(basename $(ls *.stderr) .stderr).tex" | sed -r 's/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([^ ]+)/\3\/\2\/\1 (\4\:\5\)/')
 \END
 \def\DATUM{\input{\jobname-date.stdout}}
 \fi
 
-\ifdefined\COMMIT_ID
+\ifdefined\COMMITID
 \else
 \bash
-git log -1 --pretty=format:\%h "$(basename $(ls *.stderr) .stderr).tex"
+echo $(git log -1 --pretty=format:\%h "$(basename $(ls *.stderr) .stderr).tex")
 \END
-\def\COMMIT_ID{\bashStdout}
+\def\COMMITID{\bashStdout}
 \fi
+
+\else
+
+\def\DATUM{\today}
+\def\COMMITID{}
 
 \fi
 
@@ -165,7 +165,7 @@ git log -1 --pretty=format:\%h "$(basename $(ls *.stderr) .stderr).tex"
 \title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 \\ Q#3 - L#4#5}
 \author{#6}
 
-\date{Compilation: \today \space (\currenttime) \vspace{0.5cm} \\ \IfLanguageName{english}{Last modification}{Dernière modification}: \DATUM \quad \texttt{\href{https://github.com/Gp2mv3/Syntheses/commit/\COMMIT_ID}{\COMMIT_ID}}}
+\date{Compilation: \today \space (\currenttime) \vspace{0.5cm} \\ \IfLanguageName{english}{Last modification}{Dernière modification}: \DATUM \quad \texttt{\href{https://github.com/Gp2mv3/Syntheses/commit/\COMMITID}{\COMMITID}}}
 
 \begin{document}
 
