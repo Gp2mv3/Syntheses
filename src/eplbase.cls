@@ -100,10 +100,32 @@
 \typeout{You have an old version of Tikz: \pgfversion, try to update some time ;)}
 \fi
 
+% Execute bash commands: be sure to have bashful.sty on your pc!
+\usepackage{bashful}
+
+\ifdefined\NOINFOS
+
+\def\DATUM{\today}
+\def\COMMIT_ID{}
+
+\else
+
 \ifdefined\DATUM
 \else
-    \def\DATUM{\today}
-    \def\COMMIT_ID{}
+\bash[stdoutFile=\jobname-date.stdout]
+git log -n 1 --pretty=format:\%ai "$(basename $(ls *.stderr) .stderr).tex" | sed -r 's/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([^ ]+)/\3\/\2\/\1 (\4:\5\)/'
+\END
+\def\DATUM{\input{\jobname-date.stdout}}
+\fi
+
+\ifdefined\COMMIT_ID
+\else
+\bash
+git log -1 --pretty=format:\%h "$(basename $(ls *.stderr) .stderr).tex"
+\END
+\def\COMMIT_ID{\bashStdout}
+\fi
+
 \fi
 
 \RequirePackage{pdfpages}
@@ -143,7 +165,7 @@
 \title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 \\ Q#3 - L#4#5}
 \author{#6}
 
-\date{Compilation: \today \space (\currenttime) \vspace{0.5cm} \\ Dernière modification: \DATUM \vspace{0.5cm} \texttt{\small\href{https://github.com/Gp2mv3/Syntheses/commit/\COMMIT_ID}{\COMMIT_ID}}}
+\date{Compilation: \today \space (\currenttime) \vspace{0.5cm} \\ \IfLanguageName{english}{Last modification}{Dernière modification}: \DATUM \quad \texttt{\href{https://github.com/Gp2mv3/Syntheses/commit/\COMMIT_ID}{\COMMIT_ID}}}
 
 \begin{document}
 
