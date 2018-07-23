@@ -16,33 +16,28 @@
 
 \lstset{language={C}}
 
-\part{Le language \clang{}}
+\part{Le langage \clang{}}
 \section{Normes}
-Depuis sa création par Dennis Ritchie en 1973,
-le \clang{} a pas mal évolué.
-Il existe plusieurs normes dont la norme \clang99 qui permet
-de faire pas mal de nouvelles choses.
+Depuis sa création par Dennis Ritchie en 1973, le \clang{} a pas mal évolué. Il
+existe plusieurs normes dont la norme \clang99 qui permet de faire pas mal de
+nouvelles choses.
 
-Pour demander à \lstinline[language=bash]|gcc|
-de compiler du code avec \clang99,
-il faut lui donner l'argument \lstinline[language=bash]|--std=c99|.
+Pour demander à \lstinline[language=bash]|gcc| de compiler du code avec
+\clang99, il faut lui donner l'argument \lstinline[language=bash]|--std=c99|.
 
 \section{Les pointeurs}
-En \clang{}, les variables sont passées par \emph{valeur},
-pour partager une variable sans la copier, on utilise les pointeurs.
-Un pointeur contient l'adresse \emph{virtuelle} d'un endroit en mémoire.
-\begin{lstlisting}
-int n = 0;
-int *i = &n;
-printf("%d == n\n", *i, n); // imprime 0 == 0
-\end{lstlisting}
+En \clang{}, les variables sont passées par \emph{valeur}, pour partager une
+variable sans la copier, on utilise les pointeurs. Un pointeur contient
+l'adresse \emph{virtuelle} d'un endroit en mémoire.
+
+\lstinputlisting{code/pointer1.c}
+
 On doit aussi donner ce vers quoi pointe l'adresse (ici, un \lstinline|int|)
 pour permettre au compilateur d'effectuer de l'arithmétique des pointeurs.
 En effet, lorsqu'on fait
-\begin{lstlisting}
-int *p = 0x10;
-p++;
-\end{lstlisting}
+
+\lstinputlisting{code/pointer_arith.c}
+
 \lstinline|p| n'est pas incrémenté de 1 mais de la taille d'un
 \lstinline|int|, c'est à dire \lstinline|sizeof(int)|.
 
@@ -50,11 +45,7 @@ Par convention, \lstinline|NULL| est la valeur d'un pointeur qui
 ne pointe pas encore vers de la mémoire allouée.
 Il vaut donc mieux toujours donner cette valeur à un pointeur qui ne pointe
 pas vers quelque chose de telle sorte que
-\begin{lstlisting}
-if (p != NULL) {
-  free(p);
-}
-\end{lstlisting}
+\lstinputlisting{code/pointer_free.c}
 ne libère jamais de la mémoire non allouée.
 
 \subsection{Le heap}
@@ -71,23 +62,10 @@ elle risque d'être remplie et \lstinline|malloc| renverra alors
 \lstinline|NULL|.
 \lstinline|malloc| renvoie un pointeur de type \lstinline|void*|
 pour rester générique.
-Il vaut mieux ne pas le caster dans le type voulu, car cette conversion est implicite.
-\begin{lstlisting}
-int n;
-printf("Combien voulez-vous de int (%d bytes par int) ? : ",
-       sizeof(int));
-scanf("%d", &n);
-// On s'alloue n int consecutifs dans la heap
-int *p = malloc(n * sizeof(int));
-if (p == NULL) {
-  // n est negatif, nul ou trop grand
-  printf("Vous avez ete un peut trop optimiste il me semble :)\n");
-}
-// utilisation de p
-// On n'oublie pas de liberer la memoire
-free(p);
-p = NULL;
-\end{lstlisting}
+Il vaut mieux ne pas le caster dans le type voulu, car cette conversion est
+implicite (contrairement au \clang++).
+
+\lstinputlisting{code/malloc.c}
 
 \lstinline|malloc| ne met pas de valeur dans la mémoire qu'elle alloue
 et \lstinline|free| ne change pas la valeur de \lstinline|p|
@@ -98,71 +76,22 @@ Il existe aussi la fonction \lstinline|calloc| qui contrairement à
 \lstinline|malloc| initialise tous les bytes à 0.
 \lstinline|calloc| est donc moins rapide que \lstinline|malloc| mais
 met tous les bytes à 0 de manière très efficace.
-\begin{lstlisting}
-#define N 42
-int *p = malloc(N * sizeof(int));
-for (int i = 0; i < N; i++) {
-  p[i] = 0;
-}
-// est plus lent que
-int *p = calloc(N, sizeof(int));
-\end{lstlisting}
+
+\lstinputlisting{code/calloc.c}
 
 \section{Structures}
 On peut créer des structures qui sont une sorte de classes sans méthodes.
 On accède aux éléments à l'aide de \lstinline|.|, \lstinline|a.b|
 est l'élément au label \lstinline|b| dans la variable \lstinline|a|.
 On a un raccourci pour \lstinline|(*a).b| qui est \lstinline|a->b|.
-\begin{lstlisting}
-struct point {
-  int x;
-  int y;
-}
-int move (struct point *p, struct point delta) {
-  (*p).x += delta.x;
-  p->y += delta.y;
-}
-int main () {
-  struct point d;
-  d.x = 1;
-  d.y = 2;
-  struct point *triangle = malloc(3 * sizeof(struct point));
-  printf("Before\n");
-  for (int i = 0; i < 3; i++) {
-    triangle[i].x = i;
-    triangle[i].x = i+1;
-    printf("(%d, %d)\n", triangle[i].x, triangle[i].y);
-  }
-  printf("After\n");
-  for (int i = 0; i < 3; i++) {
-    move(triangle[i], d);
-    printf("(%d, %d)\n", triangle[i].x, triangle[i].y);
-  }
-  free(triangle);
-  return 0;
-}
-\end{lstlisting}
+\lstinputlisting{code/struct_point.c}
 
 \section{Fonctions}
 En \clang{}, les variables sont passées par \emph{valeur}.
 Il n'y a jamais de passage par référence comme en \java{} pour les objets
 ou comme pour le \oz{}.
 Par exemple,
-\begin{lstlisting}
-void inc1 (int a) {
-  a++;
-}
-void inc2 (int *b) {
-  (*b)++;
-}
-void foo () {
-  int n = 0;
-  inc1(n);
-  printf("%d\n", n); // affiche 0
-  inc2(&n);
-  printf("%d\n", n); // affiche 1
-}
-\end{lstlisting}
+\lstinputlisting{code/pass_by_value.c}
 Comme on fait un passage par valeur,
 \lstinline|a| vaut 0 et changer \lstinline|a| ne change pas \lstinline|n|.
 Par contre, \lstinline|b| contient l'adresse de \lstinline|n| donc modifier
@@ -205,29 +134,9 @@ initialisées.
 À partir de la norme \clang99,
 on peut déclarer des variables à l'intérieur
 de n'importe quel bloc.
-\begin{lstlisting}
-int main () {
-  {
-    int i = 0;
-  }
-  i = 1; // ne compile pas
-  return 0;
-}
-\end{lstlisting}
+\lstinputlisting{code/loop1.c}
 ce qui permet d'écrire
-\begin{lstlisting}
-int main () {
-  int sum = 0;
-  for (int i = 0; i < 5; i++) {
-    sum += i;
-  }
-  return 0;
-}
-\end{lstlisting}
-
-
-
-
+\lstinputlisting{code/loop2.c}
 
 \section{Types de données}
 \subsection{Nombres entiers}
@@ -280,12 +189,7 @@ Il est intéressant de noter que
 \subsection{Les tableaux}
 En \clang{}, les tableaux permettent d'agréger des données d'un même type.
 Exemple :
-\begin{lstlisting}
-#define N 10
-int vecteur[N];
-int matriceC[N][N];
-int matriceR[N][2*N];
-\end{lstlisting}
+\lstinputlisting{code/array.c}
 
 Attention : il n'est pas possible de récupérer la taille d'un tableau à partir de la variable (ex \java{} : \texttt{coord1.length}).
 Il faut donc toujours passer cette information en plus du tableau (ex : \texttt{main(\textbf{int argc} , ...)}).
@@ -312,55 +216,19 @@ Il faut faire attention à ne jamais le ``dépasser'' car le \clang{} n'a pas de
 
 \subsection{Les pointeurs}
 Un \textbf{pointeur} est définit comme étant une variable content l'adresse d'une autre variable.
-\begin{lstlisting}
-int i=1;				// entier
-int *ptr_i;				// pointeur vers un entier
-
-ptr_i=&i;				// initialisation du pointeur, a l'adresse de i
-*ptr_i = *(ptr_i)+1252;	// changement du contenu de la memoire pointee par ptr_i
-\end{lstlisting}
+\lstinputlisting{code/pointer2.c}
 
 \subsection{Les structures}
 En \clang{}, les structures permettent de définir des données plus complexes.
 La langage \clang{} permet la définition de structures qui combinent différents types de données simples ou structurés.
 Les structures permettent de facilement regrouper des données qui sont logiquement reliées entre elles et doivent être manipulées en même temps.
-\begin{lstlisting}
-// Definition d'une structure
-struct student {
-  int matricule ;
-  char prenom [ 2 0 ] ;
-  char nom [ 3 0 ] ;
-};
-// Declaration + Initialisation
-struct student linus = { 1 , "Linus" , "Torvalds" } ;
-struct student richard = { .matricule = 2 , .prenom = "Richard" , .nom = "Stallman" } ;
-struct student evil;
-evil.noma = 3;
-evil.prenom = "Bill";
-evil.nom = "Gates";
-\end{lstlisting}
-
+\lstinputlisting{code/struct_student.c}
 
 \texttt{typedef} permet de redéfinir le nom des types de données.
-\begin{lstlisting}
-// Definition de nouveaux noms pour des types existants
-typedef int Entier;
-typedef struct student Etudiant;
-// Declaration de variable utilisant ces nouveaux noms
-Entier matricule = 4;
-Etudiant mark = {matricule , "Mark" , "Shuttleworth" };
-\end{lstlisting}
+\lstinputlisting{code/typedef.c}
 Les données d'une structure peuvent être accédées via l'opérateur "\texttt{.}" (point).
 Mais étant donné que les pointeurs sont souvent utilisés lors de la manipulation de structures, une notation plus pratique que \texttt{(*ptr).elem} existe : \texttt{ptr->elem}.
-\begin{lstlisting}
-//Avec l'operateur '.'
-printf("[%d] %s %s\n", mark.matricule, mark.nom, mark.prenom);
-//Avec l'operateur '->'
-Etudiant *e = &evil;
-printf("[%d] %s %s\n" e->matricule, e->nom, e->prenom);
-// qui est identique a :
-printf("[%d] %s %s\n", (*e).matricule, (*e).nom, (*e).prenom);
-\end{lstlisting}
+\lstinputlisting{code/pointer_arrow.c}
 
 \section{Compléments en langage \clang{}}
 \subsection{Les fonctions}
@@ -438,17 +306,7 @@ Ces conversions sont possibles entre les types primitifs et les pointeurs.
 
 Attention : Contrairement au compilateur \java{}, le compilateur \clang{} n'émet pas toujours de message de \textit{warning} lors de l'utilisation de typecasts qui risquent d'engendrer une perte de précision. Un exemple de typecast implicite est celui fait par les fonctions \texttt{malloc}.
 
-\begin{lstlisting}[emph={unType,unAutreType,Etudiant},emphstyle={\color{blue}\bfseries}]
-// Exemple de typecast explicite
-unType a = ... ;
-unAutreType b = (unAutreType) a;
-
-// Exemple de typecast implicite
-Etudiant * e;
-e = malloc(sizeof(Etudiant)); \\ Le typecast est implicite
-\end{lstlisting}
-
-
+\lstinputlisting[emph={unType,unAutreType,Etudiant},emphstyle={\color{blue}\bfseries}]{code/typecast.c}
 
 \subsection{Les pointeurs}
 En \clang{}, il est possible de définir des pointeurs vers n'importe quel type d'information qui est manipulé par un programme \clang{}.
@@ -555,7 +413,7 @@ Mais les inconvénients par rapport à \texttt{const} sont :
 \subsection{Organisation de la mémoire}
 \begin{wrapfigure}{r}{0.3\textwidth}
   \vspace{-0.5cm}
-  \includegraphics[width=0.3\textwidth]{mem}
+  \includegraphics[width=0.3\textwidth]{img/mem.png}
   \caption{\label{fig:mem} Organisation d'un programme Linux en mémoire}
   \vspace{-2.5cm}
 \end{wrapfigure}
@@ -581,28 +439,7 @@ La troisième zone appelée \textbf{\textit{segment des données non initialisé
 Cette zone en mémoire est initialisée à zéro par l'OS au démarrage du programme.
 C'est dans cette zone qu'on stockera les valeurs de la variable \texttt{g} et des tableaux \texttt{array} et \texttt{msg} de l'exemple ci-dessous :
 
-\begin{lstlisting}
-#define MSG_LEN 10
-int g;   // initialise par le compilateur
-int g_init=1252;
-const int un=1;
-int tab[3]={1,2,3};
-int array[10000];
-char cours[]="SINF1252";
-char msg[MSG_LEN]; // initialise par le compilateur
-
-int main(int argc, char *argv[]) {
-  int i;
-  printf("g est a l'adresse %p et initialisee a %d\n",&g,g);
-  printf("msg est a l'adresse %p contient les caracteres :",msg);
-  for(i=0;i<MSG_LEN;i++)
-  printf("%x ",msg[i]);
-  printf("\n");
-  printf("Cours est a l'adresse %p et contient : %s \n",&cours,cours);
-  return(EXIT_SUCCESS);
-}
-\end{lstlisting}
-
+\lstinputlisting{code/non_init_data.c}
 
 \paragraph{Initialisation des variables} En \clang{}, il faut être attentif à bien initialiser l'ensemble des variables utilisées dans un programme car le compilateur \clang{} est très permissif (contrairement au compilateur \java{}).
 Le compilateur \clang{} n'initialise pas les variables locales à zéro (pour un gain de performance), on ne peut donc pas faire d'hypothèse sur la valeur d'une variable non initialisée.
@@ -723,7 +560,7 @@ Cette erreur est signalée lors de la compilation par \texttt{gcc} sous la forme
 \section{Organisation des ordinateurs}
 \begin{wrapfigure}{r}{0.3\textwidth}
   \vspace{-0.5cm}
-  \includegraphics[width=0.3\textwidth]{vanNeumann}
+  \includegraphics[width=0.3\textwidth]{img/vanNeumann}
   \caption{\label{fig:vanNeumann}Modèle de von Neumann.}
 \end{wrapfigure}
 
@@ -754,8 +591,8 @@ Ainsi, un processeur qui utilise des adresses sur 32 bits n'est pas capable phys
 
 
 \begin{wrapfigure}{r}{0.5\textwidth}
-  \vspace{-0.5cm}
-  \includegraphics[width=0.5\textwidth]{mem2}
+  %\vspace{-0.5cm}
+  \includegraphics[width=0.5\textwidth]{img/mem2}
   \caption{\label{fig:vanNeumann}Architecture d'un ordinateur actuel.}
 \end{wrapfigure}
 \paragraph{Approche complexe} En pratique, l'organisation d'un ordinateur actuel est plus complexe que le modèle de von Neumann.
@@ -829,7 +666,7 @@ Une mémoire cache est une mémoire de faible capacité mais rapide qui est capa
 Cette mémoire cache sert d'interface entre le processeur et la mémoire principale.
 Toute demande d'accès à la mémoire principale passe par la mémoire cache comme illustré ci-dessous : \\
 \begin{center}
-  \includegraphics[width=0.5\textwidth]{memcache1}
+  \includegraphics[width=0.5\textwidth]{img/memcache1}
 \end{center}
 
 \subsubsection*{Mémoire cache}
@@ -843,7 +680,7 @@ Il existe deux types de localité :
 \end{itemize}
 \begin{wrapfigure}{r}{0.4\textwidth}
   \vspace{-0.5cm}
-  \includegraphics[width=0.45\textwidth]{memhierarchie}
+  \includegraphics[width=0.45\textwidth]{img/memhierarchie}
   \caption{\label{fig:memhierarchie}Hiérarchie de la mémoire.}
   \vspace{-0.5cm}
 \end{wrapfigure}
@@ -943,9 +780,8 @@ Les instructions de la famille\footnote{On parle de famille d'instructions car i
 Exemple : \texttt{movb} permet le transfert d'un byte tandis que \texttt{movl} permet le transfert d'un mot de 32 bits.} \texttt{mov} permettent de déplacer des données entre registres ou depuis la mémoire vers un registre ou d'un registre vers une zone mémoire.\\
 
 Syntaxe générale :
-\begin{lstlisting}[language={[x86masm]Assembler}]
-mov src, dest ; deplacement de src vers dest
-\end{lstlisting}
+\lstinputlisting[language={[x86masm]Assembler}]{code/mov.asm}
+
 Il existe une instruction de la famille \texttt{mov} pour chaque type de donnée pouvant être déplacé : \texttt{movb}, \texttt{movw} et \texttt{movl} qui permettent de déplacer respectivement : 1 byte, un mot de 16 bits, et un mot de 32 bits (voir table \ref{table:ia32types}).
 \\
 
@@ -966,37 +802,7 @@ Les différents modes sont :
     Ce mode d'adressage joue un rôle important dans le fonctionnement de la pile.
 \end{itemize}
 
-\begin{lstlisting}[language={[x86masm]Assembler}, emph={\$,\%,(,),movl},emphstyle={\color{blue}\bfseries}]
-; EXEMPLE MODE REGISTRE
-movl %eax, %ebx	; deplacement de %eax vers %ebx
-movl %ecx, %ecx	; aucun effet
-
-; EXEMPLE MODE IMMEDIAT
-movl $0, %eax		; initialisation de %eax a 0
-movl $1252, %ecx	; initialisation de %ecx a 1252
-
-; EXEMPLE MODE ABSOLU
-movl 0x04, %eax		; place la valeur contenue a l'adresse 0x04 en memoire dans %eax
-movl $1252,	%ecx	; initialisation de %ecx a 1252
-movl %ecx, 0x08		; remplace le contenu de la memoire a l'adresse 0x08 par 1252
-
-; EXEMPLE MODE INDIRECT
-movl $0x08, %eax	; place la valeur 0x08 dans %eax
-movl (%eax), %ecx	; place la valeur se trouvant a l'adresse qui est dans
-; %eax dans le registre %ecx
-movl 0x10, %eax		; place la valeur se trouvant a l'adresse 0x10 dans %eax
-movl %ecx, (%eax)	; place le contenu de %ecx a l'adresse qui est contenue
-; dans %eax(0x10)
-
-; EXEMPLE MODE AVEC UNE BASE ET UN DEPLACEMENT
-movl $0x08,%eax		; place la valeur 0x08 dans %eax
-movl 0(%eax), %ecx	; place la valeur se trouvant a l'adresse 0x08 dans le
-; registre %ecx
-movl 4(%eax), %ecx	; place la valeur se trouvant a l'adresse 0x0C (=0x08+4) dans
-; le registre %ecx
-movl -8(%eax), %ecx	; place la valeur se trouvant a l'adresse 0x00 (=0x08-8) dans
-; le registre %ecx
-\end{lstlisting}
+\lstinputlisting[language={[x86masm]Assembler}, emph={\$,\%,(,),movl},emphstyle={\color{blue}\bfseries}]{code/movl.asm}
 %$
 L'architecture IA32 supporte encore d'autres modes d'adressage (non vus dans le cours).
 Une autre instruction permettant de déplacer de l'information est l'instruction \texttt{leal} (\textit{load effective address}).
@@ -1241,7 +1047,7 @@ Lorsqu'un programme est décomposé en plusieurs threads, ceux-ci doivent en gé
 
 \begin{wrapfigure}{r}{0.4\textwidth}
   \vspace{-0.5cm}
-  \includegraphics[width=0.5\textwidth]{memthread}
+  \includegraphics[width=0.5\textwidth]{img/memthread}
   \caption{\label{fig:memthread}Organisation de la mémoire après la création d'un thread POSIX.}
   \vspace{-0.7cm}
 \end{wrapfigure}
@@ -1272,7 +1078,7 @@ Pour Amdahl, si le temps d'exécution d'un programme séquentiel est $T$ et qu'u
 Cette loi fixe une limite théorique difficile à atteindre et suppose que la parallélisation est parfaite c'est-à-dire que la création et la terminaison des threads n'ont aucun coût en performance.
 %\begin{wrapfigure}{r}{0.4\textwidth}
 %\vspace{-0.7cm}
-%\includegraphics[width=0.5\textwidth]{amdahl}
+%\includegraphics[width=0.5\textwidth]{img/amdahl}
 %\caption{\label{fig:amdahl}Illustration de la loi d'Amdahl}
 %\vspace{-0.7cm}
 %\end{wrapfigure}
@@ -1346,7 +1152,7 @@ La figure \ref{fig:appelsbloquant} représente les différents états d'un threa
 Lorsqu'un thread est créé (avec \texttt{pthread\_create}), il est placé dans l'état \textit{Ready}. \\
 \begin{wrapfigure}{r}{0.45\textwidth}
   \vspace{-0.5cm}
-  \includegraphics[width=0.55\textwidth]{appelsbloquant}
+  \includegraphics[width=0.55\textwidth]{img/appelsbloquant}
   \caption{\label{fig:appelsbloquant}États d'un thread d'exécution.}
   \vspace{-0.5cm}
 \end{wrapfigure}
@@ -1387,32 +1193,7 @@ Ce n'est pas un mécanisme utilisable\footnote{Bien que ce soit parfois utilisé
 Cette solution permet à plusieurs threads de coordonner leur exécution de façon à éviter une violation de section critique en utilisant uniquement des variables accessibles à tous les threads.
 La solution est applicable à $N$ threads mais nous nous limiterons à 2 threads.
 
-\begin{lstlisting}
-#define A 0
-#define B 1
-int flag[];
-flag[A]=false;
-flag[B]=false;
-// thread A
-void* threadA(void* ){
-  flag[A]=true;
-  turn=B;
-  while((flag[B]==true)&&(turn==B)) { /* loop */ }
-  section_critique();
-  flag[A]=false;
-  // ...
-}
-// thread B
-void* threadB(void* ){
-  flag[B]=true;
-  turn=A;
-  while((flag[A]==true)&&(turn==A))
-  { /* loop */ }
-  section_critique();
-  flag[B]=false;
-  // ...
-}
-\end{lstlisting}
+\lstinputlisting{code/peterson.c}
 
 Pour arriver à cet algorithme, les pages 114 à 117 du cours expliquent les différents raisonnements et problèmes qui y sont liés.
 Il faut être attentif au \textit{livelock} et aux conditions énoncées précédemment pour résoudre l'exclusion mutuelle.
@@ -1439,24 +1220,7 @@ Lorsqu'un thread veux exécuter sa section critique, il place la valeur \texttt{
 Si la valeur de son registre est 0, c'est qu'il peut rentrer dans sa section critique, sinon c'est qu'un autre thread est dans la section critique.
 Pour quitter la section critique il suffit ensuite de placer la valeur \texttt{0} en utilisant de nouveau \texttt{xchg}.
 Le code ci-dessous montre un exemple.
-\begin{lstlisting}[language={[x86masm]Assembler}, emph={\$,\%,(,),movl},emphstyle={\color{blue}\bfseries}]
-lock:                 ; etiquette, variable
-.long   0             ; initialisee a 0
-
-enter:
-movl    $1, %eax      ; %eax=1
-xchgl   %eax, (lock)  ; instruction atomique, echange (lock) et %eax
-; apres execution, %eax contient la donnee qui etait
-; dans lock et lock la valeur 1
-testl   %eax, %eax    ; met le flag ZF a TRUE si %eax contient 0
-jnz     enter         ; retour a enter: si ZF est TRUE
-ret
-
-leave:
-mov     $0, %eax      ; %eax=0
-xchgl   %eax, (lock)  ; instruction atomique
-ret
-\end{lstlisting}
+\lstinputlisting[language={[x86masm]Assembler}, emph={\$,\%,(,),movl},emphstyle={\color{blue}\bfseries}]{code/xchg.asm}
 
 \subsubsection*{Coordination par \textit{mutex}}
 L'algorithme de Peterson et l'utilisation d'instructions atomiques sont des mécanismes de base permettant de résoudre le problème de l'exclusion mutuelle.
@@ -1492,7 +1256,7 @@ La propriété de vivacité est respectée si chaque thread exécute \texttt{pth
 \subsubsection{Le problème des philosophes et \textit{deadlock}}
 \begin{wrapfigure}{r}{0.2\textwidth}
   \vspace{-0.5cm}
-  \includegraphics[width=0.2\textwidth]{philosophes}
+  \includegraphics[width=0.2\textwidth]{img/philosophes}
   \caption{\label{fig:philosophes}Problème des philosophes.}
 \end{wrapfigure}
 Le problème des philosophes est résumé sur la figure \ref{fig:philosophes}.
@@ -1510,29 +1274,7 @@ Les tests successifs ne permettent pas toujours de détecter les \textit{deadloc
 \paragraph{Solution}
 Une solution au problème des philosophes serait d'ordonner les baguettes (leur assigner un numéro par exemple), et de faire en sorte que les philosophes les prennent toujours dans le même ordre comme présenté ci-dessous.
 Cette solution fonctionne, néanmoins, il faut être conscient qu'avec cette solution il est possible qu'un seul philosophe mange alors que tous les autres attendent, ce qui est une perte de performance énorme lorsqu'il y a beaucoup de philosophes!
-\begin{lstlisting}
-void* philosophe ( void* arg )
-{
-  int *id=(int *) arg;
-  int left = *id;
-  int right = (left + 1) % PHILOSOPHES;
-  while(true) {
-    // philosophe pense
-    if(left<right) {
-      pthread_mutex_lock(&baguette[left]);
-      pthread_mutex_lock(&baguette[right]);
-    }
-    else {
-      pthread_mutex_lock(&baguette[right]);
-      pthread_mutex_lock(&baguette[left]);
-    }
-    mange(*id);
-    pthread_mutex_unlock(&baguette[left]);
-    pthread_mutex_unlock(&baguette[right]);
-  }
-  return (NULL);
-}
-\end{lstlisting}
+\lstinputlisting{code/philosopher.c}
 
 
 Ce problème des philosophes est à l'origine de la règle de bonne pratique suivante : pour éviter les \textit{deadlocks}, il est nécessaire d'ordonnancer tous les mutex utilisés par le programme dans un ordre strict.
@@ -1570,20 +1312,7 @@ Lorsque ces opérations doivent être effectuées dans des threads différents, 
 Ce problème est rencontré lorsqu'une application découpée en $N$ threads doit attendre la fin de l'exécution d'une première phase dans les $N$ threads avant de pouvoir passer à la suite.
 Chaque thread peut être résumé par une première phase, suivie d'un endroit de ``rendez-vous'' pour tous les threads et d'une deuxième phase.
 La solution est la suivante :
-\begin{lstlisting}
-premiere_phase();
-
-pthread_mutex_lock(&mutex);		//section critique pour count
-count++;
-if(count==N) {					// si tous les threads sont arrives
-  sem_post(&rendezvous);
-}
-pthread_mutex_unlock(&mutex);	//fin de section critique
-sem_wait(&rendezvous);			//attente a la "barriere"
-sem_post(&rendezvous);			//liberation d'un autre thread en attente
-
-seconde_phase();
-\end{lstlisting}
+\lstinputlisting{code/rdv.c}
 Cette solution permet de résoudre le problème du rendez-vous avec un nombre fixe de threads\footnote{Certaines implémentations de la librairie threads POSIX implémentent une barrière similaire à la solution ci-dessus.
   Une barrière est une structure de données de type \texttt{pthread\_barrier\_t}.
   Elle s'initialise en utilisant la fonction \texttt{pthread\_barrier\_init} qui prend 3 arguments : un pointeur vers une barrière, des attributs optionnels et le nombre de threads qui doivent avoir atteint la barrière pour que celle-ci s'ouvre.
@@ -1598,47 +1327,13 @@ Soit une application découpée en deux types de threads (dont le nombre n'est p
 \end{itemize}
 Ces deux types de threads communiquent en utilisant un buffer qui a une capacité limitée à $N$ \textit{slots} comme sur la figure \ref{fig:prodcons}
 \begin{figure}[h!]
-  \centering\includegraphics[width=0.5\textwidth]{prodcons}
+  \centering\includegraphics[width=0.5\textwidth]{img/prodcons}
   \caption{\label{fig:prodcons}Problème des producteurs-consommateurs.}
 \end{figure}
 Le buffer étant partagé, il est nécessaire d'utiliser un mutex pour protéger son accès.
 Un producteur ne doit être bloqué que si tout le buffer est rempli et inversement, un consommateur ne doit être bloqué que si tout le buffer est vide.
 Le problème peut être résolu avec 2 sémaphores comme le montrent les extraits de code ci-dessous.
-\begin{lstlisting}
-...
-// Dans la fonction principale : initialisation
-#define N 10 // nbre de slots du buffer
-pthread_mutex_t mutex; 	sem_t empty; sem_t full;
-
-pthread_mutex_init(&mutex, NULL);
-sem_init(&empty, 0 , N);  // empty compte le nbre de slot vide => N = buffer vide
-sem_init(&full, 0 , 0);   // full compte le nbre de slot rempli => 0 = buffer vide
-...
-// Le Producteur
-void producer(void){
-  int item;
-  while(true){
-    item=produce(item);
-    sem_wait(&empty); 		     // attente d'un slot libre
-    pthread_mutex_lock(&mutex);  	// section critique
-    insert_item();
-    pthread_mutex_unlock(&mutex);	// fin de section critique
-    sem_post(&full); 			// il y a un slot rempli en plus
-  }
-}
-
-// Le Consommateur
-void consumer(void){
-  int item;
-  while(true){
-    sem_wait(&full); 			// attente d'un slot rempli
-    pthread_mutex_lock(&mutex); 	// section critique
-    item=remove(item);
-    pthread_mutex_unlock(&mutex);
-    sem_post(&empty);              // il y a un slot libre en plus
-  }
-}
-\end{lstlisting}
+\lstinputlisting{code/prodcons.c}
 
 \paragraph{Problème des \textit{readers-writers}}~\\
 Soit de nouveau une application découpé en deux types de threads (dont le nombre n'est pas connu ni fixe à priori) :
@@ -1649,61 +1344,7 @@ Soit de nouveau une application découpé en deux types de threads (dont le nomb
 Plusieurs \textit{readers} peuvent lire en même temps, mais lorsqu'un \textit{writer} modifie les données, il ne peut y avoir d'autres \textit{writers} ni de \textit{readers} qui utilisent les données.
 Lorsqu'on cherche une solution à ce problème, il faut faire attention à ne pas donner priorité aux \textit{readers} (ce qui serait plus simple).
 Une solution au problème est présentée dans les extraits de code ci-dessous\footnote{Certaines implémentations de la librairie threads POSIX contiennent des \textit{read-write} \textit{locks} qui s'appuient sur des sémaphores pour résoudre le problème des \textit{readers-writers}\dots}.
-\begin{lstlisting}
-/* Initialisation */
-pthread_mutex_t mutex_readcount; 	        // protege readcount
-pthread_mutex_t mutex_writecount; 	        // protege writecount
-pthread_mutex_t z; 				        // un seul reader en attente
-sem_t wsem;       				        // acces exclusif a la db
-sem_t rsem;					        // pour bloquer des readers
-int readcount=0;
-int writecount=0;
-sem_init(&wsem, 0, 1);
-sem_init(&rsem, 0, 1);
-
-/* Writer */
-while(true){
-  think_up_data();
-  pthread_mutex_lock(&mutex_writecount)   // section critique - writecount
-  writecount=writecount+1;
-  if(writecount==1) {			       // si c'est le premier writer qui arrive
-    sem_wait(&rsem);
-  }
-  pthread_mutex_unlock(&mutex_writecount);// fin de la section critique - writecount
-  sem_wait(&wsem);					  // section critique, un seul writer a la fois
-  write_database();
-  sem_post(&wsem);				       // fin de la section critique
-  pthread_mutex_lock(&mutex_writecount);  // section critique - writecount
-  writecount=writecount-1;
-  if(writecount==0) {				  // depart du dernier writer
-    sem_post(&rsem);
-  }
-  pthread_mutex_unlock(&mutex_writecount);// fin de la section critique - writecount
-}
-
-/* Reader */
-while(true){
-  pthread_mutex_lock(&z);			  // 1e exclusion mutuelle, un seul reader en attente sur rsem
-  sem_wait(&rsem);
-
-  pthread_mutex_lock(&mutex_readcount);	  // exclusion mutuelle, readercount
-  readcount=readcount+1;
-  if (readcount==1) {				  // si arrivee du premier reader
-    sem_wait(&wsem);
-  }
-  pthread_mutex_unlock(&mutex_readcount); // fin exclusion mutuelle, readercount
-  sem_post(&rsem);  				  // liberation du prochain reader
-  pthread_mutex_unlock(&z);			  // fin 1e exclusion mutuelle
-  read_database();
-  pthread_mutex_lock(&mutex_readcount);	  // exclusion mutuelle, readcount
-  readcount=readcount-1;
-  if(readcount==0) {				  // si depart du dernier reader
-    sem_post(&wsem);
-  }
-  pthread_mutex_unlock(&mutex_readcount); // fin exclusion mutuelle, readcount
-  use_data_read();
-}
-\end{lstlisting}
+\lstinputlisting{code/reader_writer.c}
 
 
 \section{Processus}
@@ -1740,7 +1381,7 @@ Lorsqu'un programme est compilé de façon à utiliser une librairie dynamique, 
 \begin{figure}[h!]
   %\begin{wrapfigure}{r}{0.4\textwidth}
   %\vspace{-0.5cm}
-  \centering\includegraphics[width=0.6\textwidth]{appelssystemes}
+  \centering\includegraphics[width=0.6\textwidth]{img/appelssystemes}
   \caption{\label{fig:appelssystemes}Appels systèmes.}
   %\vspace{-0.5cm}
   %\end{wrapfigure}
@@ -1930,64 +1571,10 @@ Un \textbf{\textit{appel système lent}} est un appel système dont l'exécution
 
 \subsubsection{Traitement de signaux asynchrones}
 Après réception d'un signal asynchrone, il faudrait pouvoir continuer le code autre part que là où il s'est arrêté. Pour ce faire, on a les fonctions \texttt{int setjmp(jmp\_buf env);} et \texttt{int sigsetjmp(sigjmp\_buf env, int savesigs);}. Voici un exemple de leur utilisation.
-\begin{lstlisting}
-#include ...
-sigjmp_buf buf;
-static void sigfpe_handler(int);
-
-int main (int argc, char *argv[]){
-  if(signal(SIGFPE,sigfpe_handler)==SIG_ERR) {
-    perror("signal");
-    exit(EXIT_FAILURE);
-  }
-  for(int i=1;i<argc;i++) {
-    char *endptr; int r;
-    long val=strtol(argv[i],&endptr,10);
-    if(*endptr=='\0') {
-      r=sigsetjmp(buf,1);  // faut-il ignorer le resultat ?
-      if(r==0){
-        int resultat=1252/(int) val;
-        printf("1252/%d=%d\n",(int) val,resultat);
-      }
-      else {
-        printf("%d/%d=NaN\n",n,(int) val);
-      }
-    }
-    else{
-      printf("Argument incorrect : %s\n",argv[i]);
-    }
-  }
-  return(EXIT_SUCCESS);
-}
-
-static void sigfpe_handler(int signum){
-  siglongjmp(buf,1);      // ignorer la donnee
-}
-\end{lstlisting}
+\lstinputlisting{code/async_sig.c}
 \subsubsection{Temporisateurs}
 Il est possible d'envoyer un signal après un certain temps en utilisant \texttt{setitimer} ou \texttt{alarm} afin d'arrêter un appel système bloquant après un certain temps : si on ne veut laisser que 5 secondes à l'utilisateur pour taper un caractère de réponse par exemple.
-\begin{lstlisting}
-...
-if(signal(SIGALRM, sig_handler)==SIG_ERR)==SIG_ERR){ perror("signal"); exit(EXIT_FAILURE); }
-if(siginterrupt(SIGALRM,true)<0){	// Indique qu'il faut arreter les appels systemes si on recoit SIGALRM
-  perror("siginterrupt"); exit(EXIT_FAILURE);
-}
-...
-char c;
-alarm(5);
-int r = read(STDIN_FILENO, &c, 1);
-if((r==1)){
-  alarm(0); 			// reset timer
-  ...			     // On utilise la reponse donnee
-} else {
-  ... 				// On utilise une valeur par defaut
-}
-...
-
-static void sig_handler(int signum){
-  // rien a faire, read sera interrompu
-}
-\end{lstlisting}
+\lstinputlisting{code/tempo.c}
 Si le système est surchargé, il est possible qu'il y ait 5 secondes qui passent entre la ligne 8 et la ligne 9. Pour éviter ce problème il faudra donc faire appel à \texttt{siglongjmp} et \texttt{sigsetjmp} afin de savoir si un signal \texttt{SIGALRM} a déjà été reçu.
 \subsection{Sémaphores}
 Il n'est pas possible d'utiliser la fonction \texttt{sem\_init} vue dans le cas des threads car les processus ne partagent pas nécessairement la même zone mémoire. Par contre, il est possible d'utiliser un sémaphore nommé. Un \textbf{\textit{sémaphore nommé}} est identifié par un \textit{nom}. Sous Linux, ce nom correspond à un fichier dans le dossier virtuel \texttt{/dev/shm}, et tout processus qui connaît le nom \emph{et} a les autorisations d'y accéder peut l'utiliser. \\
@@ -2116,8 +1703,8 @@ Ces deux fonctions permettent d'écrire des séquences contigües d'octets. Lors
     \end{itemize}
 \end{itemize}
 \begin{figure}[!h]
-  \centering\includegraphics[width=0.3\textwidth]{bigendian}
-  \includegraphics[width=0.3\textwidth]{littleendian}
+  \centering\includegraphics[width=0.3\textwidth]{img/bigendian}
+  \includegraphics[width=0.3\textwidth]{img/littleendian}
   \caption{\label{fig:biglittleendian} \textit{Big-endian} et \textit{little-endian}.}
 \end{figure}
 
@@ -2139,7 +1726,7 @@ En pratique, les pipes sont utilisés par le shell avec \texttt{|}. Exemple : \t
 \subsection{La mémoire virtuelle}
 \begin{wrapfigure}{r}{0.4\textwidth}
   \vspace{-0.5cm}
-  \includegraphics[width=0.4\textwidth]{mmu}
+  \includegraphics[width=0.4\textwidth]{img/mmu}
   \caption{\label{fig:mmu}\textit{MMU} et mémoire virtuelle.}
 \end{wrapfigure}
 Avec la \textit{\textbf{mémoire virtuelle}}, deux types d'adresses sont utilisées sur le système : les \textit{adresses virtuelles} et les adresses réelles ou physiques. Une \textit{\textbf{adresse virtuelle}} est une adresse qui est utilisée à l'intérieur d'un programme.  Une \textit{\textbf{adresse physique}} est l'adresse qui est utilisée au niveau des puces de RAM pour les opérations d'écriture et de lecture. Ce sont les adresses physiques qui sont échangées sur le bus auquel la mémoire est connectée. \\
@@ -2152,7 +1739,7 @@ Le \textit{MMU} est capable d'effectuer des traductions d'adresses virtuelles sp
 \subsection{La mémoire virtuelle}
 \begin{wrapfigure}{r}{0.5\textwidth}
   \vspace{-0.5cm}
-  \includegraphics[width=0.5\textwidth]{memvirt}
+  \includegraphics[width=0.5\textwidth]{img/memvirt}
   \caption{\label{fig:memvirt}Organisation de la mémoire virtuelle.}
 \end{wrapfigure}
 Un autre avantage encore est la possibilité de combiner mémoire RAM et dispositif de stockage (disque dur, disque SSD,\dots) pour obtenir une mémoire virtuelle de plus grande capacité que la mémoire RAM.
@@ -2165,7 +1752,7 @@ L'unité intermédiaire utilisée par la mémoire virtuelle est la \textit{\text
 Lorsqu'un programme est chargé en mémoire (\texttt{execve}), il est automatiquement découpé en pages. Ces pages peuvent être stockées dans n'importe quelle zone de la mémoire RAM mais doivent être à des adresses qui sont contiguës. Une \textit{adresse virtuelle} est alors composée d'un ensemble de bits. Les bits de poids fort identifient la \textit{page}, tandis que ceux de poids faible identifient la position de la donnée par rapport au début de cette \textit{page}.\\
 \begin{figure}[!h]
   \centering
-  \includegraphics[width=0.5\textwidth]{memtradadresses}
+  \includegraphics[width=0.5\textwidth]{img/memtradadresses}
   \caption{Traduction d'adresses avec une table des pages.}
 \end{figure}\\
 Avec ce principe de \textit{pages}, un mécanisme de traduction d'adresses peut se baser sur une \textit{\textbf{table de pages}}. Cette \textit{table de pages} est stockée en mémoire RAM et contient une ligne pour chaque page existant dans la mémoire virtuelle. Cette table de pages contient :
@@ -2269,7 +1856,7 @@ Linux utilise la deuxième solution. La mémoire partagée peut y être utilisé
 
 \begin{wrapfigure}{r}{0.3\textwidth}
   \vspace{-0.5cm}
-  \includegraphics[width=0.3\textwidth]{mempart}
+  \includegraphics[width=0.3\textwidth]{img/mempart}
   \caption{\label{fig:mempart}Organisation de la mémoire d'un processus.}
 \end{wrapfigure}
 Il faut faire attention aux pointeurs en mémoire partagé ! En pratique, il ne vaut mieux pas les utiliser\dots\\
@@ -2284,7 +1871,7 @@ Si un processus tente un accès en écriture sur une de ces pages, le MMU interr
 Si le processus a effectivement les autorisations d'écriture, le noyau alloue une nouvelle page physique et y recopie la page où la tentative a eu lieu. La table des pages est mise à jour et le processus peut continuer. Cette technique de \textit{\textbf{copy-on-write}} permet de ne copier que les pages qui sont effectivement modifiées par le processus père ou le processus fils.
 \subsection{Fichiers mappés en mémoire}
 \begin{figure}[!h]
-  \centering \includegraphics[width=0.7\textwidth]{mmap}
+  \centering \includegraphics[width=0.7\textwidth]{img/mmap}
   \caption{\label{fig:mmap}Fichier mappés en mémoire.}
 \end{figure}
 Grâce à la mémoire virtuelle il est possible de placer le contenu d'un fichier ou une partie dans une zone de mémoire du processus.
