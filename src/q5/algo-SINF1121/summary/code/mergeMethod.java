@@ -14,7 +14,7 @@ private static void merge(Comparable[] a, Comparable[] aux, int lo, int mid, int
 		else if (j > hi)	a[k] = aux[i++];
 		// current key on right less than current key on left
 		else if (less(aux[j], aux[i]))	a[k] = aux[j++];
-		// current key on right greater than or equal current key on left
+		// current key on right greater than or equal to current key on left
         else	a[k] = aux[i++];
     }
 }

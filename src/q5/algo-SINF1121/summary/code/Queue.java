@@ -1,5 +1,5 @@
 public class Queue<Item> implements Iterable<Item> {
-    private int N;         // number of elements on queue
+    private int N;         // number of elements in queue
     private Node first;    // beginning of queue
     private Node last;     // end of queue
 
