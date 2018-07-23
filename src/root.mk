@@ -92,4 +92,4 @@ else
 endif
 
 add:
-git add $(MAIN_NAME).tex
+	git add $(MAIN_NAME).tex
