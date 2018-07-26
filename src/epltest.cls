@@ -3,6 +3,17 @@
 
 \newcommand*{\Majmin}{}
 
+% We do not license tests under CC-BY-SA since part of
+% the documents are work of professors.
+
+% I need to pass license=none to eplbase so I cannot just do
+% \LoadClassWithOptions because it ignores \PassOptionsToClass.
+% I need to pass every option manually with the 2 following lines
+% and then use \LoadClass
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{../../../../../../eplbase}}
+\ProcessOptions\relax
+\PassOptionsToClass{license=none}{../../../../../../eplbase}
+
 \LoadClassWithOptions{../../../../../../epleval}
 
 \IfLanguageName{english}{
