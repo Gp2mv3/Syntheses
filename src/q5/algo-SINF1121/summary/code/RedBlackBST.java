@@ -1,3 +1,2 @@
-public class RedBlackBST<Key extends Comparable<Key>, Value>
-{
+public class RedBlackBST<Key extends Comparable<Key>, Value> {
 	private Node root;

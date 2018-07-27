@@ -1,5 +1,4 @@
-public class LinearProbingHashST<Key, Value>
-{
+public class LinearProbingHashST<Key, Value> {
 	private int N; // number of key-value pairs in the table
 	private int M; // size of linear-probing table
 	private Key[] keys;
@@ -20,10 +19,10 @@ public class LinearProbingHashST<Key, Value>
 	}
 
 	public void put(Key key, Value val) {
-		if(N >= M/2) resize(2*M);
+		if (N >= M/2) resize(2*M);
 
 		int i;
-		for(i = hash(key); keys[i] != null; i = (i + 1) % M) {
+		for (i = hash(key); keys[i] != null; i = (i + 1) % M) {
 			if(keys[i].equals(key)) {
 				vals[i] = val;
 				return;
@@ -46,14 +45,15 @@ public class LinearProbingHashST<Key, Value>
 	}
 
 	public void delete(Key key) {
-		if(!contains(key)) return;
+		if (!contains(key))
+			return;
 		int i = hash(key);
-		while(!key.equals(keys[i]))
+		while (!key.equals(keys[i]))
 			i = (i + 1) % M;
 		keys[i] = null;
 		vals[i] = null;
 		i = (i + 1) % M;
-		while(keys[i] != null) {
+		while (keys[i] != null) {
 			Key keyToRedo = keys[i];
 			Value valToRedo = vals[i];
 			keys[i] = null;
@@ -64,7 +64,7 @@ public class LinearProbingHashST<Key, Value>
 		}
 
 		N--;
-		if(N > 0 && N <= M/8)
+		if (N > 0 && N <= M/8)
 			resize(M/2);
 	}
 }

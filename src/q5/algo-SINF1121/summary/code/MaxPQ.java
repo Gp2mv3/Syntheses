@@ -6,8 +6,13 @@ public class MaxPQ<Key extends Comparable<Key>> {
 		pq = (Key[]) new Comparable[maxN+1];
 	}
 
-	public boolean isEmpty() { return N == 0; }
-	public int size() { return N; }
+	public boolean isEmpty() {
+		return N == 0;
+	}
+
+	public int size() {
+		return N;
+	}
 
 	public void insert(Key v) {
 		pq[++N] = v;
