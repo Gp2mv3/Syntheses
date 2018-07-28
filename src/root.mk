@@ -73,11 +73,11 @@ $(MAIN_NAME_SOL).pdf: $(MAIN_NAME).tex
 	    -use-make $(MAIN_NAME).tex -jobname=$(MAIN_NAME_SOL)
 
 clean: cleanaux
-	$(RM) *.pdf
+	$(RM) $(ALL)
 
 cleanaux:
 	latexmk -c
-	$(RM) *.aux *.fdb_latexmk *.log *.out *.bbl *.toc
+	$(RM) *.aux *.fdb_latexmk *.log *.out *.bbl *.toc *.backup
 
 show: $(FULL)
 	$(PDFVIEWER) $(FULL) 2> /dev/null &
