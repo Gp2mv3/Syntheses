@@ -100,6 +100,34 @@
 \typeout{You have an old version of Tikz: \pgfversion, try to update some time ;)}
 \fi
 
+% Execute bash commands: be sure to have bashful.sty on your pc!
+\usepackage{bashful}
+
+\ifdefined\COMMITINFOS
+
+\ifdefined\DATUM
+\else
+\bash[stdoutFile=\jobname-date.stdout]
+echo $(git log -n 1 --pretty=format:\%ai "$(basename $(ls *.stderr) .stderr).tex" | sed -r 's/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([^ ]+)/\3\/\2\/\1 (\4\:\5\)/')
+\END
+\def\DATUM{\input{\jobname-date.stdout}}
+\fi
+
+\ifdefined\COMMITID
+\else
+\bash
+echo $(git log -1 --pretty=format:\%h "$(basename $(ls *.stderr) .stderr).tex")
+\END
+\def\COMMITID{\bashStdout}
+\fi
+
+\else
+
+\def\DATUM{\today}
+\def\COMMITID{}
+
+\fi
+
 \RequirePackage{pdfpages}
 %\usepackage{subfig}
 % subfig is deprecated see
@@ -108,6 +136,8 @@
 \usepackage{subcaption}
 
 \usepackage{enumerate}
+
+\usepackage[ddmmyyyy]{datetime}
 
 \RequirePackage{hyperref}
 
@@ -132,8 +162,10 @@
             pdfsubject={#2}}
 }
 
-\title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 Q#3 - L#4#5}
+\title{\IfLanguageName{english}{#8 of }{#8 d#1}#2 \\ Q#3 - L#4#5}
 \author{#6}
+
+\date{Compilation: \today \space (\currenttime) \vspace{0.5cm} \\ \IfLanguageName{english}{Last modification}{Dernière modification}: \DATUM \quad \texttt{\href{https://github.com/Gp2mv3/Syntheses/commit/\COMMITID}{\COMMITID}}}
 
 \begin{document}
 
@@ -246,7 +278,7 @@
         or look into the GitHub repository (see above).}
         {Ce travail est disponible sous license Creative Commons Attribution 4.0 Unported.
             Une copie de cette license est disponible sur \url{http://creativecommons.org/licenses/by/4.0/},
-        ou dans le dépot GitHub (voir ci-dessus).}
+        ou dans le dépôt GitHub (voir ci-dessus).}
     }{}
 \end{titlepage}
 }{}
