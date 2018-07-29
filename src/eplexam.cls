@@ -12,6 +12,8 @@
 \ProcessOptions\relax
 \PassOptionsToClass{license=none}{../../../../../../eplbase}
 
+\newcommand*{\Majmin}{}
+
 \LoadClassWithOptions{../../../../../../epleval}
 
 \IfLanguageName{english}{

@@ -1,6 +1,8 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{epltest}[2015/03/06 EPL test class]
 
+\newcommand*{\Majmin}{}
+
 % We do not license tests under CC-BY-SA since part of
 % the documents are work of professors.
 

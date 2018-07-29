@@ -31,6 +31,11 @@ else ifeq ($(SOL),none)
 endif
 endif
 
+define commit_function
+	$(eval DATE:=$(shell echo "$(shell git log -n 1 --pretty=format:"%ai" $1.tex)" | sed -r 's/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([^ ]+)/\3\/\2\/\1\ (\4\:\5\)/'))
+	$(eval COMMIT_ID:=$(shell git log -1 --pretty=format:%h -- $1.tex))
+endef
+
 # You want latexmk to *always* run, because make does not have all the info.
 .PHONY: $(ALL)
 
@@ -52,29 +57,27 @@ all: $(ALL)
 # missing file reference and interactively asking you for an alternative.
 
 $(MAIN_NAME).pdf: $(MAIN_NAME).tex
+	$(call commit_function,$(MAIN_NAME))
 ifneq (,$(filter $(TYPE),exam test exercises mcq))
 	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18 \
-	  '\def\Sol{false} \input{%S}'" -use-make $(MAIN_NAME).tex
+	  '\def\Sol{false} \def\DATUM{${DATE}} \def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'" -use-make $(MAIN_NAME).tex
 else
-	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18" \
-	  -use-make $(MAIN_NAME).tex
+	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18 \
+	  '\def\DATUM{${DATE}} \def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'"-use-make $(MAIN_NAME).tex
 endif
 
 $(MAIN_NAME_SOL).pdf: $(MAIN_NAME).tex
-	latexmk -pdf -pdflatex="pdflatex -jobname=$(MAIN_NAME_SOL) -shell-escape \
-	  -enable-write18 '\def\Sol{true} \input{%S}'" \
-	  -use-make $(MAIN_NAME).tex -jobname=$(MAIN_NAME_SOL)
+	$(call commit_function,$(MAIN_NAME))
+	latexmk -pdf -pdflatex="pdflatex -jobname=$(MAIN_NAME_SOL) -shell-escape -enable-write18 \
+	  '\def\Sol{true} \def\DATUM{${DATE}} \def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'" \
+	    -use-make $(MAIN_NAME).tex -jobname=$(MAIN_NAME_SOL)
 
 clean: cleanaux
-	latexmk -C
-# $(RM) *.pdf
-
-kleenex: cleanaux
-	# Just for the fun of it.
+	$(RM) $(ALL)
 
 cleanaux:
 	latexmk -c
-	$(RM) *.aux *.fdb_latexmk *.log *.out *.bbl
+	$(RM) *.aux *.fdb_latexmk *.log *.out *.bbl *.toc *.backup
 
 show: $(FULL)
 	$(PDFVIEWER) $(FULL) 2> /dev/null &
