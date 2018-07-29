@@ -10,7 +10,7 @@ args=("$@")
 nbr_arg=5
 section=( "summary" "notes" "exam" "test" "exercises" )
 sols="only none both"
-exammonths="Janvier Juin Août Septembre"
+exammonths="Janvier Juin Août"
 testmonths="Février Mars Avril Mai Septembre Octobre Novembre Décembre"
 # On ne peut juste pas avoir de tests pendant les mois d'examen (blocus l'empêche), ni pendant les vacances d'été.
 # months="Janvier Mars Juin Août Novembre" # Backward compatibility
@@ -70,14 +70,21 @@ function subdirectory {
 
     import="epl$1"
 
+    if [ $quadri -lt 7 ]; then
+      language=fr
+    else 
+      language=en
+    fi 
+
     if ! [ -f "$fulldir/$1/$fullname.tex" ]; then
-        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g" ./templates/$base.tex > "$fulldir/$fullname.tex"
+        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g; s/language/$language/g; s/minmaj/$minmaj/g;" ./templates/$base.tex > "$fulldir/$fullname.tex"
     fi
 }
 
 function mk {
     mk=$dir/$name.mk
     if ! [ -f $mk ]; then
+	echo Create directory...
         sed "s/quadri/$quadri/g; s/name/$short/g; s/option/$option/g; s/code/$code/g" ./templates/mk.mk >> $mk
     fi
 }
@@ -116,15 +123,22 @@ contains() {
 
 if [ $# -lt $nbr_arg ] ||  [ $1 = "--help" ]; then
     echo "
+    This command allows you to create a template for a new .tex document
+    
     use: bash add.sh quadri titre sigle code repertory sol year month minmaj
     e.g: bash add.sh 1      math  FSAB  1101 summary
+    e.g: bash add.sh 1      math  FSAB  1101 notes
     e.g: bash add.sh 1      math  FSAB  1201 exercises only
     e.g: bash add.sh 1      info  FSAB  1401 exam      both 2015 Juin  All
+    e.g: bash add.sh 6      mcp   INGI  1122 test      none 2018 Mars  Mineure
 
     where repertory is summary, notes, exam, test, exercises or all
           sol       is only: only contains the solution
                        none: only contains the statement
-                       both: contains both"
+                       both: contains both
+          month     is Janvier, Juin or Août (if exam)
+                       Février, Mars, Avril, Mai, Septembre, Octobre, Novembre or Décembre (if test)
+          minmaj    is Mineure, Majeure or All"
 
     exit
 fi
@@ -159,22 +173,39 @@ if ! contains "${sols}" $6; then
 fi
 
 if [ $5 = exam ]; then
-    if ! contains "${exammonths}" $8; then
+    error=true
+    for s in ${exammonths}; do
+        if [ $8 = ${s} ]; then
+            error=false
+        fi
+    done
+    if $error; then
         echo "Please choose the month among \`\`${exammonths}''. If you feel one is missing, let us know. You chose \`\`$8''."
-        error=true
     fi
 fi
 
 if [ $5 = test ]; then
-    if ! contains "${testmonths}" $8; then
+    error=true
+    for s in ${testmonths}; do
+        if [ $8 = ${s} ]; then
+            error=false
+        fi
+    done
+    if $error; then
         echo "Please choose the month among \`\`${testmonths}''. If you feel one is missing, let us know. You chose \`\`$8''."
-        error=true
     fi
 fi
 
-if ! contains "${minmajs}" $9; then
-    echo "Please choose \`\`${minmajs}\'\'. You chose \`\`$9''."
+if ([ $5 = test ] || [ $5 = exam ]) && ! $error; then
     error=true
+    for s in ${minmajs}; do
+        if [ $9 = ${s} ]; then
+            error=false
+        fi
+    done
+    if $error; then
+        echo "Please choose minmaj among \`\`${minmajs}''. You chose \`\`$9''."
+    fi
 fi
 
 if [ $error = true ]; then
@@ -203,7 +234,6 @@ month=$8
 minmaj=$9
 
 echo Starting:
-echo Create directory...
 
 mkdir -p $dir
 mk

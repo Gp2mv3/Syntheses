@@ -1,2 +1,2 @@
 TYPE=summary
-include ../geomat-AUCE1171.mk
+include ../geomat-GCIV1171.mk
