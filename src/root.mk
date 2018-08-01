@@ -23,6 +23,10 @@ else
   FULL=${MAIN_NAME}.pdf
 endif
 
+ifeq ($(MAKECMDGOALS),pvc)
+	PVC=-pvc
+endif
+
 ifdef SOL
 ifeq ($(SOL),only)
   SETSOL=-s sol=-Sol
@@ -59,16 +63,16 @@ all: $(ALL)
 $(MAIN_NAME).pdf: $(MAIN_NAME).tex
 	$(call commit_function,$(MAIN_NAME))
 ifneq (,$(filter $(TYPE),exam test exercises mcq))
-	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18 \
+	latexmk -pdf $(PVC) -pdflatex="pdflatex -shell-escape -enable-write18 \
 	  '\def\Sol{false} \def\DATUM{${DATE}} \def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'" -use-make $(MAIN_NAME).tex
 else
-	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18 \
+	latexmk -pdf $(PVC) -pdflatex="pdflatex -shell-escape -enable-write18 \
 	  '\def\DATUM{${DATE}} \def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'"-use-make $(MAIN_NAME).tex
 endif
 
 $(MAIN_NAME_SOL).pdf: $(MAIN_NAME).tex
 	$(call commit_function,$(MAIN_NAME))
-	latexmk -pdf -pdflatex="pdflatex -jobname=$(MAIN_NAME_SOL) -shell-escape -enable-write18 \
+	latexmk -pdf $(PVC) -pdflatex="pdflatex -jobname=$(MAIN_NAME_SOL) -shell-escape -enable-write18 \
 	  '\def\Sol{true} \def\DATUM{${DATE}} \def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'" \
 	    -use-make $(MAIN_NAME).tex -jobname=$(MAIN_NAME_SOL)
 
