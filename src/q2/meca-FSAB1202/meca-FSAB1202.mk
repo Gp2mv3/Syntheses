@@ -1,4 +1,4 @@
 NAME=meca
-OPTION=FSAB
+OPTION=EPL
 CODE=1202
-include ../../q2.mk
+include $(BASE_DIR)../../q2.mk
