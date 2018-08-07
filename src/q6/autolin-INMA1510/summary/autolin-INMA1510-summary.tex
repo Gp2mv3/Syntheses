@@ -772,6 +772,68 @@ est négatif.
 Au final, lors $y(t) \geq r(t)$, l'intégrale est vide et $u$ ne sature plus, on repasse donc dans un système LTI et le système
 anti-emballement n'a plus d'effet.
 
+\section{Commande linéraire quadratique}
+
+La commande LQ est une méthode qui permet de calculer la matrice de gains $K$ d'une commande par retour d'état. L'idée consiste à minimiser un critère de performance $J(u)$, quadratique en l'état $x$ et la commande $u$, et qui est une somme pondérée de l'énergie de $x$ et de celle de $u$:
+
+\[
+ J(u)= \int_{0}^{\infty} (x^TQ_xx+u^TQ_uu)\:\mathrm{d} t.
+\]
+
+On accorde plus ou moins d'importante à $x$ ou $u$ en fonction des matrices de poids $Q_x$ et $Q_u$ qu'on attribue à la fonctionnelle, ces matrices diagonales sont donc choisies par le constructeur. 
+
+On cherche ainsi 
+\[
+ u_{opt}(t) = \min_{u(t)}J(u).
+\]
+
+\begin{mytheowithoutnumber}[Théorème de Wonham]
+ Soit un système linéaire et des matrices de poids $Q_x$ diagonale définie positive ou nulle et $Q_u$ diagonale définie positive telles que
+ \begin{itemize}
+ \item La paire $(A,B)$ est stabilisable: il existe une matrice de gain $K$ telle que $A-BK$ est stable, ce qui entraîne également que $\lim_{t\rightarrow\infty}x(t)=0$,
+ \item La paire $(Q_x,A)$ est détectable,
+ \end{itemize}
+ alors il existe une solution unique $S$ symétrique de l'équation algébrique de Ricatti
+ \[
+    Q_x + A^TS+SA-SBQ_u^{-1}B^TS = 0.
+ \]
+ De plus, la matrice $A-BQ_u^{-1}B^TS$ est stable.
+\end{mytheowithoutnumber}
+
+\begin{mytheowithoutnumber}[Théorème de complétion des carrés]
+    En tirant profit du fait que $Q_u^{-1}$ est diagonal puisque $Q_u$ est diagonal, donc $(Q_u^{-1})^T=Q_u^{-1}$,
+    \[
+    \left(u+Q_u^{-1}\alpha\right)^TQ_u\left(u+Q_u^{-1}\alpha\right) = u^TQ_uu+u^T\alpha+\alpha^Tu+\alpha^TQ_u^{-1}\alpha
+    \]
+    pour lequel on remplace $\alpha$ par $B^TSx$ dans le développement ci-dessous. Le terme de gauche est positif car $Q_u$ est définie positive, et s'annule pour $u+Q_u^{-1}\alpha=0$.
+\end{mytheowithoutnumber}
+
+On peut ensuite développer l'expression de cette fonctionnelle en utilant les deux théorèmes énoncés,
+\begin{align*}
+ J(u) & = \int_{0}^{\infty} (x^TQ_xx+u^TQ_uu)\:\mathrm{d} t \\
+ & = \int_{0}^{\infty} \left(x^T\left(-A^TS-SA+SBQ_u^{-1}B^TS\right)x+u^TQ_uu\right)\:\mathrm{d} t \\
+ & = \int_{0}^{\infty}\left(-x^TA^TSx-x^TSAx+x^TS^TBQ_u^{-1}B^TSx+u^TQ_uu\right)\:\mathrm{d} t\\
+ & = \int_{0}^{\infty}\left(\left(u+Q_u^{-1}B^TSx\right)^TQ_u\left(u+Q_u^{-1}B^TSx\right)
+ -\left(x^TA^TSx+x^TSAx+u^TB^TSx+x^TS^TBu\right) \right)\:\mathrm{d} t\\
+ & = \int_{0}^{\infty}\left(\left(u+Q_u^{-1}B^TSx\right)^TQ_u\left(u+Q_u^{-1}B^TSx\right)
+ -\left(((Ax)^T+u^TB^T)Sx+x^TS(Ax+Bu)\right) \right)\:\mathrm{d} t\\
+ & = \int_{0}^{\infty}\left(\left(u+Q_u^{-1}B^TSx\right)^TQ_u\left(u+Q_u^{-1}B^TSx\right)
+ -\left(\dot{x}^TSx+x^TS\dot{x}\right) \right)\:\mathrm{d} t\\
+ & = \int_{0}^{\infty}\left(u+Q_u^{-1}B^TSx\right)^TQ_u\left(u+Q_u^{-1}B^TSx\right)\:\mathrm{d} t
+ -\int_{0}^{\infty}\fdif{}{t}(x^TSx)\:\mathrm{d} t\\
+ & = \int_{0}^{\infty}\left(u+Q_u^{-1}B^TSx\right)^TQ_u\left(u+Q_u^{-1}B^TSx\right)\:\mathrm{d} t+x_0^TSx_0
+\end{align*}
+
+Puisque le second terme est indépendant de $u(t)$, il faut minimiser le premier terme. Celui-ci étant positif ou nul, la fonctionnelle $J(u)$ est minimale pour 
+\[
+ u+Q_u^{-1}B^TSx = 0 \qquad\Longrightarrow\qquad u = -Q_u^{-1}B^TSx
+\]
+Lors d'un retour d'état, $u=-Kx$, on choisit ainsi 
+\[
+ K = Q_u^{-1}B^TS
+\]
+en se rappelant que $S$ est déterminé par l'équation de Ricatti pour laquelle $Q_x$ et $Q_u$ sont choisis et connus.
+
 \section{Commande anticipatrice}
 On utilise une commande anticipatrice pour annuler la perturbation $v(t)$: $$U(s)=[R(s)-Y(s)]C_1(s)-V(s)C_2(s)$$
 
@@ -914,6 +976,7 @@ Voici les commandes utiles sous Matlab
   \item[nyquist] \lstinline|nyquist(F)| fait le diagramme de Nyquist.
   \item[bode] \lstinline|bode(F)| fait le diagramme de bode.
   \item[rlocus] \lstinline|rlocus(F)| fait le diagramme de root locus.
+  \item[lqr] \lstinline|LQR(A,B,Q,R)| renvoie \lstinline|[K,S,e]|: la matrice de gain $K$, la solution de l'équation algébrique de Ricatti $S$ et les valeurs propres de $A-BK$.
 \end{description}
 
 \subsection{Robustesse}
