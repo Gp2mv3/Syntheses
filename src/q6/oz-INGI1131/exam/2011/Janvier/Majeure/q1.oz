@@ -15,8 +15,19 @@ fun {GateMaker F}
    end
 end
 
-fun {DelayG Xs }
-   {ByNeed fun {$} 0|Xs end}
+fun {DelayG Ds}
+   % Make the delay gate lazy
+   fun {DelayLoop Xs}
+      {ByNeed
+       fun {$}
+	  X|Xr = Xs
+       in
+	  X|{DelayLoop Xr}
+       end
+      }
+   end
+in
+   0|{DelayLoop Ds}
 end
 
 
