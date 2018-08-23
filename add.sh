@@ -17,6 +17,9 @@ testmonths="Février Mars Avril Mai Septembre Octobre Novembre Décembre"
 minmajs="Mineure Majeure All"
 size_titre=20
 
+if ! [ $(dirname $BASH_SOURCE) == "." ] || [ $(dirname $BASH_SOURCE) == "" ]; then
+	script_directory=$(dirname $BASH_SOURCE)/
+fi
 
 #     __                  _   _
 #    / _|_   _ _ __   ___| |_(_) ___  _ __
@@ -45,19 +48,19 @@ function subdirectory {
 
     if [ $1 == exam ] || [ $1 == test ]; then
       if ! [ -f "$fulldir/$1.mk" ]; then
-        sed "s/name/$name/g; s/type/$1/g" ./templates/exam.mk >> "$fulldir/$1.mk"
+        sed "s/name/$name/g; s/type/$1/g" ./"$script_directory"templates/exam.mk >> "$fulldir/$1.mk"
       fi
 
       fulldir="$fulldir/$year"
       mkdir -p "$fulldir"
       if ! [ -f "$fulldir/$year.mk" ]; then
-        sed "s/year/$year/g; s/type/$1/g" ./templates/year.mk >> "$fulldir/$year.mk"
+        sed "s/year/$year/g; s/type/$1/g" ./"$script_directory"templates/year.mk >> "$fulldir/$year.mk"
       fi
 
       fulldir="$fulldir/$month"
       mkdir -p "$fulldir"
       if ! [ -f "$fulldir/$month.mk" ]; then
-        sed "s/month/$month/g; s/year/$year/g" ./templates/month.mk >> "$fulldir/$month.mk"
+        sed "s/month/$month/g; s/year/$year/g" ./"$script_directory"templates/month.mk >> "$fulldir/$month.mk"
       fi
 
       fulldir="$fulldir/$minmaj"
@@ -65,7 +68,7 @@ function subdirectory {
     fi
 
     if ! [ -f "$fulldir/Makefile" ]; then
-        sed "s/sol/$sol/g; s/section/$1/g; s/name/$name/g; s/minmaj/$minmaj/g; s/month/$month/g" ./templates/$makef >> "$fulldir/Makefile"
+        sed "s/sol/$sol/g; s/section/$1/g; s/name/$name/g; s/minmaj/$minmaj/g; s/month/$month/g" ./"$script_directory"templates/$makef >> "$fulldir/Makefile"
     fi
 
     import="epl$1"
@@ -77,15 +80,15 @@ function subdirectory {
     fi 
 
     if ! [ -f "$fulldir/$1/$fullname.tex" ]; then
-        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g; s/language/$language/g; s/minmaj/$minmaj/g;" ./templates/$base.tex > "$fulldir/$fullname.tex"
+        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g; s/language/$language/g; s/minmaj/$minmaj/g;" ./"$script_directory"templates/$base.tex > "$fulldir/$fullname.tex"
     fi
 }
 
 function mk {
     mk=$dir/$name.mk
     if ! [ -f $mk ]; then
-	echo Create directory...
-        sed "s/quadri/$quadri/g; s/name/$short/g; s/option/$option/g; s/code/$code/g" ./templates/mk.mk >> $mk
+        echo Create directory...
+        sed "s/quadri/$quadri/g; s/name/$short/g; s/option/$option/g; s/code/$code/g" ./"$script_directory"templates/mk.mk >> $mk
     fi
 }
 
@@ -221,7 +224,7 @@ fi
 #   |_|
 sigle=$3
 code=$4
-dir="src/q$1/$2-$3$4"
+dir="$script_directory""src/q$1/$2-$3$4"
 quadri=$1
 short=$2
 option=$3
