@@ -30,14 +30,13 @@ Peiffer\and Florian Thuin}
     \item[ARP]: \textit{Address Resolution Protocol}.
     \item[BPDU]: \textit{Bridge Protocol Data Unit}.
     \item[CRC]: \textit{Cyclical Redundancy Check}.
-    \item[\difs{}]: \textit{DCF Interframe Space}. If a station detects the medium has been continuously idle for a duration of \difs{} microseconds,
+    \item[\difs{}]: \textit{DCF Interframe Space}. If a station detects the medium has been continuously idle for a duration of \difs{},
+    and the last frame transmission was successful (no corruption or error),
     it is then allowed to transmit a frame.
-    \difs{} duration can be calculated by the following method:
+    If the last transmission contained an error,
+    the station must wait for a duration of \eifs{} for any frame (re)transmission.
+    \difs{} respects the following relation :
     $\difs{} = \sifs{} + (2 \cdot \textnormal{Slot time}$).
-    Note that the last transmission need also be succesful
-    (that is, no corruption),
-    as the station would need to wait for a duration of \eifs{} until it can again transmit any frame
-    (whether it be the old one or a new one).
     \item[DNS]: \textit{Domain Name System}. Naming system for associating various information (such as an IP address) with a domain name.
     \item[\eifs{}]: \textit{Extended Interframe Space}. Similar to \difs{} but is only activated if the last frame contains an error.
     The \eifs{} duration is defined as follows:
@@ -220,7 +219,7 @@ The separation of frames is done using \emph{bit stuffing} or \emph{character st
       \item Increases the number of bits transmitted.
     \end{enumerate}
 \item[Character stuffing]: In software it's easier to work with characters.
-We add a DLE in front of each DLE contained in the data of the frame.
+We add a DLE (Data Link Escape) character in front of each DLE contained in the data of the frame.
 (The character used as a marker is not printable.)
 Beginning of frame: \textsc{DLE STX},
 end of frame: \textsc{DLE ETX}.
@@ -249,8 +248,8 @@ Since the \textbf{Physical Layer does not reorder} the bits,
 the frames will not be reordered either.
 Providing a reliable service is therefore easier than for the Transport Layer,
 which has to cope with the reordering of packets in the Network Layer
-(it has to discard packets to old packets
-and have maximal throughput because of that).
+(The transport layer has to drop new packets in favor of old packets with the same content,
+and this consumes some throughput).
 
 \paragraph{Pipelining}
 This technique allows a sender to transmit several consecutive frames
@@ -688,6 +687,10 @@ It requires three separate steps:
      \item The first host replies with an ACK message
      with acknowledgment number $y+1$,
      which the second host receives and doesn't reply to.
+     Actually, it will reply to this ACK if there is something in this message (data, FIN, RST or something else).
+     It will just not reply to the ACK itself,
+     as an ACK is not data.
+     However, a SYN is akin to data.
 \end{itemize}
 The seqnum of that last ACK (which may actually contain the first data) is $x+1$,
 and the seqnum of the next segment from the second host is $y+1$.
@@ -696,6 +699,10 @@ actually, seqnum's don't express segment numbers
 but rather expected next byte numbers.
 As the handshake has transmitted zero data,
 we still have the possibility to use it.
+The ACK in the third stage doesn't need to be ACKed.
+However, if it contains data (and most of the time it will),
+then that data needs to be ACKed.
+
 \begin{figure}[ht]
     \centering
     \includegraphics[width=12cm]{threeway.png}
@@ -729,17 +736,20 @@ $2^k \times cycle \gg MSL$.
 \begin{itemize}
     \item \textsc{message-mode}: Messages are sent and received as is (rarely
     used).
-    \item \textsc{stream-mode}: Here, byte fluxes are sent, and a delimiter
+    \item \textsc{stream-mode}: Here, byte streams are sent, and a delimiter
     needs to be specified to limit SDUs in the bytestream. (The provider
     assures that bytes arrive in the correct order.)
 \end{itemize}
 
 $\implies$  The \textbf{Stream-mode} is used for reliable transport protocols,
 and the sequence number placed in the frame corresponds to the position of the
-last payload byte in the bytestream.
+first payload byte in the bytestream.
+The ACK acknowledges the last byte of the frame
+by sending the seqnum of the next expected byte,
+which will be the first byte in the next frame.
 
 \paragraph{Note:} Multiple differences compared to the \textbf{datalink layer}
-to assure data is delivered.
+to ensure data is delivered.
 
 \begin{enumerate}
     \item Compared to the datalink layer where the transmission delay is fixed
@@ -1188,7 +1198,7 @@ divided by two (\textit{multiplicative}).
 \paragraph{TCP/IP reference model} The same but the physical layer and datalink
 layer are combined into the link layer.
 
-\paragraph{Model OSI} There is a session and a presentation layer before the
+\paragraph{OSI Model} There is a session and a presentation layer before the
 application layer. The session layer deals with the organisation and the
 synchronization of the message/data exchanged with the presentation entity.
 The presentation layer deals with representing the information.
@@ -1257,7 +1267,7 @@ LF.
 New header lines support MIME\footnote{To add non-ASCII characters in mail
 without breaking the email servers that were deployed at that time.}:
 \begin{itemize}
-    \item MIME-version: MIME version for ecncoding mail.
+    \item MIME-version: MIME version for encoding mail.
     \item Content-type: Datatype of the message:
         \begin{enumerate}
             \item multipart/mixed: the file contains independent parts (text,
@@ -1428,8 +1438,8 @@ multiple applications and has the following characteristics:
 \paragraph{Header} = Source port (16), dest port (16), length (16) and checksum
 (16)
 
-\paragraph{Port:} 0 - 1023 (\textit{privileged}), 1024 - 49 151
-(\textit{registered}), 49 152 - 65 535 (\textit{ephemere})
+\paragraph{Port:} 0--1023 (\textit{privileged}), 1024--49 151
+(\textit{registered}), 49 152--65 535 (\textit{ephemeral})
 
 \paragraph{Usage}
 \textbf{UDP} is used when delay must be minimised or losses can be recovered by
@@ -1470,7 +1480,7 @@ options:
   \item The \textbf{MSS}, which is the size of the largest acceptable payload
   (\textit{at least 536}).
   \item Window size.
-  \item Usage of SACK (information in out-of-sequence segments).
+  \item Usage of SACK (Selective ACK) (information on out-of-sequence segments).
   \item A number of options where the client and the server both communicate
   what they want and support.
 \end{enumerate}
@@ -1478,7 +1488,7 @@ options:
 \paragraph{Options encoding} is done with \textsc{TLV}, Type-Length-Value.
 
 \paragraph{Robustness principle:} SYN can contain unknown options without
-crashing, however SYN+ACK can only contain that which we know.
+crashing, however, SYN+ACK can only contain (from these options) those options that we know and recognize (other options will be ignored).
 
 \paragraph{Denial of service attacks}
 A server maintains a TCB (transmission control block) which contains the state
@@ -1537,7 +1547,7 @@ To solve this, \textbf{timestamp options} are used:
 \end{itemize}
 
 Since there is no more ambiguity, the time value can be updated
-($\textnormal{rtt} = \SI{3}{\second}$ at initialisation).
+($\textnormal{rtt} = \SI{3}{\second}$ at initialization).
 
 \begin{align*}
 \textnormal{srtt} \textrm{ (smoothed rtt mcomputed) } &=  (\alpha \times
@@ -1598,19 +1608,19 @@ out-of-sequence segments without having to notify the sender.
 
 \paragraph{Fast retransmit}
 Currently, the timer has to end before a lost segment can be sent back. Another
-method is to detect the the error when three acks are receivent for the same
+method is to detect the error when three acks are received for the same
 segment.
 
-It does however require a \texttt{dubpacks} varialbe to be added to the
+It does however require a \texttt{dubpacks} variable to be added to the
 \textsc{tcb}.
 
 \paragraph{Selective repeat}
 One of the \textsc{tcp} options allows activating \textbf{SACKs} which allow us
-to indicate which segment were received out-of-sequence. In this case, Fast
+to indicate which segments were received out-of-sequence. In this case, Fast
 Retransmit is often used.
 
 \subsubsection{TCP connection release}
-Abru[t (\textsc{rst}) or gracefully (FIN, FIN+ACK).
+Abrupt (\textsc{rst}) or gracefully (FIN, FIN+ACK).
 
 \subsection{The stream control transmission protocol (SCTP)}
 Alternative to \textsc{tcp} which offers the following characteristics:
@@ -1706,12 +1716,12 @@ to either refuse connection or close it immediately.
              &                    & \\
         \hline
     \end{tabular}
-    \caption{Difference between UDP, TCP and SCTP.}
+    \caption{Differences between UDP, TCP and SCTP.}
 \end{table}
 \subsection{Congestion control}
 The transport layer is where control happens.
 
-\textsc{tcp} controls congestion by acting on the window size since a
+TCP controls congestion by acting on the window size since a
 connection can't send data faster than \[\frac{\textnormal{window}}{rtt}\quad
 \textnormal{window} = \min(swin,rwin).\]
 
@@ -1720,13 +1730,13 @@ connection can't send data faster than \[\frac{\textnormal{window}}{rtt}\quad
 the window is $\min(cwnd, rwin, swin)$.
 \begin{itemize}
     \item[-] \textit{Additive increase}: every \textsc{rount trip time},
-    \textsc{cwnd} is incremented MSS bytes (Congestion Avoidance Phase).
+    \textsc{cwnd} is incremented by MSS bytes (Congestion Avoidance Phase).
     \item[-] \textit{Multiplicative decrease}: when congestion is detected,
     \textsc{cwnd} is decreased by a certain factor.
 \end{itemize}
 
 \paragraph{Initial value of cwnd:}
-\textbf{MSS} bytes so as to not cause congestion the network at its launch.
+\textbf{MSS} bytes so as to not cause congestion of the network at its launch.
 (This initial value has been rounded up to \SI{15}{\kilo\byte}.)
 
 
@@ -1740,7 +1750,7 @@ used which doubles \textsc{cwnd} every RTT.
     \item \textit{mild congestion}: if fast retransmit is used (cwin divided
     by two).
     \item \textit{severe congestion}: when the transmission timer expires
-    (sstresh is divied by 2 and $\textnormal{cwin} = \textnormal{MSS}$).
+    (ssthresh is divided by 2 and $\textnormal{cwin} = \textnormal{MSS}$).
 \end{itemize}
 
 \begin{figure}[ht]
@@ -1764,7 +1774,7 @@ adjust their rate.)
 \begin{enumerate}
     \item In order to use this solution, \textbf{another bit} (ECT, ECN-capable
     transport) is needed to specify whether the packet uses \textbf{ECN} or
-    not. If nothing is specified, and the router cis congested, the ones that
+    not. If nothing is specified, and the router is congested, the ones that
     do not implement ECN are given priority.
 
         \begin{itemize}
@@ -1783,7 +1793,7 @@ adjust their rate.)
 \end{enumerate}
 
 If the receiver detects congestion, the next sent packets will have this
-information (to avoid it eing lost if the ack gets lost).
+information (to avoid it being lost if the ack gets lost).
 
 \paragraph{Router algorithm}
 Two types of routers, either with a single FIFO or multiple FIFOs and a round
@@ -1949,9 +1959,9 @@ ECE/ECT).
 
 \subparagraph{No checksum}
 There is no checksum in the IPv6 packet header since there is already a
-checksum on the \textbf{frames} at the datalink layer level. Adding a checksum
-prevents memory corruption errors in a router but at a very high cost (which is
-\emph{ridiculous}).
+checksum on the \textbf{frames} at the datalink layer level.
+Adding an (expansive) checksum will detect memory corruption errors inside the router,
+which hardly happen.
 
 \subparagraph{Next header}
 Indicates the next header, such as a transport layer header (\textit{UDP=17,
@@ -2070,8 +2080,7 @@ There are two protocols: SLAAC and DHCPv6.
     ICMPv6 \textbf{Router Advertisements}, multicast on \textbf{ff02::1}
     \footnote{Corresponds to all reachable hosts.} containing:
         \begin{itemize}
-            \item[-] \textit{Cur hop limit}: temporary maximum of the router
-            (usually 64).
+            \item[-] \textit{Cur hop limit}: maximum number of intermediate routers (usually 64).
             \item[-] \textit{Router lifetime}: estimated time where the router
             is the default router.
             \item[-] \textit{Reachable time and Retrans timer}: used to
@@ -2347,7 +2356,7 @@ NP-complete. % is it P though ;-)
     \item AS prefers a route received from a customer rather than a shared-cost.
 \end{enumerate}
 
-\subsubsection{Structure global internet}
+\subsubsection{Global structure of the Internet}
 Domains can be divided up into 4 categories w.r.t. their roles and positions in
 the AS topology:
 \begin{itemize}
