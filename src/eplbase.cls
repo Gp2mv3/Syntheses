@@ -100,13 +100,12 @@
 \typeout{You have an old version of Tikz: \pgfversion, try to update some time ;)}
 \fi
 
-% Execute bash commands: be sure to have bashful.sty on your pc!
-\usepackage{bashful}
-
 \ifdefined\COMMITINFOS
 
 \ifdefined\DATUM
 \else
+% Execute bash commands: be sure to have bashful.sty on your pc!
+\usepackage{bashful}
 \bash[stdoutFile=\jobname-date.stdout]
 echo $(git log -n 1 --pretty=format:\%ai "$(basename $(ls *.stderr) .stderr).tex" | sed -r 's/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([^ ]+)/\3\/\2\/\1 (\4\:\5\)/')
 \END
