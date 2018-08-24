@@ -12,5 +12,5 @@ public class Merge {
 		sort(a, aux, lo, mid);
 		sort(a, aux, mid + 1, hi);
 		merge(a, aux, lo, mid, hi);
-    }
+	}
 }
