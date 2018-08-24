@@ -81,13 +81,15 @@ function subdirectory {
     fi 
 
     if ! [ -f "$fulldir/$1/$fullname.tex" ]; then
-        sed "s/name/$name/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g; s/language/$language/g; s/minmaj/$minmaj/g;" ./"$scdir"templates/$base.tex > "$fulldir/$fullname.tex"
+        sed "s/language/$language/g; s/name/$coursename/g; s/quadri/$quadri/g; s/sigle/$sigle/g; s/code/$code/g; s/import/$import/g; s/year/$year/g; s/month/$month/g; s/minmaj/$minmaj/g;" ./"$scdir"templates/$base.tex > "$fulldir/$fullname.tex"
     fi
 }
 
 function mk {
     mk=$dir/$name.mk
     if ! [ -f $mk ]; then
+        echo "This course isn't in this repo yet, please update the file src/config.yml 
+by adding \""$short": <official name as written in EPL-Drive>\" in mapping list (around lines 255-344)"
         echo Create directory...
         sed "s/quadri/$quadri/g; s/name/$short/g; s/option/$option/g; s/code/$code/g" ./"$scdir"templates/mk.mk >> $mk
     fi
@@ -236,6 +238,12 @@ sol=$6
 year=$7
 month=$8
 minmaj=$9
+
+if command -v python &>/dev/null; then
+    coursename=`python "$scdir"course_link.py $scdir $short`
+else
+    coursename=$short
+fi
 
 echo Starting:
 
