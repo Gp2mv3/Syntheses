@@ -173,7 +173,7 @@ if valid_section $5 ; then
     error=true
 fi
 
-if ! contains "${sols}" $6; then
+if contains "exercises exam test" $5 && ! contains "${sols}" $6; then
     echo "Please choose sol among \`\`${sols}''. You chose \`\`$6''."
     error=true
 fi
