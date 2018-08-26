@@ -1,3 +1,3 @@
-SOL=none
-MINMAJ=All
+SOL=both
+MINMAJ=Majeure
 include ../Septembre.mk
