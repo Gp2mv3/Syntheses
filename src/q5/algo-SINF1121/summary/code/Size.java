@@ -1,8 +1,10 @@
 public int size() {
-     return size(root);
+	return size(root);
 }
 
 private int size(Node x) {
-     if (x == null) return 0;
-     else return x.N;
+	if (x == null)
+		return 0;
+	else
+		return x.N;
 }

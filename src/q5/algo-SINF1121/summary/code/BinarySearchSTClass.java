@@ -1,2 +1,1 @@
-public class BinarySearchST<Key extends Comparable<Key>, Value>
-{
+public class BinarySearchST<Key extends Comparable<Key>, Value> {

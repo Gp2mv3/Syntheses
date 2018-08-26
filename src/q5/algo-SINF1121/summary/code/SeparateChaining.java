@@ -10,9 +10,8 @@ public class SeparateChainingHashST<Key, Value>
 	public SeparateChainingHashST(int M) {
 		this.M = M;
 		st = (SequentialSearchST<Key, Value>[]) new SequentialSearchST[M];
-		for(int i = 0; i < M; i++) {
+		for(int i = 0; i < M; i++)
 			st[i] = new SequentialSearchST();
-		}
 	}
 
 	private int hash(Key key) {
