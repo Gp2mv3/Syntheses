@@ -81,7 +81,7 @@ clean: cleanaux
 
 cleanaux:
 	latexmk -c
-	$(RM) *.aux *.fdb_latexmk *.log *.out *.bbl *.toc *.backup
+	$(RM) *.aux *.fdb_latexmk *.log *.out *.bbl *.toc *.backup *.run.xml *.bcf
 
 show: $(FULL)
 	$(PDFVIEWER) $(FULL) 2> /dev/null &
