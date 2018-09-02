@@ -1,8 +1,18 @@
 \documentclass[fr]{../../../../../../eplexam}
 \usepackage{../../../../../../eplcommon}
 \usepackage{../../../../../../eplunits}
+\usepackage{../../../../../../eplcode}
 
-\newcommand{\degree}{^{\circ}}
+
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{arrows,calc}
+
+% http://me.berkeley.edu/~maxchen/_static/block_diagram_in_latex.pdf
+\tikzstyle{block} = [draw, rectangle, minimum height=2em, minimum width=4em]
+\tikzstyle{sum} = [draw, fill=blue!10, circle, node distance=1cm]
+\tikzstyle{input} = [coordinate] \tikzstyle{output} = [coordinate]
+\tikzstyle{pinstyle} = [pin edge={to-,thin,black}]
 
 \hypertitle[']{Automatique Linéaire}{6}{INMA}{1510}{2018}{Juin}{Majeure}
 {Martin Braquet \and Margo Hauwaert}
@@ -51,11 +61,9 @@ Soit un système dont la dynamique est décrite par le système suivant:
 Soient les trois compensateurs suivants ($K_{p}, \tau_{i}, \tau_{d}$ sont positifs)
 \begin{gather*}
 \begin{aligned}
-P &: C_{1}(s)=K_{p},  
-  &
-PI &: C_{2}(s)=K_{p}\frac{1+s\tau_{i}}{s\tau_{i}}, 
-  &
-PD &: C_{3}(s)=K_{p}(1+s\tau_{d}), 
+P &: C_{1}(s)=K_{p}, \\
+PI &: C_{2}(s)=K_{p}\frac{1+s\tau_{i}}{s\tau_{i}}, \\
+PD &: C_{3}(s)=K_{p}(1+s\tau_{d}).
 \end{aligned}
 \end{gather*}
 
@@ -79,7 +87,7 @@ En boucle fermée par retour unitaire de sortie:
     \item P: $C(s) = k_p $
     
     $$den(s)= s^3 + 0.31 s^2 + (0.001625-0.01k_p) s + (0.0021125+0.0054k_p)$$
-    Voici le critère d'Hurwitz pour une équation du 3e degré : $a_0>0,a_2>0$ et $a_1a_2>a_0$.
+    Voici le critère d'Hurwitz pour une équation du $3^e$ degré : $a_0>0,a_2>0$ et $a_1a_2>a_0$.
     
     \[
      \left\{
@@ -95,7 +103,7 @@ En boucle fermée par retour unitaire de sortie:
     \[
      den(s)=\tau s^4 +0.31\tau s^3 +(0.001625-0.01 k_p) \tau s^2+ (0.0054 k_p  \tau - 0.01 k_p+0.0021125 \tau) s + 0.0054 k_p
     \]
-    Voici le critère d'Hurwitz pour une équation du 4e degré : 
+    Voici le critère d'Hurwitz pour une équation du $4^e$ degré : 
     \[
      \left\{
      \begin{array}{rcl}
@@ -122,7 +130,7 @@ En boucle fermée par retour unitaire de sortie:
     \[
      den(s)=s^3 + (0.31-0.01k_p\tau_d) s^2 + (0.001625+0.0054k_p\tau_d-0.01k_p) s + (0.0021125+0.0054k_p)
     \]
-    C'est aussi une équation du 3e degré:
+    C'est aussi une équation du $3^e$ degré:
     \[
      \left\{
      \begin{array}{rcl}
@@ -166,11 +174,11 @@ On cherche donc
 \[
  u_{opt}(t) = \min_{u(t)}J(u).
 \]
-Or, on sait que par l'équation de Ricatti,
+Or, on sait que par l'équation de Riccati,
 \[
  Q_x = -A^TS-SA+SBQ_u^{-1}B^TS
 \]
-avec $S$ la matrice symétrique solution de l'équation de Ricatti.
+avec $S$ la matrice symétrique solution de l'équation de Riccati.
 
 On utilise également le théorème de complétion des carrés\footnote{On peut tirer profit du fait que $Q_u^{-1}$ est diagonal puisque $Q_u$ est diagonal, donc $(Q_u^{-1})^T=Q_u^{-1}$.},
 \[
@@ -202,7 +210,7 @@ Lors d'un retour d'état, $u=-Kx$, on choisit ainsi
 \[
  K = Q_u^{-1}B^TS
 \]
-en se rappelant que $S$ est déterminé par l'équation de Ricatti pour laquelle $Q_x$ et $Q_u$ sont choisis et connus.
+en se rappelant que $S$ est déterminé par l'équation de Riccati pour laquelle $Q_x$ et $Q_u$ sont choisis et connus.
  
 \end{solution}
 
@@ -211,9 +219,23 @@ en se rappelant que $S$ est déterminé par l'équation de Ricatti pour laquelle
 
 Soit un système en boucle fermée avec $$G(s)=\frac{1}{3}\frac{3-s}{s^3+2.5s^2+s}.$$ 
 
-\begin{center}
- \includegraphics[scale=0.12]{q4.png}
-\end{center}
+\begin{figure}[!ht]
+	\centering
+	\begin{tikzpicture}
+	\node [input, name=input] at (0,0) {};
+	\node [sum] (sum) at (1,0) {};
+	\node [block] (C) at (3,0) {$k_0C(s)$};
+	\node [block] (G) at (6,0) {$G(s)$};
+	\node [output, name=output] at (8,0) {};
+	
+	\draw [->] (input) -- node[above left] {$r(t)$} node[above left,pos=1] {$+$} (sum);
+	\draw [->] (sum) -- (C);
+	\draw [->] (C) -- node[above, midway] {$u(t)$} (G);
+	\draw [->] (G) -- node[above, pos=0.8] {$y(t)$} (output);
+	
+	\draw [->] (7,0) -- (7,-1) -| node[below right, pos=1] {$-$} (sum);
+	\end{tikzpicture}
+\end{figure}
 
 Le diagramme de Bode a les caractéristiques suivantes\footnote{Un graphe du diagramme de Bode était disponible à l'examen.}:
 \[
@@ -224,7 +246,7 @@ P_m=\SI{10.4}{deg} \mbox{ à } \SI{0.615}{ rad/sec}
 \]
 Déterminez un filtre à avance de phase $C(s)$ et la valeur du paramètre $k_0$ pour satisfaire aux spécifications suivantes: 
 \[
-    \phi_M = 45\degree \qquad\mathrm{pour}\qquad  \omega=\SI{0.5}{ rad/sec}
+    \phi_M = \ang{45} \qquad\mathrm{pour}\qquad  \omega=\SI{0.5}{ rad/sec}
 \]
 
 \nosolution
@@ -255,9 +277,9 @@ L'entrée de commende est $C_{A,in}$.
 
 \begin{enumerate}
   \item Vous avez accès à la mesure $C_B$ mais pas à celle de $C_A$, que vous souhaitez déterminer en temps réel en utilisant un observateur de Luenberger, dont vous souhaitez fixer les pôles. Donnez les équations de l'observateur dans ce cas. 
-  \item Vous êtes dans la situation inverse où vous mesurez $C_A$ mais pas $C_B$ et vous utilisez la même approche qu'au point 1 pour synthétiser un observateur de Luenberger. Donnez les équations de l'observateur dans ce cas. 
-  \item Comparez les 2 observatuers en termes de performances dynamiques. Justifiez votre réponse. 
-  \item Donnez les valeurs des gains de l'observateur $K$ de Kaman dans le premier cas, sachant que l'équation de Ricatti et le gain $K$ s'écrivent ainsi:
+  \item Vous êtes dans la situation inverse où vous mesurez $C_A$ mais pas $C_B$ et vous utilisez la même approche qu'au point $1$ pour synthétiser un observateur de Luenberger. Donnez les équations de l'observateur dans ce cas. 
+  \item Comparez les $2$ observateurs en termes de performances dynamiques. Justifiez votre réponse. 
+  \item Donnez les valeurs des gains de l'observateur $K$ de Kalman dans le premier cas, sachant que l'équation de Riccati et le gain $K$ s'écrivent ainsi:
     \[
     0=-RC^TCR+RA^T+AR
     \]
@@ -274,9 +296,30 @@ L'entrée de commende est $C_{A,in}$.
 
 Soit le système en boucle fermée suivant: 
 
-\begin{center}
- \includegraphics[scale=0.10]{q6.png}
-\end{center}
+\begin{figure}[!ht]
+	\centering
+	\begin{tikzpicture}[auto,>=latex']
+		\node [input, name=input] at (0,0) {};
+		\node [sum] (sum1) at (1,0) {};
+		\node [block] (C1) at (3,0) {$C_1(s)$};
+		\node [sum] (sum2) at (5,0) {};
+		\node [block] (C2) at (7,0) {$C_2(s)$};
+		\node [block] (G2) at (9,0) {$G_2(s)$};
+		\node [block] (G1) at (13,0) {$G_1(s)$};
+		\node [output, name=output] at (14.5,0) {};
+		
+		\draw [->] (input) -- node[pos=0.2] {$y^*(t)$} node[pos=0.9] {$+$} (sum1);
+		\draw [->] (sum1) -- (C1);
+		\draw [->] (C1) -- node[pos=0.4] {$y_1^*(t)$} node[pos=0.9] {$+$} (sum2);
+		\draw [->] (sum2) -- (C2);
+		\draw [->] (C2) -- (G2);
+		\draw [->] (G2) -- node {$y_1(t)$} (G1);
+		\draw [->] (G1) -- node[pos=0.8] {$y(t)$} (output);
+		
+		\draw [->] (11,0) -- (11,-1) -| node[below right, pos=1] {$-$} (sum2);
+		\draw [->] (14,0) -- (14,-1.5) -| node[below right, pos=1] {$-$} (sum1);
+	\end{tikzpicture}
+\end{figure}
 
 avec 
 \begin{equation*}
@@ -285,7 +328,7 @@ avec
 
 \begin{enumerate}
     \item Comment s'appelle cette structure? Quel est son intérêt? Quels sont ses avantages et inconvénients? 
-    \item Déterminez les valeurs de $K_{p1}, K_{p2}, \tau_{i1}$ de manière à avoir une dynamique en boucle fermé avec seulement deux pôles en -4 et -5.
+    \item Déterminez les valeurs de $K_{p1}, K_{p2}, \tau_{i1}$ de manière à avoir une dynamique en boucle fermé avec seulement deux pôles en $-4$ et $-5$.
     \item Cette structure de commande permet-elle d'annuler l'erreur statique? Justifiez vos réponses. 
 \end{enumerate}
 
