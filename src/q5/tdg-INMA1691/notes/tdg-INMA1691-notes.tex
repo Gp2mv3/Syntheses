@@ -1,0 +1,171 @@
+\documentclass[fr]{../../../eplnotes}
+
+\usepackage{float}
+
+\hypertitle{Mathématiques discrètes I : Théorie et algorithmique des graphes}{5}{INMA}{1691}
+{Gilles Peiffer}
+{Raphaël Jungers}[
+\paragraph{Remarque} Ce document reprend les notes prises
+au cours de l'année 2018-2019.
+]
+
+\section{Formalisme, isomorphisme et Théorème d'Euler}
+% TODO find better title
+\subsection{Introduction}
+	De façon informelle,
+	on peut dire qu'un graphe
+	est ``un réseau de sommets reliés par des arêtes''.
+	Un exemple d'un graphe serait donc par exemple
+	celui à la \figuref{graph}.
+	\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}
+		\node[draw, circle] at (-1,2)  (1) {};
+		\node[draw, circle] at ( 1,2)  (2) {};
+		\node[draw, circle] at (-1,0)  (3) {};
+		\node[draw, circle] at ( 1,0)  (4) {};
+
+		\draw[-] (2) edge node[anchor = north] {} (3);
+		\draw[-] (2) edge node[anchor = north east] {} (4);
+	\end{tikzpicture}
+	\caption{Un graphe à 4 sommets et 2 arêtes.}
+	\label{fig:graph}
+	\end{figure}
+
+	Pourquoi est-il intéressant d'étudier la théorie des graphes?
+	Grâce aux résultats de celle-ci,
+	énormément de problèmes semblant initialement compliqués
+	sont réduits à des problèmes relativement simples.
+	En effet, un acronyme intéressant,
+	très souvent valable en théorie des graphes,
+	est \textsc{TONCAS}:
+	``\emph{The Obviously Necessary Condition is Also Sufficient}'',
+	c'est-à-dire que si une condition paraît intuitivement nécessaire,
+	il y a de bonnes chances qu'elle soit également suffisante.
+\subsection{Définitions}
+	\begin{mydef}[Graphe]
+		Un \emph{graphe} $G$ est un triplet ordonné $(V, E, \psi)$, où:
+		\begin{itemize}
+		\item $V$ est un ensemble dont les éléments sont appelés sommets ou noeuds;
+		\item $E$ est un ensemble dont les éléments sont appelés arêtes;
+		\item $\psi$ est une fonction, dite fonction d'incidence,
+		qui associe à chaque arête un sommet ou une \emph{paire} de sommets.
+		\end{itemize}
+	\end{mydef}
+	Prenons de nouveau un exemple de graphe (\figuref{graph_2}).
+	\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}
+		\node[draw, circle] at ( 0, 2.82)  (u) {$u$};
+		\node[draw, circle] at ( 0, 0  )  (x) {$x$};
+		\node[draw, circle] at (-4, 0  )  (y) {$y$};
+		\node[draw, circle] at ( 2,-2  )  (v) {$v$};
+		\node[draw, circle] at (-2,-2  )  (w) {$w$};
+
+		\draw (u) -- (v) node [midway, right] {$e_1$};
+		\draw (u) -- (w) node [midway, right] {$e_2$};
+		\draw (v) -- (w) node [midway, above] {$e_3$};
+		\draw (x) -- (v) node [midway, above] {$e_4$};
+		\draw (x) -- (w) node [midway, right] {$e_5$};
+		\draw (x) -- (u) node [midway, left] {$e_6$};
+		\draw (x) -- (y) node [midway, above] {$e_7$};
+	\end{tikzpicture}
+	\caption{Un graphe à 5 sommets et 7 arêtes.}
+	\label{fig:graph_2}
+	\end{figure}
+	Pour ce graphe, on a
+	\begin{align*}
+		V &= \{u, v, w, x, y\}\,,\\
+		E &= \{e_1, e_2, \dots, e_7\}\,,\\
+		\psi(e_1) &= (u,v)\,,\\
+		\psi(e_2) &= (u,w)\,,\\
+		&\vdotswithin{=}\\
+		\psi(e_7) &= (x,y)\,.\\
+	\end{align*}
+
+	\begin{mydef}[Degré]
+		Le degré d'un sommet
+		est le nombre d'arêtes incidentes à celui-ci.
+	\end{mydef}
+
+	\begin{myexem}[Sous-graphe]
+		Un exemple de sous-graphe du graphe en \figuref{graph_2}
+		est le graphe en \figuref{subgraph}.
+		\begin{figure}[H]
+		\centering
+		\begin{tikzpicture}
+			\node[draw, circle] at ( 0, 0  )  (x) {$x$};
+			\node[draw, circle] at (-4, 0  )  (y) {$y$};
+			\node[draw, circle] at ( 2,-2  )  (v) {$v$};
+			\node[draw, circle] at (-2,-2  )  (w) {$w$};
+			\draw (v) -- (w) node [midway, above] {$e_3$};
+			\draw (x) -- (w) node [midway, right] {$e_5$};
+			\draw (x) -- (y) node [midway, above] {$e_7$};
+		\end{tikzpicture}
+		\caption{Un graphe chemin à 4 sommets et 3 arêtes,
+		sous-graphe de celui à 5 sommets et 7 arêtes en \figuref{graph_2}.}
+		\label{fig:subgraph}
+		\end{figure}
+		En général, un \emph{sous-graphe} du graphe $(V, E, \psi)$
+		est un graphe $(V', E', \psi')$ avec :
+		\begin{itemize}
+		\item $V' \subseteq V$;
+		\item $E' \subseteq E$;
+		\item $\psi'$ est la restriction de $\psi$ à $E'$.
+  \end{itemize}
+	\end{myexem}
+
+	\begin{mydef}[Graphe simple]
+		Un graphe simple est un graphe sans boucle ni arête multiple.
+	\end{mydef}
+
+	Il faut noter qu'un graphe est une notion abstraite,
+	indépendante de sa représentation.
+	Le graphe $G$ aurait tout aussi bien pu être noté sous la forme
+	\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}
+		\node[draw, circle] at ( 2, 2)  (u) {$b$};
+		\node[draw, circle] at ( 2,-2)  (x) {$d$};
+		\node[draw, circle] at ( 4, 0)  (y) {$k$};
+		\node[draw, circle] at (-2, 2)  (v) {$a$};
+		\node[draw, circle] at (-2,-2)  (w) {$c$};
+
+		\draw (u) -- (v) node [midway, above] {$e_1$};
+		\draw (u) -- (w) node [near end, right] {$e_2$};
+		\draw (v) -- (w) node [midway, left] {$e_3$};
+		\draw (x) -- (v) node [near start, left] {$e_4$};
+		\draw (x) -- (w) node [midway, above] {$e_5$};
+		\draw (x) -- (u) node [midway, left] {$e_6$};
+		\draw (x) -- (y) node [midway, left] {$e_7$};
+	\end{tikzpicture}
+	\caption{Le graphe de la \figuref{graph_2} représenté différemment.}
+	\label{fig:graph_2_iso}
+	\end{figure}
+
+	L'\emph{isomorphisme} est
+	\[
+	\begin{array}{cc}
+		y & k \\
+		x & d \\
+		w & c \\
+		u & b \\
+		v & a
+	\end{array}
+	\]
+
+	\subsection{Isomorphisme de graphes}
+	\begin{mydef}[Isomorphisme de graphes]
+		Deux graphes $(V, E, \psi)$ et $(V', E', \psi')$
+		sont dits \emph{isomorphes} s'il existe
+		des bijections $f \colon V \to V'$ et $g \colon E \to E'$ telles que:
+		\[
+		\psi(e) = (u,v) \iff \psi(g(e)) = \big(f(u),f(v)\big)\,.
+		\]
+		\end{center}
+		Deux graphes sont isomorphes
+		s'il y a une bijection entre les n\oe{}uds et les arêtes.
+	\end{mydef}
+
+	% TODO propo pour la rel d'équiv
+\end{document}
