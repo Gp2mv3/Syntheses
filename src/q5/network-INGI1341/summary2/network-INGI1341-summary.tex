@@ -94,6 +94,7 @@ three arrows are needed.
 \end{enumerate}
 
 \begin{figure}[H]
+	\centering
 	\includegraphics[width=\textwidth]{timeseqdiag.png}
 	\caption{A simple time-sequence diagram.}
 	\label{fig:timeseqdiag}
@@ -117,6 +118,7 @@ during their transmission on an electrical cable
 (as in \figuref{lostbitdiag}).
 
 \begin{figure}[H]
+	\centering
 	\includegraphics[width=\textwidth]{lostbitdiag.png}
 	\caption{Bits can ``disappear'' due to mismatched clock frequencies.}
 	\label{fig:lostbitdiag}
@@ -144,6 +146,7 @@ The four possible combinations make for four possible characters,
 as shown in \figuref{manchester_encoding}.
 
 \begin{figure}[H]
+	\centering
 	\includegraphics[width=\textwidth]{manchester_encoding.png}
 	\caption{Visualisation of the Manchester encoding.
 	$0$ and $1$ are regular bits,
@@ -162,7 +165,107 @@ Computer networks use different layers,
 where each layer provides a service that is built above the underlying layer,
 and is close to the needs of the applications.
 The datalink layer builds upon the service provided by the physical layer.
+\bigbreak
+\subsubsection{Framing}
+\begin{mydef}[Frame]
+	In many networks, the fundamental unit of of information
+	exchanged between two hosts is called a \emph{frame}.
+	A \emph{frame} is a sequence of bits
+	that has a particular syntax or structure.
+\end{mydef}
+\begin{myrem}[Bit rate and bandwidth]
+	Bit rate and bandwidth are often used
+	to characterize the transmission capacity of the physical service.
+	Bandwidth is defined as ``a range of radio frequencies
+	which is occupied by a modulated carrier wave,
+	which is assigned to a service,
+	or over which a device can operate''.
+	By extension, bandwidth is also used
+	to represent the capacity of a communication system in bits per second.
+\end{myrem}
+Since the physical layer is not perfect,
+transmitting and receiving frames
+is not as simple as just defining a way to encode frames into bits,
+or make out frames from bits.
+A generic solution exists that works on any physical layer: \emph{stuffing}.
+To enable a receiver to easily delineate the frame boundaries,
+special bit strings serve as frame boundary markers
+and encode the frames so that these special bit strings
+do not appear inside the frames.
+There are two variants of \emph{stuffing}:
+\begin{itemize}
+	\item \emph{Bit stuffing}.
+	Bit stuffing reserves the $01111110$ bit string
+	as the frame boundary marker
+	and ensures there will never be six consecutive $1$ symbols
+	transmitted by the physical layer inside a frame.
+	It works as follows:
+	\begin{enumerate}
+		\item The sender transmits the marker, i.e. $01111110$.
+		\item The sender sends all the bits of the frame
+		and inserts an additional bit set to $0$
+		after each sequence of five consecutive $1$ bits.
+		\item The sender transmits the marker again,
+		marking the end of the frame.
+		\item The receiver detects the beginning of a frame
+		thanks to the marker.
+		\item The receiver processes the received bits,
+		and if it counts five consecutive bits set to $1$,
+		followed by a $0$ bit,
+		that last bit is discarded.
+		\item Once the receiver detects the marker again,
+		it knows the frame has been received entirely.
+	\end{enumerate}
+	Bit stuffing increases the number of bits
+	required to transmit the frame,
+	with the worst case being
+	a long sequence of bits set to $1$ inside the frame.
+	Note that bit stuffing is vulnerable to transmission errors.
+	If such an error happens,
+	the frame (and possible the next)
+	will not correctly be decoded by the receiver,
+	but it will be able to resynchronize itself at the next valid marker.
+	\item \emph{Character stuffing}.
+	Character stuffing techniques
+	use control characters in the ASCII table
+	as markers to delineate frame boundaries.
+	The following markers are often used:
+	DLE STX to mark the beginning and DLE ETX to mark the end\footnote{DLE ($0010000$ b) for ``Data Link Escape'',
+	STX ($0000010$ b) for ``Start of Text''
+	and ETX ($0000011$ b) for ``End of Text''.}.
+	When transmitting a frame,
+	the sender adds a DLE character after each transmitted DLE character.
+	This ensures that none of the markers
+	can appear inside the transmitted frame.
+	The receiver detects this
+	and removes the second DLE when it receives two consecutive ones.
+	Just like bit stuffing,
+	character stuffing increases the length of the transmitted frames.
+	The worst frame for character stuffing
+	is a frame containing many DLE characters.
+	Again, two frames can potentially be lost
+	when a transmission error occurs,
+	but the receiver will be able to resynchronize itself
+	with the next correctly received markers.
+\end{itemize}
+While bit stuffing is easily implemented in hardware,
+it is difficult to implement in software
+given the complexity of performing bit manipulations in software.
+Software implementations prefer to use character stuffing instead.
 
-% TODO from "The datalink layer"
+Both of these techniques allow to recover frames from a stream of bits or bytes.
+The framing mechanism provides a richer service than the physical layer.
+It can also be represented using the DATA.req and DATA.ind primitives,
+as illustrated in \figuref{stuffing_diag}.
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.4\textwidth]{stuffing_diag.png}
+	\caption{Time-sequence diagram of framing,
+	assuming hypothetical frames containing four useful bits
+	and one bit of framing.}
+	\label{fig:stuffing_diag}
+\end{figure}
+
+\subsubsection{Recovering from transmission errors}
 \end{document}
