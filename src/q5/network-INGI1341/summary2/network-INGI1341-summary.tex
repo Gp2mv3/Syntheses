@@ -8,6 +8,7 @@
 {Gilles Peiffer}
 {Olivier Bonaventure}
 
+\part{Principles}
 \section{Connecting two hosts}
 
 The first step when building a network,
@@ -24,7 +25,7 @@ Various types of media have been used for this purpose:
 		which are used in the telephone network
 		and in enterprise networks;
 		\item coaxial cables,
-		which are used in cable TV networks,
+		which are used in cable \textsc{TV} networks,
 		but not in enterprise networks anymore.
 	\end{itemize}
 	Some technologies operate over the classical electrical cable.
@@ -33,7 +34,7 @@ Various types of media have been used for this purpose:
 	when the distance between the devices is larger than one kilometer.
 	There are two main types of optical fibers:
 	\begin{itemize}
-		\item multimode, which uses a LED to send signals
+		\item multimode, which uses a \textsc{LED} to send signals
 		over distances greater than several tens of kilometers;
 		\item monomode, which uses a laser to send signals
 		over distances of a few kilometers.
@@ -227,22 +228,25 @@ There are two variants of \emph{stuffing}:
 	but it will be able to resynchronize itself at the next valid marker.
 	\item \emph{Character stuffing}.
 	Character stuffing techniques
-	use control characters in the ASCII table
+	use control characters in the \textsc{ASCII} table
 	as markers to delineate frame boundaries.
 	The following markers are often used:
-	DLE STX to mark the beginning and DLE ETX to mark the end\footnote{DLE ($0010000$ b) for ``Data Link Escape'',
-	STX ($0000010$ b) for ``Start of Text''
-	and ETX ($0000011$ b) for ``End of Text''.}.
+	\textsc{DLE STX} to mark the beginning
+	and \textsc{DLE ETX} to mark the end\footnote{\textsc{DLE} ($0010000$ b) for ``Data Link Escape'',
+	\textsc{STX} ($0000010$ b) for ``Start of Text''
+	and \textsc{ETX} ($0000011$ b) for ``End of Text''.}.
 	When transmitting a frame,
-	the sender adds a DLE character after each transmitted DLE character.
+	the sender adds a \textsc{DLE} character
+	after each transmitted \textsc{DLE} character.
 	This ensures that none of the markers
 	can appear inside the transmitted frame.
 	The receiver detects this
-	and removes the second DLE when it receives two consecutive ones.
+	and removes the second \textsc{DLE}
+	when it receives two consecutive ones.
 	Just like bit stuffing,
 	character stuffing increases the length of the transmitted frames.
 	The worst frame for character stuffing
-	is a frame containing many DLE characters.
+	is a frame containing many \textsc{DLE} characters.
 	Again, two frames can potentially be lost
 	when a transmission error occurs,
 	but the receiver will be able to resynchronize itself
@@ -255,7 +259,8 @@ Software implementations prefer to use character stuffing instead.
 
 Both of these techniques allow to recover frames from a stream of bits or bytes.
 The framing mechanism provides a richer service than the physical layer.
-It can also be represented using the DATA.req and DATA.ind primitives,
+It can also be represented
+using the \texttt{DATA.req} and \texttt{DATA.ind} primitives,
 as illustrated in \figuref{stuffing_diag}.
 
 \begin{figure}[H]
@@ -268,4 +273,263 @@ as illustrated in \figuref{stuffing_diag}.
 \end{figure}
 
 \subsubsection{Recovering from transmission errors}
+We distinguish two types of \texttt{DATA.req} and \texttt{DATA.ind} primitives:
+\begin{itemize}
+	\item the interactions between the user and the datalink layer entity
+	are represented using \texttt{DATA.req} and \texttt{DATA.ind};
+	\item the interactions between the datalink layer entity
+	and the framing sublayer
+	are represented by using \texttt{send} and \texttt{recvd}.
+\end{itemize}
+The datalink layer entity has a buffer
+to deal with \textsc{SDU}s that have been received as a \texttt{DATA.request}
+but have not been sent.
+It also has a buffer that deals with received frames
+that haven't been processed yet.
+If one of these buffers overflows,
+arriving frames will be discarded,
+even if they are correct.
+Hence, a reliable protocol must include a feedback mechanism
+that allows the receiver to inform the sender that it has processed a frame
+and that another one can be sent,
+regardless of transmission errors.
+We need two types of frames:
+\begin{itemize}
+	\item \emph{data frames} carrying an \textsc{SDU};
+	\item \emph{control frames} carrying an acknowledgment
+	indicating the previous frames were processed correctly.
+\end{itemize}
+These two types can be distinguished by dividing the frame in two parts:
+\begin{itemize}
+	\item the \emph{header} that contains a bit
+	set to $0$ in data frames and $1$ in control frames.
+	\item the \emph{payload} that contains the \textsc{SDU}
+	supplied by the application.
+\end{itemize}
+The datalink entity can then be modelled
+as an \textsc{FSM}\footnote{Finite state machine.},
+containing two states for the receiver and the sender (\figuref{fsm}).
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+		\includegraphics[width=0.6\textwidth]{fsm.png}
+		\caption{\textsc{FSM} of the simplest reliable protocol,
+		with the sender above and the receiver below.
+		The sender has to wait for an acknowledgment
+		before being able to transmit the next \textsc{SDU}.}
+		\label{fig:fsm}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{simp_rel_prot.png}
+		\caption{Exchange of a few frames between two hosts.}
+		\label{fig:simp_rel_prot}
+	\end{subfigure}
+\end{figure}
+
+\subsubsection{Reliable data transfer on top of an imperfect link}
+In the datalink layer,
+we mainly have to deal with two types of transmission errors:
+\begin{itemize}
+	\item corrupted frames;
+	\item lost or unexpected frames;
+\end{itemize}
+Data transmission on a physical link
+can be affected by the following transmission errors:
+\begin{itemize}
+	\item random isolated errors
+	where the value of a single bit has been modified;
+	\item random burst errors
+	where the values of $n$ consecutive bits have been changed;
+	\item random bit creations and removals.
+\end{itemize}
+In order to avoid this,
+we have to add \emph{redundancy} to the frames that are sent.
+Information theory allows us to add redundant information
+as an \emph{error detection code}.
+Simply put,
+the frame is sent with an error detection code,
+computed by the sender, added to it.
+Once the frame is received,
+the receiver recomputes the error detection code
+and verifies whether it matches the received one.
+To understand error detection codes,
+consider two devices that exchange bit strings containing $N$ bits.
+To allow the receiver to detect a transmission error,
+an error detection code calculates $r$ redundant bits
+for each string of $N$ bits,
+thus transforming the strings into strings of $N+r$ bits each.
+The simplest error detection code is the parity bit.
+Two types exist: even and odd parity.
+With the even (resp. odd) parity scheme,
+the redundant bit is chosen so that an even (resp. odd) number of bits
+are set to $1$ in the transmitted string.
+The receiver can easily recompute the parity of each received bit string
+and discard the strings with an invalid parity.
+This means that if multiple bits have been affected,
+the receiver might not be able to detect the transmission error.
+Another example of a (more powerful) error detection code
+is a \textsc{CRC}\footnote{Cyclic redundancy check.},
+which are widely used in datalink layer protocols.
+\begin{myprop}[CRC]
+	An $N$-bit \textsc{CRC} can detect
+	\begin{itemize}
+		\item all transmission errors affecting a burst
+		of less than $N$ bits in the transmitted frame and
+		\item all transmission errors that affect an odd number of bits.
+	\end{itemize}
+\end{myprop}
+
+It is also possible to design a code
+that allows the receiver to correct transmission errors,
+the simplest example of which being
+the \textsc{TMR}\footnote{Triple modular redundancy.},
+where every bit is sent three consecutive times,
+so as to allow the receiver to detect errors
+and correct them by looking at the majority of bits in case an error occurs.
+Other more powerful codes like the Hamming Code,
+which is a clever combination of parity bits, exist.
+However, these error correction schemes aren't really used in practice.
+
+A frame is usually divided into two parts:
+\begin{itemize}
+	\item A \emph{header} that contains
+	the fields used by the reliable protocol to ensure reliable delivery.
+	The header contains a checksum or \textsc{CRC}
+	that is used to detect transmission errors.
+	Some headers also indicate a \emph{length field}
+	with the length of the frame or the payload.
+	\item A \emph{payload} that contains the user data.
+\end{itemize}
+The checksum is a simple error detection scheme:
+both the sender and the receiver compute the arithmetic sum
+of all the bytes of the frame.
+Frames with an invalid checksum are discarded by the receiver.
+\textsc{CRC}s have better error detection capabilities,
+but require more processing power when implemented in software.
+\begin{myrem}[Checksums and \textsc{CRC}s]
+	Both checksums and \textsc{CRC}s are used in practice.
+	The \textsc{TCP/IP} and \textsc{OSI} communities chose checksums
+	(resp. the Internet checksum and the Fletcher checksum),
+	while many datalink layer protocols and file formats such as
+	\texttt{zip} or \texttt{png} use \textsc{CRC}s.
+	It always comes down to a trade-off between error detection capabilities
+	and processing power.
+\end{myrem}
+
+Since the receiver send an acknowledgment after each received data frame,
+a retransmission timer is used.
+The value of this retransmission timer needs to be larger
+than the \textsc{RTT}\footnote{Round-trip time,
+i.e. the delay between the transmission of the first bit of a data frame
+to the reception of the last bit of the corresponding acknowledgment.}.
+A retransmission timer is started when the sender sends a frame,
+and when it expires,
+the sender assumes the data segment was lost
+and retransmits it (\figuref{retrans_timer}).
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.4\textwidth]{retrans_timer.png}
+	\caption{An example of retransmission timer expiry.}
+	\label{fig:retrans_timer}
+\end{figure}
+
+However, an issue that can (and does) arise,
+is the case when the acknowledgment is lost.
+If this happens,
+the sender will retransmit the data segment,
+except that the receiver will interpret this retransmission as a new segment,
+whose payload must be delivered to the user.
+To solve this problem,
+datalink protocols associate a seqnum\footnote{Sequence number.}
+to each data frame.
+This seqnum is one of the fields in the header of data frames.
+We use the notation \texttt{D(x,\dots)}
+to indicate a data frame whose seqnum field is set to value \texttt{x}.
+The sequence number is encoded as a bit string of fixed length.
+A simple reliable protocol
+is \emph{Alternating bit protocol} (\textsc{ABP}).
+
+\textsc{ABP} uses a single bit to encode the seqnum.
+The sender and receiver
+only require a four-state \textsc{FSM} (\figuref{abp_fsm}).
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{abp_sender_fsm.png}
+		\caption{\textsc{ABP} sender \textsc{FSM}.
+		The initial state of the sender
+		is \texttt{Wait for D(0,\dots)}.
+		In this state,
+		the sender waits for a \texttt{DATA.request}.
+		The first data frame uses seqnum $0$.
+		Once this is sent,
+		the sender waits for an \texttt{OK0} acknowledgment.
+		A frame is transmitted when the retransmission timer expires
+		or when an acknowledgment with an incorrect seqnum
+		has been received.}
+		\label{fig:abp_sender_fsm}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{abp_receiver_fsm.png}
+		\caption{\textsc{ABP} receiver \textsc{FSM}.
+		The receiver first waits for \texttt{D(0,\dots)}.
+		If the frame contains a correct \textsc{CRC},
+		it passes the \textsc{SDU} to its user and sends \texttt{OK0}.
+		If the \textsc{CRC} is invalid,
+		the frame is discarded.
+		The receiver then waits for \texttt{D(1,\dots)}.
+		In this state,
+		it may receive a duplicate \texttt{D(0,\dots)}
+		or a data frame with an invalid \textsc{CRC}.
+		In both cases, it returns an \texttt{OK0} frame
+		to allow the sender to recover
+		from the possible loss of the previous \texttt{OK0} frame.}
+		\label{fig:abp_receiver_fsm}
+	\end{subfigure}
+	\caption{\textsc{FSM}s for the \textsc{ABP}.}
+	\label{fig:abp_fsm}
+\end{figure}
+
+\textsc{ABP} can recover
+from transmission errors and frame losses (shown in \figuref{abp_errors}).
+However, it has an important drawback:
+it has low maximum throughput.
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[t]{0.31\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{abp_success.png}
+		\caption{A successful transmission with \textsc{ABP}.}
+		\label{fig:abp_success}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.31\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{abp_error_trans.png}
+		\caption{\textsc{ABP} can recover from the loss of data frames.}
+		\label{fig:abp_error_trans}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.31\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{abp_error_ack.png}
+		\caption{\textsc{ABP} can recover
+		from the loss of control frames.}
+		\label{fig:abp_error_ack}
+	\end{subfigure}
+	\caption{\textsc{ABP} can recover
+	from the losses of data or control frames.}
+	\label{fig:abp_errors}
+\end{figure}
+\subsubsection{Go Back $N$}
+\subsubsection{Selective repeat}
 \end{document}
