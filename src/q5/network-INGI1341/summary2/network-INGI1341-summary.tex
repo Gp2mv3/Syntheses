@@ -96,7 +96,7 @@ three arrows are needed.
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\textwidth]{timeseqdiag.png}
+	\includegraphics[width=0.5\textwidth]{timeseqdiag.png}
 	\caption{A simple time-sequence diagram.}
 	\label{fig:timeseqdiag}
 \end{figure}
@@ -120,7 +120,7 @@ during their transmission on an electrical cable
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\textwidth]{lostbitdiag.png}
+	\includegraphics[width=0.5\textwidth]{lostbitdiag.png}
 	\caption{Bits can ``disappear'' due to mismatched clock frequencies.}
 	\label{fig:lostbitdiag}
 \end{figure}
@@ -282,7 +282,9 @@ We distinguish two types of \texttt{DATA.req} and \texttt{DATA.ind} primitives:
 	are represented by using \texttt{send} and \texttt{recvd}.
 \end{itemize}
 The datalink layer entity has a buffer
-to deal with \textsc{SDU}s that have been received as a \texttt{DATA.request}
+to deal with \textsc{SDU}s\footnote{Service data unit,
+a generic term to represent the data that is transported by a protocol.}
+that have been received as a \texttt{DATA.request}
 but have not been sent.
 It also has a buffer that deals with received frames
 that haven't been processed yet.
@@ -531,5 +533,197 @@ it has low maximum throughput.
 	\label{fig:abp_errors}
 \end{figure}
 \subsubsection{Go Back $N$}
+To deal with the performance limitations of \textsc{ABP},
+reliable protocols rely on \emph{pipelining}.
+This means a sender can send multiple consecutive frames
+without having to wait for an acknowledgment after each frame.
+Each frame contains a seqnum encoded in an $n$-bit field.
+Pipelining can possibly overload the receiver,
+which is why reliable protocols only allow
+$W$ unacknowledged frames to be transmitted
+before being forced to wait for an acknowledgment.
+This is implemented by using a \emph{sliding window},
+like the ones shown in \figuref{sliding_window}.
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{sliding_window1.png}
+		\caption{An example sliding window containing $5$ segments.}
+		\label{fig:sliding_window1}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{sliding_window2.png}
+		\caption{An example of a sliding window of size $3$
+		being used by the sender.}
+		\label{fig:sliding_window2}
+	\end{subfigure}
+	\caption{The sliding window.}
+	\label{fig:sliding_window}
+\end{figure}
+
+Note that since the headers use an $n$-bit field to encode the seqnum,
+only the numbers in the interval $0$--$2^n - 1$ can be used.
+This means the sliding window needs to be able to wrap.
+
+To recover from losses,
+a sliding window protocol must define
+\begin{itemize}
+	\item a \emph{heuristic} to detect frame losses and
+	\item a \emph{retransmission strategy} to retransmit the lost frames.
+\end{itemize}
+The simplest such strategy is called Go Back $N$.
+It works as follows:
+when a receiver receives a frame,
+it returns an acknowledgment containing the seqnum of
+the last in-sequence frame it received.
+This acknowledgment is said to be \emph{cumulative}.
+This means that if the frame with seqnum $x$ is acknowledged,
+then the sender knows that all previous frames were also received succesfully,
+even if their acknowledgments were lost in transmission.
+A sender stores a buffer of the size of the sliding window.
+The frames are sent with increasing seqnums
+($\mod \texttt{maxseq}$).\footnote{\texttt{maxseq} is the maximum number of different sequence numbers ($2^n$).}
+Once the sending buffer is full,
+it must wait for an acknowledgment.
+When the sender receives an acknowledgment,
+it removes all the acknowledged frames from the sending buffer,
+and uses a retransmission timer to detect frame losses.
+This timer is started when the first frame is sent,
+and after receicing an acknowledgment,
+it only restarts the timer if
+there are still unacknowledged frames in the sending buffer.
+When the timer expires,
+all frames in the buffer are retransmitted
+(and the timer is restarted again, etc.).
+These possible states are summarized in \figuref{gbn_fsms}.
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{gbn_receiver_fsm.png}
+		\caption{The finite state machine for a Go Back $N$ receiver.
+		This receiver uses two variables:
+		\texttt{lastack} and \texttt{next}.
+		\texttt{next} is the next expected sequence number
+		and \texttt{lastack} the sequence number
+		of the last data frame that has been acknowledged.
+		The receiver only accepts the frames
+		that are received in sequence.}
+		\label{fig:gbn_receiver_fsm}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.45\linewidth}
+		\centering
+		\includegraphics[width=\textwidth]{gbn_sender_fsm.png}
+		\caption{The finite state machine for a Go Back $N$ sender.}
+		\label{fig:gbn_sender_fsm}
+	\end{subfigure}
+	\caption{Finite state machines for the Go Back $N$ recovery protocol.}
+	\label{fig:gbn_fsms}
+\end{figure}
+
+The operation of this protocol is illustrated in \figuref{gbn_ex}.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{gbn_ex.png}
+	\caption{An example of Go Back $N$ at work.}
+	\label{fig:gbn_ex}
+\end{figure}
+
+While it is easy to implement,
+Go Bac $N$ also has some drawbacks:
+when many frames are lost,
+performance drops because out-of-sequence frames
+are not accepted by the receiver and
+the sender retransmits \emph{all} frames once it detects a loss.
 \subsubsection{Selective repeat}
+For these reasons,
+selective repeat is a smarter strategy.
+It has a sliding window of $W$ frames,
+just like Go Back $N$,
+but it also stores received out-of-frequence frames.
+The selective repeat receiver discards all frames with an invalid \textsc{CRC}.
+\texttt{lastack} is the last in-sequence frame received,
+and it is always included in the acknowledgments that the receiver sends.
+Some protocols also allow the selective repeat receiver
+to acknowledge the out-of sequence frames that it has received.
+This can be done by placing the list of the correctly received,
+but out-of-sequence frames together with the \texttt{lastack} value.
+When the receiver receives a data frame,
+it first verifies whether the frame is inside its receiving window.
+If yes, the frame is placed in the receive buffer.
+If not, the frame is discarded and an acknowledgment with \texttt{lastack}
+is sent to the sender.
+The receiver then removes all consecutive frames
+starting at \texttt{lastack} (if any) from the receive buffer.
+The payloads of these frames are delivered to the user,
+\texttt{lastack} and the receiving window are updated,
+and an acknowledgment acknowledging the last frame received in sequence is sent.
+\bigbreak
+The selective repeat sender maintains a sending buffer
+that can store up to $W$ unacknowledged frames.
+These frames are sent as long as the sending buffer is not full.
+Several implementations of a selective repeat sender are possible.
+A simple implementation associates one retransmission timer to each frame.
+The timer is started when the frame is sent
+and cancelled upon reception of an acknowledgement that covers this frame.
+When a retransmission timer expires,
+the corresponding frame is retransmitted
+and this retransmission timer is restarted.
+When an acknowledgement is received,
+all the frames that are covered by this acknowledgement
+are removed from the sending buffer and the sliding window is updated.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{selective_repeat_ex.png}
+	\caption{An example of selective repeat at work.
+	The figure illustrates the operation of selective repeat
+	when frames are lost.
+	In this figure, \texttt{C(OK,x)} is used to indicate that all frames,
+	up to and including sequence number $x$ have been received correctly.
+	This figure also shows selective acknowledgment,
+	which the receiver telling the sender
+	about correctly received,
+	but out-of-sequence frames.
+	The sender knows it should stop the retransmission timers
+	for those frames,
+	while still keeping them in the sending buffer
+	until the reception of a cumulative acknowledgment.}
+	\label{fig:selective_repeat_ex}
+\end{figure}
+
+\begin{myrem}[Maximum window size with Go Back $N$ and selective repeat]
+	Theoretically, the maximum window size for a reliable protocol
+	using $n$ bits to encode its seqnums is $2^n$.
+	However, consider Go Back $N$ and that all acknowledgments are lost,
+	despite the frames being received in-sequence.
+	The sender will have to send all the frames again,
+	and the user will receive them a second time.
+	This can be fixed by using $2^n-1$ instead.
+	Something similar happens with selective repeat.
+	To avoid this problem and have reliable delivery,
+	selective repeat senders should use window of size at most $2^{n-1}$.
+\end{myrem}
+
+Reliable protocols often need to send data in both directions.
+\emph{Piggybacking} is used to avoid overhead caused by acknowledgments
+by allowing the acknowledgments to be sent together with other information.
+This only works when data flows in both directions.
+If no data is to be sent,
+the receiver will simply send a pure acknowledgment (\figuref{piggybacking}).
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.6\textwidth]{piggybacking.png}
+	\caption{An example of piggybacking being used.
+	The bottom of the figure shows
+	the receiver sending a pure acknowlegment
+	when no data is to be sent in the opposite direction.}
+	\label{fig:piggybacking}
+\end{figure}
 \end{document}
