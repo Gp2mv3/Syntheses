@@ -2,11 +2,11 @@
 
 \usepackage{float}
 \usepackage{colonequals}
+\usepackage[french,ruled,vlined]{algorithm2e}
 
 \graphicspath{{img/}}
 
 \newcommand{\prop}{\langle \textnormal{proposition} \rangle}
-\newcommand{\impdef}{\mathrel{\ratio \mspace{-1.3mu} \coloneqq}}
 \newcommand{\true}{\textnormal{true}}
 \newcommand{\false}{\textnormal{false}}
 \newcommand{\EP}{\mathcal{E}_P}
@@ -158,8 +158,8 @@ que doivent respecter les phrases propositionnelles:
 \[
 \renewcommand{\arraystretch}{1.5}
 \begin{array}{rrl}
-	\langle \textnormal{identificateur} \rangle & \impdef & A \mid B \mid C \mid \dots\\
-	\prop &\impdef& \true\\
+	\langle \textnormal{identificateur} \rangle & \coloneqq & A \mid B \mid C \mid \dots\\
+	\prop &\coloneqq& \true\\
 	&\mid& \false\\
 	&\mid& \langle \textnormal{identificateur} \rangle\\
 	&\mid& \big(\prop\big)\\
@@ -317,20 +317,20 @@ pour la conséquence et l'équivalence matérielles
 par $p \to q$ et $p \leftrightarrow q$),
 on reprendra donc sa notation,
 bien qu'elle soit non standard.}.
-Soit $p \models q$.
+Soit $p \vDash q$.
 Cela veut dire que si $M$ est modèle de $p$, alors $M$ est aussi modèle de $q$.
 On a donc $\tauto (p \to q)$,
 car $p \to q$ est toujours vrai.
 On peut donc bien écrire $p \logcons q$.
 \begin{myexem}
 	Soit $p \equiv \big(P \land Q\big)$ et $q \equiv \big(P\big)$.
-	On a alors que $p \models q$.
+	On a alors que $p \vDash q$.
 \end{myexem}
 La conséquence logique $p \logcons q$ fait partie du métalangage,
 et n'est donc pas une proposition logique.
 \subsubsection{Équivalence logique}
 Par un raisonnement similaire,
-si on a $p \models q$ et $q \models p$,
+si on a $p \vDash q$ et $q \vDash p$,
 on a également $\tauto (p \to q)$ et $\tauto (q \to p)$.
 On peut donc écrire $p \logeq q$.
 L'équivalence logique n'est pas non plus une proposition logique
@@ -546,4 +546,183 @@ cela signifie que $r$ rend les prémisses inconsistentes.
 	p,\dots,q & \vdash & \lnot r
 \end{array}
 \]
+\subsection{Algorithme de preuve}
+Les preuves manuelles de la section précédente
+ont un grand défaut:
+elles sont extrêmement lentes.
+Afin de diminuer le temps nécessaire pour prouver une équivalence logique,
+on peut définir un algorithme de preuve,
+qui est une automatisation d'une démonstration par l'absurde
+qui est basée sur une seule règle,
+la \emph{résolution}.
+
+\subsubsection{Tranformation en forme normale conjonctive}
+
+Toute formule logique peut être transformée en une formule équivalente,
+qui est une conjonction de disjonctions.
+C'est la forme normale conjonctive (\textsc{FNC}).
+On peut également définir une forme similaire,
+la \textsc{FND} (forme normale disjonctive),
+qui est donc une disjonction de conjonctions.
+
+\paragraph{Terminologie}
+Afin de faciliter la discussion autour des formes normales,
+on introduit la terminologie suivante:
+\begin{itemize}
+	\item Un \emph{littéral} $L$ est soit une proposition première,
+	soit la négation d'une proposition première.
+	\item Une \emph{clause} $C$, en \textsc{FNC},
+	est une disjonction de littéraux.
+	On écrit
+	\begin{align*}
+	C &\equiv \bigvee\limits_{i = 1}^{n} L_i\\
+	&\equiv L_1 \lor L_2 \lor \dots \lor L_n\,.
+	\end{align*}
+	En \textsc{FNC}, on a souvent des conjonctions de clauses,
+	c'est-à-dire des formules de la forme
+	\begin{align*}
+	\bigwedge\limits_{i=1}^{m} C_i &\equiv \bigwedge\limits_{i = 1}^{m} \bigvee\limits_{j = 1}^{n} L_{ij}\\
+	&\equiv \big(L_{11} \lor \dots \lor L_{1n}\big) \land \dots \land \big(L_{m1} \lor \dots \lor L_{mn}\big) \,.
+	\end{align*}
+\end{itemize}
+
+\paragraph{Algorithme de normalisation}
+Pour mettre sous \textsc{FNC} une formule logique quelconque,
+on utilise l'algorithme suivant:
+\begin{enumerate}
+	\item éliminer les implications et équivalences matérielles
+	($\to$ et $\leftrightarrow$)
+	en les remplaçant par des formules équivalentes;
+	\item déplacer les négations vers l'intérieur
+	(jusqu'aux propositions premières)
+	en utilisant les formules de De Morgan;
+	\item déplacer les disjonctions ($\lor$) vers l'intérieur
+	en utilisant les lois distributives;
+	\item simplifier en éliminant les formes $(P \lor \lnot P)$
+	dans chaque disjonction.
+\end{enumerate}
+
+\subsubsection{Résolution}
+La règle de résolution est l'unique règle d'inférence utilisée
+dans les algorithmes de preuve.
+Elle s'écrit comme suit:
+\[
+\begin{array}{l@{}c@{}r}
+	p_1 & {} \lor {} & q\\
+	p_2 & {} \lor {} & \lnot q\\
+	\hline
+	p_1 & {} \lor {} & p_2
+\end{array}
+\]
+\begin{myrem}[La résolution préserve les modèles]\leavevmode
+\begin{proof}
+	Soient
+	\begin{align*}
+		p &\equiv \bigwedge\limits_{i=1}^{2} C_i\,,\\
+		C_1 &\equiv p_1 \lor q\,,\\
+		C_2 &\equiv p_2 \lor \lnot q\,,\\
+		r &\equiv p_1 \lor p_2\\
+		&\equiv \left(C_1 - \{P\}\right) \lor \left(C_2 - \{\lnot P\}\right)\,.
+	\end{align*}
+	$r$ est une nouvelle disjonction à partir de deux autres disjonctions.
+	Prouvons que $r$ est toujours vrai ($\{C_1, C_2\} \vDash r$).
+	On utilise pour cela la sémantique,
+	une preuve en métalangage qui n'est donc pas formalisée.
+
+	Si
+	\[
+	\left\{
+	\begin{array}{c}
+		\VAL{I}(C_1) = \true\,,\\
+		\VAL{I}(C_2) = \true\,,
+	\end{array}
+	\right.
+	\]
+	alors $I$ est modèle de $\{C_1, C_2\}$.
+
+	On voit que c'est le cas,
+	car on a toujours soit $\VAL{I}(q) = \true$
+	et donc $\VAL{I}(p_2) = \true$,
+	ou bien $\VAL{I}(q) = \false$
+	et donc $\VAL{I}(p_1) = \true$.
+	$r$ est donc toujours vrai.
+\end{proof}
+\end{myrem}
+
+\subsubsection{Pseudocode}
+
+Prenons des axiomes $C_i$ en \textsc{FNC}:
+\begin{align*}
+C_i &= \bigvee\limits_{i=1}^{n} L_i\,,\\
+L_i &= P \textnormal{ ou } \lnot P\,,
+\end{align*}
+et un théorème à prouver, $C$.
+On veut donc démontrer
+\[
+\{C_1, \dots,C_n\} \vdash C\,.
+\]
+On sait que
+\[
+\{C_1, \dots, C_n\} \vDash C \iff \{C_1, \dots, C_n, \lnot C\} \vDash \false\,.
+\]
+Il suffit donc de démontrer que $\mathcal{S} = \{C_1, \dots, C_n, \lnot C\}$
+est inconsistant.
+Pour faire cela,
+l'algorithme de preuve combine les éléments de $\mathcal{S}$
+grâce à la résolution,
+jusqu'à ce qu'on arrive à une contradiction,
+ou qu'il n'y ait plus de possibilité d'utiliser la résolution.
+Dans le premier cas,
+nous avons prouvé $C$.
+Dans le second,
+$C$ est improuvable.
+
+\begin{algorithm}
+\DontPrintSemicolon
+\KwData{$C_1,\dots,C_n$ les clauses, et $C$ le théorème à prouver.}
+\KwResult{Si oui ou non $C_1, \dots, C_n \vdash C$.}
+\Begin{
+	$\mathcal{S} \coloneqq \{C_1, \dots, C_n, \lnot C\}$\;
+	\While{$\false \notin \mathcal{S}$ et
+	$\exists C_i, C_j \in \mathcal{S}$ telles que $C_i, C_j$
+	résolvables et non résolues}{
+		choisir $C_1, C_2 \in \mathcal{S}$
+		telles que $\exists P \in C_1, \lnot P \in C_2$\;
+		calculer $r \coloneqq C_1 - \{P\} \lor C_2 - \{ \lnot P\}$\;
+		calculer $\mathcal{S} \coloneqq \mathcal{S} \cup \{r\}$\;
+	}
+	\eIf{$\false \in \mathcal{S}$}{
+		$C$ prouvé\;
+	}{
+		$C$ improuvable\;
+	}
+}
+\caption{Algorithme de preuve\label{algo:proof}}
+\end{algorithm}
+
+En plus de prouver l'existence éventuelle d'une preuve,
+l'algorithme de preuve nous donne également cette preuve.
+
+\begin{myprop}[Propriétés de l'algorithme de preuve]
+	Pour toute théorie $B = \{C_1, \dots, C_n\}$ et théorème $C$,
+	l'algorithme de preuve est
+	\begin{itemize}
+		\item \textbf{Décidable (\emph{decidable}).}
+		L'algorithme se termine
+		après un nombre fini d'étapes $\forall B,C$.
+		\item \textbf{Exponentiel (\emph{exponential}).}
+		Le temps d'exécution
+		est exponentiel en le nombre de propositions premières
+		et de clauses\footnote{Bien que son temps d'exécution
+		puisse être fortement amélioré
+		par l'utilisation de diverses heuristiques,
+		comme celles utilisées dans les \textsc{SAT} solvers.}.
+		\item \textbf{Adéquat (\emph{sound}).}
+		Si $B \vdash C$,
+		alors $B \vDash C$.
+		\item \textbf{Complet (\emph{complete}).}
+		Si $B \vDash C$,
+		alors $B \vdash C$.
+	\end{itemize}
+\end{myprop}
 \end{document}
