@@ -2,7 +2,12 @@
 
 \usepackage{float}
 \usepackage{../../../eplmath}
+\usepackage{stmaryrd}
+\usepackage[french,ruled,vlined]{algorithm2e}
 
+\renewcommand{\S}{\mathcal{S}}
+
+\SetKwComment{Comment}{$\triangleright$\ }{}
 
 \hypertitle{Mathématiques discrètes I : Théorie et algorithmique des graphes}{5}{INMA}{1691}
 {Gilles Peiffer}
@@ -74,6 +79,7 @@ au cours de l'année 2018-2019.
 	\caption{Un graphe à 5 sommets et 7 arêtes.}
 	\label{fig:graph_2}
 	\end{figure}
+
 	Pour ce graphe, on a
 	\begin{align*}
 		V &= \{u, v, w, x, y\}\,,\\
@@ -361,7 +367,7 @@ M = \bordermatrix{  & a & b & c & d & e\cr
 	\end{proof}
 \end{mytheo}
 
-\begin{myexem}
+\begin{myexem}[Séquences de De Bruijn]
 \label{exem:code}
 Un autre exemple d'utilisation de la matrice d'adjacence
 est qu'elle permet par exemple de répondre à la question
@@ -473,8 +479,299 @@ le nombre de mots ne contenant pas la séquence $111$ est $\approx \rho^k$.
 	ce qui termine la preuve.
 	\end{proof}
 \end{mytheo}
-\begin{mytheo}[Théorème de l'amitié]
-	% TODO 
+\begin{mytheo}[Théorème des amis et des étrangers]
+	Dans toute fête de six personnes,
+	soit au moins trois d'entre eux sont (par paires)
+	mutuellement des étrangers,
+	soit au moins trois d'entre eux sont (par paires)
+	mutuellement des amis\footnote{Ce théorème est un cas particulier
+	du théorème de Ramsey, qui a donné lieu
+	à une nouvelle branche des mathématiques,
+	la théorie de Ramsey.}.
+
+	\begin{proof}
+		Si on attribue à chaque personne un sommet dans un graphe,
+		et qu'on trace une arête rouge
+		si les deux sommets sont ``amis'',
+		et une arête bleue si ils sont ``inconnus'',
+		on peut raisonner sur ce problème
+		comme un problème de théorie des graphes.
+
+		Choisissons un sommet quelconque; appelons-le $P$.
+		Il y a cinq arêtes issues de $P$.
+		Elles sont de couleur rouge ou bleu.
+		Le principe des tiroirs dit
+		qu'au moins trois d'entre elles doivent être
+		de la même couleur,
+		car s'il y a moins de trois d'une couleur,
+		disons rouge, alors il y en a au moins trois qui sont bleues.
+
+		Soient $A$, $B$, $C$ les autres extrémités
+		de ces trois arêtes,
+		toutes de la même couleur, disons bleu.
+		Si parmi $AB$, $BC$, $CA$, l'une est bleue,
+		alors cette arête,
+		avec les deux arêtes joignant $P$
+		aux extrémités de cette arête forme un triangle bleu.
+		Si aucune parmi $AB$, $BC$, $CA$ n'est bleue,
+		alors les trois arêtes sont rouges
+		et nous avons un triangle rouge, à savoir, $ABC$.
+	\end{proof}
 \end{mytheo}
+
+\section{Troisième cours magistral}
+
+\subsection{Plus courts chemins}
+\begin{mytheo}[Le plus court parcours entre deux n\oe{}uds
+est toujours un chemin]\leavevmode
+	\begin{proof}
+		Soit $d'$ la longueur du plus court chemin
+		et $d$ la longueur du plus court parcours $P$.
+		Comme tout chemin est un parcours,
+		on a nécessairement $d' \ge d$.
+
+		Supposons, par l'absurde, $d' > d$.
+		$P$ n'est donc pas un chemin et contient un ou plusieurs cycles.
+		\[
+		p = u \ldots \underbrace{v_i \ldots v_i}_{\textnormal{cycle $C$}} \ldots v\,.
+		\]
+		Si on retire le cycle $C$,
+		on obtient le parcours $P' = u \ldots v_i \ldots v$.
+		Comme on considère tous les poids positifs,
+		on a deux cas possibles:
+		\begin{enumerate}
+			\item Le cycle $C$ possède au moins une arête
+			de poids $w_i > 0$
+			$\implies P'$ est plus court que $P$.
+			\hspace*{\fill} $\lightning$
+			\item Le cycle $C$ est de poids nul
+			$\implies P'$ et $P$ ont la même longueur.
+			On a donc deux sous-cas:
+			\begin{enumerate}[label=(\roman*)]
+				\item Il n'y a plus de cycle dans $P'$
+				$\implies P'$ est un chemin
+				de longueur $d = d'$.
+				\hspace*{\fill} $\lightning$
+				\item Il reste des cycles dans $P'$.
+				On recommence l'argument
+				en remplaçant $P$ par $P'$.
+				On finira éventuellement sur une contradiction
+				car le nombre de cycles dans $P$ est fini.
+			\end{enumerate}
+		\end{enumerate}
+	\end{proof}
+\end{mytheo}
+
+\subsection{Algorithme de Dijkstra}
+\begin{myexem}
+	On cherche les distances à partir de $a$.
+	\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}
+		\node[draw, circle] at (0,  2) (a) {$a$};
+		\node[draw, circle] at (2,  1) (b) {$b$};
+		\node[draw, circle] at (1, -2) (c) {$c$};
+		\node[draw, circle] at (-1,-2) (d) {$d$};
+		\node[draw, circle] at (-2, 1) (e) {$e$};
+		\begin{scope}[every node/.style={fill=white,circle}]
+			\draw[->] (a) edge node {$50$} (b);
+			\draw[->] (c) edge node {$5$} (b);
+			\draw[->] (c) edge node {$50$} (d);
+			\draw[->] (e) edge node {$10$} (d);
+			\draw[->] (a) edge node {$10$} (e);
+			\draw[->] (d) edge node {$5$} (a);
+			\draw[->] (a) edge node {$30$} (c);
+			\draw[->] (d) edge node[near start] {$20$} (b);
+		\end{scope}
+	\end{tikzpicture}
+	\caption{Un exemple de digraphe pondéré.}
+	\label{fig:dijkstra_graph}
+	\end{figure}
+
+	Le graphe de la \figuref{dijkstra_graph} est défini par
+	\begin{align*}
+	V &= \{a,b,c,d,e\}\,,\\
+	E &= \{ab, cb, cd, ed, ae, da, ac\}\,.
+	\end{align*}
+
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{ccccccc}
+			\hline
+			$u'$ & $S$ & $\ell(a)$ & $\ell(b)$ & $\ell(c)$ & $\ell(d)$ & $\ell(e)$\\
+			\hline
+			$a$ & $\lbrace a \rbrace$ & $\boxed{0}$ & $\infty$ & $\infty$ & $\infty$ &$\infty$\\
+			$e$ & $\lbrace a,e \rbrace$ && 50 & 30 & $\infty$ & $\boxed{10}$\\
+			$d$ & $\lbrace a,e,d \rbrace$ && 50 & 30 & $\boxed{20}$ &\\
+			$c$ & $\lbrace a,e,d,c \rbrace$ && 40 & $\boxed{30}$ & &\\
+			$b$ & $\lbrace a,e,d,c,b \rbrace$ && $\boxed{35}$ & & &\\
+			\hline
+		\end{tabular}
+		\caption{Résultats de l'Algorithme de Dijkstra
+		pour le graphe de la \figuref{dijkstra_graph}.}
+		\label{tab:dijkstra}
+	\end{table}
+\end{myexem}
+
+\begin{myrem}
+	Les dernières arêtes utilisées pour joindre un sommet
+	forment les plus courts chemins.
+\end{myrem}
+
+En pseudocode,
+l'Algorithme de Dijkstra peut être implémenté comme suit:
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{$G$, le graphe, et $s$, le n\oe{}ud source.}
+\KwResult{Les plus courts chemins de $s$ vers tout autre n\oe{}ud du graphe.}
+\Begin{
+	crée l'ensemble des n\oe{}uds $\mathcal{Q}$\;
+	dist[$s$] $\gets$ 0 \Comment*[r]{Initialisation}
+
+	\ForEach{vertex $v$ in $G$}{
+		dist[$v$] $\gets \infty$ \Comment*[r]{Distance inconnue de $s$ à $v$}
+		prev[$v$] $\gets$ UNDEFINED \Comment*[r]{Prédécesseur de $v$ sur chemin optimal partant de $s$}
+		ajoute $v$ à $\mathcal{Q}$ \Comment*[r]{Tous les n\oe{}uds sont initialement dans $\mathcal{Q}$}
+	}
+	dist[$s$] $\gets 0$\;
+	\While{$\mathcal{Q}$ n'est pas vide}{
+		$u \gets$ n\oe{}ud dans $\mathcal{Q}$ avec $\min$ dist[$u$] \Comment*[r]{Enlève et retourne le n\oe{}ud avec la distance minimale dans $\mathcal{Q}$}
+		enlève $u$ de $\mathcal{Q}$\;
+		\ForEach{voisin $v$ de $u$}{
+			alt $\gets$ dist[$u$] $+$ length($u$, $v$)\;
+			\If{alt $<$ dist[$v$]}{
+				dist[$v$] $\gets$ alt\;
+				prev[$v$] $\gets u$\;
+			}
+		}
+	}
+	\Return dist[], prev[]\;
+}
+\caption{Dijkstra($G$, $s$)\label{algo:dijkstra}}
+\end{algorithm}
+
+L'Algorithme~\ref{algo:dijkstra} a une complexité de $\bigoh(\abs{V}^2)$.
+Il existe aussi des implémentations
+avec des structures de données différentes\footnote{Les min-priority queues.},
+permettant de réduire la complexité à $\bigoh(\abs{E} + \abs{V} \log \abs{V})$.
+
+\begin{mytheo}[Correction de l'Algorithme de Dijkstra]\leavevmode
+	\begin{proof}
+	Par induction.
+	On suppose les propriétés vérifiées à l'itération $i-1$
+	et on veut les prouver pour l'itération $i$.
+	Soit $\S_i$ l'ensemble $\S$ à l'itération $i$.
+	\noindent
+	\newline
+	\fbox{Cas de base ($i = 1$)}
+	\newline
+	À la fin de l'initialisation,
+	\begin{align}
+	\S &= \{u_0\}\,, \nonumber\\
+	\ell(u_0) &= 0 = d(u_0,u_0)\,. \label{eq:dijkstra1}
+	\end{align}
+	Après la première mise à jour de $\ell$,
+	\begin{align}
+	\ell(v) &= \min(\ell(v), \underbrace{\ell(v_0)}_{=0} + w(u_0 v))\,, \quad \forall v \in \S \nonumber\\
+	\implies \ell(v) &= \infty \textnormal{ si il n'y a pas d'arête } v_0v. \label{eq:dijkstra2}
+	\end{align}
+	\noindent
+	\newline
+	\fbox{Cas inductif}
+	\newline
+	$u_i$ est le n\oe{}ud qui vient d'être rajouté à l'itération précédente.
+	Il faut prouver qu'après avoir rajouté $u_i$ dans $\S_i$,
+	$\ell(u_i) = d(u_0, u_i)$.
+
+	La condition~\eqref{eq:dijkstra1} est verifiée
+	par les autres éléments de $\S_i$
+	par l'hypothèse d'induction.
+	Supposons par l'absurde que l'algorithme
+	n'a pas trouvé le plus court chemin vers $u_i$
+	et que donc $\ell(u_i) > d(u_0, u_i)$.
+
+	Par la condition~\eqref{eq:dijkstra2} appliquée à l'itération $i-1$,
+	$\ell(u_i)$ est la longueur du plus court chemin
+	où tous les n\oe{}uds internes sont dans $\S_{i-1}$.
+
+	Si $\ell(u_i) \ne d(u_0, u_i)$,
+	alors il y a un autre plus court chemin
+	qui passe par un n\oe{}ud de $\widebar{S_{i-1}}$.
+	Soit $v$ le premier n\oe{}ud de $\widebar{S_{i-1}}$ de ce chemin.
+	% Using mathcal makes the widebar command broken for some reason...
+	Comme $u \ldots v \ldots u_i$ est un plus court chemin,
+	$u_0 \ldots v$ en est aussi un.
+	On sait que $\ell(v) = d(u_0, v)$
+	car tous les n\oe{}uds internes de $u_0 \ldots v$
+	sont uniquement dans $\S_{i-1}$
+	(par \eqref{eq:dijkstra2} à l'étape $i-1$).
+	De plus, on sait que les poids sont $\ge 0$.
+	\[
+	\implies \ell(v) = d(u_0, v) \le d(u_0, u_i)\,.
+	\]
+
+	Mais $u_i$ est tel que
+	\[
+	\ell(u_i) = \min\limits_{u \in \widebar{S_{i-1}}}(\ell(u))\,.
+	\]
+	On a donc $\ell(u_i) \le \ell(v) \le d(u_0, u_i)$.
+	\hspace*{\fill}$\lightning$
+
+	Commençons par montrer que
+	\[
+	\ell(v) \ge d(u_0, v)\,, \quad \forall v \in \S\,.
+	\]
+	Les seuls $\ell(v)$ qui changent à cette itération
+	sont égaux à
+	\[
+	\ell(v) = \underbrace{\ell(u_i)}_{= d(u_0, u_i)} + w(u_i v)\,,
+	\]
+	qui ont la longueur du chemin $u_0 \ldots u_i v$.
+	Donc, $\ell(v) \ge d(u_0, v)$.
+	Montrons que $\ell(v)$ est la longueur du plus court chemin
+	dont tous les n\oe{}uds internes sont dans $\S$.
+
+	Par \eqref{eq:dijkstra2} à l'étape $i-1$,
+	$\ell(v)\,, \quad \forall v \notin \S_{i-1}$
+	est longueur du plus court chemin de $u_0$ à $v$
+	dont tous les n\oe{}uds internes appartiennent à $\S_{i-1}$.
+
+	Il faut juste considérer les chemins passant par $u_i$.
+	Le plus court de ces chemins est le chemin fait
+	du plus court chemin de $u_0$ à $u_i$ et de l'arête $u_i v$,
+	de longueur $d(u_0, u_i) + w(u_i v)$.
+	Le plus court chemin vers $v$ dont les n\oe{}uds internes
+	sont dans $\S_i$ a donc soit
+	ses n\oe{}uds internes uniquement dans $\S_{i-1}$ (longueur $\ell(v)$),
+	soit il passe par $u_i$ (longueur $\ell(u_i) + w(u_i v)$).
+	Cela correspond à la mise à jour de $\ell(v)$.
+	\[
+	\ell(v) = \min(\ell(v), \ell(u_i) + w(u_i v))\,.
+	\]
+	\end{proof}
+\end{mytheo}
+
+\begin{mytheo}[L'Algorithme de Dijkstra est $\bigoh(\abs{V}^2)$] \leavevmode
+	\begin{proof}\leavevmode
+		\begin{itemize}
+			\item Après l'initialisation,
+			$\abs{\widebar{\S}} = \abs{V}-1$
+			et à chaque passage de boucle décroit de $1$
+			$\implies \abs{V}-1$ itérations.
+			\item À chaque itération,
+			l'opération ``$\forall v \notin \S$'' est
+			$\bigoh(\abs{V} - \abs{\S}$, tout comme
+			l'opération ``trouver $v_{\textnormal{min}}$''.
+			\item Le nombre total d'opérations est donc
+			$2 (\abs{V} - 1) + 2 (\abs{V} - 2) + \cdots + 2
+			\in \bigoh{\abs{V}^2}$.
+		\end{itemize}
+		L'algorithme est polynomial
+		et donc \emph{relativement} efficace.
+	\end{proof}
+\end{mytheo}
+
+% TODO autre formule pour pcc
 
 \end{document}
