@@ -2,6 +2,13 @@
 
 \usepackage{../../../eplmath}
 \usepackage{float}
+\usepackage{tikz}
+\usepackage[french, ruled, vlined]{algorithm2e}
+
+\usetikzlibrary{matrix}
+
+\SetKwComment{Comment}{$\triangleright$\ }{}
+\SetKw{KwDownTo}{down to}
 
 \graphicspath{{img/}}
 
@@ -12,10 +19,12 @@
 \newcommand{\frob}[1]{\norm{#1}_{\textnormal{F}}}
 
 \DeclareMathOperator{\nullspace}{null}
+\DeclareMathOperator{\Image}{Im}
 \DeclareMathOperator{\range}{range}
 \DeclareMathOperator{\rank}{rank}
 \DeclarePairedDelimiterX{\inp}[2]{\langle}{\rangle}{#1, #2}
 \DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\sign}{sign}
 
 \hypertitle[']{Analyse numérique}{5}{INMA}{1170}
 {Gilles Peiffer}
@@ -475,6 +484,199 @@ En mettant au carré des deux cotés et en sommant, on trouve
 
 \section{Factorisation QR}
 \subsection{Projecteurs}
+\begin{mydef}[Projecteur]
+	Un \emph{projecteur} est une matrice carrée $P$
+	qui satisfait l'équation
+	\[
+	P^2 = P\,.
+	\]
+	Une telle matrice est également appelée \emph{idempotente}.
+	On distingue les projecteurs orthogonaux et non orthogonaux.
+	Un projecteur n'a que deux valeurs propres potentielles: $0$ et $1$.
+	Si le projecteur $P$ est symétrique, alors
+	\[
+	\Image P \perp \ker P\,.
+	\]
+\end{mydef}
 
+On définit un projecteur ``fondamental''\footnote{Nom donné par le professeur.}
+tel que
+\begin{align*}
+P &= \frac{vv^*}{\norm{v}_2^2} = \frac{vv^*}{v^* v} \\
+\implies P^2 &= \frac{(v v^*) (v v^*)}{\norm{v}_2^4} = \frac{v v^* \norm{v}_2^2}{\norm{v}_2^4} = \frac{vv^*}{\norm{v}_2^2} = P\,.
+\end{align*}
 
+On définit également un projecteur complémentaire à $P$, $I - P$.
+\[
+(I - P)^2 = I^2 - 2P + P^2 = I - P\,.
+\]
+
+\subsection{Réflecteurs de Householder}
+Définissons une application linéaire $F$
+et appelons-là \emph{réflecteur de Householder}.
+Prenons un point $x$ et un hyperplan $H$ défini comme
+l'ensemble des points orthogonaux
+à un vecteur non nul fixe $v = \norm{x}e_1 - x$.
+
+Lorsque le réflecteur est appliqué,
+tout point d'un coté de $H$ est envoyé sur son image de l'autre coté.
+En particulier, $x$ est envoyé sur $\norm{x} e_1$.
+La formule de cette réflection se dérive de la façon suivante:
+on voit facilement que la projection orthogonale de $y \in \Cm$ sur $H$
+est donnée par
+\[
+Py = \left( I - \frac{v v^*}{v^* v} \right) y = y - v \left( \frac{v^* y}{v^* v} \right)\,.
+\]
+Afin de terminer la réflection, on ne peut pas encore s'arrêter là;
+il faut se déplacer dans cette direction une fois de plus.
+La réflection $Fy$ devrait donc être
+\[
+Fy = \left( I - 2 \frac{v v^*}{v^* v} \right) y = y - 2v \left( \frac{v^* y}{v^* v} \right)\,.
+\]
+On déduit alors que la matrice $F$ est
+\[
+F = I - 2 \frac{v v^*}{v^* v}\,.
+\]
+On vérifie facilement que cette matrice est unitaire
+car $F^2 = I$ et donc $F = F^*$.
+Comme la matrice est inversible, elle est de plein rang.
+
+\subsection{Factorisation QR}
+Soit une matrice $A \in \Cmn$.
+On suppose que
+\[
+A = QR\,, \quad Q \in \Cmm \textnormal{ unitaire,} \quad R \in \Cmn \textnormal{ triangulaire supérieure.}
+\]
+On voit direct que cette façon d'encoder $A$ n'est pas optimale:
+$A$ a $mn$ éléments, alors que $Q$ et $R$ ensemble en ont $m(m+n)$.
+Cependant, on sait que $R$ est triangulaire supérieure
+et que $Q$ est unitaire
+(et on connaît donc les valeurs des ses éléments diagonaux).
+Schématiquement, on a donc quelque chose de la forme suivante
+(ici pour $(m, n) = (5, 3)$):
+\[
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+\matrix[matrix of math nodes,execute at empty cell={\node[black!20]{0};},%Node color and text "0"
+        every left delimiter/.style={xshift=1ex},%tighter delimiter spacing
+        every right delimiter/.style={xshift=-1ex},
+                left delimiter={(},right delimiter={)}
+                ] {
+a_{11} & a_{12} & a_{13} \\
+a_{21} & a_{22} & a_{23} \\
+a_{31} & a_{32} & a_{33} \\
+a_{41} & a_{42} & a_{43} \\
+a_{51} & a_{52} & a_{53} \\
+};
+\end{tikzpicture}
+=
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+\matrix[matrix of math nodes,execute at empty cell={\node[black!20]{\times};},%Node color and text "0"
+        every left delimiter/.style={xshift=1ex},%tighter delimiter spacing
+        every right delimiter/.style={xshift=-1ex},
+                left delimiter={(},right delimiter={)}
+                ] {
+       &        &        &        &        \\
+q_{21} &        &        &        &        \\
+q_{31} & q_{32} &        &        &        \\
+q_{41} & q_{42} & q_{43} &        &        \\
+q_{51} & q_{52} & q_{53} &        &        \\
+};
+\end{tikzpicture}
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+\matrix[matrix of math nodes,execute at empty cell={\node[black!20]{0};},%Node color and text "0"
+        every left delimiter/.style={xshift=1ex},%tighter delimiter spacing
+        every right delimiter/.style={xshift=-1ex},
+                left delimiter={(},right delimiter={)}
+                ] {
+r_{11} & r_{12} & r_{13} \\
+       & r_{22} & r_{23} \\
+       &        & r_{33} \\
+       &        &        \\
+       &        &        \\
+};
+\end{tikzpicture}
+\]
+On a donc bien $mn$ entrées utiles dans $Q$ et $R$ combinés.
+
+On obtient l'algorithme de factorisation suivant
+(où on définit $\sign(x) = 1$ si $x = 0$):
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{Une matrice $A \in \Cmn$.}
+\KwResult{La matrice triangulaire supérieure $R \in \Cmn$
+dans la décomposition QR de $A$.}
+\Begin{
+	\For{$k \gets 1$ \KwTo $n$}{
+	$x \gets A_{k {:} m, k}$\;
+	$v_k \gets \sign(x_1)\norm{x}_2 e_1 + x$\;
+	$v_k \gets v_k / \norm{v_k}_2$\;
+	$A_{k {:} m, k {:} n} \gets A_{k {:} m, k {:} n} - 2 v_k(v_k^* A_{k {:} m, k {:} n})$\;
+	}
+	\Return $A$\;
+}
+\caption{Factorisation QR de Householder\label{algo:qr_householder}}
+\end{algorithm}
+
+Cet algorithme a une complexité qui se calcule relativement facilement:
+soit $w(m, n)$ la fonction qui compte le nombre d'opérations
+en fonction de la taille d'entrée.
+\begin{align*}
+w(m, n) &\sim \sum_{k=1}^{n} \big( 4 \left( n-k+1 \right)\left( m-k+1 \right) \big) \\
+&\sim \frac{2}{3}n(n+1)(3m-n+1) \\
+&\sim 2mn^2+2mn-\frac{2n^3}{3}+\frac{2n}{3} \\
+&\sim 2mn^2-\frac{2n^3}{3} \\
+\overset{m=n}{\implies} w(n) &\sim \frac{4}{3}n^3\,.
+\end{align*}
+
+Ensuite, après avoir trouvé cette matrice $R$,
+on utilise les différents vecteurs $v_k$
+afin d'assembler le produit $Q^* b$ sans calculer $Q$ explicitement.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{$b$ et les vecteurs $v_k$ servant à assembler $Q$.}
+\KwResult{Le produit $Q^* b$.}
+\Begin{
+	\For{$k \gets 1$ \KwTo $n$}{
+	$b_{k {:} m} \gets b_{k {:} m} - 2 v_k(v_k^* b_{k {:} m})$\;
+	}
+	\Return $b$\;
+}
+\caption{Calcul implicite d'un produit $Q^* b$\label{algo:qr_q*b}}
+\end{algorithm}
+
+Cet algorithme est de complexité $\bigoh(mn)$.
+
+Finalement, on trouve alors $x$ par substitution arrière
+(car $R$ est triangulaire supérieure).
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{Le vecteur $b$
+et la matrice triangulaire supérieure $R$.}
+\KwResult{Le vecteur $x$ dans $Rx = b$.}
+\Begin{
+	\For{$k \gets m$ \KwDownTo $1$}{
+	$x_{j} \gets \left.\left(b_{j} - \sum\limits_{k = j+1}^{m} x_k r_{jk} \right)\right/ r_{jj}$\;
+	}
+	\Return $x$\;
+}
+\caption{Substitution arrière\label{algo:back_substitution}}
+\end{algorithm}
+
+Cet algorithme a une complexité $b(m)$ égale à
+\begin{align*}
+b(m) &\sim \sum_{j=1}^{m} \big(2(m - j) + 1 \big) \\
+&\sim 2 \sum_{k=0}^{m-1} k + m \\
+&\sim m (m - 1) + m \\
+&\sim m^2\,.
+\end{align*}
+
+Cependant, ces trois algorithmes se font séquentiellement,
+et la complexité totale de résolution d'un système linéaire
+avec une factorisation QR est donc
+\[
+t(n) \sim \frac{4}{3} n^3\,.
+\]
 \end{document}
