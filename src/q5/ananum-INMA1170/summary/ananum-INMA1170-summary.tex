@@ -1,8 +1,10 @@
 \documentclass[fr]{../../../eplsummary}
 
 \usepackage{../../../eplmath}
+\usepackage{multirow}
 \usepackage{float}
 \usepackage{tikz}
+\usepackage{tabularx}
 \usepackage[french, ruled, vlined]{algorithm2e}
 
 \usetikzlibrary{matrix}
@@ -14,8 +16,11 @@
 
 \newcommand{\Cmn}{\C^{m \times n}}
 \newcommand{\Cmm}{\C^{m \times m}}
+\newcommand{\Rmn}{\R^{m \times n}}
+\newcommand{\Rmm}{\R^{m \times m}}
 \newcommand{\Cn}{\C^{n}}
 \newcommand{\Cm}{\C^{m}}
+\newcommand{\Rm}{\R^{m}}
 \newcommand{\frob}[1]{\norm{#1}_{\textnormal{F}}}
 
 \DeclareMathOperator{\nullspace}{null}
@@ -32,6 +37,7 @@
 
 % TODO annexe Gmsh (CM2)?
 % TODO check for reorganisation?
+% TODO explain the last part of CM3 better, cf. slides
 
 \section{Fondements}
 Dans ce chapitre, nous allons étudier
@@ -679,4 +685,322 @@ avec une factorisation QR est donc
 \[
 t(n) \sim \frac{4}{3} n^3\,.
 \]
+\section{Décomposition en valeurs singulières}
+La décomposition en valeurs singulières
+(\emph{singular value decomposition} en anglais)
+est la généralisation pour les matrices quelconques
+de la décomposition en éléments propres.
+
+\begin{mytheo}[Theorème spectral]
+	Toute matrice carrée $A$ normale
+	(c'est-à-dire telle que $AA^* = A^*A$)
+	peut être diagonalisée par une base orthonormée de vecteurs propres.
+\end{mytheo}
+\begin{mydef}[$n$-sphère]
+Nous définissons la $n$-sphère comme
+\[
+S^n = \{x \in \R^{n+1} \colon \norm{x} = r\}\,.
+\]
+On peut alors définir la $n$-sphère unité comme le cas particulier $r = 1$.
+Nous prenons en général comme norme la $2$-norme vectorielle.
+\end{mydef}
+
+La SVD est motivée par l'observation géométrique suivante:
+\begin{center}
+	L'image de la $n$-sphère unité par une matrice $m \times n$ quelconque
+	est une hyperellipse.
+\end{center}
+Bien que la décomposition en valeurs singulières
+ne soit pas unique aux matrices réelles,
+nous considérons ici le cas $A \in \Rmn$.
+\begin{mydef}[Hyperellipse]
+	Une \emph{hyperellipse} est
+	la généralisation à $m$ dimensions d'une ellipse.
+	On peut définir une hyperellipse dans $\Rm$ comme la surface obtenue
+	en étirant la $n$-sphère unité dans $\Rm$
+	par des facteurs multiplicatifs
+	$\sigma_1, \ldots, \sigma_m$ (potentiellement nuls)
+	dans des directions orthogonales $u_1, \ldots, u_m \in \Rm$.
+\end{mydef}
+On peut dire sans perte de généralité que $\norm{u_i}_2 = 1$.
+Les vecteurs $\{\sigma_i u_i\}$
+sont les demi-axes principaux de l'hyperellipse,
+avec pour longueurs $\sigma_1, \ldots, \sigma_m$.
+Si la matrice $A$ est de rang $r$,
+exactement $r$ des longueurs $\sigma_i$ seront non nulles,
+et en particulier si $m \ge n$,
+au plus $n$ d'entre-elles seront non nulles.
+
+\subsection{SVD réduite}
+Supposons $\rank(A) = n$ ($A$ de plein rang);
+l'image de $S^{n}$ par $A$, $AS^{n}$, est une hyperellipse dans $\Rn$.
+On obtient alors trois choses:
+\begin{itemize}
+	\item $n$ valeurs singulières de $A$
+	(conventionnellement ordonnées de façon décroissante)
+	$\sigma_1 \ge \sigma_2 \ge \cdots \ge \sigma_n \ge 0$.
+	Elles sont stockées sur
+	la diagonale principale de la matrice $\hat{\Sigma} \in \Rnn$.
+	\item $n$ vecteurs de base orthonormés $\{u_1, \ldots, u_n\} \Rm$
+	dits de ``sortie'' ou ``à gauche''.
+	Ils sont stockés dans une matrice $\hat{U} \in \Rmn$.
+	\item $n$ vecteurs de base orthonormés $\{v_1, \ldots, v_n\} \Rn$
+	dits d'``entrée'' ou ``à droite''.
+	Ils sont stockés dans une matrice unitaire $V \in \Rnn$.
+\end{itemize}
+On écrit alors
+\[
+A v_j = \sigma_j u_j\,, \quad 1 \le j \le n\,,
+\]
+ou bien plus de façon plus compacte
+\[
+AV = \hat{U} \hat{\Sigma}\,.
+\]
+Or $V$ est unitaire; on écrit alors
+\[
+A = \hat{U} \hat{\Sigma} V^*\,.
+\]
+Cette factorisation s'appelle
+la \emph{décomposition en valeurs singulières réduite},
+ou bien \emph{reduced singular value decomposition} en anglais.
+
+\subsection{SVD complète}
+Pour les matrices $A$ qui ne sont pas de rang plein,
+la formulation est légèrement différente.
+Si l'on définit $U \in \Cmm$ comme la matrice $\hat{U}$
+à laquelle on a ajouté $m-n$ colonnes orthonormeés,
+on peut résoudre ce problème.
+Il faut cependant encore modifier légèrement $\hat{\Sigma}$,
+de sorte à obtenir $\Sigma \in \Rmn$ qui n'est autre
+que $\hat{\Sigma}$ en dessous de laquelle
+nous avons ajouté $m-n$ lignes de zéros.
+On écrit alors
+\[
+A = U \Sigma V^*\,.
+\]
+On note que la matrice $U$ est unitaire.
+
+Pour revenir sur l'interprétation géométrique,
+nous observons que cette décomposition montre bien les différentes étapes:
+\begin{itemize}
+	\item l'application unitaire $V^*$ préserve la $n$-sphère;
+	\item la matrice diagonale $\Sigma$ étire la $n$-sphère
+	de sorte à former une hyperellipse alignée avec la base canonique et
+	\item l'application unitaire finale $U$
+	reflette ou fait tourner l'hyperellipse sans changer sa forme.
+\end{itemize}
+Ainsi, si nous arrivons à prouver que toute matrice a une SVD,
+nous aurons également prouvé que
+l'image de la $n$-sphère unité sous n'importe quelle application linéaire
+est une hyperellipse.
+
+\subsection{Existence et unicité}
+\begin{mytheo}[Existence et unicité de la décomposition en valeurs singulières]
+Toute matrice $A \in \Cmn$ a une décomposition en valeurs singulières.
+De plus, les valeurs singulières $\{\sigma_j\}$
+sont univoques (\emph{uniquely determined})
+et si $A$ est carrée et les $\sigma_j$ sont distincts, alors
+les vecteurs $\{u_j\}$ et $\{v_j\}$ sont univoques à une phase près.
+\begin{proof}
+	Afin de prouver l'existence de la SVD,
+	nous isolons la direction de plus grande action de $A$,
+	et procédons ensuite par induction sur la dimension de $A$.
+
+	Supposons $\sigma_1 = \norm{A}_2 = \sup_{S^n} \norm{Ax}_2$.
+	Par un argument de compacité,
+	il doit y avoir des vecteurs $v_1 \in \Cn$ et $u_1 \in \Cm$
+	tels que $\norm{v_1}_2 = \norm{u_1}_2 = 1$ et $A v_1 = \sigma_1 u_1$.
+	Considérons une quelconque extension de $v_1$
+	à une base orthonormée $\{v_j\}$ de $\Cn$
+	et de $u_1$ à une base orthonormée $\{u_j\}$ de $\Cm$,
+	et soient $U_1$ et $V_1$ les matrices unitaires
+	avec comme colonnes $u_j$ et $v_j$ respectivement.
+	On a alors
+	\[
+	U_1 A V_1 = S =
+	\begin{pmatrix}
+		\sigma_1 & w^*\\
+		0        & B
+	\end{pmatrix}\,,
+	\]
+	où $0$ est un vecteur colonne de dimension $m-1$,
+	$w^*$ est un vecteur ligne de dimension $n-1$
+	et $B$ est de dimension $(m-1) \times (n-1)$.
+	De plus,
+	\[
+	\norm{\begin{pmatrix}
+		\sigma_1 & w^*\\
+		0        & B
+	\end{pmatrix}\begin{pmatrix}
+		\sigma_1 \\
+		w
+	\end{pmatrix}}_2 \ge \sigma_1^2 + w^* w = (\sigma_1^2 + w^* w)^{1/2}\norm{\begin{pmatrix}
+		\sigma_1 \\
+		w
+	\end{pmatrix}}_2\,,
+	\]
+	impliquant $\norm{S}_2 \ge (\sigma_1^2 + w^* w)^{1/2}$.
+	Comme $U_1$ et $V_1$ sont unitaires,
+	on sait que $\norm{S}_2 = \norm{A}_2 = \sigma_1$,
+	et on déduit donc que $w = 0$.
+	Si $m = 1$ ou $n = 1$, cela termine la preuve.
+	Sinon la sous-matrice $B$ décrit l'action de $A$
+	sur le sous-espace orthogonal à $v_1$.
+	Par l'hypothèse d'induction,
+	la SVD de $B$ existe et est donnée par $B = U_2 \Sigma_2 V_2^*$.
+	On vérifie alors facilement
+	(il suffit de démontrer que les termes
+	à gauche et à droite de la matrice diagonale sont unitaires) que
+	\[
+	A = U_1 \begin{pmatrix}
+	1 & 0\\
+	0 & U_2
+	\end{pmatrix}
+	\begin{pmatrix}
+	\sigma_1 & 0\\
+	0        & \Sigma_2
+	\end{pmatrix}
+	\begin{pmatrix}
+	1 & 0\\
+	0 & V_2
+	\end{pmatrix}^*
+	V_1^*
+	\]
+	est une SVD de $A$, ce qui termine la preuve d'existence.
+
+	En ce qui concerne l'unicité,
+	la justification géométrique est directe:
+	si les longueurs de demi-axe d'une hyperellipse sont distinctes,
+	alors les demi-axes eux-mêmes sont déterminés par la géométrie,
+	au signe près.
+	Algébriquement, on note d'abord que $\sigma_1$
+	est univoque.
+	Supposons maintenant qu'en plus de $v_1$,
+	il y ait un autre vecteur linéairement indépendant $w$
+	tel que $\norm{w}_2 = 1$ et $\norm{Aw}_2 = \sigma_1$.
+	Définissons un vecteur unitaire $v_2$, orthogonal à $v_1$,
+	comme une combinaison linéaire de $v_1$ et $w$,
+	\[
+	v_2 = \frac{w - \big(v_1^* w\big) v_1}{\norm{w - \big(v_1^* w \big) v_1}_2}\,.
+	\]
+	Comme $\norm{A}_2 = \sigma_1$, $\norm{Av_2}_2 \le \sigma_1$;
+	or cela doit être une égalité,
+	car sinon, comme $w = v_1 c + v_2 s$
+	pour des constantes $c$ et $s$
+	telles que $\abs{c}^2 + \abs{s}^2 = 1$,
+	on aurait $\norm{Aw}_2 < \sigma_1$.
+	Ce vecteur $v_2$ est un deuxième vecteur singulier à droite de $A$
+	correspondant à la valeur singulière $\sigma_1$;
+	il va mener à l'apparition d'un vecteur $y$
+	(égal aux $n-1$ dernières composantes de $V_1^*v_2$)
+	tel que $\norm{y}_2 = 1$ et $\norm{By}_2 = \sigma_1$.
+	On conclut que si le vecteur singulier $v_1$ n'est pas unique,
+	alors la valeur singulière $\sigma_1$ correspondante n'est pas simple.
+	Afin de terminer la preuve d'unicité,
+	nous notons comme indiqué ci-dessus
+	qu'une fois $\sigma_1, v_1$ et $u_1$ déterminés de façon univoque,
+	la reste de la SVD est déterminée par l'action de $A$
+	sur le sous-espace orthogonal à $v_1$.
+	Comme $v_1$ est unique à un signe près,
+	cet espace orthogonal est univoque,
+	et l'unicité des valeurs et vecteurs singuliers restants
+	est assurée par induction.
+\end{proof}
+\end{mytheo}
+\subsection{Interprétation de la SVD}
+La SVD nous permet de dire que
+toute matrice est diagonale--à condition d'utiliser les bonnes bases
+pour le domaine et l'image.
+Tout $b \in \Cm$ peut s'exprimer
+dans la base des vecteurs singuliers à gauche de $A$ (colonnes de $U$)
+et tout $x \in \Cn$ peut s'exprimer
+dans la base des vecteurs singuliers à droite de $A$ (colonnes de $V$).
+On écrit alors
+\[
+b' = U^* b\,, \quad x' = V^* x\,.
+\]
+On peut alors réécrire
+\[
+b = Ax \iff U^* b = U^* Ax \iff b' = U^* U \Sigma V^* x \iff b' = \Sigma x'\,.
+\]
+$A$ se réduit donc en la matrice diagonale $\Sigma$
+lorsque l'image est exprimée dans la base formée par les colonnes de $U$
+et que le domaine est exprimé dans la base des colonnes de $V$.
+\subsection{SVD vs. décomposition en valeurs propres}
+Ce même principe de \emph{diagonalisation}
+est également sous-jacent à l'étude des valeurs propres.
+Une matrice régulière $A$ peut être exprimée
+comme une matrice diagonale de valeurs propres $\Lambda \in \Cmm$,
+à condition que le domaine et l'image soient représentés
+dans la base des vecteurs propres.
+
+Si les colonnes d'une matrice $X \in \Cmm$
+contiennent des vecteurs linéairement indépendants de $A \in \Cmm$,
+la décomposition en valeurs propres de $A$ est
+\[
+A = X \Lambda X^{-1}\,,
+\]
+Cela implique que si nous définissons pour $b, x \in \Cm$ tels que $b = Ax$,
+\[
+b' = X^{-1}b\,, \quad x' = X^{-1}x\,,
+\]
+alors $b'$ et $x'$ satisfont $b' = \Lambda x'$.
+
+La \tabref{SVDvsEVD} reprend quelques différences
+entre ces deux factorisations.
+\begin{table}[H]
+	\centering
+	\begin{tabular}{l p{0.35\linewidth} p{0.35\linewidth}}
+		\hline
+		\\
+		\multicolumn{1}{c}{Critère} & \multicolumn{1}{c}{SVD} & \multicolumn{1}{c}{EVD}\\\\
+		\multirow{2}{*}{Bases et orthogonalité} & Deux bases orthonormées ($\{u_j\}$ et $\{v_j\}$) & Une base non orthogonale ($\{X\}$)\\\\
+		\multirow{2}{*}{Existence} & Existe pour toute matrice (même rectangulaire) & N'existe pas pour toute matrice (même carrée) \\\\
+		\multirow{2}{*}{Applications} & Problèmes sur les formes itérées de $A$ ($A^k$ ou $\mathrm{e}^{tA}$) & Problèmes sur $A$ ou son inverse\\
+		\hline
+	\end{tabular}
+	\caption{Différences entre
+	la décomposition en valeurs singulières (SVD)
+	et la décomposition en valeurs propres (EVD).}
+	\label{tab:SVDvsEVD}
+\end{table}
+\subsection{Propriétés des matrices par la SVD}
+\begin{mytheo}
+	Le rang de $A$ est $r$, le nombre de valeurs singulières non nulles.
+	\begin{proof}
+		Le rang d'une matrice diagonale
+		est égal au nombre d'entrées non nulles,
+		et dans la décomposition $A = U\Sigma V^*$,
+		$U$ et $V$ sont de plein rang.
+		Dès lors, $\rank(A) = \rank(\Sigma) = r$.
+	\end{proof}
+\end{mytheo}
+\begin{mytheo}
+	$\range(A) = \langle u_1, \ldots, u_r \rangle$ et $\nullspace(A) = \langle v_{r+1}, \ldots, v_n$.
+	\begin{proof}
+		Ceci est une conséquence du fait que
+		$\range(\Sigma)
+		= \langle e_1, \ldots, \e_r \rangle \subseteq \Cm$ et
+		que $\nullspace(\Sigma)
+		= \langle e_{r+1}, \ldots, e_n \rangle \subseteq \Cn$.
+	\end{proof}
+\end{mytheo}
+\subsection{Approximation de rang faible}
+\begin{mytheo}[Approximation par des matrices de rang un]
+	$A$ peut être écrite comme une somme de $r$ matrices de rang un:
+	\[
+	A = \sum_{j = 1}^{r} \sigma_j u_j v^*_j\,.
+	\]
+\end{mytheo}
+\begin{mytheo}[Optimalité de la somme des $\nu$ premières approximations de rang un]
+	Pour tout $\nu$ tel que $0 \le \nu \le r$, nous définissons
+	\[
+	A_{\nu} = \sum_{j=1}^{\nu} \sigma_j u_j v_j^*\,;
+	\]
+	si $\nu = p = \min\{m, n\}$, définissons $\sigma_{\nu+1} = 0$.
+	On a alors que
+	\[
+	\norm{A - A_{\nu}}_2 = \inf_{\substack{B \in \Cmn \\ \rank(B) \le \nu}} \norm{A - B}_2 = \sigma_{\nu + 1}\,.
+	\]
+\end{mytheo}
 \end{document}
