@@ -38,6 +38,9 @@
 % TODO annexe Gmsh (CM2)?
 % TODO check for reorganisation?
 % TODO explain the last part of CM3 better, cf. slides
+% TODO add proof for low-rank approx proofs CM4
+% TODO add reference to Higham?
+% TODO appendix with example of why classical GS is instable
 
 \section{Fondements}
 Dans ce chapitre, nous allons étudier
@@ -741,10 +744,10 @@ On obtient alors trois choses:
 	$\sigma_1 \ge \sigma_2 \ge \cdots \ge \sigma_n \ge 0$.
 	Elles sont stockées sur
 	la diagonale principale de la matrice $\hat{\Sigma} \in \Rnn$.
-	\item $n$ vecteurs de base orthonormés $\{u_1, \ldots, u_n\} \Rm$
+	\item $n$ vecteurs de base orthonormés $\{u_1, \ldots, u_n\} \in \Rm$
 	dits de ``sortie'' ou ``à gauche''.
 	Ils sont stockés dans une matrice $\hat{U} \in \Rmn$.
-	\item $n$ vecteurs de base orthonormés $\{v_1, \ldots, v_n\} \Rn$
+	\item $n$ vecteurs de base orthonormés $\{v_1, \ldots, v_n\} \in \Rn$
 	dits d'``entrée'' ou ``à droite''.
 	Ils sont stockés dans une matrice unitaire $V \in \Rnn$.
 \end{itemize}
@@ -753,13 +756,11 @@ On écrit alors
 A v_j = \sigma_j u_j\,, \quad 1 \le j \le n\,,
 \]
 ou bien plus de façon plus compacte
-\[
-AV = \hat{U} \hat{\Sigma}\,.
-\]
-Or $V$ est unitaire; on écrit alors
-\[
-A = \hat{U} \hat{\Sigma} V^*\,.
-\]
+\begin{align*}
+AV &= \hat{U} \hat{\Sigma}\,.\\
+\intertext{Or $V$ est unitaire; on écrit alors}
+A &= \hat{U} \hat{\Sigma} V^*\,.
+\end{align*}
 Cette factorisation s'appelle
 la \emph{décomposition en valeurs singulières réduite},
 ou bien \emph{reduced singular value decomposition} en anglais.
@@ -1003,4 +1004,93 @@ entre ces deux factorisations.
 	\norm{A - A_{\nu}}_2 = \inf_{\substack{B \in \Cmn \\ \rank(B) \le \nu}} \norm{A - B}_2 = \sigma_{\nu + 1}\,.
 	\]
 \end{mytheo}
+\section{Orthogonalisation de Gram-Schmidt}
+\subsection{Forme classique}
+\label{sec:gsclassical}
+Nous cherchons à trouver les colonnes $\{q_j\}$
+de la matrice $\hat{Q} \in \Cm$
+par un procédé d'orthogonalisation successive.
+Ce procédé est appelé \emph{orthogonalisation de Gram-Schmidt}.
+À l'étape $j$, nous cherchons à trouver
+un vecteur unitaire $q_j \in \langle a_1, \ldots, a_j \rangle$
+orthogonal à $q_1, \ldots, q_{j-1}$.
+Le vecteur
+\[
+v_j = a_j - (q_1^* a_j) q_1 - (q_2^* a_j) q_2 - \cdots - (q_{j-1}^* a_j) q_{j-1}\,.
+\]
+satisfait ces conditions, mis à part le fait qu'il ne soit pas normé.
+En le divisant par $\norm{v_j}_2$, on obtient un vecteur $q_j$ approprié.
+On peut maintenant écrire
+\begin{align*}
+	q_1 &= \frac{a_1}{r_{11}}\,,\\
+	&\vdotswithin{=}\\
+	q_i &= \frac{a_i - \sum_{j=1}^{i-1} r_{ji} q_j}{r_{ii}}\,,\\
+	&\vdotswithin{=}\\
+	q_n &= \frac{a_n - \sum_{j=1}^{n-1} r_{jn} q_j}{r_{nn}}\,.
+\end{align*}
+Une définition appropriée des coefficients $r_{ij}$ dans les numérateurs
+est donnée par
+\begin{align*}
+r_{ij} &= q_i^* a_j \quad (i \ne j)\,.\\
+\intertext{Alors que les coefficients dans les dénominateurs
+sont choisis pour la normalisation:}
+\abs{r_{jj}} &= \norm{a_j - \sum_{i=1}^{j-1} r_{ij} q_j}_2\,.
+\end{align*}
+Le signe de ces derniers n'est pas déterminé.
+Nous choisissons arbitrairement $r_{jj} > 0$,
+et terminerons donc avec une factorisation $A = \hat{Q} \hat{R}$ dans laquelle
+les entrées diagonales de $\hat{R}$ sont strictement positives.
+
+Un algorithme simple pour cette orthogonalisation
+est l'Algorithme~\ref{algo:gs_classical}.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{Une matrice $A \in \Cmn$.}
+\KwResult{La matrice triangulaire supérieure $\hat{R} \in \Cmn$
+et la matrice unitaire $\hat{Q} \in \Cmn$ dans la décomposition QR de $A$.}
+\Begin{
+	\For{$j \gets 1$ \KwTo $n$}{
+		$v_j \gets a_j$\;
+		\For{$i \gets 1$ \KwTo $j-1$}{
+			$r_{ij} \gets q_i^* a_j$\;
+			$v_{j} \gets v_j - r_{ij} q_i$\;
+		}
+		$r_{jj} \gets \norm{v_j}_2$\;
+		$q_j \gets v_j / r_{jj}$\;
+	}
+	\Return $\hat{R}, \hat{Q}$\;
+}
+\caption{Orthogonalisation de Gram-Schmidt (instable)\label{algo:gs_classical}}
+\end{algorithm}
+
+\subsection{Formulation avec les projecteurs orthogonaux}
+Soit $A \in \Cmn$, $m > n$,
+une matrice de plein rang avec pour colonnes $\{a_j\}$.
+Considérons les formules suivantes:
+\[
+q_1 = \frac{P_1 a_1}{\norm{P_1 a_1}}\,, \quad \ldots\,, \quad q_i = \frac{P_i a_i}{\norm{P_i a_i}}\,, \quad \ldots\,, \quad q_n = \frac{P_n a_n}{\norm{P_n a_n}}\,.
+\]
+Dans ces formules, chaque $P_j$ représente un projecteur orthogonal.
+$P_j$ est un matrice $m \times m$ de rang $m - (j - 1)$
+qui projette orthogonalement $\Cm$
+sur l'espace orthogonal à $\langle q_1, \ldots, q_{j-1} \rangle$.
+On remarque que dans le cas $j=1$, ceci se réduit à l'identité ($P_1 = I$).
+On observe alors que $q_j$ défini ainsi est
+\begin{itemize}
+	\item orthogonal à $\langle q_1, \ldots, q_{j-1} \rangle$;
+	\item dans l'espace vectoriel $\langle a_1, \ldots, a_j \rangle$;
+	\item normé.
+\end{itemize}
+On remarque que cette formulation est équivalente
+à celle établie à la \sectionref{gsclassical}.
+Le projecteur $P_j$ peut est donné par la formule
+\[
+P_j = I - \hat{Q}_{j-1} \hat{Q}^*_{j-1}\,,
+\]
+où $\hat{Q}_{j-1}$ dénote la matrice $m \times (j-1)$
+contenant les $j-1$ premières colonnes de $\hat{Q}$.
+\subsection{Gram-Schmidt modifié}
+On peut démontrer assez facilement par un exemple
+que l'Algorithme~\ref{algo:gs_classical} n'est pas stable.
 \end{document}
