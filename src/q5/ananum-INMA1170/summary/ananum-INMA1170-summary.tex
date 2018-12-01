@@ -927,7 +927,7 @@ b = Ax \iff U^* b = U^* Ax \iff b' = U^* U \Sigma V^* x \iff b' = \Sigma x'\,.
 $A$ se réduit donc en la matrice diagonale $\Sigma$
 lorsque l'image est exprimée dans la base formée par les colonnes de $U$
 et que le domaine est exprimé dans la base des colonnes de $V$.
-\subsection{SVD vs. décomposition en valeurs propres}
+\subsection{SVD vs décomposition en valeurs propres}
 Ce même principe de \emph{diagonalisation}
 est également sous-jacent à l'étude des valeurs propres.
 Une matrice régulière $A$ peut être exprimée
@@ -1034,7 +1034,7 @@ est donnée par
 r_{ij} &= q_i^* a_j \quad (i \ne j)\,.\\
 \intertext{Alors que les coefficients dans les dénominateurs
 sont choisis pour la normalisation:}
-\abs{r_{jj}} &= \norm{a_j - \sum_{i=1}^{j-1} r_{ij} q_j}_2\,.
+\abs{r_{jj}} &= \norm{a_j - \sum_{i=1}^{j-1} r_{ij} q_i}_2\,.
 \end{align*}
 Le signe de ces derniers n'est pas déterminé.
 Nous choisissons arbitrairement $r_{jj} > 0$,
@@ -1093,4 +1093,178 @@ contenant les $j-1$ premières colonnes de $\hat{Q}$.
 \subsection{Gram-Schmidt modifié}
 On peut démontrer assez facilement par un exemple
 que l'Algorithme~\ref{algo:gs_classical} n'est pas stable.
+Il faut donc corriger l'algorithme de sorte à ne plus avoir ces problèmes.
+La modification apportée est la suivante:
+pour chaque valeur de $j$,
+l'algorithme calcule une seule projection orthogonale de rang $m - (j - 1)$,
+\[
+v_j = P_j a_j\,.
+\]
+L'algorithme modifié quant à lui calcule $j-1$ projections de rang $m-1$.
+On utilise la notation $P_{\bot q}$ pour dénoter
+le projecteur de rang $m-1$ sur l'espace orthogonal
+au vecteur non nul $q \in \Cm$.
+On voit par définition de $P_j$ que
+\[
+P_j = P_{\bot q_{j-1}} \cdots P_{\bot q_2} P_{\bot q_1}\,,
+\]
+avec $P_1 = I$.
+On peut alors écrire
+\[
+v_j = P_{\bot q_{j-1}} \cdots P_{\bot q_2} P_{\bot q_1} a_j\,.
+\]
+En utilisant cette formule pour calculer $v_j$,
+on peut rendre l'algorithme de Gram-Schmidt stable.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{Une matrice $A \in \Cmn$.}
+\KwResult{La matrice triangulaire supérieure $\hat{R} \in \Cmn$
+et la matrice unitaire $\hat{Q} \in \Cmn$ dans la décomposition QR de $A$.}
+\Begin{
+	\For{$i=1$ \KwTo $n$}{
+		$v_i \gets a_i$\;
+	}
+	\For{$i \gets 1$ \KwTo $n$}{
+		$r_{ii} = \norm{v_i}$\;
+		$q_i \gets v_i / r_{ii}$\;
+		\For{$j \gets i+1$ \KwTo $n$}{
+			$r_{ij} \gets q_i^* v_j$\;
+			$v_{j} \gets v_j - r_{ij} q_i$\;
+		}
+	}
+	\Return $\hat{R}, \hat{Q}$\;
+}
+\caption{Orthogonalisation de Gram-Schmidt modifiée (stable) \label{algo:gs_modified}}
+\end{algorithm}
+
+Les deux algorithmes d'orthogonalisation
+ont la complexité asymptotique $f(m, n)$ suivante:
+\[
+f(m, n) \sim \sum_{i=1}^{n} \sum_{j=i+1}^{n} 4m \sim 2 mn^2\,.
+\]
+
+\section{Factorisation LU}
+L'élimination gaussienne transforme un système linéaire plein
+en un système triangulaire supérieur
+en appliquant des transformations simples à gauche.
+Elle est donc analogue dans ce sens à la triangularisation de Householder,
+utilisée pour calculer les factorisations QR.
+La différence est que les transformations de l'élimination gaussienne
+ne sont pas unitaires.
+Soit une matrice carrée $A \in \Cmm$
+(l'algorithme peut aussi s'appliquer aux matrices rectangulaires,
+mais ceci se fait rarement en pratique).
+Nous cherchons à transformer la matrice $A$
+en une matrice triangulaire supérieure $U$
+en introduisant des zéros sous la diagonale principale,
+d'abord dans la première colonne, puis la deuxième, et ainsi de suite.
+Ce ``procédé d'élimination'' revient en fait à
+une multiplication à gauche de $A$
+par une séquence de matrice triangulaires inférieures $L_k$:
+\[
+\underbrace{L_{m-1} \cdots L_2 L_1}_{L^{-1}} A = U\,.
+\]
+On peut alors trouver facilement que
+\[
+A = LU\,,
+\]
+où $L$ est triangulaire inférieure à diagonale unité
+et $U$ est triangulaire supérieure.
+
+La $k$\ieme{} transformation $L_k$
+introduit des zéros en-dessous du $k$\ieme{} élément diagonal
+en soustrayant des multiples de la ligne $k$ des lignes $k+1, \ldots, m$.
+
+\subsection{Formules générales et deux coups de chance}
+Voici les formules générales pour une matrice $m \times m$.
+Supposons que $x_n$ soit la $k$\ieme{} colonne de la matrice
+au début de la $k$\ieme{} itération.
+On a alors
+\[
+x_k =
+\begin{pmatrix}
+	x_{1k} \\
+	\vdots \\
+	x_{kk} \\
+	x_{k+1, k} \\
+	\vdots \\
+	x_{mk}
+\end{pmatrix}
+\quad
+\xrightarrow{L_k}
+\quad
+L_k x_k =
+\begin{pmatrix}
+	x_{1k} \\
+	\vdots \\
+	x_{kk} \\
+	0 \\
+	\vdots \\
+	0
+\end{pmatrix}\,.
+\]
+Afin de faire cela, nous devons soustraire $\ell_{jk}$ fois
+la ligne $k$ de la ligne $j$, où
+\[
+\ell_{jk} = \frac{x_{jk}}{x_{kk}}\,, \quad (k < j \le m)\,.
+\]
+La matrice triangualire inférieure à diagonale unité $L_k$ a donc la forme
+\[
+L_k =
+\begin{pmatrix}
+	1 &        &                &   &        &   \\
+	  & \ddots &                &   &        &   \\
+	  &        &              1 &   &        &   \\
+	  &        & -\ell_{k+1, k} & 1 &        &   \\
+	  &        &         \vdots &   & \ddots &   \\
+	  &        &     -\ell_{mk} &   &        & 1
+\end{pmatrix}\,.
+\]
+Les entrées vides ont la valeur $0$.
+
+Définissons maintenant
+\[
+\ell_k =
+\begin{pmatrix}
+	0 \\
+	\vdots \\
+	0 \\
+	\ell_{k+1, k} \\
+	\vdots \\
+	\ell_{mk}
+\end{pmatrix}\,.
+\]
+On peut alors réécrire $L_k$ comme
+\[
+L_k = I - \ell_{k} e^*_k\,,
+\]
+où $e_k$ est le vecteur colonne avec $1$ en position $k$ et $0$ sinon.
+L'aspect creux de $\ell_k$ implique alors que $e^*\ell_k = 0$, et donc
+\[
+(I - \ell_k e_k^*) (I + \ell_k e_k^*) = I - \ell_k e_k^* \ell_k e_k^* = I\,.
+\]
+L'inverse de $L_k$ est donc tout simplement $I + \ell_k e_k^*$.
+C'est le premier coup de chance de l'élimination gaussienne.
+
+Pour le deuxième coup de chance, considérons le produit $L_k^{-1} L_{k+1}^{-1}$.
+Par l'aspect creux de $\ell_{k+1}$, nous avons $e_k^* \ell_{k+1} = 0$, et donc
+\[
+L_k^{-1} L_{k+1}^{-1} = (I + \ell_k e_k^*) (I + \ell_{k+1} e_{k+1}^*)
+= I + \ell_k e_k^* + \ell_{k+1} e_{k+1}^*\,.
+\]
+La matrice $L_k^{-1} L_{k+1}^{-1}$ est
+la matrice triangulaire inférieure à diagonale unité
+avec les entrées de $L_k^{-1}$ et $L_{k+1}^{-1}$ sous la diagonale.
+Par extension, on a donc
+\[
+L = L_1^{-1} L_2^{-1} \cdots L_{m-1}^{-1} =
+\begin{pmatrix}
+	        1 &           &        &               &   \\
+	\ell_{21} &         1 &        &               &   \\
+	\ell_{31} & \ell_{32} &      1 &               &   \\
+	   \vdots &    \vdots & \ddots &        \ddots &   \\
+	\ell_{m1} & \ell_{m2} & \cdots & \ell_{m, m-1} & 1
+\end{pmatrix}\,.
+\]
 \end{document}
