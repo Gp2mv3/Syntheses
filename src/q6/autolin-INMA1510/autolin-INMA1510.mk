@@ -1,4 +1,4 @@
 NAME=autolin
 OPTION=INMA
 CODE=1510
-include ../../q6.mk
+include $(BASE_DIR)../../q6.mk
