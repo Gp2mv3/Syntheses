@@ -12,8 +12,8 @@
 \LoadClass{../../../eplbase}
 
 \IfLanguageName{english}{
-\newcommand{\Epltype}{Formulaire}
-\newcommand{\epltypesingular}{formulaire} % si quelqu'un connait la vraie traduction en anglais
+\newcommand{\Epltype}{Cheat sheet}
+\newcommand{\epltypesingular}{cheat sheet} % si quelqu'un connait la vraie traduction en anglais
 }{
 \newcommand{\Epltype}{Formulaire}
 \newcommand{\epltypesingular}{formulaire} % version au singulier
@@ -22,7 +22,7 @@
 }
 
 \newcommand{\hypertitle}[7][e ]{%
-\basehypertitle[#1]{#2}{#3}{#4}{#5}{#6}{#7}{\IfLanguageName{english}{Formulaire}{Formulaire}}}
+\basehypertitle[#1]{#2}{#3}{#4}{#5}{#6}{#7}{\IfLanguageName{english}{Formulary}{Formulaire}}}
 
 \RequirePackage{../../../eplcommon}
 
