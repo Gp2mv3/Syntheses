@@ -138,7 +138,7 @@ echo $(git log -1 --pretty=format:\%h "$(basename $(ls *.stderr) .stderr).tex")
 
 \usepackage[ddmmyyyy]{datetime}
 
-\RequirePackage{hyperref}
+\RequirePackage[hidelinks]{hyperref}
 
 % le `[e ]' rend le premier argument (#1) optionnel
 % avec comme valeur par défaut `e `
