@@ -222,8 +222,9 @@ en utilisant une \emph{interprétation}.
 Soit $\EP$ l'ensemble des propositions premières.
 Alors, une interprétation $I$ définit
 une fonction de valuation $\val{I} \colon \EP \to \{\true,\false\}$,
-qui permet de savoir si ces propositions premières sont vraies ou fausses\footnote{La notation $f \colon A \to B$ signifie ici
-que $f$ est une fonction depuis l'ensemble $A$ vers l'ensemble $B$.}.
+qui permet de savoir si ces propositions premières sont vraies ou fausses\footnote{La notation $f \colon \mathcal{A} \to \mathcal{B}$
+signifie ici que $f$ est une fonction
+depuis l'ensemble $\mathcal{A}$ vers l'ensemble $\mathcal{B}$.}.
 On pourrait par exemple écrire
 \begin{align*}
 	\left\{
@@ -709,19 +710,19 @@ $C$ est improuvable.
 En plus de prouver l'existence éventuelle d'une preuve,
 l'algorithme de preuve nous donne également cette preuve.
 
-\begin{myprop}[Propriétés de l'algorithme de preuve]
-	Pour toute théorie $B = \{C_1, \dots, C_n\}$ et théorème $C$,
+\begin{myprop}[Propriétés de l'algorithme de preuve en logique propositionnelle]
+	Pour toute théorie $\mathcal{B} = \{C_1, \dots, C_n\}$ et théorème $C$,
 	l'algorithme de preuve est
 	\begin{itemize}
 		\item \textbf{Décidable (\emph{decidable}).}
 		L'algorithme se termine
-		après un nombre fini d'étapes $\forall B,C$.
+		après un nombre fini d'étapes $\forall \mathcal{B}, C$.
 		\item \textbf{Adéquat (\emph{sound}).}
-		Si $B \vdash C$,
-		alors $B \vDash C$.
+		Si $\mathcal{B} \vdash C$,
+		alors $\mathcal{B} \vDash C$.
 		\item \textbf{Complet (\emph{complete}).}
-		Si $B \vDash C$,
-		alors $B \vdash C$.
+		Si $\mathcal{B} \vDash C$,
+		alors $\mathcal{B} \vdash C$.
 	\end{itemize}
 
 	Le temps d'exécution
@@ -900,10 +901,10 @@ de sorte à pouvoir calculer $\VAL{I}(p)$ à partir de $\val{I}$.
 	Un \emph{modèle} d'un ensemble de formules
 	est une interprétation qui rend toutes les formules vraies.
 	Formellement,
-	si on a un ensemble de formules $B = \{p_1, \ldots, p_n\}$,
-	une interprétation $I$ pour $B$ est modèle si et seulement si
+	si on a un ensemble de formules $\mathcal{B} = \{p_1, \ldots, p_n\}$,
+	une interprétation $I$ pour $\mathcal{B}$ est modèle si et seulement si
 	\[
-	\VAL{I}(p_i) = \true\,, \quad \forall p_i \in B\,.
+	\VAL{I}(p_i) = \true\,, \quad \forall p_i \in \mathcal{B}\,.
 	\]
 \end{mydef}
 
@@ -984,7 +985,7 @@ On distingue plusieurs cas:
 	\begin{itemize}
 		\item $x$ n'était pas libre
 		dans une formule contenant un quantificateur existentiel
-		qu'on a éliminé;
+		qu'on a éliminé ;
 		\item $x$ n'est pas libre dans une prémisse
 		(sinon, $x$ possèderait une valeur depuis le début).
 	\end{itemize}
@@ -1017,4 +1018,131 @@ La règle s'écrit alors $\begin{array}{c}
 	\hline
 	\exists x.\ p[x]
 \end{array}$.
+
+\section{Algorithme de preuve pour la logique des prédicats}
+Il est possible d'adapter l'algorithme de preuve de la logique propositionnelle
+pour qu'il fonctionne en logique des prédicats,
+mais il perd alors certaines des ses propriétés.
+
+\subsection{Propriétés}
+\begin{myprop}[Propriétés de l'algorithme de preuve en logique des prédicats]
+	Soit $\mathcal{B} = \{A_1, \dots, A_n\}$ l'ensemble des axiomes
+	et $T$ le théorème que l'on veut prouver.
+	L'algorithme de preuve est
+	\begin{itemize}
+		\item \textbf{Semi-décidable (\emph{semi-decidable}).}
+		Si $\mathcal{B} \vDash T$, alors l'algorithme trouve une preuve.
+		Sinon, il peut tourner indéfiniment.
+		\item \textbf{Adéquat (\emph{sound}).}
+		Si $\mathcal{B} \vdash T$,
+		alors $\mathcal{B} \vDash T$.
+		\item \textbf{Complet (\emph{complete}).}
+		Si $\mathcal{B} \vDash T$,
+		alors $\mathcal{B} \vdash T$.
+	\end{itemize}
+\end{myprop}
+
+L'algorithme se base sur deux idées:
+\begin{itemize}
+	\item \textbf{Simplification des prémisses.}
+	On transforme les prémisses de sorte à
+	les avoir en forme clausale.
+	\item \textbf{Simplification des règles d'inférence.}
+	On garde un seule règle d'inférence, la résolution,
+	qui fonctionne sur la forme clausale.
+\end{itemize}
+
+\subsection{Forme normale conjonctive (\textsc{fnc})}
+La transformation des prémisses en forme clausale se fait en trois étapes.
+\begin{enumerate}
+	\item \emph{Mise sous forme prénexe.}
+	\[
+	(\cdots \forall \cdots \exists \cdots \forall) \logeq \forall \exists \forall (\cdots)\,.
+	\]
+	La forme prénexe est une formulation
+	équivalente à la formulation initiale
+	telle que tous les quantificateurs
+	se retrouvent devant le reste de la formule.
+	Cette transformation préserve donc les modèles.
+	Elle se fait elle-même en quatre étapes:
+	\begin{enumerate}
+		\item Éliminer les implications et les équivalences.
+		\item Renommer les variables et
+		supprimer les quantificateurs si possible.
+		\item Migrer les négations vers l'intérieur,
+		jusqu'aux formules atomiques (prédicats).
+		Cela peut toujours se faire
+		grâce à la Loi~\ref{law:quant_swap}.
+		\begin{mylaw}[Interchangeabilité des quantificateurs]
+			\label{law:quant_swap}
+			Pour passer d'un quantificateur universel
+			à un quantificateur existentiel (et inversement),
+			on peut utiliser la formule
+			\[
+			\forall x.\ \lnot p \logeq \lnot \exists x.\ p\,.
+			\]
+			Cette équivalence se justifie
+			par un raisonnement informel sur les modèles :
+			tout modèle de $\forall x.\ \lnot p$
+			est aussi modèle de $\lnot \exists x.\ p$.
+		\end{mylaw}
+		\item Transférer les quantificateurs vers la tête de la formule.
+	\end{enumerate}
+	\item \emph{Mise sous forme de Skolem.}
+	\[
+	\forall \exists \forall (\cdots) \leadsto \forall \cdots \forall (\cdots)\,.
+	\]
+	La forme de Skolem transforme les quantificateurs existentiels
+	en quantificateurs universels.
+	Elle préserve l'existence des modèles (la satisfaisabilité),
+	mais pas les modèles eux-mêmes,
+	qui doivent être modifiés pour conserver la même signification.
+
+	Notons ${x_i}_I$ les variables
+	dans la portée d'un quantificateur universel
+	et ${z_i}_I$ les variables
+	dans la portée d'un quantificateur existentiel.
+	Les quantificateurs existentiels expriment que
+	pour toutes variables ${x_i}_I \in \mathcal{D}_I$,
+	on peut trouver ${z_i}_I \in \mathcal{D}_I$.
+	Cela implique qu'il y a une relation fondamentale
+	entre les ${x_i}_I$ et les ${z_i}_I$.
+	On le note par ${z_i}_I = {f_i}_I({x_i}_I)$,
+	où les $f_i$ sont des \emph{fonctions de Skolem}.
+	Si l'interprétation $I$ est un modèle,
+	alors la nouvelle formule, sous forme de Skolem, a comme modèle
+	l'interprétation $I' = I \cup \{f_i \leftarrow {f_i}_I\}$.
+	La version skolémisée d'une formule
+	ne lui est en général pas équivalente (le langage étant étendu).
+	Néanmoins :
+	\begin{itemize}
+		\item tout modèle de la formule skolémisée
+		est modèle de la formule initiale ;
+		\item tout modèle de la formule initiale
+		peut être étendu en un modèle de la formule skolémisée,
+		obtenu en conservant les interprétations des symboles
+		de la signature initiale,
+		et en interprétant correctement
+		les nouveaux symboles de fonction
+		introduits par la skolémisation.
+	\end{itemize}
+	Une formule close et sa forme de Skolem
+	sont dites \emph{équisatisfaisables} :
+	l'une possède un modèle si, et seulement si l'autre en possède un.
+	\item \emph{Mise sous forme normale conjonctive.}
+	\[
+	\forall \cdots \forall \bigwedge\limits_{i = 1}^{m} \bigvee\limits_{j = 1}^{n_i} L_{ij}
+	\logeq \big(L_{11} \lor \dots \lor L_{1n_1}\big) \land \dots \land \big(L_{m1} \lor \dots \lor L_{mn_m}\big) \,.
+	\]
+	La forme normale conjonctive est une forme où la formule
+	est représentée comme une conjonction de disjonctions.
+	Elle est semblable à la transformation en logique propositionnelle
+	et conserve les modèles.
+\end{enumerate}
+
+\subsection{Résolution}
+L'algorithme de preuve n'utilise qu'une seule règle, la résolution:
+\[
+\frac{L \lor C_1,\lnot L \lor C_2}{C_1 \lor C_2}\,.
+\]
 \end{document}
