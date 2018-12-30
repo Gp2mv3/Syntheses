@@ -23,6 +23,9 @@
 \newcommand{\Cm}{\C^{m}}
 \newcommand{\Rm}{\R^{m}}
 \newcommand{\frob}[1]{\norm{#1}_{\textnormal{F}}}
+\newcommand{\eps}{\varepsilon_{\textnormal{machine}}}
+\newcommand{\fl}{\textnormal{fl}}
+\newcommand{\ft}{\tilde{f}}
 \newcommand{\nnz}{\textnormal{nnz}}
 \newcommand{\sA}{\textnormal{sA}}
 \newcommand{\iA}{\textnormal{iA}}
@@ -1516,6 +1519,279 @@ peut se résoudre par substitution avant,
 puis ensuite $Ux = y$ peut être résolu par substitution arrière.
 Dans le cas où on n'effectue pas de pivotage,
 la matrice $P$ est simplement la matrice identité.
+
+\section{Conditionnement et stabilité}
+\subsection{Conditionnement}
+Soit un problème $f$, qu'on peut voir comme une fonction $f \colon X \to Y$
+d'un espace vectoriel normé $X$ des données
+à un espace vectoriel normé $Y$ des solutions.
+Le problème $f$ est dit \foreignquote{french}{\emph{bien conditionné}}
+si toute petite perturbation de $x$ conduit à une petite perturbation de $f(x)$.
+Au contraire, le problème est dit \foreignquote{french}{\emph{mal conditionné}}
+si une petite perturbation de $\delta x$ des données
+peut conduire à une grande variation $\delta f(x)$ de $f(x)$ :
+\[
+\delta f(x) = f(x + \delta x) - f(x)\,.
+\]
+
+\subsection{Arithmétique en virgule flottante}
+\subsubsection{Limitations des représentations digitales}
+Sur un ordinateur, il est impossible de représenter exactement
+tous les nombres à virgule.
+Pour cette raison, il existe un standard
+développé par l'\textsc{ieee}\footnote{\emph{Institute of Electrical and Electronics Engineers}.}
+qui a pour but d'uniformiser la représentation des nombres à virgule.
+Ce standard, appelé arithmétique à double précision,
+doit faire face principalement à deux problèmes:
+\begin{itemize}
+	\item les problèmes d'\emph{underflow} et d'\emph{overflow},
+	qui ne sont pas réellement problématiques dans la plupart des cas et
+	\item les problèmes d'\foreignquote{french}{écart} entre
+	deux nombres adjacents représentables.
+\end{itemize}
+Dans le standard \textsc{ieee},
+ces écarts ne dépassent jamais $2^{-52} \approx 2.22 \times 10^{-16}$
+au sens relatif.
+
+\subsubsection{Nombres en virgule flottante}
+L'arithmétique \textsc{ieee} est un exemple  d'un système arithmétique
+basé sur la représentation en virgule flottante des nombres réels.
+Dans cette représentation, la position de la virgule est stockée séparément
+des chiffres, et les écarts entre nombres adjacents
+sont proportionnels à la taille de ceux-ci.
+
+Considérons un système en virgule flottante idéalisé
+consistant d'un sous-ensemble discret $\mathcal{F} \subsetneq \R$.
+Ce sous-ensemble est déterminé
+par un entier $\beta \ge 2$
+appelé \foreignquote{french}{base} ou \foreignquote{french}{radix}
+(typiquement $2$) et un entier $t \ge 1$
+appelé \foreignquote{french}{précision}
+($24$ ou $53$ en simple et double précision \textsc{ieee}, respectivement).
+Les élements de $\mathcal{F}$ sont le nombre $0$
+ainsi que tous les nombres de la forme $\pm (m / \beta^t) \beta^e$,
+où $m$ est un entier dans l'intervalle $1 \le m \le \beta^t$
+et $e$ est un entier aribtraire.
+\[
+\mathcal{F} = \{0\} \cup \set*{x \given x = \pm \frac{m}{\beta^t} \beta^e}\,.
+\]
+De façon équivalente, on pourraît définir $\beta^{t-1} \le m \le \beta^t -1$,
+rendant ainsi le choix de $m$ unique.
+La quantité $\pm m / \beta^t$ est appelée la \foreignquote{french}{mantisse}
+et $e$ est l'\emph{exposant}.
+Notre système est idéalisé dans le sens où il ignore
+les problèmes d'\emph{underflow} et d'\emph{overflow}.
+Pour cette raison, $\mathcal{F}$ est un ensemble infini dénombrable,
+et est autosimilaire : $\mathcal{F} = \beta \mathcal{F}$.
+
+\subsubsection{Epsilon machine}
+La résolution de $\mathcal{F}$ est typiquement résumée
+en un nombre appelé \foreignquote{french}{epsilon machine}, noté $\eps$.
+\begin{mydef}[Epsilon machine]
+	L'epsilon machine, $\eps$, est défini comme étant la demi-différence
+	entre la représentation de $1$
+	et celle du plus petit nombre supérieur à $1$.
+	On écrit donc
+	\[
+	\eps = \frac{1}{2} \beta^{1-t}.
+	\]
+	L'epsilon machine est donc la plus grande erreur relative
+	entre deux nombres adjacents en virgule flottante :
+	\begin{center}
+	Pour tout $x \in \R$,
+	il existe $x' \in \mathcal{F}$ tel que $\abs{x - x'} \le \eps \abs{x}$.
+	\end{center}
+\end{mydef}
+Dans les standards \textsc{ieee},
+l'epsilon machine vaut $2^{-24} \approx 5.96 \times 10^{-8}$
+en simple précision
+et $2^{-53} \approx 1.11 \times 10^{-16}$ en double précision.
+
+Soit $\fl \colon \R \to \mathcal{F}$ une fonction donnant
+l'approximation en virgule flottante la plus proche d'une nombre réel,
+son équivalent \emph{arrondi} dans le système en virgule flottante.
+\begin{myrem}
+	La fonction $\fl$ est un projecteur; en effet, remarquons que
+	$\fl(\fl(x)) = \fl(x)$.
+\end{myrem}
+\begin{myprop}
+	\label{prop:eps}
+	On peut réécrire la propriété donnée dans la définition de $\eps$ comme
+	\begin{center}
+		Pour tout $x \in \R$, il existe $\varepsilon$
+		avec $\varepsilon \le \eps$
+		tel que $\fl(x) = x(1 + \varepsilon)$.
+	\end{center}
+	Ceci revient à dire que la différence entre un nombre réel
+	et sa représentation en virgule flottante la plus proche
+	est toujours plus petite que $\eps$ en termes relatifs.
+\end{myprop}
+
+\subsection{Arithmétique en virgule flottante}
+Dans $\R$, nous avons les opérations élémentaires $+$, $-$,
+$\times$ et $\slash$.
+Dans $\mathcal{F}$, des opérations élémentaires analogues existent.
+On dénote ces opérations en virgule flottante par $\oplus$, $\ominus$, $\otimes$
+et $\oslash$.
+Un ordinateur peut être construit
+en se basant sur le principe de conception suivant.
+Soient $x$ et $y$ des nombres en virgule flottante arbitraires,
+c'est-à-dire que $x, y \in \mathcal{F}$.
+Soit $\ast$ une des opérations élémentaires $+$, $-$, $\times$ ou $\slash$,
+et soit $\circledast$ sont analogue en virgule flottante.
+Dans ce cas,
+$x \circledast y$ doit être donné exactement par
+\[
+x \circledast y = \fl(x \ast y)\,, \quad \forall x, y \in \mathcal{F}\,.
+\]
+Si cette propriété est respectée,
+on peut alors conclure que l'ordinateur a une propriété simple et puissante.
+\begin{myax}[Axiome fondamental de l'arithmétique en virgule flottante]
+	\label{ax:fund_float}
+	Pour tout $x, y \in \mathcal{F}$,
+	il existe $\varepsilon$ avec $\varepsilon \le \eps$ tel que
+	\[
+	x \circledast y = (x \ast y)(1 + \varepsilon)\,.
+	\]
+\end{myax}
+En d'autres mots, \emph{toute opération en arithmétique en virgule flottante
+est exacte jusqu'à une erreur relative de taille au plus $\eps$}.
+On suppose pour une machine donnée qu'il existe $\eps$
+tel que la Propriété~\ref{prop:eps} et l'Axiome~\ref{ax:fund_float}
+soient toujours vérifiés.
+
+\begin{myrem}[Arithmétique complexe en virgule flottante]
+	Les nombres complexes en virgule flottante
+	sont en général représentés comme des paires de nombres
+	en virgule flottante, et les opérations sont calculées
+	par séparation en partie réelle et imaginaire.
+	La valeur de l'epsilon machine change
+	pour les opérations $\otimes$ et $\oslash$,
+	mais une fois ces modifications apportées,
+	l'analyse est la même que pour les nombres réels.
+\end{myrem}
+
+\subsection{Stabilité}
+\subsubsection{Algorithmes}
+Définissons un \emph{problème} mathématique
+comme une fonction $f \colon X \to Y$, d'un espace vectoriel de données $X$
+à un espace vectoriel $Y$ de solutions.
+Un \emph{algorithme} peut alors être vu comme une autre application
+$\ft \colon X \to Y$ entre les deux mêmes espaces.
+Nous pouvons rendre cette définition formelle comme suit :
+soit un problème $f$, un ordinateur
+dont le système de représentation satisfait l'Axiome~\ref{ax:fund_float},
+un algorithme pour $f$
+et une implémentation de cet algorithme
+sous la forme d'un programme informatique.
+Étant donné des données $x \in X$,
+arrondissons ces données en virgule flottante
+de sorte à respecter la Propriété~\ref{prop:eps}
+et donnons-les comme entrées au programme informatique.
+Le résultat de l'exécution du programme est alors
+un ensemble de nombres en virgule flottante
+appartenant à l'espace vectoriel $Y$.
+Appelons finalement ce résultat $\ft(x)$.
+
+\subsubsection{Précision}
+Un bon algorithme $\ft$ devrait approximer le problème associé $f$.
+Afin de rendre cette idée quantitative,
+on définit l'\emph{erreur absolue} d'un calcul comme $\norm{\ft(x) - f(x)}$,
+et l'\emph{erreur relative} comme
+\[
+\frac{\norm{\ft(x) - f(x)}}{\norm{f(x)}}\,.
+\]
+Parler de la précision d'un algorithme revient à
+chercher une borne pour cette valeur.
+
+La précision dépend de deux choses :
+\begin{itemize}
+	\item la stabilité de l'algorithme ;
+	\item le conditionnement du problème.
+\end{itemize}
+On met cela en évidence en écrivant
+\begin{align*}
+\frac{\norm{\ft(x) - f(x)}}{\norm{f(x)}} &= \frac{\norm{\ft(x) - f(\tilde{x}) + f(\tilde{x}) - f(x)}}{\norm{f(x)}} \\
+&\le \underbrace{\frac{\norm{\ft(x) - f(\tilde{x})}}{\norm{f(x)}}}_{\mathclap{\textnormal{stabilité de $\ft$}}} + \underbrace{\frac{\norm{f(\tilde{x}) - f(x)}}{\norm{f(x)}}}_{\mathclap{\textnormal{conditionnement de $f$}}}\,.
+\end{align*}
+
+\subsubsection{Stabilité}
+On peut voir dans l'équation ci-dessus que quand $f$ est mal conditionné,
+il peut être impossible d'arriver à une précision voulue.
+Dans ce cas, on définit la stabilité de l'algorithme
+comme étant
+\[
+\frac{\norm{\ft(x) - f(\tilde{x})}}{\norm{f(x)}}\,.
+\]
+Un algorithme $\ft$ est dit \emph{stable} pour un problème $f$ si,
+pour tout $x \in X$,
+\[
+\frac{\norm{\ft(x) - f(\tilde{x})}}{\norm{f(x)}} \in \mathcal{O}(\eps)\,,
+\]
+avec
+\[
+\frac{\norm{\tilde{x} - x}}{\norm{x}} \in \mathcal{O}(\eps)\,.
+\]
+
+\subsubsection{Stabilité arrière}
+Certains algorithmes satisfont une condition
+plus forte et plus simple que la stabilité.
+On dit qu'un algorithme $\ft$ pour une problème $f$
+est \emph{stable arrière} (\emph{backward stable})
+si pour tout $x \in X$,
+\[
+\ft(x) = f(\tilde{x}) \quad \textnormal{pour un certain} \quad \tilde{x} \quad \textnormal{avec} \quad \frac{\norm{\tilde{x} - x}}{\norm{x}} \in \mathcal{O}(\eps)\,.
+\]
+
+\subsubsection{Signification de $\mathcal{O}(\eps)$}
+La notation $f(\varepsilon) \in \mathcal{O}(\eps)$ signifie
+qu'il existe un constante $C$ telle que,
+pour tout $\varepsilon$ suffisamment petit,
+$\abs{f(\varepsilon)} \le C \eps$.
+Les résultats de la forme
+\[
+\norm{\textnormal{quantité calculée}} \in \mathcal{O}(\eps)
+\]
+signifient ceci :
+\begin{itemize}
+	\item \foreignquote{french}{$\norm{\textnormal{quantité calculée}}$}
+	représente la norme d'un nombre ou d'un ensemble de nombres
+	déterminé(s) par un algorithme $\ft$ pour une probléme $f$,
+	et dépendant des données $x \in X$ pour $f$ et de $\eps$ ;
+	\item on suppose que $\eps \to 0$ ;
+	\item la borne s'applique pour uniformément pour tout $x \in X$.
+\end{itemize}
+
+\subsubsection{Conditionnement d'un algorithme stable arrière}
+Soit $\ft$ un algorithme stable arrière pour le problème $f \colon X \to Y$.
+On a par la définition du conditionnement relatif
+\[
+\kappa(x) = \lim_{\delta \to 0} \sup_{\norm{\delta x} < \delta} \left. \left( \frac{\norm{f(x + \delta x) - f(x)}}{\norm{f(x)}} \right/ \frac{\norm{\delta x}}{\norm{x}}\right)\,.
+\]
+La notion de limite implique qu'il existe $\delta > 0$ tel que
+\[
+\begin{array}{rcl@{\quad}l}
+\renewcommand\arraystretch{1.5}
+{\displaystyle \left. \frac{\norm{f(x + \delta x) - f(x)}}{\norm{f(x)}} \right/ \frac{\norm{\delta x}}{\norm{x}}} & \le & \kappa(x)\,, & \forall \norm{\delta x} \le \delta \\
+&&&\\
+{\displaystyle \iff \frac{\norm{f(x + \delta x) - f(x)}}{\norm{f(x)}}} & \le & {\displaystyle \kappa(x) \frac{\norm{\delta x}}{\norm{x}}}\,, & \forall \norm{\delta x} \le \delta\,.
+\end{array}
+\]
+
+On définit maintenant $\tilde{x}$.
+La stabilité arrière de $\ft$ implique qu'il existe $\tilde{x} \in X$
+avec $\norm{\tilde{x} - x} / \norm{x} \in \mathcal{O}(\eps)$
+tel que $\ft(x) = f(\tilde{x})$.
+Si la fonction $f$ n'est pas pathologique, $C \eps < \delta$.
+On a comme cas particulier de la condition de conditionnement,
+en posant $\delta x = x - \tilde{x}$
+et en appliquant la définition du conditionnement relatif,
+\begin{align*}
+\frac{\norm{\ft(x) - f(x)}}{\norm{f(x)}} &\le (\kappa(x) + o(1)) \frac{\norm{\tilde{x} - x}}{\norm{x}} \\
+&= \kappa(x) C \eps\,.
+\end{align*}
+où $o(1)$ dénote une quantité qui tend vers $0$
+lorsque $\eps \to 0$.
 
 \section{Matrices creuses}
 En analyse numérique pratique, on résout souvent
