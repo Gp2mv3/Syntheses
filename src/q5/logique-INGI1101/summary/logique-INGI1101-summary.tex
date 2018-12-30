@@ -695,7 +695,7 @@ $C$ est improuvable.
 	résolvables et non résolues}{
 		choisir $C_1, C_2 \in \mathcal{S}$
 		telles que $\exists P \in C_1, \lnot P \in C_2$\;
-		calculer $r \gets C_1 - \{P\} \lor C_2 - \{ \lnot P\}$\;
+		calculer $r \gets C_1 \setminus \{P\} \lor C_2 \setminus \{ \lnot P\}$\;
 		calculer $\mathcal{S} \gets \mathcal{S} \cup \{r\}$\;
 	}
 	\eIf{$\false \in \mathcal{S}$}{
@@ -775,7 +775,7 @@ Les symboles utilisés sont montrés dans la \tabref{symbols}.
 		 & Caractères de ponctuation & $($ et $)$ \\
 		 & \multirow{2}{*}{Variables} & $x$, $y$, $z$,\ldots \\
 		 & & $\true$ et $\false$ \\
-		\multirow{3}{*}{Symbole non logiques} & Symboles de prédicat & $P$, $Q$, $R$,\ldots (avec arité $\ge 0$) \\
+		\multirow{3}{*}{Symboles non logiques} & Symboles de prédicat & $P$, $Q$, $R$,\ldots (avec arité $\ge 0$) \\
 		 & Symboles de fonction & $f$, $g$, $h$,\ldots (avec arité $\ge 0$) \\
 		 & Symboles de constante & $a$, $b$, $c$,\ldots (si arité $= 0$) \\
 		\hline
@@ -1141,8 +1141,326 @@ La transformation des prémisses en forme clausale se fait en trois étapes.
 \end{enumerate}
 
 \subsection{Résolution}
-L'algorithme de preuve n'utilise qu'une seule règle, la résolution:
+L'algorithme de preuve n'utilise qu'une seule règle, la résolution.
+Cependant, il faut l'adapter un peu
+afin qu'elle fonctionne pour la logique des prédicats.
+La règle va prendre la forme
 \[
-\frac{L \lor C_1,\lnot L \lor C_2}{C_1 \lor C_2}\,.
+\frac{L_1 \lor C_1,\lnot L_2 \lor C_2}{(C_1 \lor C_2)\sigma}\,,
 \]
+où $L_1$ et $L_2$ représentent des ensembles d'objets généralement différents.
+Afin de pouvoir utiliser la résolution telle qu'on la connaît,
+on doit essayer de rendre les deux ensembles égaux.
+Appelons $L$ la partie commune des deux ensembles.
+Mathématiquement, il s'agit alors
+de l'intersection des deux : $L = L_1 \cap L_2$.
+Afin de trouver cet ensemble, on définit une \emph{substitution} $\sigma$,
+de sorte à ce que $L = L_1 \sigma = L_2 \sigma$.
+\begin{mytheo}[Existence d'une substitution la plus générale]
+	Plusieurs choix sont possibles pour $\sigma$,
+	mais on peut prouver qu'il existe une substitution unique
+	qui soit plus générale (minimale) que toutes les autres.
+	On appelle cette substitution
+	l'\foreignquote{french}{\emph{unificateur
+	le plus général}}, \textsc{upg}
+	(\foreignquote{french}{\emph{most general unifier}}, \textsc{mgu}).
+	On appelle le processus
+	pour trouver le \textsc{mgu} l'\emph{unification}.
+	S'il existe, le \textsc{mgu} est calculable\footnote{L'algorithme
+	de Martelli et Montanari permet de le trouver, par exemple.}.
+\end{mytheo}
+
+\subsection{Algorithme de preuve}
+L'Algorithme~\ref{algo:pred} est l'adaptation à la logique de prédicats
+de l'Algorithme~\ref{algo:proof} pour la logique des propositions.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{$\textnormal{Ax}_1,\dots,\textnormal{Ax}_n$, les axiomes,
+et $\textnormal{Th}$ le théorème à prouver.
+Chaque formule est en \textsc{fnc}.}
+\KwResult{Si $\textnormal{Ax}_1, \dots, \textnormal{Ax}_n \vdash \textnormal{Th}$,
+à condition que l'algorithme termine.
+Sinon, on ne peut rien conclure.}
+\Begin{
+	$\mathcal{S} \gets \{\textnormal{Ax}_1, \dots, \textnormal{Ax}_n, \lnot \textnormal{Th}\}$\;
+	\While{$\false \notin \mathcal{S}$ et
+	$\exists p_i, p_j \in \mathcal{S}$ telles que $p_i, p_j$
+	résolvables et non résolues}{
+		choisir $p_i, p_j \in \mathcal{S}$
+		telles que $\exists L^+ \in p_i, \lnot L^- \in p_j$
+		et que $L^+$ et $L^-$ unifiables par \textsc{mgu} $\sigma$\;
+		calculer $r \gets (p_i \setminus \{L^+\} \lor p_j \setminus \{ \lnot L^-\})\sigma$\;
+		calculer $\mathcal{S} \gets \mathcal{S} \cup \{r\}$\;
+	}
+	\eIf{$\false \in \mathcal{S}$}{
+		\Return \true \Comment*[r]{$\mathcal{S}$ inconsistant,
+		$\textnormal{Th}$ prouvé}
+	}{
+		\Return \false \Comment*[r]{$\mathcal{S}$ consistant,
+		$\textnormal{Th}$ non prouvé}
+	}
+}
+\caption{Algorithme de preuve en logique des prédicats\label{algo:pred}}
+\end{algorithm}
+
+Cet algorithme utilise la preuve par contradiction.
+On rajoute donc $\lnot \textnormal{Th}$ à l'ensemble des axiomes,
+et essayer de déduire une contradiction.
+Les déductions utilisent la règle de résolution,
+bien adaptée à la forme normale conjonctive.
+
+Il n'y a pas de garantie que l'algorithme terminera
+car il est \emph{semi-décidable} ; s'il termine avec une contradiction,
+cela démontre le théorème $\textnormal{Th}$.
+Sinon, on ne peut pas décider.
+
+L'algorithme a plusieurs sources de non-déterminisme :
+\begin{itemize}
+	\item le choix des clauses ;
+	\item le choix des littéraux dans les clauses.
+\end{itemize}
+À chaque itération, ces choix sont faits,
+et un mauvais choix peut faire en sorte que l'algorithme ne se termine pas
+ou faire des déductions inutiles.
+
+Pour que cet algorithme soit utilisable en pratique,
+il est important de concrétiser les stratégies pour les choix
+des paires $p_i, p_j$ et $L^+, L^-$.
+Selon le choix qu'on fait,
+cela donne lieu à deux types de programmes appelés
+\emph{assistants de preuve} ou \emph{langages logiques}.
+
+\subsubsection{Assistant de preuve}
+Un \emph{assistant de preuve} est un outil qui aide un mathématicien humain
+à faire des preuves formelles.
+C'est au mathématicien de lui donner des \foreignquote{french}{coups de pouce},
+sous forme de lemmes, hypothèses, chemins, stratégies,\ldots
+Ensuite, l'assistant de preuve s'occupe de la manipulation des symboles.
+
+\subsubsection{Langage logique}
+Un \emph{langage logique} est un langage de programmation
+basé sur la logique des prédicats.
+Le plus célèbre de ces langages est Prolog.
+Prolog utilise volontairement des stratégies naïves
+qui permettent de rendre l'algorithme prévisible.
+Les axiomes deviennent un \emph{programme}.
+L'heuristique utilisée par Prolog s'appelle \textsc{lush},
+pour \emph{Linear resolution with Unrestricted Selection for Horn clauses}.
+Elle fonctionne comme suit :
+\begin{itemize}
+	\item choisir les $p_i, p_j$ dans l'ordre spécifié par l'utilisateur ;
+	\item choisir de gauche à droite à l'intérieur de la clause $p_i$.
+\end{itemize}
+Le choix de l'ordre des clauses est donc une responsabilité de l'utilisateur.
+
+\section{Théories logiques}
+Lorsqu'on définit une structure mathématique avec la logique,
+la définition contient deux types de formules:
+\begin{itemize}
+	\item des \emph{axiomes} ;
+	\item des \emph{règles d'inférence}.
+\end{itemize}
+\begin{mydef}[Théorie logique]
+	Une \emph{théorie logique} est un ensemble d'axiomes et de formules
+	avec un vocabulaire propre et éventuellement quelques règles d'inférence
+	spécifiques à la théorie.
+\end{mydef}
+Ces formalisations peuvent être utilisées en programmation
+et dans les assistants de preuve,
+mais il faut alors faire attention à la manière dont on définit
+les axiomes et les règles,
+car cela peut avoir une grande influence sur l'efficacité.
+
+\subsection{Théorie du premier ordre}
+\begin{mydef}[Théorie du premier ordre]
+	Une théorie logique du premier ordre contient les parties suivantes :
+	\begin{itemize}
+		\item un sous langage de la logique du premier ordre :
+		\begin{itemize}
+			\item vocabulaire : constantes, fonctions, prédicats ;
+			\item règles syntaxiques
+			et sémantiques sur ce vocabulaire.
+		\end{itemize}
+		\item ensemble d'axiomes ;
+		\item ensemble de règles d'inférence
+	\end{itemize}
+	Les axiomes et les règles d'inférence sont des formules \emph{fermées},
+	ne contenant pas de variables libres.
+\end{mydef}
+
+Nous allons voir quatre exemples de théories du premier ordre :
+\begin{itemize}
+	\item \textsc{fam}, la théorie des liens familiaux ;
+	\item \textsc{ops}, la théorie d'ordre partiel strict ;
+	\item \textsc{eg}, la théorie d'égalité et
+	\item \textsc{op}, la théorie d'ordre partiel.
+\end{itemize}
+
+\subsection{Théorie des liens familiaux, \textsc{fam}}
+La théorie des liens familiaux possède le vocabulaire suivant :
+\begin{itemize}
+	\item deux symboles de fonctions à un paramètre : $p/1$ et $m/1$ ;
+	\item trois symboles de prédicats à deux paramètres :
+	$P/2$, $GM/2$ et $GP/2$.
+\end{itemize}
+La signification de chaque symbole est
+\begin{itemize}
+	\item $p$ et $m$ signifient
+	\foreignquote{french}{père de} et \foreignquote{french}{mère de} ;
+	\item $P$, $GM$ et $GP$ dénotent \foreignquote{french}{parent de},
+	\foreignquote{french}{grand-mère de} et
+	\foreignquote{french}{grand-père de}.
+\end{itemize}
+
+Les axiomes de la théorie sont
+\begin{align*}
+	&(\forall x) (P(x, p(x))) \tag{\textnormal{père}} \\
+	&(\forall x) (P(x, m(x))) \tag{\textnormal{mère}} \\
+	&(\forall x) (\forall y) (P(x, y) \to GP(x, p(y))) \tag{\textnormal{grand-père}} \\
+	&(\forall x) (\forall y) (P(x, y) \to GM(x, m(y))) \tag{\textnormal{grand-mère}} \\
+\end{align*}
+
+Les règles d'inférence sont uniquement celles de la logique des prédicats.
+Une théorie logique peut avoir plusieurs modèles.
+
+\subsection{Propriétés des théories}
+Une théorie logique a plusieurs propriétés :
+\begin{itemize}
+	\item Une formule fermée $p$ est \emph{valide}
+	dans la théorie \textsc{th} si elle est vraie
+	dans chaque modèle de \textsc{th}.
+	On l'écrit $\models_{\textnormal{\textsc{th}}} p$.
+	Soit l'ensemble des axiomes
+	$\textnormal{Ax} = \{\textnormal{Ax}_1, \ldots, \textnormal{Ax}_n\}$.
+	On a bien que $\models_{\textnormal{\textsc{th}}} \textnormal{Ax}_i$.
+	\item $q$ est une \emph{conséquence logique} de $p$
+	dans la théorie \textsc{th} si $q$ est vraie
+	dans tous les modèles de \textsc{th} qui rendent $p$ vraie.
+	On écrit $p \vDash_{\textnormal{\textsc{th}}} q$.
+	En anglais, cela se dit \foreignquote{french}{$p$ \emph{entails} $q$}.
+	\item Une théorie est \emph{consistante} si elle a au moins un modèle.
+	\item Une théorie est \emph{inconsistante} si elle n'a pas de modèle.
+\end{itemize}
+
+\subsubsection{Établir la validité}
+Pour établir $\models_{\textnormal{\textsc{th}}} p$,
+il y a deux approches :
+\begin{itemize}
+	\item L'approche \emph{sémantique} :
+	on prend un modèle quelconque $I$
+	et on évalue la théorie grâce à la fonction de valuation $\VAL{I}$.
+	\item L'approche \emph{syntaxique} :
+	on essaie de construire une preuve de $p$ à partir des axiomes,
+	en appliquant les règles de la théorie.
+	Cette approche s'appelle aussi \emph{théorie de la preuve}.
+\end{itemize}
+
+\subsubsection{Qualité d'une théorie}
+Une \foreignquote{french}{bonne} théorie est
+\begin{itemize}
+	\item \emph{Consistante.}
+	Il est impossible de déduire $p$ et $\lnot p$ de la même théorie.
+	\item \emph{Minimale.}
+	Les axiomes sont indépendants : $\{\textnormal{Ax}_1, \ldots, \textnormal{Ax}_n\} \nvDash \textnormal{Ax}_k$.
+	\item \emph{Complète.}
+	Les axiomes suffisent pour prouver les propriétés d'intérêt.
+\end{itemize}
+
+\subsection{Opérations sur les théories}
+Définissons maintenant une opération, appellée l'\emph{extension},
+qui permet de créer une nouvelle théorie par rapport à une théorie existante,
+et deux opérations (l'inclusion et l'équivalence)
+qui permettent de comparer deux théories.
+
+\subsubsection{Extension d'une théorie}
+Afin de rendre une théorie plus complète,
+on souhaite parfois l'étendre.
+\begin{mydef}[Extension d'une théorie]
+	Une théorie $\textnormal{\textsc{th}}_2$ est
+	une extension de $\textnormal{\textsc{th}}_1$ si
+	\begin{itemize}
+		\item le vocabulaire de $\textnormal{\textsc{th}}_1$ est inclus
+		dans le vocabulaire de $\textnormal{\textsc{th}}_2$
+		($V_1 \subseteq V_2$) ;
+		\item tout axiome de $\textnormal{\textsc{th}}_1$ est axiome
+		de $\textnormal{\textsc{th}}_2$.
+	\end{itemize}
+\end{mydef}
+On peut donc étendre le vocabulaire et ajouter des axiomes.
+\begin{myrem}
+	Étendre un théorie peut réduire son nombre de modèles,
+	et celui-ci peut même devenir nul.
+	L'ensemble des modèles de la théorie étendue est
+	un sous-ensemble de l'ensemble des modèles de la théorie initiale.
+\end{myrem}
+
+\subsubsection{Comparaison de théories}
+Soit $V_i$ le vocabulaire,
+$M_i$ l'ensemble des modèles et
+$\{\textnormal{Ax}_i\}$ l'ensemble des axiomes de $\textnormal{\textsc{th}}_i$.
+
+\begin{mydef}[Inclusion de théories]
+	Si $V_1 \subseteq V_2$ et
+	toute formule valide dans $\textnormal{\textsc{th}}_1$
+	l'est aussi dans $\textnormal{\textsc{th}}_2$.
+	On a alors $M_2 \subseteq M_1$,
+	et on dit que $\textnormal{\textsc{th}}_1$
+	est \emph{contenue} dans $\textnormal{\textsc{th}}_2$.
+\end{mydef}
+
+\begin{mydef}[Équivalence de théories]
+	On dit que $\textnormal{\textsc{th}}_1$
+	et $\textnormal{\textsc{th}}_2$ sont \emph{équivalentes}
+	si $\textnormal{\textsc{th}}_1$ est contenue
+	dans $\textnormal{\textsc{th}}_2$
+	et $\textnormal{\textsc{th}}_2$ est
+	contenue dans $\textnormal{\textsc{th}}_1$.
+\end{mydef}
+
+\begin{myrem}
+	Il faut bien faire la différence entre l'inclusion d'une théorie
+	et l'extension de celle-ci :
+	l'extension est définie par rapport aux axiomes de la théorie,
+	alors que l'inclusion est définie par rapport aux modèles.
+	L'extension est donc une manipulation syntaxique,
+	alors que l'inclusion est une manipulation sémantique.
+\end{myrem}
+
+\begin{mycorr}
+	Si $V_1 \subseteq V_2$ et $M_2 \subseteq M_2$,
+	alors $\textnormal{\textsc{th}}_1$ est contenue
+	dans $\textnormal{\textsc{th}}_2$.
+\end{mycorr}
+
+\begin{mycorr}
+	Si $V_1 \subseteq V_2$ et
+	$\{\textnormal{Ax}_1\} \subseteq \{\textnormal{Ax}_2\}$,
+	alors $\textnormal{\textsc{th}}_1$ est contenue
+	dans $\textnormal{\textsc{th}}_2$.
+	Il est donc vrai que $M_2 \subseteq M_1$ :
+	une extension donne lieu à une extension (\emph{mais pas inversement}).
+\end{mycorr}
+
+\begin{mycorr}
+	Si $V_1 = V_2$, et pour tout axiome $p \in \{\textnormal{Ax}_1\}$,
+	nous avons $\models_{\textnormal{\textsc{th}}_2} p$
+	et pour tout axiome $q \in \{\textnormal{Ax}_2\}$
+	nous avons $\models_{\textnormal{\textsc{th}}_1} q$,
+	alors $\textnormal{\textsc{th}}_1$ et $\textnormal{\textsc{th}}_2$
+	sont équivalentes.
+\end{mycorr}
+
+\begin{mycorr}
+	Si $p$ est une formule fermée
+	telle que $\models_{\textnormal{\textsc{th}}_1} p$
+	et $\textnormal{\textsc{th}}_2 = \textnormal{\textsc{th}}_1 \cup \{p\}$,
+	alors $\textnormal{\textsc{th}}_1$ et $\textnormal{\textsc{th}}_2$
+	sont équivalentes.
+\end{mycorr}
+
+\subsection{Théorie des ordres partiels stricts, \textsc{ops}}
+
+
+
 \end{document}
