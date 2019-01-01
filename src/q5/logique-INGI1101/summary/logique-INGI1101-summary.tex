@@ -1,5 +1,6 @@
 \documentclass[fr]{../../../eplsummary}
 
+\usepackage[minted]{../../../eplcode}
 \usepackage{float}
 \usepackage{colonequals}
 \usepackage[french,ruled,vlined]{algorithm2e}
@@ -1574,4 +1575,449 @@ Un exemple de modèle pour \textsc{op} est $\mathcal{D}_I = \mathbb{Z}$,
 $\val{I}(==) =$ \og $=$ \fg{}, l'égalité d'entiers,
 et $\val{I}(\le) =$ \og $\le$ \fg{},
 le symbole plus petit ou égal pour les entiers.
+
+\section{Introduction à la programmation logique}
+Pour la programmation logique,
+l'exécution d'un programme correspond à un raisonnement logique
+dans une théorie logique.
+Elle propose l'approche suivante :
+\begin{itemize}
+	\item le programme est un \emph{ensemble d'axiomes}
+	en logique des prédicats ;
+	\item l'exécution du programme
+	est faite par un \emph{prouveur de théorèmes} ;
+	\item l'exécution démarre avec une \emph{requête},
+	une formule à prouver en logique des prédicats.
+\end{itemize}
+Cette approche permet
+\begin{itemize}
+	\item la vérification des programmes et
+	\item l'intelligence artificielle (en partie, pour l'instant).
+\end{itemize}
+
+\subsection{La voie vers la programmation logique}
+Pour tout langage de programmation logique,
+il y a un compromis entre expressivité et efficacité.
+Il faut résoudre trois problèmes :
+\begin{enumerate}
+	\item \emph{Limitations theóriques du prouveur.}
+	L'algorithme de preuve en logique des prédicats est semi-décidable,
+	et peut tourner à l'infini.
+	\item \emph{Efficacité du prouveur.}
+	Même lorsqu'il est possible de trouver une preuve,
+	le prouveur prend un temps exponentiel.
+	Il doit donc avoir une sémantique opérationnelle efficace et prévisible.
+	\item \emph{Construction du résultat.}
+	Le prouveur ne peut pas se contenter
+	de démontrer l'existence de la réponse,
+	il doit également la construire.
+\end{enumerate}
+
+\subsubsection{Limitations théoriques du prouveur}
+L'algorithme de preuve est
+\begin{itemize}
+	\item \emph{Adéquat.}
+	Si $p \vdash q$, alors $p \vDash q$.
+	\item \emph{Complet.}
+	Si $p \vDash q$, alors $p \vdash q$.
+\end{itemize}
+Cependant, l'algorithme n'est pas décidable (il semi-décidable).
+S'il n'arrive pas à prouver $p \vdash q$, on ne peut rien conclure.
+
+\subsubsection{Efficacité du prouveur}
+L'algorithme de preuve a une complexité exponentielle.
+Pour réduire le temps d'exécution, les solutions utilisées sont :
+\begin{itemize}
+	\item \emph{Mettre des restrictions sur la forme des axiomes.}
+	On ne permet que des axiomes pour lesquels
+	l'algorithme sait raisonner efficacement.
+	Typiquement, on ne permet dans une clause $C_i$
+	seulement un littéral sans négation.
+	Ce type de clause s'appelle une \emph{clause de Horn}.
+	\item \emph{Permettre au programmeur de donner des heuristiques.}
+	Le programmeur est souvent libre de spécifier l'ordre dans lequel
+	le programme doit essayer de résoudre les clauses.
+\end{itemize}
+Le langage Prolog utilise ces deux techniques pour obtenir un langage efficace.
+
+\subsubsection{Construction du résultat}
+Notre algorithme de preuve construit de nouvelles clauses
+à partir des anciennes.
+La résolution utilise l’unification, ce qui instancie les variables.
+Pour obtenir un résultat final d’une requête,
+il suffit de garder la requête pendant le calcul
+et de l’instancier avec les mêmes substitutions utilisées par la résolution.
+À la fin du calcul, les variables de la requête
+contiendront alors le résultat.
+
+\subsection{Introduction au langage Prolog}
+Un programme en Prolog est un ensemble de clauses de la forme
+\[
+A_1 \leftarrow B_{11}, \ldots, B_{1n}\,.
+\]
+L'intuition d'une clause est que l'on peut prouver $A_i$
+en prouvant $B_{i1}, \ldots B_{in}$.
+On voit facilement qu'il s'agit d'une clause de Horn.
+
+\subsubsection{Exemple de programme en Prolog}
+Écrire un programme en Prolog, c'est formuler les algorithmes
+avec des axiomes en logique.
+Voici un exemple de programme en Prolog.
+\begin{minted}{prolog}
+grandpere(X,Z) :- pere(X,Y), pere(Y,Z).
+pere(terach, abraham).
+pere(abraham, isaac).
+pere(haram, lot).
+\end{minted}
+
+Les noms de variable sont en majuscules
+et le symbole \og $\leftarrow$ \fg{}
+est représenté par \og \mintinline{prolog}{:-} \fg{}.
+Cette syntaxe représente la forme normale suivante:
+\[
+\forall x.\ \forall y.\ \forall z.\ \Big(GP(x, z) \lor \lnot P(x, y) \lor \lnot P(y, z)\Big) \land P(t, a) \land P(a, i) \land P(h, l)\,.
+\]
+On voit clairement qu'il y a une correspondance entre Prolog
+et les bases de données relationnelles.
+Un programme Prolog peut être vu comme une base de données relationnelle,
+augmentée avec la déduction.
+
+\subsection{Algorithme d'exécution de Prolog}
+L'algorithme d'exécution de Prolog est basé
+sur l'algorithme de preuve de la logique des prédicats,
+modifié avec les techniques nécessaires pour être plus efficace
+et pour construire les résultats.
+Au lieu de travailler avec un ensemble $\mathcal{S}$ grandissant toujours,
+on ne retient que la clause $r$ qui s'appelle la \emph{résolvante}.
+On n'augmente donc jamais le nombre de clauses.
+On ne garde que trois choses :
+\begin{itemize}
+	\item les axiomes de base ($P = \{\textnormal{Ax}_1, \ldots, \textnormal{Ax}_n\}$);
+	\item la résolvante $r$ ;
+	\item la requête originale $G$, c'est-à-dire le théorème à prouver.
+\end{itemize}
+
+\subsubsection{Explication de l'algorithme}
+Voici les différentes étapes de l'exécution de l'algorithme :
+\begin{enumerate}
+	\item Mettre $G$ dans $r$, sans négation.
+	\item Tant que $r$ n'est pas vide,
+	prendre le premier littéral dans $r$, par exemple $A_1$.
+	\item Parcourir les axiomes de $P$
+	pour trouver une clause $\textnormal{Ax}_i$ unifiable avec $A_1$
+	au moyen du \textsc{mgu}, $\sigma$.
+	\begin{itemize}
+		\item Si on trouve une clause unifiable,
+		ajouter à $r$ les littéraux de cette clause
+		après unification avec $A_1$, puis reprendre depuis le début.
+		\item Si on ne trouve pas de clause unifiable,
+		remettre $r$ dans son état initial
+		et revenir sur le dernier choix.
+		\item Si on épuise tous les choix sans que $r$ ne soit vide,
+		$G$ ne peut pas être prouvé.
+	\end{itemize}
+	\item Si $r$ est vide ou qu'il n'y a plus de choix à faire,
+	arrêter l'exécution. Si $r$ est vide, $G$ contient le résultat.
+\end{enumerate}
+Il est possible que l'algorithme boucle à l'infini ;
+c'est au programmeur de veiller à définir les axiomes de telle sorte
+que ce scénario ne se passe pas.
+
+\subsubsection{Définition de l'algorithme}
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{$\textnormal{Ax}_1,\dots,\textnormal{Ax}_n$, les axiomes,
+et $G$ le théorème à prouver.
+Chaque formule est une clause de Horn.}
+\KwResult{Si $\textnormal{Ax}_1 \land \cdots \land \textnormal{Ax}_n \vdash G$,
+à condition que l'algorithme termine.
+Sinon, on ne peut rien conclure.}
+\Begin{
+	$r \gets \langle G \rangle$ \Comment*[r]{Résolvante initiale ;
+	pendant l'exécution, $r = \langle A_1, \ldots, A_m \rangle$}
+	\While{$r$ est non vide et qu'il reste des choix}{
+		Choisir le premier littéral, $A_1$, dans $r$\;
+		Choisir une clause $\textnormal{Ax}_i = (A \leftarrow B_1, \ldots, B_k)$ dans $P$.
+		On commence par prendre la première, puis la suivante,
+		et ainsi de suite, jusqu'à trouver
+		une clause unifiable avec $A_1$.
+		Si aucune clause n'est unifiable,
+		on revient sur le dernier choix (\emph{backtrack})\;
+		$r \gets \langle B_1, \ldots, B_k, A_2, \ldots, A_m \rangle \sigma$.\;
+		$G \gets G \sigma$\;
+	}
+	\If{$r$ est vide}{
+		\Return $G$ \Comment*[r]{Le théorème est prouvé ;
+		si on le veut, on peut faire un retour en arrière pour trouver d'autres solutions}
+	}
+	\If{$r$ non vide mais on a épuisé les choix}{
+		\Return $\false$ \Comment*[r]{On n'a pas prouvé $G$,
+		mais il peut être vrai
+		(les heuristiques sont insuffisantes pour le prouver)}
+	}
+}
+\caption{Algorithme de Prolog \label{algo:prolog}}
+\end{algorithm}
+
+\subsubsection{Gestion des choix}
+L'algorithme fait parfois un retour en arrière (\emph{backtrack})
+pour changer un choix.
+Chaque fois que l'on choisit une clause
+à unifier avec le début de la résolvante
+cela marque un endroit où l'on peut faire un retour en arrière.
+Pour faire le retour en arrière,
+on remet les structures de données internes $r$ et $G$ à l'état avant le choix,
+et on recommence l'exécution à l'endroit du dernier choix.
+S'il n'y a plus de clauses possibles,
+on revient au choix d'avant, et ainsi de suite.
+La gestion des choix est \emph{récursive}.
+Il y a une pile de choix gérée par l'algorithme.
+Pour simplifier la présentation,
+la gestion de la pile n'est pas montrée dans la définition de l'algorithme.
+Si on arrive au tout premier choix qui a été fait,
+et qu'on ne peut plus unifier de clauses,
+l'algorithme termine sans solution.
+C'est une faiblesse de l'algorithme.
+Si au contraire, on arrive à rendre $r$ vide,
+on a une solution dans $G$.
+
+Une conséquence intéressante de ceci est que
+l'algorithme peut trouver plusieurs solutions différentes
+pour une requête donnée (si elles existent).
+
+\subsection{Exemples de programmes Prolog}
+Comme dit plus haut,
+l'idée de base de la programmation logique est qu'un programme
+est un ensemble d'axiomes qui énoncent des propriétés vraies
+des algorithmes que l'on veut programmer.
+\begin{myexem}[Factorielle en Prolog]
+	Ce programme permet de calculer la factorielle d'un nombre.
+	On commence par établir un fait : $0! = 1$,
+	ou bien en Prolog, \mintinline{prolog}{fact(0, 1).}.
+	Ensuite, on définit une clause pour les factorielles en général :
+	$n! = n (n-1)!$ si $n > 0$.
+	Le programme est le suivant :
+\begin{minted}{prolog}
+fact(0, 1).
+fact(N,F) :- N>0, N1 is N-1, fact(N1,F1), F is N*F1.
+\end{minted}
+	Les virgules sont les séparateurs entre littéraux négatifs
+	alors que le point marque la fermeture de la clause.
+
+	Ce programme n'est pas récursif terminal ;
+	l'exécution dépend également d'une pile
+	et il serait donc intéressant de le mettre en forme récursive terminale.
+	Pour un compilateur Prolog, la différence est importante.
+
+	Étudions maintenant l'exécution du programme.
+	Le prompt Prolog est représenté par \og \mintinline{prolog}{|?-} \fg{}
+	et la sortie standard par \og \mintinline{prolog}{->} \fg{}.
+	\catcode`\%=11
+	Les commentaires sont écrits après des \og \mintinline{prolog}{%} \fg{}
+	où entre \og \mintinline{prolog}{/* */} \fg{}.
+	Le point à la fin de la requête est important également.
+
+\begin{minted}{prolog}
+|?- fact(5,F). % Requête de l'utilisateur
+-> F=120       % Réponse du système
+\end{minted}
+
+	Sous forme clausale, le programme s'écrit
+	\[
+	\mathrm{fact}(0, 1) \land \forall n.\ \forall f.\ \forall n_1.\ \forall f_1.\ \mathrm{fact}(n, f) \lor \lnot (n > 0) \lor \lnot \mathrm{minus}(n_1, n, 1) \lor \lnot \mathrm{fact}(n_1, f_1) \lor \lnot \mathrm{times}(f, n, f_1)\,.
+	\]
+	Les prédicats mathématiques font partie du système et sont prédéfinis :
+	\begin{itemize}
+		\item $a > b$ est vrai si
+		$a$ est strictement plus grand que $b$ ;
+		\item $\mathrm{minus}(a, b, c)$ est vrai si $a = b - c$ ;
+		\item $\mathrm{times}(a, b, c)$ est vrai si $a = bc$.
+	\end{itemize}
+
+	Afin de prouver $G = \mathrm{fact}(5, r)$,
+	Prolog construira au fur et à mesure de l'exécution
+	une substitution finale $\sigma_{\textnormal{res}}$
+	en faisaant les résolutions qui feront évoluer $r$.
+	Appliquée à $G$, cette substitution donne le résultat final.
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{lll}
+			\hline
+			\\
+			Requête initiale & $\sigma_0 = \emptyset$ & $r = \langle \mathrm{fact}(5, n) \rangle$ \\
+			Résolution $1$ & $\sigma_1 = \sigma_0 \cup \{(n, 5), (f, r)\}$ & $r = \langle (5 > 0), \mathrm{minus}(n_1, 5, 1), \mathrm{fact}(n_1, f_1), \mathrm{times}(r, 5, f_1) \rangle$ \\
+			Résolution $2$ & $\sigma_2 = \sigma_1$ & $r = \langle \mathrm{minus}(n_1, 5, 1), \mathrm{fact}(n_1, f_1), \mathrm{times}(r, 5, f_1) \rangle$ \\
+			Résolution $3$ & $\sigma_3 = \sigma_2 \cup \{(n_1, 4)\}$ & $r = \langle \mathrm{fact}(4, f_1), \mathrm{times}(r, 5, f_1) \rangle$ \\
+			\\
+			$\vdots$ & $\vdots$ & $\vdots$ \\
+			\\
+			Fin & $\sigma_{\textnormal{res}} = \{(r, 120), \ldots\}$ & $r = \langle \rangle$ \\
+			\\
+			\hline
+		\end{tabular}
+	\end{table}
+	Le résultat final est donc $G \sigma = \mathrm{fact}(5, 120)$,
+	ou bien en Prolog : \mintinline{prolog}{fact(5,120)}.
+\end{myexem}
+
+\begin{myexem}[Concaténation de listes]
+	Ce programme fait la concaténation de deux listes.
+\begin{minted}{prolog}
+append([],L,L).
+append([X|L1],L2,[X|L3]) :- append(L1,L2,L3).
+\end{minted}
+
+	La requête initiale est $G = \textnormal{append}(\mathrm{cons}(1, \mathrm{nil}), \mathrm{cons}(2, \mathrm{nil}), \ell)$.
+	En syntaxe Prolog, on veut concaténer
+	les listes \mintinline{prolog}{[1]} et \mintinline{prolog}{[2]}.
+	La paire de listes écrite \mintinline{prolog}{[X|L1]} en Prolog
+	s'écrit $\mathrm{cons}(x, \ell_1)$.
+	Notre requête Prolog s'écrit
+\begin{minted}{prolog}
+|?- append([1],[2],L).
+-> L=[1,2]
+\end{minted}
+
+	Sous forme clausale, le programme devient
+	\[
+	\textnormal{append}(\mathrm{nil}, \ell', \ell') \land \Big(\forall \ell_1.\ \forall \ell_2.\ \forall l_3.\ \forall x.\ \textnormal{append}\big(\mathrm{cons}(x, \ell_1), \ell_2, \mathrm{cons}(x, \ell_3)\big) \lor \lnot \textnormal{append}(\ell_1, \ell_2, \ell_3) \Big)\,.
+	\]
+
+	L'exécution est la suivante :
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{ll}
+			\hline
+			\\
+			\multirow{2}{*}{Requête initiale} & $\sigma_0 = \emptyset$ \\
+			& $r = \langle \textnormal{append}\big(\mathrm{cons}(1, \mathrm{nil}), \mathrm{cons}(2, \mathrm{nil}), \ell \big)\rangle$ \\
+			\\
+			\multirow{2}{*}{Résolution $1$} & $\sigma_1 = \sigma_0 \cup \{(x, 1), (\ell_1, \mathrm{nil}), (\ell_2, \mathrm{cons}(2, \mathrm{nil})), (\ell, \mathrm{cons}(x, \ell_3))\}$ \\
+			& $r = \langle \textnormal{append}\big(\mathrm{nil}, \mathrm{cons}(2, \mathrm{nil}), \ell_3 \big)\rangle$ \\
+			\\
+			\multirow{2}{*}{Résolution $2$} & $\sigma_{\textnormal{res}} = \sigma_1 \cup \{(\ell', \mathrm{cons}(2, \mathrm{nil})), (\ell_3, \ell')\}$ \\
+			& $r = \langle \rangle$ \\
+			\\
+			\hline
+		\end{tabular}
+	\end{table}
+
+	Lors de la première résolution,
+	il y a une unification entre le premier élément de $r$
+	et la tête d'une clause dans le programme.
+	Cette unification donne lieu à une substitution.
+	La nouvelle résolvante après la résolution
+	est le littéral négatif de la clause.
+	Après la deuxième résolution, l'exécution s'arrête avec réussite,
+	parce que $r$ est vide.
+	Le résultat final est
+	$G = \textnormal{append}\big(\mathrm{cons}(1, \mathrm{nil}), \mathrm{cons}(2, \mathrm{nil}), \mathrm{cons}(1, \mathrm{cons}(2, \mathrm{nil}))\big)$.
+
+	\begin{myrem}
+		Chaque fois qu'on fait une résolution
+		avec une clause du programme,
+		il faut renommer les variables de la clause.
+	\end{myrem}
+
+	Le programme précédent permet de calculer plusieurs solutions,
+	à condition qu'elles existent.
+	Prenons la requête $G = \textnormal{append}(\ell_1, \ell_2, \mathrm{cons}(1, \mathrm{nil}))$.
+	Il y a deux solutions possibles :
+	\begin{itemize}
+		\item $\ell_1 = \mathrm{nil}$, $\ell_2 = \mathrm{cons}(1, \mathrm{nil})$ ;
+		\item $\ell_1 = \mathrm{cons}(1, \mathrm{nil})$ et $\ell_2 = \mathrm{nil}$.
+	\end{itemize}
+
+	En syntaxe Prolog,
+	la requête est \mintinline{prolog}{append(L1,L2,[1]).}.
+	Pour demander une solution supplémentaire,
+	l'utilisateur peut utiliser le caractère \mintinline{prolog}{;}.
+\begin{minted}{prolog}
+|?- append(L1,L2,[1]).
+-> L1=[], L2=[1] ;
+-> L1=[1], L2=[]
+\end{minted}
+
+	L'exécution est la suivante :
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{ll}
+			\hline
+			\\
+			\multirow{2}{*}{Requête initiale} & $\sigma_0 = \emptyset$ \\
+			& $r = \langle \textnormal{append}\big(\ell_1, \ell_2, \mathrm{cons}(1, \mathrm{nil}) \big)\rangle$ \\
+			\\
+			\multirow{2}{*}{Résolution $1$} & $\sigma_{\textnormal{res}} = \sigma_0 \cup \{(\ell_1, \mathrm{nil}), (\ell_2, \ell'), (\ell', \mathrm{cons}(1, \mathrm{nil}))$ \\
+			& $r = \langle \rangle$ \\
+			\\
+			\hline
+		\end{tabular}
+	\end{table}
+	L'algorithme commence par choisir la première clause.
+	Cela donne le résultat
+	$G = \textnormal{append}\big(\mathrm{nil}, \mathrm{cons}(1, \mathrm{nil}), \mathrm{cons}(1, \mathrm{nil})\big)$.
+	En syntaxe Prolog,
+	ce résultat s'écrit \mintinline{prolog}{append([],[1],[1])}.
+	Si on demande un autre résultat,
+	l'algorithme fera un retour en arrière
+	pour faire un autre choix de clause.
+	Dans ce cas-ci, ce choix est fait au moment de la première résolution.
+	Une autre possibilité est
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{ll}
+			\hline
+			\\
+			\multirow{2}{*}{Résolution $1'$} & $\sigma_{1'} = \sigma_0 \cup \{(\ell_1, \mathrm{cons}(x', \ell'_1)), (\ell_2, \ell'_2), (x', 1), (\ell'_3, \mathrm{nil})\}$ \\
+			& $r = \langle \textnormal{append}\big(\mathrm{cons}(1, \ell'_1), \ell'_2, \mathrm{nil} \big)\rangle$ \\
+			\\
+			\multirow{2}{*}{Résolution $2'$} & $\sigma_{2'} = \sigma_1 \cup \{(\ell'', \mathrm{cons}(1, \ell'_1)), (\ell'', \ell'_2)\}$ \\
+			& $r = \langle \textnormal{append}\big(\ell'_1, \ell'_2, \mathrm{nil} \big)\rangle$ \\
+			\\
+			\multirow{2}{*}{Résolution $3'$} & $\sigma_{\textnormal{res}'} = \sigma_2 \cup \{(\ell'_1, \mathrm{nil}), (\ell'_2, \ell'''), (\ell''', \mathrm{nil})\}$ \\
+			& $r = \langle \rangle$ \\
+			\\
+			\hline
+		\end{tabular}
+	\end{table}
+	Cette fois-ci, le résultat est
+	$G = \textnormal{append}\big(\mathrm{cons}(1, \mathrm{nil}), \mathrm{nil}, \mathrm{cons}(1, \mathrm{nil})\big)$.
+	En syntaxe Prolog,
+	ce résultat s'écrit \mintinline{prolog}{append([1],[],[1])}.
+	On peut essayer de trouver une troisième résultat
+	en faisant un nouveau retour en arrière
+	(la résolution $3'$ choisit la première clause),
+	mais l'unification échouera ;
+	il n'y a que deux résultats pour notre requête.
+\end{myexem}
+
+\subsubsection{Remarques finales}
+Il y a deux façons de percevoir l'exécution d'un programme Prolog :
+\begin{itemize}
+	\item \emph{La vue opérationnelle.}
+	L'exécution est vue comme une suite de calculs.
+	On se concentre sur l'exécution de l'algorithme de preuve.
+	Le résultat d'un calcul est une séquence d'opérations,
+	avec ses problèmes de temps d'exécution et d'espace mémoire utilisé.
+	\item \emph{La vue logique.}
+	L'exécution est vue comme une preuve en logique des prédicats.
+	On oublie l'algorithme et on se concentre sur la logique.
+	Le résultat d'un calcul est un théorème,
+	donc une conséquence logique des axiomes.
+\end{itemize}
+On peut donc raisonner (presque) indépendamment
+sur l'efficacité et l'exactitude du programme.
+
+\begin{myprop}[Équation de Kowalski]
+	La relation entre la vue logique et la vue opérationnelle
+	est résumée par l'équation de Kowalski :
+	\[
+	\textnormal{Algorithm} = \textnormal{Logic} + \textnormal{Control}\,.
+	\]
+	La logique et le contrôle peuvent être vus de façon séparée ;
+	pour une même définition logique,
+	on peut changer l'efficacité (l'algorithme)
+	sans changer le contrôle (ce que calcule l'algorithme).
+\end{myprop}
 \end{document}
