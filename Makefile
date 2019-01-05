@@ -1,11 +1,26 @@
-# run make all for every synthèse discarding stdout and stderr (-qq)
-all:
-	cd src; smartcp -v -qq -x "make all" -n config.yml
+# Dossiers contenant un makefile
+SUBDIRS := $(sort $(shell find src/ -name "Makefile"))
+SUBDIRS := $(filter-out src/how_to_contribute/Makefile,$(SUBDIRS))
+SUBDIRS := $(filter-out src/q1/info-FSAB1401/exam/2009/Juin/All/src/Makefile,$(SUBDIRS))
 
-# same but also copy to the destination
-release:
-	cd src; python3 ~/git/smartcp/smartcp.py --google-drive -v -qq -x "make all" -s quadri=2 config.yml
+ifeq ($(MAKECMDGOALS),clean)
+	COMPILE=make clean
+else
+	COMPILE=make
+endif
 
-# run make clean for all synthèse
-clean:
-	cd src; smartcp -v -qq -x "make clean" -n config.yml
+ifneq (,$(filter $(MAKEMCGOALS),pvc))
+	PVC:=-pvc
+endif
+
+.PHONY: all $(SUBDIRS) clean pvc
+
+all: $(SUBDIRS)
+
+$(SUBDIRS):
+	$(COMPILE) -C $(dir $@)
+
+clean: $(SUBDIRS)
+	
+pvc: $(SUBDIRS)
+	
