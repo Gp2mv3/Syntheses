@@ -1,6 +1,5 @@
 # Dossiers contenant un makefile
 SUBDIRS := $(sort $(shell find src/ -name "Makefile"))
-SUBDIRS := $(filter-out src/how_to_contribute/Makefile,$(SUBDIRS))
 SUBDIRS := $(filter-out src/q1/info-FSAB1401/exam/2009/Juin/All/src/Makefile,$(SUBDIRS))
 
 ifeq ($(MAKECMDGOALS),clean)
