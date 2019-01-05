@@ -1,12 +1,15 @@
 \documentclass[en,license=none]{../../../eplsummary}
 
 \usepackage{float}
+\usepackage{../../../eplunits}
 
 \graphicspath{{img/}}
 
 \hypertitle{Computer networks}{5}{INGI}{1341}
 {Gilles Peiffer}
 {Olivier Bonaventure}
+
+%TODO don't really know where this is going, probably just gonna make it into a short summary for myself
 
 \part{Principles}
 \section{Connecting two hosts}
@@ -790,9 +793,9 @@ An example network is represented in \figuref{typ_network}.
 \end{mydef}
 
 Let's analyze the operations that need to be performed to allow host $A$
-in the bove network to send one byte to host $B$.
-Host $A$ can easily send a frame to router $R1$ over the datalink layer.
-The network layer serves to let $R1$ know
+in the above network to send one byte to host $B$.
+Host $A$ can easily send a frame to router $R_1$ over the datalink layer.
+The network layer serves to let $R_1$ know
 that the data is for host $B$ and not for the router itself.
 
 The network layer sends packets from host to host,
@@ -814,5 +817,415 @@ There are two possible organisations for the network layer:
 \end{itemize}
 
 \subsection{The datagram organisation}
+Each host is identified by its \emph{network layer address}.
+Hosts create packets containing
+\begin{itemize}
+	\item the network layer address of the destination host;
+	\item its own network layer address;
+	\item the information to be sent.
+\end{itemize}
 
+Routers in the datagram organisation use \emph{hop-by-hop} forwarding.
+Hence, when a router receives a packet that is not destined to itself,
+it looks up the destination address in its \emph{forwarding table}.
+\begin{mydef}[Forwarding table]
+	A forwarding table is a data structure
+	that maps each destination address
+	with the outgoing interface over which this address must be forwarded.
+\end{mydef}
+
+Computing forwarding tables can be done in multiple ways,
+but care must be taken so as to make sure that:
+\begin{itemize}
+	\item No \emph{black holes} occur.
+	A black hole is when a router receives a packet with a destination
+	for which it does not have an entry in its forwarding table.
+	\item Packets do not get caught in an infinite loop.
+\end{itemize}
+
+The forwarding table and the format of the packets
+are part of the \emph{data plane} of the network.
+This data plane contains all the protocols and algorithms
+that are used by hosts and routers
+to create and process the packets that contain user data.
+A network is also characterized by its control plane,
+which contains the the protocols and algorithms
+used to compute the forwarding tables.
+Forwarding tables must be adapted in case of link or router failure.
+
+\subsubsection{Computing forwarding tables}
+We present three techniques for computing forwarding tables
+upon the arrival of a packet.
+
+The first technique assumes that the network topology is a tree.
+This means there cannot be cycles or infinite loops.
+In this technique,
+routers maintain data structures called
+\emph{port-address tables},
+which map outgoing interfaces to destination addresses.
+When the router receives a packet on a certain interface,
+it learns that the source host is reachable over that interface,
+and adds this to its port-address table.
+If the destination address is in the router's port-address table,
+it simply forwards the packet on the corresponding interface.
+If not,
+the packet is \emph{broadcast} over the network
+(forwarded over all interfaces except the one it was received over).
+
+This technique has two main drawbacks:
+\begin{itemize}
+	\item If the destination is not in the network,
+	the packet gets broadcast repeatedly.
+	\item Few networks have the required tree-shaped topology.
+	If the network does not have this topology,
+	packets can get caught in infinite loops easily.
+\end{itemize}
+
+Another technique, called \emph{source routing},
+enables a destination to discover the paths
+from a given source to itself,
+by relying on network nodes to change some information inside packets.
+We assume the data plane supports two types of packets:
+data packets and control packets.
+
+Data packets are used to exchange data,
+while control packets are used to discover paths between endhosts.
+When a host or router starts,
+it sends a special control packet over all of its interfaces
+to advertise its address to its neighbors.
+When a host or node receives this control packet,
+it replies with its own address.
+This can also allows checking whether a neighbor is still alive.
+With source routing, the data plane packets include a list of identifiers,
+called a \emph{source route}.
+This list is the path to be followed by the packet.
+When a router receives such a packet, it forwards the packet
+over the next interface in the sequence of identifiers.
+
+Control packets contain a list that records the intermediate nodes.
+When a router receives a control packet,
+it looks for its own address in this \emph{record route}.
+If it is included, the packet is discarded,
+if not, the node adds its own address to the record route
+and broadcasts the packet.
+When a host receives multiple copies of the same packet,
+the one that arrived first is supposed to have the best route.
+
+Once the destination host receives the packet,
+it can simply reverse the record route
+and send a data packet to let the source node know the route.
+
+\subsubsection{Flat or hierarchical addresses}
+There are two ways in which addresses can be organized.
+Addresses are encoded as bit strings.
+
+Under the flat addresssing scheme,
+each host and network node has a unique address.
+With this scheme,
+the lookup operation in the forwarding table can be implemented
+with binary search if the list of addresses is sorted,
+hence it has complexity $\bigoh(\lg n)$.
+
+However, a drawback of this scheme is that
+the size of the forwarding tables grows
+linearly with the number of hosts and nodes in the network.
+
+The second scheme is called hierarchical addressing,
+and it divides the address into parts,
+where each part narrows down the number of possible addresses.
+The addressing space is divided in consecutive blocks,
+then these blocks are allocated to different parts of the network.
+
+The main advantage of hierarchical addressing over flat addressing
+is the significantly reduced forwarding table size.
+The drawbacks are
+\begin{itemize}
+	\item lookup operations become more complicated,
+	\item when a host first connects to a network,
+	it must contact a node to determine its own address and
+	\item if a host moves, its address can change.
+\end{itemize}
+
+\subsubsection{Dealing with heterogeneous datalink layers}
+When a network needs to deal with heterogeneous datalink layers,
+exchanging packets becomes possible thanks to the network layer,
+provided that the packet can be placed inside a datalink layer frame
+before being transmitted.
+
+If a router finds a packet that is too large
+to be forwarded inside a single frame,
+multiple solutions exist:
+\begin{itemize}
+	\item the router can send the packet back to the source host
+	indicating it cannot forward packets
+	longer than a certain amount of bytes;
+	\item the network layer fragments the packets in two fragments
+	before transmitting them,
+	and then they are reassembled by the next router;
+	\item the fragments are valid packets,
+	and are treated as regular packets by the next routers,
+	meaning the destination host receives them as two separate packets.
+\end{itemize}
+
+The first solution is simple
+and does not require routers to do any fragmentation.
+Hosts are more complex however,
+because they need to store the packets they produce
+if they pass through a narrow link.
+
+Fragmenting the packets on a per-link basis
+can minimize the transmission overhead.
+Two drawbacks are that processing time
+and buffer requirements on the routers are increased.
+It also leads to a longer end-to-end delay since the downstream router
+has to reassemble the fragments before forwarding the original packet.
+
+The last solution is a compromise between the two others.
+It has a lowed end-to-end delay
+and requires less processing time and memory on the routers.
+
+The first solution suggests using control packets
+to inform the source about the reception of a long packet.
+This is one of the functions of the control protocol; the others are
+\begin{itemize}
+	\item sending a control packet to the source
+	if a router does not have a valid entry in its forwarding table;
+	\item sending a control packet
+	when a looping packet is detected inside the network;
+	\item verifying that packets can reach a given destination.
+\end{itemize}
+
+\subsection{Virtual circuit organisation}
+In a network using virtual circuits,
+all hosts are identified with a network layer address.
+Each packet contains a \emph{label} in its header,
+which can be switched by routers.
+When it receives a packet,
+the router looks for this packet in its \emph{label forwarding table}
+to find which interface the packet must be forwarded over.
+The lookup operation has constant complexity as the table is stored as an array.
+The table also indicates what the label of the outgoing packet should be set to.
+The label forwarding table contains two pieces of information:
+\begin{itemize}
+	\item the outgoing interface for the packet;
+	\item the label for the outgoing packet.
+\end{itemize}
+Label switching allows users to have full control
+over the path followed by the packets inside the network.
+
+Multi-Protocol Label Switching (\textsc{mpls})
+is a deployed networking technology that relies on label switching.
+It is more complicated than the above description however.
+The control plane contains distributed algorithms,
+called \emph{routing protocols},
+to compute the forwarding tables that are installed on the network nodes.
+Two main families of routing protocols exist:
+\emph{distance vector routing} and \emph{link state routing}.
+
+\subsection{The control plane}
+One of the objectives of the control plane in the network layer
+is to maintain the routing tables.
+
+\subsubsection{Distance vector routing}
+With distance vector routing,
+the shortest path between hosts is computed based on \emph{metrics}
+that are associated to each link.
+We used \texttt{l.cost} to represent the metric
+that has been configured for link \texttt{l} on a router.
+
+Each router maintains a routing table.
+The routing table \texttt{R} can be modelled as a data structure
+that stores, for each known destination address \texttt{d},
+the following attributes:
+\begin{itemize}
+	\item \texttt{R[d].link} is the outgoing link
+	used to forward packets to \texttt{d};
+	\item \texttt{R[d].cost} is the sum of the metrics of the links
+	that compose the shortest path to reach \texttt{d};
+	\item \texttt{R[d].time} is the timestamp
+	of the last distance vector containing destination \texttt{d}.
+\end{itemize}
+
+A router using distance vector routing regularly sends its distance vector
+over all its interfaces.
+The distance vector is a summary of the router's routing table
+that indicates the distance towards each known destination.
+
+When a router receives a distance vector on link \texttt{l},
+it iterates over all addresses in the distance vector.
+It updates its routing table as follows:
+\begin{itemize}
+	\item If the distance vector contains a previously unknown address,
+	the destination is inserted inside the routing table via link \texttt{l}
+	and at a distance which is the sum between
+	the distance in the vector and the cost of link \texttt{l}.
+	\item If the address was previously known,
+	the entry is updated if
+	\begin{itemize}
+		\item the cost of the new route is smaller than the one
+		in the table (if \texttt{V[d].cost + l.cost < R[d].cost});
+		\item the new route was learned over the same link
+		as the current best route (\texttt{R[d].link = l}).
+	\end{itemize}
+	The first condition ensures that the router
+	discovers the shortest path to each destination,
+	while the second is used to take into account
+	changes of routes in case something in the network changes.
+\end{itemize}
+
+To deal with link and router failures,
+routers use the timestamp in their routing table.
+Routers send their distance vector every $N$ seconds,
+thus no route should have a timestamp older than $N$ seconds,
+unless it is not reachable anymore.
+In practice, the cutoff is at $3N$ seconds:
+all routes that are older than this value
+are removed when the router checks its table's timestamps every $N$ seconds.
+When a router notices a route towards a destination has expired,
+it associates an infinite cost to this route
+and sends a distance vector to neighboring routers to inform them.
+After some more waiting (typically $3N$ seconds),
+the entry can be removed from the routing table.
+
+In some situations, a problem known as ``\emph{count to infinity}'' can occur,
+when two routers exchange distance vectors with increasing costs.
+This problem can appear as soon as the network contains cycles.
+Some protocols consider that $16$ is infinity
+to mitigate the impact of counting to infinity.
+This limits the metrics that operators can use
+and the diameter of networks using distance vectors.
+
+The problem occurs when a router $R_1$ advertises to another router $R_2$
+a route that it has learned via $R_2$.
+A solution is then a technique called \emph{split-horizon},
+where routers create distance vectors that are specific to each neighbor
+and only contain routes that have not been learned via this neighbor.
+Another variant called \emph{split-horizon with poison-reverse}
+is used as well.
+In this case, routers advertise an infinite cost
+for destinations that they reach
+via the router to which they send the distance vector.
+Not all count to infinity problems can be avoided with these techniques however.
+
+\begin{myrem}[Forwarding tables versus routing tables]
+	Routers usually maintain both a \emph{routing table}
+	and a \emph{forwarding table}.
+	The routing table associates a destination to an outgoing interface
+	or a nexthop router, and a set of additional attributes.
+	Different routing protocols store different attributes.
+	Distance vector routing protocols
+	will store the cost to reach the destination along the shortest path.
+	The routing table is usually not directly used when forwarding packets,
+	as this operation relies on a more compact data structure
+	called a \emph{forwarding table}.
+	This forwarding table contains
+	a subset of the information found in the routing table.
+	It only contains the paths that are used to forward packets,
+	associating each destination to an outgoing interface or nexthop router.
+\end{myrem}
+
+\subsubsection{Link-state routing}
+Link-state routing is based on routers exchanging messages
+to allow each router to learn the entire network topology.
+
+A network is modelled as a \emph{directed weighted graph}.
+Each router is a node, the links are the edges in the graph
+and the weights are associated according to one of these options:
+\begin{itemize}
+	\item unit weights;
+	\item weight proportional to the propagation delay on the link;
+	\item $\textnormal{weight} = \frac{C}{\textnormal{bandwidth}}$,
+	where $C$ is a constant greater than the highest bandwidth.
+\end{itemize}
+Routers use the shortest path to reach each destination.
+
+When a link-state router first boots,
+it sends a \texttt{HELLO} message every $N$ seconds on all of its interfaces.
+This message contains the router's address.
+This allows all routers to know which other routers they are connected to.
+\texttt{HELLO} messages are never forwarded,
+and a link is considerd to have failed if
+no \texttt{HELLO} message has been received from the neigboring router
+for a period of $kN$ seconds.
+
+Once a router has discovered its neighbors,
+it builds \emph{link state packets} (\textsc{lsp}s),
+to distribute its local links to all routers in the network.
+A \textsc{lsp} contains the following information:
+\begin{itemize}
+	\item \texttt{LSP.router}:
+	identification of the sender of the \textsc{lsp}.
+	\item \texttt{LSP.age}:
+	remaining lifetime of the \textsc{lsp}.
+	\item \texttt{LSP.seq}:
+	sequence number of the \textsc{lsp}.
+	\item \texttt{LSP.links[]}:
+	links advertised in the \textsc{lsp}.
+	Each directed link contains the following information:
+	\begin{itemize}
+		\item \texttt{LSP.links[i].id}: identification of the neighbor.
+		\item \texttt{LSP.links[i].cost}: cost of the link.
+	\end{itemize}
+\end{itemize}
+The \emph{flooding} algorithm is used to distribute \textsc{lsp}s.
+Each router maintains a link-state database (\textsc{lsdb})
+containing the most recent \textsc{lsp} sent by each router.
+When a router receives a \textsc{lsp},
+it verifies whether this packet is already stored in its database.
+If not, the packet is broadcast.
+If it is in the database, then the packet has already been broadcast before,
+and does not need to be broadcast again.
+
+\begin{myrem}[Determining the most recent \textsc{lsp}]
+	The comparison should take into account the modulo arithmetic
+	used to increment the sequence numbers,
+	hence divide the circle of all sequence numbers into two halves.
+	Current link-state routing protocols
+	use $\SI{32}{\bit}$ sequence numbers
+	and include a special mechanism
+	in case a sequence number reaches the maximum value.
+	\textsc{lsp}s contain a checksum to deal with memory corruption,
+	which can cause the algorithm to fail.
+
+	Each router must verify the checksum
+	when it receives or floods a \textsc{lsp}.
+	Furthermore, each router must periodically verify the checksums
+	of the \textsc{lsp}s stored in its \textsc{lsdb}.
+\end{myrem}
+
+Flooding allows \textsc{lsp}s to be distributed
+to all routers inside the network without relying on routing tables.
+To avoid sending the same \textsc{lsp} twice on the same link,
+routers wait for a random time before forwarding \textsc{lsp}s.
+In practice,
+this is only done for ``refresh \textsc{lsp}s'',
+as packets with new information are immediately flooded.
+
+Link-state protocols use reliable flooding
+to ensure all routers receive all \textsc{lsp}s.
+To achieve this,
+routers use acknowledgments and, if necessary, retransmissions.
+
+When a link fails,
+the two routers attached to this link generate and flood new \textsc{lsp}s
+that no longer contain the failed link.
+This might not happen at exactly the same time,
+hence when other routers receive the \textsc{lsp}
+of only one of the attached routers,
+they still consider the link as having failed,
+and remove it from the directed graph
+that they compute from their \textsc{lsdb}.
+When a link comes up, it can only be used
+once both attached routers have advertised it in their \textsc{lsp}s.
+This \emph{two-way connectivity check} also ensures that
+failed routers are removed from the graph.
+
+When a router has failed, it must be removed from the databases of all routers.
+This can be done by decreasing the \texttt{age} field in each \textsc{lsp}.
+Routers regularly decrement the age of the \textsc{lsp}s in their database,
+and discard them once they reach zero.
+
+To compute its forwarding table, each router computes the spanning tree
+rooted at itself using Dijkstra's shortest path algorithm.
+The forwarding table can be derived automatically from the spanning tree.
 \end{document}
