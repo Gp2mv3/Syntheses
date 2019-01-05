@@ -45,10 +45,6 @@ endif
 
 INPUT:=$(strip ${QUADRI} ${NAME} ${OPTION} ${CODE} ${TYPE} ${YEAR} ${MONTH})
 
-DIRPATH:=/home/martin/Documents/Onedrive/EPL-Drive
-
-PY_SCRIPT:=/home/martin/Syntheses-PDF-Builder/mysmartcp.py
-
 MAIN_NAME_SOL=${MAIN_NAME}-Sol
 
 ifdef SOL
@@ -71,6 +67,8 @@ define commit_function
 	$(eval COMMIT_ID:=$(shell git log -1 --pretty=format:%h -- $1.tex))
 endef
 
+SMARTCP:=$(BASE_DIR)../../../mysmartcp.py
+
 # 1e: make all
 # 2e: make only out-of-date
 # .PHONY: clean cleanaux $(ALL)
@@ -79,8 +77,7 @@ endef
 all: $(ALL) cleanaux
 
 $(MAIN_NAME).pdf: $(MAIN_NAME).tex
-	$(eval SUBPATH:=$(shell python3 ${PY_SCRIPT} ${INPUT}))
-	$(eval MYPATH:=${DIRPATH}/${SUBPATH})
+	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT}))
 	$(call commit_function,$(MAIN_NAME))
 ifneq (,$(filter $(TYPE),exam test exercises mcq))
 	latexmk -pdf $(PVC) -pdflatex="pdflatex -shell-escape -enable-write18 '\def\Sol{false} \def\DATUM{${DATE}} \def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'" -use-make $(MAIN_NAME).tex
@@ -91,8 +88,7 @@ endif
 	cp  "$(MAIN_NAME).pdf" "${MYPATH}/$(OUT_MAIN_NAME).pdf"
 
 $(MAIN_NAME_SOL).pdf: $(MAIN_NAME).tex
-	$(eval SUBPATH:=$(shell python3 ${PY_SCRIPT} ${INPUT}))
-	$(eval MYPATH:=${DIRPATH}/${SUBPATH})
+	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT}))
 	$(call commit_function,$(MAIN_NAME))
 	latexmk -pdf $(PVC) -pdflatex="pdflatex -jobname=$(MAIN_NAME_SOL) -shell-escape -enable-write18 '\def\Sol{true} \def\DATUM{${DATE}} \def\COMMITINFOS{} \def\COMMITID{${COMMIT_ID}} \input{%S}'" \
 	  -use-make $(MAIN_NAME).tex -jobname=$(MAIN_NAME_SOL)
