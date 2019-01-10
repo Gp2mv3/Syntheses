@@ -9,7 +9,7 @@
 {Gilles Peiffer}
 {Olivier Bonaventure}
 
-%TODO don't really know where this is going, probably just gonna make it into a short summary for myself
+% TODO add some figures
 
 \part{Principles}
 \section{Connecting two hosts}
@@ -89,12 +89,12 @@ three arrows are needed.
 	sort of like a procedure call.
 	The bit being transmitted is the only parameter.
 	In the example in \figuref{timeseqdiag},
-	the primitive is named \texttt{DATA.request}.
+	the primitive is named \texttt{Data.request}.
 	\item The dashed arrow indicates the signal's propagation time
 	between the two hosts.
 	Once the signal is received,
 	it's interpreted and converted into a bit.
-	\item The bit is delivered as a \texttt{DATA.indication} primitive.
+	\item The bit is delivered as a \texttt{Data.indication} primitive.
 \end{enumerate}
 
 \begin{figure}[H]
@@ -263,7 +263,7 @@ Software implementations prefer to use character stuffing instead.
 Both of these techniques allow to recover frames from a stream of bits or bytes.
 The framing mechanism provides a richer service than the physical layer.
 It can also be represented
-using the \texttt{DATA.req} and \texttt{DATA.ind} primitives,
+using the \texttt{Data.req} and \texttt{Data.ind} primitives,
 as illustrated in \figuref{stuffing_diag}.
 
 \begin{figure}[H]
@@ -276,10 +276,10 @@ as illustrated in \figuref{stuffing_diag}.
 \end{figure}
 
 \subsubsection{Recovering from transmission errors}
-We distinguish two types of \texttt{DATA.req} and \texttt{DATA.ind} primitives:
+We distinguish two types of \texttt{Data.req} and \texttt{Data.ind} primitives:
 \begin{itemize}
 	\item the interactions between the user and the datalink layer entity
-	are represented using \texttt{DATA.req} and \texttt{DATA.ind};
+	are represented using \texttt{Data.req} and \texttt{Data.ind};
 	\item the interactions between the datalink layer entity
 	and the framing sublayer
 	are represented by using \texttt{send} and \texttt{recvd}.
@@ -287,7 +287,7 @@ We distinguish two types of \texttt{DATA.req} and \texttt{DATA.ind} primitives:
 The datalink layer entity has a buffer
 to deal with \textsc{SDU}s\footnote{Service data unit,
 a generic term to represent the data that is transported by a protocol.}
-that have been received as a \texttt{DATA.request}
+that have been received as a \texttt{Data.request}
 but have not been sent.
 It also has a buffer that deals with received frames
 that haven't been processed yet.
@@ -471,7 +471,7 @@ only require a four-state \textsc{FSM} (\figuref{abp_fsm}).
 		The initial state of the sender
 		is \texttt{Wait for D(0,\dots)}.
 		In this state,
-		the sender waits for a \texttt{DATA.request}.
+		the sender waits for a \texttt{Data.request}.
 		The first data frame uses seqnum $0$.
 		Once this is sent,
 		the sender waits for an \texttt{OK0} acknowledgment.
@@ -1228,4 +1228,417 @@ and discard them once they reach zero.
 To compute its forwarding table, each router computes the spanning tree
 rooted at itself using Dijkstra's shortest path algorithm.
 The forwarding table can be derived automatically from the spanning tree.
+
+\section{The transport layer}
+The \emph{network layer} ensures the delivery of packets on a hop-to-hop basis
+through intermediate nodes.
+It provides a service to the upper layer called the \emph{transport layer},
+that improves the service provided by the network layer
+to make it usable by applications.
+
+Most networks use a datagram organisation and provide a simple service
+which is called the \emph{connectionless service}.
+The connectionless service is represented as follows on a time-sequence diagram:
+a source with address \texttt{S} issues
+a \texttt{Data.request} primitive (\texttt{Data.request(S, D, `M')})
+containing a Service Data Unit (\textsc{sdu}) \texttt{M}
+that must be delivered to destination \texttt{D},
+which delivers the corresponding
+\texttt{Data.indication} primitive
+to the user (\texttt{Data.indication(S, D, `M')}).
+
+A \emph{reliable connectionless service} is a service
+where the service provider guarantees that all \textsc{sdu}s
+submitted in \texttt{Data.request}s by a user
+will eventually be delivered to their destination.
+In practice, an \emph{unreliable connectionless service} is often supported.
+As the transport layer is built on top of the network layer,
+it is important to know the key features
+of the \emph{(connectionless) network layer service}:
+\begin{itemize}
+	\item it can only transfer \textsc{sdu}s of \emph{limited size};
+	\item it may discard \textsc{sdu}s;
+	\item it may corrupt \textsc{sdu}s;
+	\item it may delay, reorder of even duplicate \textsc{sdu}s.
+\end{itemize}
+The main cause of packet losses and errors
+are the buffers used on the network nodes.
+
+\subsection{Transport layer services}
+When two applications need to communicate,
+they need to structure their exchange of information.
+This requires solving two problems:
+\begin{itemize}
+	\item How to represent information being exchanged.
+	\item How to organise the interactions
+	between the application and the underlying network.
+	From the application's viewpoint,
+	the network will appear as the \emph{transport layer service}.
+	This layer provides three types of services to the applications:
+	\begin{itemize}
+		\item the \emph{connectionless service};
+		\item the \emph{connection-oriented service};
+		\item the \emph{request-response service}.
+	\end{itemize}
+\end{itemize}
+
+\subsubsection{The connectionless service}
+The \emph{connectionless service} is used to exchange small \textsc{sdu}s.
+It can easily be built on top of the connectionless network layer service
+described earlier.
+
+\subsubsection{The connection-oriented service}
+This service is used when users need to send or receive
+several different and potentially large \textsc{sdu}s,
+or by users who need structured exchanges.
+An invocation of the \emph{connection-oriented service}
+is divided into three phases:
+\begin{enumerate}
+	\item Establishment of a \emph{connection}.
+	\begin{mydef}[Connection]
+		A \emph{connection} is a temporary association
+		between two users through a service provider.
+		Several connections may exist at the same time
+		between any pair of users.
+		Connections are used to transfer \textsc{sdu}s,
+		and they usually provide one bidirectional stream
+		supporting the exchange of \textsc{sdu}s.
+	\end{mydef}
+	\item \emph{Data transfer phase}.
+	The stream provided by the connection is used to transfer data.
+	\item \emph{Termination} of the connection.
+	Once users are done exchanging \textsc{sdu}s,
+	they request termination of the connection from the provider.
+\end{enumerate}
+
+\paragraph{Connection establishment}
+The establishment of a connection can be modelled using four primitives:
+\begin{itemize}
+	\item \texttt{Connect.request}, used to request the connection;
+	\item \texttt{Connect.indication}, delivered by the provider
+	to inform the destination user of the connection attempt;
+	\item \texttt{Connect.response}, sent if the destination user
+	accepts the connection;
+	\item \texttt{Connect.confirm}, delivered by the provider
+	to the user who initiated the connection.
+\end{itemize}
+The destination user can start sending \textsc{sdu}s
+after sending a \texttt{Connect.response}.
+The connection is open after sending the \texttt{Connect.confirm} primitive,
+and both users can send \textsc{sdu}s at that point.
+
+Two reasons for why a connection might fail to be established are:
+\begin{itemize}
+	\item The destination user may not agree to establish a connection,
+	and responds to the \texttt{Connect.indication}
+	with a \texttt{Disconnect.request}.
+	The provider then delivers a \texttt{Disconnect.indication}
+	to the initiating user.
+	\item If the provider is unable to reach the destination,
+	it responds to the \texttt{Connect.request}
+	with a \texttt{Disconnect.indication}.
+\end{itemize}
+
+\paragraph{Data transfer phase}
+Two streams are supplied to the communicating users:
+\begin{itemize}
+	\item the first can be used by the initiator to send \textsc{sdu}s;
+	\item the second allows the responding user to send \textsc{sdu}s.
+\end{itemize}
+
+These streams can be organised in different ways:
+\begin{itemize}
+	\item \emph{Message-mode transfer}.
+	With this organisation,
+	the service prodiver guarantees that only one \texttt{Data.indication}
+	will be delivered for each \texttt{Data.request}.
+	\item \emph{Stream-mode transfer}.
+	The service provider supplies a byte stream
+	that links the two communicating users.
+	\textsc{sdu}s are sent as sequences of bytes.
+	The provider guarantees the order in which the bytes arrive is correct,
+	but does not attempt to preserve the boundaries of the \textsc{sdu}s.
+	No relation is enforced between
+	the number of \texttt{Data.request}
+	and \texttt{Data.indication} primitives.
+	Users have to provide the mechanisms that allow the receiving user
+	to separate successive \textsc{sdu}s
+	in the byte stream that it receives.
+\end{itemize}
+
+\paragraph{Connection release}
+Connections involve three parties (two users and a provider),
+and each one of them can request connection termination.
+Two types of connection release exist:
+\begin{itemize}
+	\item \emph{Abrupt connection release}.
+	This type of release can be triggered by the provider and the users,
+	and can cause losses of data.
+	If the provider requests it,
+	it sends a \texttt{Disconnect.indication} primitive
+	to both users.
+	When a user requests it,
+	the user sends a \texttt{Disconnect.request(abrupt)} primitive
+	to the provider, which then stops the two data streams
+	and delivers the \texttt{Disconnect.indication} primitive
+	to the remote user.
+	\item \emph{Graceful connection release}.
+	We consider both streams to be independent.
+	One user issues a \texttt{Disconnect.request(graceful)} primitive
+	to their provider after sending their last \texttt{Data.request},
+	then closes their outbound communications.
+	The provider sends all \texttt{Data.indication} primitives,
+	then send the \texttt{Disconnect.indication}.
+	This tells the other user that they will no longer receive \textsc{sdu}s
+	over this connection,
+	but are still able to issue \texttt{Data.request} primitives
+	on the stream in the opposite direction,
+	hence this user can close their inbound communications.
+
+	When the user is done issuing \texttt{Data.request} primitives,
+	they send a \texttt{Disconnect.request(graceful)} primitive
+	to the provider,
+	and close their outbound communications.
+	The provider issues the necessary \texttt{Data.indication} primitives,
+	then follows up with a \texttt{Disconnect.indication}.
+	The other user receives this primitive
+	and closes their inbound communications,
+	The two streams have been released successfully,
+	and the connection is completely closed.
+\end{itemize}
+
+\begin{myrem}[Reliability of the connection-oriented service]
+	The connection-oriented service can only guarantee correct delivery
+	of all \textsc{sdu}s
+	provided that the connection has been released gracefully.
+	While the connection is active, there is no such guarantee,
+	as the connection may be released abruptly at any time.
+\end{myrem}
+
+\subsubsection{The request-response service}
+The \emph{request-response service} is a compromise
+between the connectionless service and the connection-oriented service.
+It allows to efficiently exchange small amounts of information in a request
+and associate it with the corresponding response.
+
+\subsection{The transport layer}
+The transport layer entity allows to deal with some issues of the network layer.
+
+\subsubsection{Connectionless transport}
+This transport service includes two additional features
+on top of the connectionless network layer service.
+\begin{itemize}
+	\item an \emph{error detection} mechanism
+	that allows to detect corrupted data;
+	\item a \emph{multiplexing technique}
+	that enables several applications running on one host
+	to exchange information with another host.
+\end{itemize}
+
+\textsc{sdu}s are encapsulated inside \emph{segments}.
+\begin{mydef}[Segment]
+	The \emph{segment} is the basic unit of information
+	transferred in the transport layer.
+	When the transport layer entity creates a segment,
+	it is encapsulated by the network layer
+	into a packet with the segment as its payload and a network header.
+	The packet is then encapsulated in a frame
+	to be transmitted in the datalink layer.
+	A segment also contains control information
+	stored inside a \emph{header}.
+\end{mydef}
+Transport protocols rely on
+checksums or \textsc{crc}s to detect transmission errors.
+
+In order to differentiate applications running on a host,
+the transport layer provides \emph{port numbers}.
+Thanks to these port numbers, the transport layer
+can allow applications running on one host
+to exchange information with another host.
+
+\subsubsection{Connection-oriented transport}
+To support the connection-oriented service,
+the transport service needs to include several mechanisms
+to enrich the connectionless network layer service.
+
+\paragraph{Connection establishment}
+The connection-oriented service makes the same use of port numbers
+and checksums / \textsc{crc}s as the connectionless service.
+An important difference between them however is the fact that
+the transport entities in the connection-oriented service
+maintain some state during the lifetime of the connection.
+This state is created when a connection is established,
+and is removed when it is released.
+
+Establishing a transport connection requires
+defining two special control segments:
+\begin{itemize}
+	\item \texttt{CR}, sent by the transport entity
+	that wishes to initiate a connection;
+	\item \texttt{CA}, used by the remote entity to accept the connection.
+\end{itemize}
+Both contain port numbers that allow to identify the communicating applications.
+The transport connection is said to be ``established''
+once the \texttt{CA} segment has been received
+(at that point, segments can be sent in both directions).
+The control segments must be protected using a checksum / \textsc{crc},
+and the \texttt{CR} segment can be protected using a retransmission timer.
+
+Transport protocols also require the network layer
+to bound the \emph{Maximum Segment Lifetime} (\textsc{msl}).
+Segments must not remain in the network
+for longer than $\textnormal{msl}$ seconds (two minutes on the Internet).
+To distinguish between duplicate and new \texttt{CR}s,
+a \emph{transport clock} with the following characteristics
+is used inside each entity:
+\begin{itemize}
+	\item The clock is implemented as a $k$-bit counter,
+	and its clock cycle
+	is such that $2^k \times \textnormal{cycle} \gg \textnormal{MSL}$.
+	The clock counter is incremented every clock cycle
+	and after each connection establishment.
+	\item The clock must continue to be incremented
+	even if the transport entity stops or reboots.
+\end{itemize}
+
+This clock can be combined with an exchange of three segments,
+called the \emph{three-way handshake},
+to detect duplicates:
+\begin{enumerate}
+	\item The initiating transport entity sends a \texttt{CR} segment,
+	with a port number and a segment number, \texttt{seq = x},
+	extracted from the clock.
+	The transmission is protected by a retransmission timer.
+	\item The remote transport entity processes the \texttt{CR} segment,
+	and creates a state for the connection attempt.
+	It returns a \texttt{CA} segment
+	that acknowledges the reception of the \texttt{CR} segment,
+	\texttt{ack = x} and has a sequence number
+	extracted from the clock, \texttt{seq = y}.
+	\item The initiating entity receives the \texttt{CA} segment.
+	The connection is considered to be established by the initiating entity
+	and sequence numbers start their numbering at \texttt{x}.
+	Before sending data, the initiating entity
+	must acknowledge the received \texttt{CA} segments
+	by sending another \texttt{CA} segment.
+	\item The remote entity considers the transport connection
+	to be established after having received the acknowledgment
+	for its \texttt{CA} segment.
+	Data segment numbering starts at sequence number \texttt{y}.
+\end{enumerate}
+
+This three-way handshake avoids duplicate transport connections.
+Consider the following three scenarios:
+\begin{itemize}
+	\item If the remote entity receives an old \texttt{CR} segment,
+	it replies with a \texttt{CA} segment.
+	The initiating host cannot match this segment
+	with a previous connection attempt,
+	hence it sends a control segment, \texttt{REJECT},
+	to cancel the spurious connection attempt.
+	The remote entity cancels the connection attempt
+	upon reception of this control segment.
+	\item If the initiating entity sends a \texttt{CR} segment
+	that does not reach the remote entity,
+	and receives a duplicate \texttt{CA} segment
+	from a previous connection attempt,
+	it finds that the acknowledgment cannot be valid,
+	and retransmits the \texttt{CR} segment upon expiration of the timer.
+	\item If in the first scenario,
+	the control segment fails to be delivered,
+	and a duplicate \texttt{CA} segments reaches the remote host instead,
+	the remote host realises that the acknowledgment has the wrong number
+	hence it sends a control segment (\texttt{REJECT}) of its own.
+\end{itemize}
+
+\paragraph{Data transfer}
+The transport protocol must include sliding windows,
+retransmission timers and Go Back $N$ or selective repeat,
+but cannot simply reuse techniques from the datalink layer.
+The differences between the two layers are:
+\begin{itemize}
+	\item The transport layer must face with more variable delays.
+	This happens because packets sent through a network
+	do not necessarily follow the same path to their destination.
+	Second, some packets may be queued in the buffers of routers,
+	which can increase end-to-end delay.
+	\item A network does not always deliver packets in sequence.
+	\item The network may sometimes duplicate packets.
+	\item The transport layer needs to include mechanisms
+	to fragment and reassemble large \textsc{sdu}s.
+\end{itemize}
+
+However, both layers use checksums / \textsc{crc}s
+to detect transmission errors.
+Each segment contains one which is computed over the entire segment
+(header and payload) by the sender and inserted in the header.
+They also use sequence and acknowlegment numbers,
+but in the transport layer,
+the sequence number in the segment header corresponds to
+the position of the first byte of the payload in the bytestream.
+This allows to detect losses but also to reorder out-of-sequence segments.
+It also makes fragmenting \textsc{sdu}s easier.
+
+Sequence numbers in the transport layer are often longer
+than in the datalink layer,
+because they must be greater than
+the number of bytes transmitted during the \textsc{msl} period.
+
+Most transport protocols use selective repeat instead of Go Back $N$,
+as transport entities should always store the segments
+that it receives out-of-sequence.
+
+A transport protocol should also allow the sender and the receiver
+to adjust their window sizes,
+as the memory which can be used to support
+the sending or the receiving buffer of a transport connection
+may change during the lifetime of the connection.
+
+Transport protocols allow the receiver to advertise
+the current size of its receiving window
+in all the acknowledgments that it sends.
+The sender maintains two state variables:
+\begin{itemize}
+	\item \texttt{swin}, the size of its sending window;
+	\item \texttt{rwin}, the size of the receiving window
+	advertised by the receiver.
+\end{itemize}
+The number of unacknowledged segments cannot be larger
+than $\min(\texttt{swin}, \texttt{rwin})$.
+To solve deadlock problems that can arise when the receiver advertises
+a window of size $0$,
+transport protocols rely on a timer called the \emph{persistence timer}.
+This timer is started by the sender
+whenever a receiving window of $0$ is advertised.
+When the timer expires, the sender retransmits and old segment
+to force a new acknowledgment.
+
+To deal with ambiguities caused by excessive delays,
+transport protocols combine large sequence number fields
+with a \emph{Maximum Segment Lifetime}
+to ensure segments arriving in the wrong order are handled appropriately.
+If a transport protocol uses $n$ bits to encode its sequence numbers,
+it cannot send more than $2^n$ segments every $\textnormal{MSL}$ seconds.
+
+\paragraph{Connection release}
+Two methods exist to release a transport connection:
+\begin{itemize}
+	\item Defining a new control segment (\texttt{DR}),
+	and considering the connection to be released
+	once this segment has been sent or received.
+	This allows abrupt connection releases.
+	\item Release the two directions of data transfer independently.
+	When a user has sent all of their \textsc{sdu}s,
+	they send a \texttt{Disconnect.request}
+	for their direction of data transfer.
+	The transport entity sends a control segment
+	to request connection release after having sent
+	all of the remaining \texttt{Data.indication} primitives.
+	The remote host confirms the reception of the \texttt{DR} segment
+	and the release of the corresponding direction of data transfer
+	by returning an acknowlegment.
+	Something similar then happens in the other direction
+	once the remote host has finished sending \textsc{sdu}s.
+	This constitutes a graceful connection release.
+\end{itemize}
 \end{document}
