@@ -2,7 +2,7 @@
 
 | **Documentation**  | **PDF** | **Chat** | **Forum** | **Git** |
 |:------------------:|:-------:|:--------:|:---------:|:-------:|
-| [<img src="https://cdn.pixabay.com/photo/2013/04/01/21/32/reading-99244_960_720.png" width="48">][doc-url] | [<img src="https://image.freepik.com/free-icon/pdf-file-format-symbol_318-45340.jpg" width="48">][pdf-url] | [![Join the chat at https://gitter.im/Gp2mv3/Syntheses](https://badges.gitter.im/Gp2mv3/Syntheses.svg)][chat-url] | [<img src="http://forum-epl.be/images/avatars/gallery/Photos/logo_phpBB.gif" width="96">][forum-url] | [<img src="https://avatars3.githubusercontent.com/u/18133?s=200&v=4" width="48">][git-url]
+| [<img src="https://cdn.pixabay.com/photo/2013/04/01/21/32/reading-99244_960_720.png" width="48">][doc-url] | [<img src="https://image.freepik.com/free-icon/pdf-file-format-symbol_318-45340.jpg" width="48">][pdf-url] | [![Join the chat at https://gitter.im/Gp2mv3/Syntheses](https://badges.gitter.im/Gp2mv3/Syntheses.svg)][chat-url] | [<img src="http://forum-epl.be/images/avatars/gallery/Photos/logo_phpBB.gif" width="96">][forum-url] | [<img src="https://gitforwindows.org/img/git_logo.png" width="48">][git-url]
 
 
 Les documents présents sur ce repository sont des documents
@@ -45,10 +45,8 @@ tout le contenu que vous soumettez pour inclusion dans ce dépot.
 
 Si cette license vous pose problème, venez en discuter en ouvrant une [issue](https://github.com/Gp2mv3/Syntheses/issues/new).
 
-## Copier les synthèses à leur destination
-Vous pouvez copier les synthèses automatiquement vers leur destination à l'aide de `make release` mais pour cela il vous faut d'abord spécifier les destination dans un fichier de configuration `src/config.yml` et installer
-[`smartcp`](https://github.com/blegat/smartcp).
-Vous pouvez trouver une explication sur l'écriture du fichier dans le lien de `smartcp`.
+## Compiler automatiquement les documents en PDF
+Vous pouvez copier les documents automatiquement vers leur destination en tapant `make` en ligne de commande à la racine du repository (dossier `Syntheses`). Make va ainsi compiler et copier tous les documents dans le dossier de destination que vous aurez préalablement choisi en inscrivant le chemin absolu du dossier à la ligne 2 du fichier `src/config.yml`.
 
 [pdf-url]: https://uclouvain-my.sharepoint.com/:f:/g/personal/mbraquet_oasis_uclouvain_be/EsZVP62vNgpHgo02HE7RMx8BkQdOgtVrPLe70BSTUoOfqQ
 [doc-url]: https://drive.google.com/file/d/0B1axlYz3_XXKRzdGVWdGdUZ6UGs/view?usp=sharing
