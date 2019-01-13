@@ -4,6 +4,8 @@ SUBDIRS := $(filter-out src/q1/info-FSAB1401/exam/2009/Juin/All/src/Makefile,$(S
 
 ifeq ($(MAKECMDGOALS),clean)
 	COMPILE=make clean
+else ifeq ($(MAKECMDGOALS),release)
+	COMPILE=make release
 else
 	COMPILE=make
 endif
@@ -20,6 +22,8 @@ $(SUBDIRS):
 	$(COMPILE) -C $(dir $@)
 
 clean: $(SUBDIRS)
-	
+
+release: $(SUBDIRS)
+
 pvc: $(SUBDIRS)
-	
+

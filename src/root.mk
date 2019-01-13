@@ -76,24 +76,32 @@ SMARTCP:=$(BASE_DIR)../../../mysmartcp.py
 
 all: $(ALL) cleanaux
 
+release: $(ALL) cleanaux
+
 $(MAIN_NAME).pdf: $(MAIN_NAME).tex
-	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT}))
 	$(call commit_function,$(MAIN_NAME))
 ifneq (,$(filter $(TYPE),exam test exercises mcq))
-	latexmk -pdf $(PVC) -pdflatex="pdflatex -shell-escape -enable-write18 '\def\Sol{false} \def\DATUM{${DATE}} \def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'" -use-make $(MAIN_NAME).tex
+	latexmk -pdf $(PVC) -pdflatex="pdflatex -shell-escape -enable-write18 '\def\Sol{false} \def\DATUM{${DATE}} \
+	\def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'" -use-make $(MAIN_NAME).tex
 else
-	latexmk -pdf $(PVC) -pdflatex="pdflatex -shell-escape -enable-write18 '\def\DATUM{${DATE}} \def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'" -use-make $(MAIN_NAME).tex
+	latexmk -pdf $(PVC) -pdflatex="pdflatex -shell-escape -enable-write18 '\def\DATUM{${DATE}} \
+	\def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'" -use-make $(MAIN_NAME).tex
 endif
+ifeq ($(MAKECMDGOALS),release)
+	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT}))
 	mkdir -p "${MYPATH}"
 	cp  "$(MAIN_NAME).pdf" "${MYPATH}/$(OUT_MAIN_NAME).pdf"
+endif
 
 $(MAIN_NAME_SOL).pdf: $(MAIN_NAME).tex
-	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT}))
 	$(call commit_function,$(MAIN_NAME))
-	latexmk -pdf $(PVC) -pdflatex="pdflatex -jobname=$(MAIN_NAME_SOL) -shell-escape -enable-write18 '\def\Sol{true} \def\DATUM{${DATE}} \def\COMMITINFOS{} \def\COMMITID{${COMMIT_ID}} \input{%S}'" \
-	  -use-make $(MAIN_NAME).tex -jobname=$(MAIN_NAME_SOL)
+	latexmk -pdf $(PVC) -pdflatex="pdflatex -jobname=$(MAIN_NAME_SOL) -shell-escape -enable-write18 '\def\Sol{true} \
+	\def\DATUM{${DATE}} \def\COMMITINFOS{} \def\COMMITID{${COMMIT_ID}} \input{%S}'" -use-make $(MAIN_NAME).tex -jobname=$(MAIN_NAME_SOL)
+ifeq ($(MAKECMDGOALS),release)
+	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT}))
 	mkdir -p "${MYPATH}"
 	cp "$(MAIN_NAME_SOL).pdf" "${MYPATH}/$(OUT_MAIN_NAME_SOL).pdf"
+endif
 
 # Supprime tout
 clean: cleanaux
