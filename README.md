@@ -39,14 +39,15 @@ Vous pouvez visualiser le statut des différentes synthèses
 [ici](https://github.com/Gp2mv3/Syntheses/wiki/Status).
 N'hésitez pas à en rajouter dans la liste :)
 
+## Compiler automatiquement les documents en PDF
+Vous pouvez compiler automatiquement tous les documents dans leur destination (le dossier ou se trouve le fichier .tex) en tapant `make` en ligne de commande à la racine du repository (dossier `Syntheses`).
+Vous pouvez également compiler **et** copier les documents automatiquement dans un dossier de destination à part en tapant `make release`. Make va ainsi compiler et copier tous les documents dans le dossier de destination que vous aurez préalablement choisi en inscrivant le chemin absolu du dossier à la ligne 2 du fichier `src/config.yml`.
+
 ## License
 Sauf mention expresse, vous licensiez sous license [CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)
 tout le contenu que vous soumettez pour inclusion dans ce dépot.
 
 Si cette license vous pose problème, venez en discuter en ouvrant une [issue](https://github.com/Gp2mv3/Syntheses/issues/new).
-
-## Compiler automatiquement les documents en PDF
-Vous pouvez copier les documents automatiquement vers leur destination en tapant `make` en ligne de commande à la racine du repository (dossier `Syntheses`). Make va ainsi compiler et copier tous les documents dans le dossier de destination que vous aurez préalablement choisi en inscrivant le chemin absolu du dossier à la ligne 2 du fichier `src/config.yml`.
 
 [pdf-url]: https://uclouvain-my.sharepoint.com/:f:/g/personal/mbraquet_oasis_uclouvain_be/EsZVP62vNgpHgo02HE7RMx8BkQdOgtVrPLe70BSTUoOfqQ
 [doc-url]: https://drive.google.com/file/d/0B1axlYz3_XXKRzdGVWdGdUZ6UGs/view?usp=sharing
