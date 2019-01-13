@@ -1,3 +1,3 @@
 SOL=both
 TYPE=exercises
-include $(BASE_DIR)../logique-INGI1101.mk
+include ../logique-INGI1101.mk

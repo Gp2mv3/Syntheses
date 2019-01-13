@@ -1,2 +1,2 @@
 TYPE=summary
-include $(BASE_DIR)../advSecu-INGI2144.mk
+include ../advSecu-INGI2144.mk

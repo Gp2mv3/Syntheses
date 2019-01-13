@@ -1,3 +1,3 @@
 SOL=both
 TYPE=exercises
-include $(BASE_DIR)../info-FSAB1401.mk
+include ../info-FSAB1401.mk
