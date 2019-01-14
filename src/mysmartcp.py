@@ -11,12 +11,16 @@ import sys
 import yaml   
             
 def main():
+    with open(os.path.dirname(os.path.realpath(__file__)) + '/../compilation.yml', 'r') as stream:
+        document = yaml.load(stream)
+        stream.close()
+        abspath = document['output_base']
+        
     with open(os.path.dirname(os.path.realpath(__file__)) + '/config.yml', 'r') as stream:
         document = yaml.load(stream)
         stream.close()
         
         quadri = int(sys.argv[1])
-        abspath = document['output_base']
         
         if quadri == -1:
             print(abspath)
@@ -33,10 +37,12 @@ def main():
                 year = int(sys.argv[6])
                 month = sys.argv[7]
                 type_map = document['clients'][1]['output']['parameters'][1]['mapping'][typ]
-                out_path = abspath + '/' + cycle + '/' + option_map + '/Q' + str(quadri) + '/L' + option + str(code) + ' - ' + titre + '/' + type_map + '/' + str(year) + '_' + month.title()
+                out_path = abspath + '/' + cycle + '/' + option_map + '/Q' + str(quadri) + '/L' + option + str(code) \
+                            + ' - ' + titre + '/' + type_map + '/' + str(year) + '_' + month.title()
             else:
                 type_map = document['clients'][0]['output']['parameters'][1]['mapping'][typ]
-                out_path = abspath + '/' + cycle + '/' + option_map + '/Q' + str(quadri) + '/L' + option + str(code) + ' - ' + titre + '/' + type_map
+                out_path = abspath + '/' + cycle + '/' + option_map + '/Q' + str(quadri) + '/L' + option + str(code) \
+                            + ' - ' + titre + '/' + type_map
             print(out_path)
             
 if __name__ == "__main__":
