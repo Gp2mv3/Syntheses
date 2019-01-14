@@ -33,12 +33,8 @@ all: $(PDF_NAME) clean
 # Other depences are gessed automatically by latexmk
 # see http://tex.stackexchange.com/questions/40738/how-to-properly-make-a-latex-project
 $(PDF_NAME): $(MAIN_NAME).tex
-	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18" \
-	  -use-make $(MAIN_NAME).tex
-	$(eval MYPATH:=$(shell python3 ../mysmartcp.py -1))
-	mkdir -p "${MYPATH}"
-	cp  "$(MAIN_NAME).pdf" "${MYPATH}/$(OUT_MAIN_NAME).pdf"
-	
+	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18" -use-make $(MAIN_NAME).tex
+
 # Supprime les fichiers auxilliaires
 clean:
 	latexmk -c
@@ -48,4 +44,6 @@ show: $(PDF_NAME)
 	$(PDFVIEWER) $(PDF_NAME) 2> /dev/null &
 
 release: all
-	python3 ~/git/smartcp/smartcp.py --google-drive -v config.yml
+	$(eval MYPATH:=$(shell python3 ../mysmartcp.py -1))
+	mkdir -p "${MYPATH}"
+	cp  "$(MAIN_NAME).pdf" "${MYPATH}/$(OUT_MAIN_NAME).pdf"
