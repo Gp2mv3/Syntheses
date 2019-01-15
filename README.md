@@ -40,8 +40,8 @@ Vous pouvez visualiser le statut des différentes synthèses
 N'hésitez pas à en rajouter dans la liste :)
 
 ## Compiler automatiquement les documents en PDF
-Vous pouvez compiler automatiquement tous les documents dans leur destination (le dossier ou se trouve le fichier .tex) en tapant `make` en ligne de commande à la racine du repository (dossier `Syntheses`).
-Vous pouvez également compiler **et** copier les documents automatiquement dans un dossier de destination à part en tapant `make release`. Make va ainsi compiler et copier tous les documents dans le dossier de destination que vous aurez préalablement choisi en inscrivant le chemin absolu du dossier dans le fichier `compilation.yml`.
+Vous pouvez compiler automatiquement tous les documents dans leur destination (le dossier où se trouve le fichier `.tex`) en tapant `make` en ligne de commande à la racine du repository (dossier `Syntheses`).
+Vous pouvez également compiler **et** copier les documents automatiquement dans un dossier de destination à part en tapant `make release`. `make` va ainsi compiler et copier tous les documents dans le dossier de destination que vous aurez préalablement choisi en inscrivant le chemin absolu du dossier dans le fichier `compilation.yml`.
 
 ## License
 Sauf mention expresse, vous licensiez sous license [CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)
