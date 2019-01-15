@@ -74,7 +74,9 @@ SMARTCP:=$(BASE_DIR)../../../mysmartcp.py
 # .PHONY: clean cleanaux $(ALL)
 .PHONY: clean cleanaux
 
-all: $(ALL) cleanaux
+all: $(ALL)
+
+pdf: $(ALL) cleanaux
 
 release: $(ALL) cleanaux
 

@@ -19,7 +19,9 @@ OUT_MAIN_NAME=How_to_Contribute
 #default: all
 #default: show
 
-all: $(PDF_NAME) clean
+all: $(PDF_NAME)
+
+pdf: $(PDF_NAME) clean
 
 # MAIN LATEXMK RULE
 

@@ -6,6 +6,8 @@ ifeq ($(MAKECMDGOALS),clean)
 	COMPILE=make clean
 else ifeq ($(MAKECMDGOALS),release)
 	COMPILE=make release
+else ifeq ($(MAKECMDGOALS),pdf)
+	COMPILE=make pdf
 else
 	COMPILE=make
 endif
@@ -26,4 +28,6 @@ clean: $(SUBDIRS)
 release: $(SUBDIRS)
 
 pvc: $(SUBDIRS)
+
+pdf: $(SUBDIRS)
 
