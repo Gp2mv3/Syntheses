@@ -3,21 +3,22 @@
 \usepackage{float}
 \usepackage{../../../eplunits}
 \usepackage[minted]{../../../eplcode}
+\usepackage[english,ruled,vlined]{algorithm2e}
+
 
 \graphicspath{{img/}}
 
 \newcommand{\ipvf}{\textsc{ip}v4}
 \newcommand{\ipvs}{\textsc{ip}v6}
 
+% TODO add some figures
+
 \hypertitle{Computer networks}{5}{INGI}{1341}
 {Gilles Peiffer}
 {Olivier Bonaventure}
 
-% TODO add some figures
-
 \part{Principles}
 \section{Connecting Two Hosts}
-
 The first step when building a network,
 even a worldwide network such as the Internet,
 is to connect two hosts together.
@@ -1886,6 +1887,7 @@ Two classes of solutions exist:
 \end{itemize}
 
 \subsection{Congestion Control}
+\label{sec:congcontrol1}
 It is important for networks to be able to assure reliability
 even with heterogeneous links.
 A mechanism known as \emph{self-clocking} is sometimes used
@@ -2905,4 +2907,762 @@ the first available port number in the ephemeral range.
 The Transmission Control Protocol, \textsc{tcp},
 provides a reliable byte stream, connection-oriented transport service
 on top of the unreliable connectionless network service provided by \textsc{ip}.
+A \textsc{tcp} segment contains a header and optionally a payload.
+
+The header, whose default size is $20$ bytes, contains the following fields:
+\begin{itemize}
+	\item \emph{Source and destination ports}.
+	Both the server and the client need to specify
+	a source and destination port in every segments.
+	A \textsc{tcp} connection is identified by four pieces of information:
+	\begin{itemize}
+		\item the address of the client;
+		\item the address of the server;
+		\item the port chosen by the client;
+		\item the port chosen by the server.
+	\end{itemize}
+	\item \emph{Sequence Number, Acknowledgment Number} and \emph{Window}.
+	These fields are used to provide a reliable data transfer,
+	using a window-based protocol.
+	\item \emph{Urgent Pointer}.
+	This pointer is used to indicate that some data should be considered
+	as urgent in a \textsc{tcp} byte stream.
+	\item \emph{Flags}.
+	The bit flags indicate how a segment should be interpreted
+	by the \textsc{tcp} entity receiving it.
+	These are some of the flags:
+	\begin{itemize}
+		\item \texttt{SYN} is used during connection establishment;
+		\item \texttt{FIN} is used during connection release;
+		\item \texttt{RST} is used in case of problems,
+		or when an invalid segment has been received;
+		\item \texttt{ACK} indicates
+		whether the \emph{Acknowledgment Number} field is valid;
+		\item \texttt{URG} is used with the \emph{Urgent Pointer}.
+	\end{itemize}
+	\item \emph{Checksum}.
+	This field contains the value of the checksum computed
+	over the entire segment and a pseudo-header.
+	\item \emph{\textsc{tcp} Header Length} or \emph{Data Offset}.
+	Four bits field indicating the size of the header.
+	\item \emph{Optional Header Extension}.
+	This field is used to add optional information to the header.
+\end{itemize}
+
+\subsection{\textsc{tcp} Connection Establishment}
+A \textsc{tcp} connection is established using a three-way handshake.
+The connection establishment phase uses the sequence number,
+the acknowledgment number and the \texttt{SYN} flag.
+When a client host wants to open a \textsc{tcp} connection with a server host,
+it creates a \textsc{tcp} segment with
+\begin{itemize}
+	\item the \texttt{SYN} flag set;
+	\item the sequence number set to $x$, the current value
+	of the counter of the client host's \textsc{tcp} entity.
+\end{itemize}
+Upon reception of this \texttt{SYN} segment,
+the server host replies with a segment containing:
+\begin{itemize}
+	\item the \texttt{SYN} flag set;
+	\item the sequence number set to $y$, the current value
+	of the counter of the server host's \textsc{tcp} entity;
+	\item the \texttt{ACK} flag set;
+	\item the acknowledgment number set to $(x+1) \mod 2^{32}$.
+\end{itemize}
+The \texttt{SYN+ACK} segment confirms that the server
+has correctly received the \texttt{SYN} segment.
+The client now considers the connection to be established,
+and replies to the \texttt{SYN+ACK} segment with a segment containing:
+\begin{itemize}
+	\item the \texttt{ACK} flag set;
+	\item the \emph{acknowledgment number} set to $(y+1) \mod 2^{32}$.
+\end{itemize}
+At this point, the connection is open, and both the client and the server
+are allowed to send segments containing data.
+These segments' sequence numbers start at $(x+1) \mod 2^{32}$ for the client
+and $(y+1) \mod 2^{32}$ for the server.
+
+A server can refuse a connection upon reception of a \texttt{SYN} segment
+by replying with a segment with its \texttt{RST} flag set
+and its acknowledgment number set to $(x+1) \mod 2^{32}$.
+
+In case both the client and server host try to initiate a connection
+at the same time,
+the connection is established after the \texttt{SYN+ACK} segments
+have been received.
+
+\paragraph{Denial of Service Attacks}
+When a \textsc{tcp} entity opens a \textsc{tcp} connection,
+it creates a \emph{Transmission Control Block}, \textsc{tcb},
+which, during connection establishment,
+contains
+\begin{itemize}
+	\item the local and remote \textsc{ip} addresses,
+	\item the local and remote port numbers,
+	\item the local and last received sequence numbers,
+	\item the state of the \textsc{tcp fsm},
+	\item the sequence number of the next byte to send
+	and the earliest unacknowledged byte,
+	\item the size of the sending and receiving windows and
+	\item a sending and receiving buffer.
+\end{itemize}
+
+By limiting the number of connections
+that can be in the \emph{\texttt{SYN} RCVD} state at a given time,
+a type of attack known as ``\texttt{SYN} flooding'' become possible,
+where attackers would send out \texttt{SYN} segments
+to reach the connection cap.
+By adding \texttt{SYN} cookies,
+the server does not have to create \textsc{tcb} for every \texttt{SYN} segment.
+
+\paragraph{Retransmitting the First \texttt{SYN} Segment}
+The retransmission timer for the \texttt{SYN} and \texttt{SYN+ACK} segments
+is usually set to three seconds initially,
+then doubles after every retransmission,
+up to a maximum number in the case of the \texttt{SYN} segment.
+
+Uses for the \textsc{tcp} options are
+\begin{itemize}
+	\item negotiating parameters
+	such as the \emph{Maximum Segment Size}, \textsc{mss};
+	\item enabling \textsc{tcp} extensions,
+	encoded using a \texttt{Type Length Value} format where
+	\begin{itemize}
+		\item the first byte indicates the \texttt{Type} of the option;
+		\item the second byte indicates the \texttt{Length} in bytes;
+		\item the last bytes are option-specific.
+	\end{itemize}
+\end{itemize}
+Only three options have to be supported by every \textsc{tcp} implementation:
+\begin{itemize}
+	\item the \emph{Maximum Segment Size} option,
+	to specify the \textsc{mss} supported by the sender of the segment;
+	\item the \emph{End of Option} option,
+	to ensure that the header extension is padded;
+	\item the \emph{No-Operation} option,
+	to align options on $32$-bit boundaries.
+\end{itemize}
+Any \textsc{tcp} implementation
+should be able to parse segments for known options without crashing,
+as part of the \emph{robustness} principle.
+
+\subsection{\textsc{tcp} Reliable Data Transfer}
+\textsc{tcp} is a window-based transport protocol
+that provides a bi-directional byte stream service.
+
+To send data,
+the \textsc{tcp} entity performs the following operations on the \textsc{tcb}:
+\begin{enumerate}
+	\item Checks that the sending buffer does not contain more
+	than the receive window advertised.
+	\item Places up to \textsc{mss} bytes of data
+	in the payload of a segment, if the window is not full.
+	\item Sets the sequence number and
+	adds the length of the payload to \texttt{snd.nxt}.
+	\item Sets the acknowledgment number.
+	\item Computes the window.
+	\item Stores the data in the sending buffer.
+\end{enumerate}
+
+When a segment with \texttt{ACK} flag set is received,
+\begin{enumerate}
+	\item The receiving window is updated.
+	\item The acknowledgment number is verified.
+	\item The data is removed from the sending buffer
+	and \texttt{snd.una} is updated.
+	\item If the segment contains data,
+	the sequence number is compared to \texttt{rcv.nxt},
+	and if they are equal, \texttt{rcv.nxt} is updated.
+	\item The contents of the receiving buffer are checked
+	to see if another segment can be delivered to the user,
+	and if it can, the value of \texttt{rcv.nxt} is updated again.
+	\item The segment's payload is placed in the receiving buffer.
+\end{enumerate}
+
+\subsubsection{Segment Transmission Strategies}
+An algorithm known as Nagle's Algorithm
+is used to determine when to send segments.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\Begin{
+	\eIf{$\texttt{rcv.wnd} \ge \texttt{MSS}$ and
+	$\texttt{len(data)} \ge \texttt{MSS}$}{
+		send one \textsc{mss}-sized segment\;
+	}{
+		\eIf{there are unacknowledged data}{
+			place data in buffer until ACK has been received\;
+		}{
+			send one \textsc{tcp} segment
+			containig all buffered data\;
+		}
+	}
+}
+\caption{Nagle's Algorithm\label{algo:nagle}}
+\end{algorithm}
+
+\subsection{\textsc{tcp} Windows}
+Most implementations support an extension to allow
+windows to be stored as $32$-bit integers,
+which makes it possible to have higher throughput values.
+
+\subsection{\textsc{tcp}'s Retransmission Timeout}
+The easiest way to measure the round-trip time on a \textsc{tcp} connection
+is to measure the delay between the transmission of a data segment
+and the reception of the corresponding acknowledgment.
+This solution works only if there are no segment losses.
+A way to work around this is to use the \texttt{Timestamp} option,
+allowed on most \textsc{tcp} implementations.
+This option uses two $32$-bit timestamps:
+\begin{itemize}
+	\item \texttt{TSVal} is chosen by the sender of the segment;
+	\item \texttt{TSecr} is the last received value of \texttt{TSVal}.
+\end{itemize}
+These values allow us to estimate the value of the round-trip time.
+
+Jacobson's Algorithm to compute the retransmission timeout
+uses two state variables and two parameters $\alpha$ and $\beta$.
+The first \textsc{rto} is set to $3$ seconds.
+When a first estimation of the \textsc{rtt} is available,
+we can compute
+\begin{align*}
+	\textnormal{SRTT} &= \textnormal{RTT}\\
+	\textnormal{RTTVAR} &= \textnormal{RTT} / 2\\
+	\textnormal{RTO} &= \textnormal{SRTT} + 4\,\textnormal{RTTVAR}\,,
+\end{align*}
+Then when other measurements are available,
+we can update
+\begin{align*}
+	\textnormal{RTTVAR} &= (1 - \beta) \, \textnormal{RTTVAR} + \beta \abs{\textnormal{SRTT} - \textnormal{RTT}}\\
+	\textnormal{SRTT} &= (1- \alpha) \, \textnormal{SRTT} + \alpha \textnormal{RTT}\\
+	\textnormal{RTO} &= \textnormal{SRTT} + 4 \, \textnormal{RTTVAR}\,.
+\end{align*}
+The recommended parameters are $\alpha = 1/8$ and $\beta = 1/4$.
+
+\subsection{Advanced Retransmission Strategies}
+When the \textsc{rto} expires,
+the first unacknowledged segment is retransmitted.
+The \textsc{rto} is doubled until it reaches a configured maximum;
+this is called an \emph{exponential backoff}.
+If this maximum is reached, the connection is closed.
+
+A \emph{delayed acknowledgment} strategy is used
+to avoid sending pure acknowledgments
+by making use of \emph{piggybacking}.
+
+The fast retransmit heuristic triggers
+a retransmission of the last unacknowledged segment
+upon receiving three consecutive duplicate acknowledgments.
+This works best when losses are isolated, and windows are sufficiently wide.
+
+When the losses are not isolated, or the windows are narrow,
+an extension called \emph{Selective Acknowledgments} can be used,
+which allows the receiver to indicate
+which blocks have been received correctly but out-of-sequence.
+
+\subsection{\textsc{tcp} Connection Release}
+\textsc{tcp} supports both graceful and abrupt connection releases.
+The abrupt connection release is achieved
+using a segment with the \texttt{RST} bit set.
+Reasons for sending such a segment are
+\begin{itemize}
+	\item a non-\texttt{SYN} segment was received
+	for a non-existing connection;
+	\item implementation-specific behaviour.
+\end{itemize}
+When an \texttt{RST} segment is sent,
+it should contain the current sequence number,
+and the acknowledgment number should be set
+to the next expected sequence number.
+\begin{myrem}[\textsc{tcp} \texttt{RST} wars]
+	\textsc{tcp} entities are never allowed to send an \texttt{RST} segment
+	in response to another \texttt{RST} segment.
+\end{myrem}
+
+Connections are usually terminated gracefully, using the \texttt{FIN} flag,
+and allowing each host to release their own direction of data transfer.
+When a host sends a \texttt{FIN} segment,
+it waits until this segment is acknowledged
+before closing its outbound communications,
+while the other host closes their inbound communications.
+When the other host is done sending their data,
+they send a \texttt{FIN} segment too.
+When this segment is received,
+the receiving host closes its inbound communications,
+and sends an acknowledgment for the \texttt{FIN} segment,
+then enters the \texttt{TIME\_WAIT} state
+for $2\texttt{MSL}$ seconds,
+in order to be able to retransmit
+the acknowledgment for the \texttt{FIN} segment.
+When the sending host receives this segment,
+the connection is completely closed
+and the \textsc{tcb} is discarded.
+
+\begin{myrem}[\texttt{TIME\_WAIT} on busy \textsc{tcp} servers]
+	Because the \texttt{TIME\_WAIT} state
+	poses an important operational problem on big servers,
+	some implementations prefer to abruptly release the connection.
+	This implies a tradeoff between reliability and memory usage.
+\end{myrem}
+
+\section{The Stream Control Transmission Protocol}
+There were several motivations for
+the Stream Control Transmission Protocol, \textsc{sctp}, to be designed:
+\begin{itemize}
+	\item The need to efficiently support
+	hosts equipped with two or more network interfaces,
+	i.e. hosts with several \textsc{ip} addresses.
+	\item The ability to provide
+	a different service than \textsc{tcp}'s byte stream.
+	\textsc{sctp} provides the ability to exchange messages
+	instead of only a stream of bytes.
+	\item \emph{Head-of-line blocking} can be mitigated with \textsc{sctp}.
+	\item With the \emph{partially-reliable delivery} option,
+	an \textsc{sctp} sender can ``expire'' data.
+\end{itemize}
+
+\subsection{\textsc{sctp} Segments}
+An \textsc{sctp} segment is always composed of a fixed size \emph{common header}
+followed by a variable number of chunks.
+The common header is $12$ bytes long and contains four fields:
+\begin{itemize}
+	\item The \texttt{Source Port Number} and \texttt{Destination Port Number} fields are $2$ bytes long.
+	\item The \texttt{Verification Tag} is $4$ bytes long
+	and is set during connection establishment.
+	\item The \texttt{Checksum} is a $32$-bit \textsc{crc}
+	computed over the entire segment.
+\end{itemize}
+
+An \textsc{sctp} segment can contain
+a variable number of chunks of different lengths.
+The payload itself is a chunk.
+An \textsc{sctp} chunk has
+\begin{itemize}
+	\item a $1$-byte \texttt{Chunk Type} field;
+	\item a $1$-byte \texttt{Chunk Flags} field;
+	\item a $2$-byte \texttt{Chunk Length} field.
+\end{itemize}
+
+The first two bits of the chunk specify what to do with unknown chunks:
+\begin{itemize}
+	\item \texttt{00} indicates the entire segment should be discarded;
+	\item \texttt{01} indicates the segment should be discarded,
+	and an error should be reported to the sender;
+	\item \texttt{10} indicates the chunk should be ignored,
+	but other chunks are still processed;
+	\item \texttt{11} indicates the chunk should be ignored,
+	but other chunks are still process and an error is reported.
+\end{itemize}
+
+\subsection{Connection Establishment}
+An \textsc{sctp} connnection is established
+by using a \emph{four-way handshake}.
+The client starts by sending a segment containing the \texttt{INIT} chunk.
+This segment contains the \texttt{Initiation Tag},
+which identifies the connection.
+The server replies with a \texttt{INIT-ACK} chunk,
+containing a new \texttt{Initiation Tag},
+the client's \texttt{Initiation Tag} and
+a \emph{State cookie} which stores some information a a signature.
+The client responds to this with a \texttt{COOKIE-ECHO} chunk,
+which simply echoes back the cookie sent by the server.
+The server responds with a \texttt{COOKIE-ACK} chunk,
+after which the connection is established.
+
+\subsection{Reliable Data Transfer}
+In \textsc{sctp}, data is exchanged using data chunks.
+Communicating hosts can access two or more message streams,
+which is a stream of variable-length messages.
+\textsc{sctp} provides a connection-oriented service.
+
+\textsc{sctp} uses the \emph{Transmission Sequence Number}, \texttt{TSN},
+to sequence the data chunks that are sent, increasing by one for every chunk.
+A segment may contain multiple chunks.
+Within a stream, all messages are delivered in sequence.
+When fragmenting big chunks over multiple segments,
+the \texttt{B} and \texttt{E} bits enable the receiver
+to detect the message boundaries.
+
+In \textsc{sctp},
+acknowledgments, retransmissions and flow-control
+rely on the Selective Acknowledgment (\texttt{SACK}) chunk.
+This chunk allows the receiver to specify what chunks have been received
+thanks to the \texttt{Cumulative TSN ACK} field,
+and advertise their receiving window.
+The \texttt{SACK} chunk also provides information about eventual
+out-of-sequence chunks.
+
+\subsection{Connection Release}
+Connection release in \textsc{sctp} is done with a three-way handshake.
+The \texttt{SHUTDOWN} chunk contains the last cumulative sequence number.
+The receiving entity ensures that all data have been delivered correctly,
+then sends a \texttt{SHUTDOWN-ACK}
+to confirm the reception of the previous segment.
+The \texttt{SHUTDOWN-COMPLETE} segment completes the three-way handshake.
+The \texttt{ABORT} chunk provides the equivalent
+to \textsc{tcp}'s \texttt{RST} segment.
+
+\section{Congestion Control}
+Congestion control is implemented in the transport layer.
+As mentioned before, \textsc{tcp} uses \textsc{aimd} to control congestion,
+explained in \sectionref{congcontrol1}.
+
+The \textsc{tcp} congestion control scheme
+starts with a small initial congestion window.
+To avoid having to wait for too long before using the available bandwidth,
+\textsc{tcp} uses a \emph{slow-start} algorithm.
+This means the congestion window is doubled every round-trip time.
+Slow-start uses an additional variable in the \textsc{tcb}, \texttt{ssthresh},
+which is an estimation of the last value of \texttt{cwnd}
+that didn't cause congestion.
+Once this threshold is reached,
+the congestion window uses congestion avoidance with additive increase.
+
+\textsc{tcp} distinguishes between two types of congestion:
+\begin{itemize}
+	\item \emph{Mild congestion}.
+	The network is considered mildly congested
+	when three duplicate acknowledgments are received.
+	Fast retransmit is then used,
+	and the congestion window is divided by two (multiplicative decrease).
+	The value of \texttt{ssthresh} is set to the new value of \texttt{cwnd}.
+	The congestion window then uses congestion avoidance.
+	\item \emph{Severe congestion}.
+	The network is considered severely congested
+	when the retransmission timer expires.
+	The first segment is retransmitted,
+	and \texttt{ssthresh} is set to half the congestion window.
+	The congestion window is then reset to its initial value,
+	and a slow start is performed.
+\end{itemize}
+If a connection has been idle for more than the retransmission timer,
+the congestion window is reset to the initial window.
+
+\subsection{Controlling Congestion Without Losing Data}
+In \textsc{tcp},
+\emph{Explicit Congestion Notification} allows routers to mark packets
+when they are congested.
+Hosts return the congestion information to the source, so it can adapt.
+In practice, this has to be done with two bits;
+one bit to indicate whether there is congestion,
+and one bit to indicate whether transport protocol supports \textsc{ecn} or not.
+
+In order to notify sources of congestion,
+\textsc{ecn} uses spare bits in the \textsc{tcp} header.
+To detect whether remote hosts support \textsc{ecn},
+\textsc{tcp} uses the \texttt{ECE} and \texttt{CWR} bits in the header,
+while \textsc{sctp} defines the \texttt{ECN Support Parameter},
+which can be included in the \texttt{INIT} and \texttt{INIT-ACK} chunks.
+Since acknowledgments carry the \texttt{ECE} bit,
+this information can get lost.
+The \texttt{CWR} bit serves to ``acknowledge'' the \texttt{ECE} bit,
+indicating that the sender has detected mild congestion.
+
+\textsc{sctp} uses the \texttt{ECN Echo} chunk,
+which contains the lowest \texttt{TSN}
+that was received in a packet with the congestion bit set,
+and the number of packets received.
+The \texttt{CWR} chunk acknowledges
+the reception of the \texttt{ECN Echo} chunk.
+
+In order to decide which packets to mark,
+we consider a router to be congested as soon as
+the average occupancy of its buffers exceeds a certain treshold.
+If there is only one queue, packets are marked probabilistically
+with a probability corresponding to the average occupancy.
+If the router uses several queues served by a scheduler,
+the packets on a particular queue are marked
+as soon as the occupancy on that queue exceeds the treshold.
+
+\subsection{Modeling \textsc{tcp} Congestion Control}
+We consider a hypothetical connection
+that suffers from equally spaced segment losses.
+Let $p$ be the segment loss ratio.
+This means $1/p - 1$ segments are transmitted before one is lost.
+If we ignore the initial slow start,
+this environment is always in congestion avoidance,
+as losses can be recovered with fast retransmit.
+
+The congestion window starts at some value $w/2$,
+and is incremented by one \texttt{MSS} every \textsc{rtt},
+until it reaches this value.
+The number of segments that are sent is equal to
+\[
+\left(\frac{w}{2}\right)^2 + \frac{1}{2} \left(\frac{w}{2}\right)^2 = \frac{3w^2}{8}\,.
+\]
+Since there are $1/p$ segments sent between two losses,
+this gives
+\[
+w = \sqrt{\frac{8}{3p}} = \frac{k}{\sqrt{p}}\,.
+\]
+The throughput $t$ is given by
+\[
+t = \frac{\frac{3w^2}{8}}{\frac{w}{2}\texttt{RTT}} \texttt{MSS} \iff t = \sqrt{\frac{3}{2}} \frac{\texttt{MSS}}{\texttt{RTT} \sqrt{p}}\,.
+\]
+This simplified analysis allows us to deduce that
+\begin{itemize}
+	\item \textsc{Tcp}'s congestion control scheme favors connections
+	with a shorter round-trip time.
+	\item \textsc{Tcp}'s congestion control scheme favors connections
+	with a larger \texttt{MSS}.
+\end{itemize}
+
+In general, we have
+\[
+t < \min\left(\frac{\textnormal{Window}}{\texttt{RTT}}, \frac{k \, \texttt{MSS}}{\texttt{RTT} \sqrt{p}}\right)\,.
+\]
+
+\section{The Network Layer}
+The network layer allows endsystems connected to different networks
+to exchange information through intermediate systems called routers.
+The unit of information in the network layer is called a \emph{packet}.
+
+Before explaining the network layer, we briefly analyze
+the service provided by the \emph{datalink} layer.
+We focus on the connectionless datalink layer service.
+
+Datalink layers exchange frames,
+which are transmitted through the physical layer.
+There are three main types of datalink layers:
+\begin{itemize}
+	\item The \emph{point-to-point} datalink layer.
+	We assume that there are only two communicating systems
+	that are directly connected through the physical layer,
+	This datalink layer is used when there is a point-to-point link
+	between the two communicating systems.
+	\item The datalink layer used in \emph{Local Area Networks}.
+	A \textsc{lan} is a set of communicating devices
+	such that any two devices can directly exchange frames
+	through the datalink layer.
+	In a \textsc{lan},
+	each device is identified by a unique \emph{datalink layer address}.
+	Most \textsc{lan}s use $48$-bit \emph{\textsc{mac} addresses},
+	and support special broadcast and multicast datalink layer addresses.
+	\item The datalink layers
+	used in \emph{Non-Broadcast Multi-Access} networks.
+	These networks are like \textsc{lan}s,
+	except they only support unicast.
+\end{itemize}
+
+\subsection{\textsc{ip} Version 6}
+The initial \textsc{ip} version 6
+was designed based on the following assumptions:
+\begin{itemize}
+	\item \ipvs{} addresses are encoded as a 128-bit field;
+	\item the \ipvs{} header has a simple format
+	that can easily be parsed by hardware devices;
+	\item a host should be able
+	to configure its \ipvs{} address automatically;
+	\item security must be a part of \ipvs.
+\end{itemize}
+
+\subsubsection{\ipvs{} Addressing Architecture}
+\ipvs{} supports unicast, multicast and anycast addresses.
+
+\paragraph{Unicast Addresses}
+An \ipvs{} unicast address is used
+to identify one datalink-layer interface on a host.
+It is composed of three parts:
+\begin{enumerate}
+	\item A global routing prefix
+	that is assigned to the Internet Service Provider
+	that owns this block of addresses.
+	\item A subnet identifier
+	that identifies a customer of the \textsc{isp}.
+	\item An interface identifier
+	that identifies a particular interface on an endsystem.
+\end{enumerate}
+The subnet identifier allows to preserve scalability of the routing system
+by minimizing the number of routes that are stored on each router.
+
+Two types of address allocations are often distinguished:
+\begin{itemize}
+	\item \emph{Provider-independent} addresses (\textsc{pi}).
+	These address blocks are allocated to large companies or \textsc{isp}s,
+	and can be used with any provider at will.
+	\item \emph{Provider-aggregatable} addresses (\textsc{pa}).
+	These address blocks are allocated by providers
+	from their own \textsc{pi} address block.
+	Changing providers then means having to change all the addresses.
+\end{itemize}
+The typical sizes of \ipvs{} address blocks are
+\begin{itemize}
+	\item \texttt{/32} for an \textsc{isp};
+	\item \texttt{/48} for a single company;
+	\item \texttt{/56} for small user sites;
+	\item \texttt{/64} for a single user;
+	\item \texttt{/128} for a single endhost.
+\end{itemize}
+
+When a router knows several routes towards the same destination address,
+it must forward packets along the route having the longest prefix length.
+This rule is called ``\emph{longest prefix match}''.
+\texttt{::/0} is the \emph{default route}.
+
+\emph{Unique Local Unicast} addresses are for companies that want to use \ipvs{}
+without being connected to the \ipvs{} Internet.
+Two special \ipvs{} addresses are the \emph{loopback address}, \texttt{::1},
+and the \emph{unspecified address}, \texttt{::}.
+
+\emph{Link Local Unicast} addresses are part of the \texttt{fe80::/10}
+address block and are computed by concatenating the \texttt{fe80::/64} prefix
+with the $64$-bit identifier of its interface.
+These addresses are used for address discovery and auto-configuration purposes.
+
+\paragraph{Multicast Addresses}
+A \emph{multicast} address identifies a set of receivers
+and each frame sent towards this address
+is sent to all the receivers in the group.
+The multicast service can be provided in \textsc{lan}s
+and in networks with routers and hosts.
+
+A multicast address' low order bits are the group's identifier,
+while the high order bits
+are used as a marker to distinguish multicast addresses from unicast addresses.
+The $4$-bit flag field indicates whether the address is temporary or permanent,
+and the $4$-bit scope field indicates the boundaries
+on the forwarding of packets destined to a particular address.
+
+\subsubsection{\ipvs{} Packet Format}
+The standard \ipvs{} header occupies $40$ bytes
+and contains $8$ different fields:
+\begin{itemize}
+	\item \texttt{Source Address}.
+	\item \texttt{Destination Address}.
+	\item \texttt{Version}.
+	\item \texttt{Traffic Class}.
+	Indicates the type of service expected
+	and contains the \textsc{ecn} flags.
+	\item \texttt{Flow Label}.
+	No current use.
+	\item \texttt{Payload Length}.
+	Size of the packet payload in bytes.
+	\item \texttt{Hop Limit}.
+	Number of routers that can forward the packet.
+	\item \texttt{Next Header}.
+	Indicates the type of header that follows the \ipvs{} header.
+	This also allows supporting a chain of headers.
+\end{itemize}
+
+Several extension headers can be added to an \ipvs{} packet:
+\begin{itemize}
+	\item \emph{Hop-by-Hop Options} header.
+	Processed by routers and endhosts.
+	Allows \ipvs{} to be easily extended.
+	It has the following fields:
+	\begin{itemize}
+		\item \texttt{Next Header} supports the chain of headers.
+		\item \texttt{Hdr Ext Len} indicates the length of the header.
+		\item \texttt{Opt. Type} indicates the type of the option.
+		The two high order bits have the following meaning:
+		\begin{itemize}
+			\item \texttt{00} if unrecognized headers
+			should be ignored;
+			\item \texttt{01} if packets with unrecognized headers
+			should be discarded;
+			\item \texttt{10} (resp. \texttt{11})
+			if a control packet must be returned
+			when the header is not recognized
+			(resp. except if the destination
+			was a multicast address).
+		\end{itemize}
+	\end{itemize}
+	\item \emph{Destination Options} header.
+	Processed by endhosts.
+	\item \emph{Routing} header.
+	Processed by some nodes.
+	The \emph{Type 0} routing header allows a host to indicate
+	a loose source route that should be followed by a packet
+	specifying the addresses of some of the routers
+	that must forward this packet.
+	This header has been removed from the specification.
+	\item \emph{Fragment} header.
+	Processed by endhosts.
+	This header enables the receiver
+	to reassemble the received fragments
+	when packets have to pass through heterongeneous datalink layers.
+	This fragmentation is performed only by the source host.
+	If a router receives a packet that is too long to be forwarded,
+	the packet is dropped and an \textsc{icmp}v6 message is sent
+	to inform the sender of the problem.
+	The $64$-bit header is composed of the following fields:
+	\begin{itemize}
+		\item \texttt{Next header} supports the chain of headers.
+		\item \texttt{Reserved} set to \texttt{0}.
+		\item \texttt{Fragment Offset} contains
+		the offset of the data following this header
+		relative to the start of the original packet.
+		\item \texttt{M} set to \texttt{1}
+		except for the last fragment of a packet.
+		\item \texttt{Identification} indicates to which original packet
+		a fragment belongs.
+	\end{itemize}
+	\item \emph{Authentication} header.
+	Processed by endhosts.
+	Adds security above \ipvs.
+	\item \emph{Encapsulating Security Payload}.
+	Processed by endhosts.
+	Adds security above \ipvs.
+\end{itemize}
+
+\subsection{\textsc{icmp} Version 6}
+The Internet Control Message Protocol is used to report problems that occurred
+while processing an \ipvs{} packet but also when distributing addresses.
+\textsc{icmp}v6 messages are carried inside \ipvs{} packets.
+Each message contains a $32$-bit header with
+\begin{itemize}
+	\item the \texttt{Type} field;
+	\item the \texttt{Code} field;
+	\item the \texttt{Checksum} field,
+\end{itemize}
+and a message body that contains the faulty \ipvs{} packet.
+
+\textsc{icmp}v6 specifies two classes of messages:
+error messages and informational messages.
+Four types of error messages are defined:
+\begin{itemize}
+	\item \texttt{1}: \emph{Destination Unreachable}.
+	\texttt{Code} can take on the following values:
+	\begin{itemize}
+		\item \texttt{0}: No route to destination.
+		\item \texttt{1}: Communication with destination
+		administratively prohibited.
+		\item \texttt{2}: Beyond scope of source address.
+		\item \texttt{3}: Address unreachable.
+		\item \texttt{4}: Port unreachable.
+	\end{itemize}
+	\item \texttt{2}: \emph{Packet Too Big}.
+	This allows the host to implement Path \textsc{mtu} discovery,
+	where the Maximum Transmission Unit can be detected
+	on a path towards a given destination,
+	and the \textsc{mss} can be adjusted.
+	\item \texttt{3}: \emph{Time exceeded}.
+	\texttt{Code} can take on the following values:
+	\begin{itemize}
+		\item \texttt{0}: \texttt{Hop Limit} reached \texttt{1}.
+		\item \texttt{1}: unable to reassemble received fragments.
+	\end{itemize}
+	\item \texttt{4}: \emph{Parameter Problem}.
+	\texttt{Code} can take on the following values:
+	\begin{itemize}
+		\item \texttt{0}: erroneous header field.
+		\item \texttt{1}: unknown \texttt{Next Header}.
+		\item \texttt{2}: unknown \textsc{ip} option.
+	\end{itemize}
+\end{itemize}
+
+Two types of informational messages are defined: \texttt{Echo Request}
+and \texttt{Echo Reply},
+which are used to test the reachability of a destination
+by using \mintinline{bash}{ping6}.
+Each host is supposed to reply
+with an \textsc{icmp} \texttt{Echo Reply} message
+when it receives an \textsc{icmp} \texttt{Echo Request} message.
+
+Another tool is \mintinline{bash}{traceroute6}.
+The \mintinline{bash}{traceroute6} tool uses the \texttt{Time Exceeded} messages
+to discover the intermediate routers on the path towards a destination.
+To do this, it sends packets with an increasing \texttt{Hop Limit},
+starting from \texttt{Hop Limit = 1}.
+
 \end{document}
