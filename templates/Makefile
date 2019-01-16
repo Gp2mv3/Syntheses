@@ -1,2 +1,2 @@
 TYPE=section
-include $(BASE_DIR)../name.mk
+include ../name.mk

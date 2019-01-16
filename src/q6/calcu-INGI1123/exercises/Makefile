@@ -1,2 +1,2 @@
 TYPE=exercises
-include $(BASE_DIR)../calcu-INGI1123.mk
+include ../calcu-INGI1123.mk
