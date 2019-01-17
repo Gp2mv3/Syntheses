@@ -3665,4 +3665,365 @@ to discover the intermediate routers on the path towards a destination.
 To do this, it sends packets with an increasing \texttt{Hop Limit},
 starting from \texttt{Hop Limit = 1}.
 
+\section{The IPv6 Subnet}
+Each datalink layer interface includes a unique hardwired \textsc{mac} address.
+Most \textsc{lan}s provide an unreliable connectionless service
+and a datalink layer frame has a header containing:
+\begin{itemize}
+	\item the source and destination \textsc{mac} addresses;
+	\item some multiplexing information.
+\end{itemize}
+
+\subsection{Interactions Between \ipvs{} And The Datalink Layer}
+In \ipvs{}, hosts discover the \textsc{mac} addresses of other hosts
+attached to the same \textsc{lan}
+using the \emph{Neighbor Discovery Protocol}, \textsc{ndp}.
+This protocol is part of \textsc{icmp}v6
+and uses the multicast datalink layer service.
+
+\textsc{ndp} operates as follows:
+\begin{enumerate}
+	\item The querier sends
+	a multicast \textsc{icmp}v6 Neighbor Sollicitation (\textsc{ns}) message
+	that contains as parameter the queried \ipvs{} address.
+	\item The queried node receives the frame,
+	parses it and replies with a unicast
+	\textsc{icmp}v6 Neighbor Advertisement (\textsc{na})
+	that provides its own \ipvs{} and \textsc{mac} addresses.
+	\item The querier stores the mapping between the \ipvs{}
+	and the \textsc{mac} address inside its \textsc{ndp} table.
+\end{enumerate}
+This \textsc{ns} message can also be used to verify the reachability
+of a host in the local subnet.
+When an entry in the table times out,
+it may either be deleted or revalidated.
+These messages also detect the use of duplicate addresses,
+thanks to the Duplicate Address Detection Algorithm, \textsc{dad}.
+
+\ipvs{} supports two protocols to automatically configure addresses:
+\textsc{dhcp}v6 and \textsc{slaac}
+
+\paragraph{Stateless Address Autoconfiguration}
+With \textsc{slaac},
+hosts derive their link-local address from their identifier,
+and then multicast a \textsc{ns} with this address as target,
+to verify whether another host is using the same address on this subnet.
+If it receives \textsc{na},
+it generates another identifier,
+and repeats this procedure until finding a unique address.
+\ipvs{} routers must regularly multicast
+\textsc{icmp}v6 Router Advertisement messages
+that indicate the \ipvs{} prefix assigned to the subnet.
+This message contains several interesting fields:
+\begin{itemize}
+	\item The \texttt{Cur Hop Limit} field
+	allows to specify the default hop limit.
+	\item The \texttt{M} and \texttt{O} bits
+	are used to indicate that
+	some information can be obtained from \textsc{dhcp}v6.
+	\item The \texttt{Router Lifetime} field
+	provides the expected lifetime in seconds of the sending router.
+	\item The \texttt{Reachable Time} and \texttt{Retrans Timer} fields
+	are used to configure the use of the \textsc{ndp} protocol
+	on the hosts attached to the subnet.
+	\item Several options, such as
+	\begin{itemize}
+		\item The \texttt{MTU} option,
+		that indicates the \textsc{mtu} to be used.
+		\item The \texttt{Prefix} option,
+		that provides information about the prefix(es)
+		that is (are) advertised by the router on the subnet.
+		The important fields of this option are
+		\begin{itemize}
+			\item \texttt{Prefix} and \texttt{Prefix Length}.
+			\item \texttt{Valid Lifetime}
+			and \texttt{Preferred Lifetime} provide information
+			about the expected prefix lifetime.
+		\end{itemize}
+	\end{itemize}
+\end{itemize}
+
+Upon reception of this message,
+the host can derive its global \ipvs{} address by concatenating the prefix
+and its $64$-bit identifier.
+It concludes by sending a \textsc{ns} message targeted at its global address,
+to ensure it is unique.
+Router Advertisements always have a \texttt{Hop Limit} set to \texttt{255}.
+Hosts can also send Router Sollicitation messages,
+to which the default router will reply.
+
+The Redirect message is used when there is more than one host on a subnet.
+This message allows hosts to update their forwarding tables
+to include a new transient entry for the destination reported in the message,
+avoiding useless transmissions.
+
+\paragraph{Dynamic Host Configuration Protocol}
+\textsc{dhcp} allows a host to automatically retrieve
+its assigned \ipvs{} address, but relies on a server associated to each subnet.
+When a host is attached to the subnet, it sends a \textsc{udp} segment
+inside a multicast packet targetted at the \textsc{dhcp} server.
+The server selects an unassigned address in its address pool,
+and leases this address to the host,
+as well as providing some extra information.
+
+\section{Routing In IP Networks}
+There are two classes of \emph{routing protocols}:
+\begin{itemize}
+	\item \emph{Intradomain routing protocols},
+	which are used by routers inside a domain
+	to exchange routing information about the destinations
+	that are reachable inside the domain.
+	These protocols distribute routing information
+	and allow routers to quickly recover from failures.
+	\item \emph{Interdomain routing protocols},
+	which distribute information between domains.
+	There is only one interdomain routing protocol: \textsc{bgp}.
+\end{itemize}
+
+Each domain has its own \emph{routing policy} composed of three elements:
+\begin{itemize}
+	\item an \emph{import filter} that specifies
+	which routes can be accepted by a domain;
+	\item an \emph{export filter} that specifies
+	which routes can be advertised by a domain;
+	\item a \emph{ranking algorithm} that selects
+	the best route towards a destination prefix.
+\end{itemize}
+
+\subsection{Intradomain Routing}
+\subsubsection{\textsc{rip}}
+The Routing Information Protocol
+is a distance vector protocol.
+\textsc{rip} messages
+are sent inside \textsc{udp} segments.
+The \texttt{command} field indicates
+whether the message is a request or a response.
+All \textsc{rip} routers
+listen to the \texttt{FF02::9} \ipvs{} multicast address
+and reply by sending their own routing table when it receives a request message.
+Each \textsc{rip} message contains a set of route entries,
+encoded as a $20$-byte field each containing an \texttt{IPv6 prefix},
+a \texttt{route tag}, \texttt{prefix len}, the length of the subnet identifier
+and \texttt{metric} encoded as one byte.
+
+\subsubsection{\textsc{ospf}}
+The Open Shortest Path First protocol
+is a link-state routing protocol.
+\textsc{ospf} introduces hierarchical routing,
+which divides the network into regions, called \emph{areas} in \textsc{ospf}.
+Routers only have detailed information about their own region.
+
+\textsc{ospf} areas contain two types of routers:
+\begin{itemize}
+	\item \emph{Internal routers},
+	whose directly connected networks belong to the area.
+	\item \emph{Area border routers},
+	which are attached to several areas.
+\end{itemize}
+
+The \emph{backbone area} is a special area that groups
+all the area border routers,
+and the routers that are connected to the area border routers
+but do not belong to another area.
+Internal routers only need to know how to reach the backbone area,
+and other routers inside their area.
+Inter-area routing is done by exchanging distance vectors.
+
+\textsc{ospf} also supports \textsc{lan}.
+When \textsc{ospf} routers boot on a \textsc{lan},
+they elect one of them as \emph{Designated Router},
+and let it represent the local area network.
+\textsc{lan} routers only exchange \texttt{HELLO} packets with the \textsc{dr}.
+
+When routers know multiple equal-length paths to a destination,
+they implement \emph{per-flow load balancing}.
+This means they distribute the load over the paths
+but that packets that belong to the same flow are forwarded on the same path.
+Routers use hash functions to remember which path corresponds to which flow.
+
+\section{Interdomain Routing}
+Domains can be divided into two classes:
+\begin{itemize}
+	\item A \emph{stub domain} sends and receives packets
+	whose source or destination
+	is one of its own hosts.
+	A stub domain is \emph{single-homed}
+	if it is connected to a single transit domain,
+	otherwise it is \emph{multi-homed}.
+	An \emph{access-rich} stub domain
+	contains hosts that receive many packets.
+	A \emph{content-rich} stub domain mainly produces packets.
+	\item A \emph{transit domain} provides a transit service
+	for other domains.
+\end{itemize}
+
+Domains can be connected using \emph{private peering links},
+when routers from each domain are linked.
+In practice however, \emph{Internet eXchange Points} are used.
+These \textsc{ixp}s contains a \textsc{lan}
+to which all the participating routers are connected.
+
+Interdomain routing converts economical relationships
+into peering relationships between domains connected via peering links.
+There are three types of peering relationships:
+\begin{itemize}
+	\item \texttt{Customer->provider} relationships,
+	which are used when a customer domain pays an \textsc{isp}
+	to be able to exchange packets with the global Internet
+	over an interdomain routing link.
+	\begin{itemize}
+		\item Over a \texttt{customer->provider} relationship,
+		the \emph{customer} advertises to its \emph{provider}
+		all its routes and all the routes that it has learned
+		from its own customers.
+		\item Over a \texttt{provider->customer} relationship,
+		the \emph{provider} advertises all the routes that it knows
+		to its \emph{customer}.
+	\end{itemize}
+	\item \texttt{Shared-cost} relationships,
+	over which a domain only advertises its internal routes
+	and the routes it has learned from its customers.
+	This implies that routes learned from a provider
+	or from another share-cost peer are not advertised.
+	\item \texttt{Sibling} relationships,
+	when domains exchange their routes in all directions.
+\end{itemize}
+A domain's import and export filters can be defined
+by using the Route Policy Specification Language.
+
+\subsection{The Border Gateway Protocol}
+\textsc{bgp} is a \emph{path-vector} protocol.
+When a \textsc{bgp} router advertises a route towards a prefix,
+it announces the \textsc{ip} prefix
+and the interdomain path used to reach this prefix.
+Each domain is identified
+by a unique \emph{Autonomous System} (\textsc{as}) number.
+and the path contains the successive \textsc{as} numbers.
+A \textsc{bgp} router does not send the entire contents of its routing table,
+but only the entries that have changed.
+
+A \textsc{bgp} session between two peers runs above \textsc{tcp}.
+Several messages can be exchanged over a \textsc{bgp} session:
+\begin{itemize}
+	\item \texttt{OPEN}: initialises the session
+	and allows the negotiation of some options.
+	\item \texttt{NOTIFICATION}: terminates the session.
+	\item \texttt{UPDATE}: advertises new or modified routes.
+	\item \texttt{KEEPALIVE}: used to ensure a regular exchange of messages.
+\end{itemize}
+
+When a session starts, an \texttt{UPDATE} message is sent to advertise
+all the exportable routes that each router knows.
+Each \texttt{UPDATE} message contains
+\begin{itemize}
+	\item a list of \textsc{ip} prefixes that are withdrawn;
+	\item a list of \textsc{ip} prefixes that are (re-)advertised;
+	\item the set of attributes associated to the advertised prefixes.
+\end{itemize}
+
+A \textsc{bgp} router connected to $N$ \textsc{bgp} peers
+can be described as being composed of four parts:
+\begin{itemize}
+	\item \texttt{Adj-RIB-In} contains the routes
+	that have been received from each peer.
+	\item \texttt{Loc-RIB} contains the routes
+	considered as acceptable by the router.
+	\item \texttt{FIB} contains, for each destination,
+	the best route selected by the \emph{\textsc{bgp} decision process}.
+	\item \texttt{Adj-RIB-Out} contains
+	the routes that have been advertised to each \textsc{bgp} peer.
+\end{itemize}
+
+When a session starts,
+the routers first exchange \texttt{OPEN} messages
+to negotiate options that apply throughout the entire session.
+Then, each router extracts
+the routes to be advertised to the peer from its \texttt{FIB}.
+These routes must pass the peer's export filter.
+
+When a \textsc{bgp} message is received,
+the router first applies the peer's \emph{import filter}
+to verify whether the message is acceptable.
+The import filter accepts all routes
+that don't yet contain the local \textsc{as}
+in the \textsc{as}-Path.
+
+If the import filter accepts the message,
+we distinguish two cases:
+\begin{itemize}
+	\item If this is an \texttt{UPDATE} message for prefix \texttt{p},
+	the router retrieves from its \texttt{RIB}
+	the best route towards \texttt{p}.
+	Then, the route is inserted in the \texttt{RIB} and the decision process
+	is run to find whether the best route towards \texttt{p} has changed.
+	For each peer, the router checks if their export filter
+	allows the route to be advertised.
+	If yes, the filtered message is sent,
+	otherwise a \texttt{WITHDRAW} message is sent.
+	\item If this is an \texttt{WITHDRAW} message
+	it verifies whether the removal of the route
+	caused its best route to the prefix to change.
+\end{itemize}
+
+A \textsc{bgp} \texttt{UPDATE} message contains three fields:
+\begin{itemize}
+	\item the advertised prefix;
+	\item the \textsc{bgp} \texttt{nexthop};
+	\item the attributes including the \textsc{as}-Path.
+\end{itemize}
+
+\subsubsection{The \textsc{bgp} Decision Process}
+The first attribute that is used to rank routes
+is the \texttt{local-preference} attribute.
+The higher \texttt{local-pref} is preferred.
+Among routes with the same \texttt{local-pref},
+\textsc{bgp} routers prefer the one with the shortest \textsc{as}-Path.
+This \texttt{local-pref} can be used specify preferred links,
+or to specify a backup link.
+Another important use of this attribute
+is to support the \texttt{customer-provider}
+and \texttt{shared-cost} peering relationships.
+The usual import filters are
+\begin{itemize}
+	\item insert a high \texttt{local-pref}
+	in the routes learned from a customer.
+	\item insert a medium \texttt{local-pref}
+	in the routes learned over shared-cost peering.
+	\item insert a low \texttt{local-pref}
+	in the routes learned from a provider.
+\end{itemize}
+
+\subsubsection{\textsc{bgp} Convergence}
+Routes selected by \textsc{bgp} routers may sometimes depend
+on the ordering of the \textsc{bgp} messages that are exchanged.
+The convergence of \textsc{bgp} is not always guaranteed,
+and checking for global convergence is either \textsc{np}-complete
+or \textsc{np}-hard.
+The following guidelines provide a guarantee that \textsc{bgp} converges
+in the global Internet:
+\begin{itemize}
+	\item The topology of all the \texttt{customer->proivder} peering links
+	is an acyclic graph.
+	\item An \textsc{as} always prefers a route received from a customer
+	over a route received from a shared-cost peer or a provider.
+\end{itemize}
+
+The \textsc{as} level structure of the Internet
+can be divided in four categories:
+\begin{itemize}
+	\item The core is composed of \emph{Tier 1} \textsc{isp}s,
+	that is, domains without a provider.
+	Such an \textsc{isp} has \texttt{shared-cost} peering relationships
+	with all other \emph{Tier 1} \textsc{isp}s,
+	and \texttt{provider->customer} relationships
+	with smaller \textsc{isp}s.
+	\item \emph{Tier 2} \textsc{isp}s
+	are national or continental \textsc{isp}s.
+	They have \texttt{shared-cost} relationships
+	with other \emph{Tier 2} \textsc{isp}s.
+	\item \emph{Tier 3} networks
+	are either stub domains or smaller \textsc{isp}s.
+	They sometimes have \texttt{shared-cost} peering relationships.
+	\item The large content providers that are managing large datacenters.
+\end{itemize}
 \end{document}
