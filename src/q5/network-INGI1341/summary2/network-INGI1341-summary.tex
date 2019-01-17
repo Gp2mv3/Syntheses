@@ -4026,4 +4026,256 @@ can be divided in four categories:
 	They sometimes have \texttt{shared-cost} peering relationships.
 	\item The large content providers that are managing large datacenters.
 \end{itemize}
+
+\section{Datalink Layer Technologies}
+\subsection{The Point-to-Point Protocol}
+The first solution to transport \textsc{ip} packets over a serial line
+is \emph{Serial Line \textsc{ip}}.
+It is a simple character stuffing technique applied to \textsc{ip} packets.
+The \texttt{END} character marks the boundary of a packet,
+and \texttt{ESC} is an escape character.
+The Point-to-Point protocol is a family of three protocols used together:
+\begin{itemize}
+	\item The \emph{Point-to-Point Protocol}
+	defines the framing technique to transport network layer packets.
+	\item The \emph{Link Control Protocol}
+	negotiates the options and authenticates the session
+	by using credentials.
+	\item The \emph{Network Control Protocol}
+	negotiates protocol-specific options.
+\end{itemize}
+
+A \textsc{ppp} frame is composed of the following fields:
+\begin{itemize}
+	\item A $1$-byte flag with \texttt{01111110} to start and end the frame.
+	\item \texttt{Address} and \texttt{Control}.
+	\item \texttt{Protocol} contains the network layer protocol.
+	\item \texttt{Network Layer Packet} is the packet.
+	\item \texttt{Frame Check Sequence} is a \textsc{crc}.
+\end{itemize}
+
+\subsection{Ethernet}
+Some important parameters for Ethernet networks are
+\begin{itemize}
+	\item The commercial Ethernet
+	is standardised at \SI{10}{\mega\byte\per\second}.
+	\item The slot time is set at \SI{51.2}{\micro\second}.
+	\item The initial frame format used by Xerox
+	contains $8$-bit source and destination
+	addresses, a $16$-bit type indication,
+	up to $554$ bytes of payload and a $16$-bit \textsc{crc}.
+\end{itemize}
+
+Ethernet uses \textsc{mac} addresses structured as follows:
+\begin{itemize}
+	\item The first bit identifie a network adapter or a multicast group
+	(\texttt{0}: unicast, \texttt{1}: multicast).
+	\item The upper $24$ bits encode an Organisation Unique Identifier,
+	which identifies a block of addresses.
+	\item The lower $24$ bits encode an adapter identifier.
+\end{itemize}
+
+The original Ethernet frames are composed of five fields:
+\begin{itemize}
+	\item (A preamble used by the physical layer of the receiver
+	to synchronise with the sender's clock.)
+	\item The \texttt{Destination Address}.
+	\item The \texttt{Source Address} (always unicast).
+	\item The \texttt{(Ether)Type}.
+	\item The \texttt{Payload} ($46$--$1500$ bytes).
+	\item The \texttt{CRC}.
+\end{itemize}
+
+The only difference between the original \textsc{dix} specification,
+and the 802.3 frame format, is that the \texttt{Type} field is replaced
+with a \texttt{Length} field,
+containing the number of useful bytes in the payload.
+
+\begin{myrem}[What is the Ethernet service?]
+	An Ethernet network provides an unreliable connectionless service.
+	It support three different transmission modes:
+	unicast, multicast and broadcast.
+	A good Ethernet network should provide a service that
+	\begin{itemize}
+		\item delivers frames to their destination
+		with a very high probability of succesful delivery;
+		\item does not reorder the transmitted frames.
+	\end{itemize}
+\end{myrem}
+
+All devices connected to a star-shaped 10BaseT network
+are attachedd to a twisted pair cable that ends in the telecom closet.
+When one twisted pair is damaged, this only affects one device.
+An Ethernet hub is a physical layer relay that receives an electrical signal
+on one of its interfaces,
+regenerates the signal and transmits it over all its other interfaces.
+
+When building a network with hubs
+\begin{itemize}
+	\item the network should be a tree,
+	\item collisions can happen and should be handled by \textsc{csma/cd}.
+\end{itemize}
+Various standards have been developed over the years,
+up to \SI{100}{\giga\bit\per\second} Ethernet.
+
+\subsubsection{Ethernet Switches}
+An Ethernet switch is a relay that operates in the datalink layer,
+and can selectively forward frames over each interface.
+For this, it maintains a \textsc{mac} address table.
+The \textsc{mac} address learning algorithm runs on each Ethernet switch
+and extracts the source address of the received frames
+and remembers the port over which a frame has been received for each.
+
+An Ethernet switch forwards Ethernet frames as follows:
+\begin{enumerate}
+	\item It updates its \textsc{mac} address table
+	with the source address of the frame.
+	This address table has a timestamp to expire old entries.
+	\item Forward the received unicast frame,
+	either selectively or by broadcasting.
+\end{enumerate}
+
+The Spanning Tree Protocol allows switches
+to automatically disable ports to ensure that
+the network does not contain any cycles that could cause frames to loop forever.
+
+\subsubsection{The Spanning Tree Protocol (802.1d)}
+The \textsc{stp} is a distributed protocol that is used by switches
+to reduce the network topology to a spanning tree.
+
+Switches running the \textsc{spt} exchange \textsc{bpdu}s.
+The spanning tree is built by first selecting
+the switch with the smallest identifier as the root of the tree.
+The branches of the spanning tree are then composed of the shortest paths
+that allow all of the switches that compoes the network to be reached.
+\textsc{bpdu}s contain the following information:
+\begin{itemize}
+	\item the identifier of the root switch, \texttt{R};
+	\item the cost of the shortest path between
+	the switch that sent the \textsc{bpdu} and the root switch, \texttt{c};
+	\item the identifier
+	of the switch that sent the \textsc{bpdu}, \texttt{T};
+	\item the number of the switch port
+	over which the \textsc{bpdu} was sent, \texttt{p}.
+\end{itemize}
+A \textsc{bpdu} is then represented as \texttt{<R,c,T,p>}.
+The following Python function could implement
+the ordering relationship
+between two \textsc{bpdu}s \texttt{b1} and \texttt{b2}.
+\begin{minted}{python}
+# returns True if bpdu b1 is better than bpdu b2
+def better(b1, b2) :
+	return  ( (b1.R < b2.R) or
+		( (b1.R==b2.R) and (b1.c<b2.c) ) or
+		( (b1.R==b2.R) and (b1.c==b2.c) and (b1.T<b2.T) ) or
+		( (b1.R==b2.R) and (b1.c==b2.c) and (b1.T==b2.T) and (b1.p<b2.p) ) )
+\end{minted}
+The cost associated to port \texttt{p} is \texttt{cost[p]}.
+A switch port can be in three different states:
+\emph{Root}, \emph{Designated} or \emph{Blocked}.
+All the ports on the root switch are in the Designated state.
+
+When \textsc{bdpu} \texttt{<R,c,T,p>} is received on port \texttt{q},
+the switch computes the port's root priority vector,
+\texttt{V[q] = <R,c+cost[q],T,p>}.
+The last root priority vector for each port is stored in a table.
+The switch then compares its own identifier
+with the smallest identifier in the table.
+If its own identifier is smaller,
+the switch is the root of the spanning tree,
+and the \textsc{bpdu} is then \texttt{<R,0,R,p>}.
+Otherwise,
+the best priority vector is chosen, and the port corresponding to it
+becomes the Root port of the switch.
+The switch can then compute its own \textsc{bpdu} as \texttt{R,c,S,p}.
+
+The switch compares its own \textsc{bpdu}
+with the last received one on each port.
+If the switch has the better \textsc{bpdu},
+the port becomes Designated,
+otherwise it becomes Blocked.
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{lccc}
+		Port state & Receives \textsc{bpdu}s & Sends \textsc{bpdu}s & Handles data frames \\
+		\hline
+		Blocked & Yes & No & No \\
+		Root & Yes & No & Yes \\
+		Designated & Yes & Yes & Yes
+	\end{tabular}
+\end{table}
+
+\textsc{bpdu}s contain additional fields:
+\texttt{Age} and \texttt{Maximum Age}.
+The \texttt{Age} is incremented every second
+until it reaches \texttt{Maximum Age}.
+This shouldn't happen if the network is stable, hence if this happens,
+the \textsc{stp} should be restarted as a switch has failed.
+
+\subsubsection{Virtual \textsc{lan}s}
+Ethenet switches can create Virtual Local Area Networks, that is,
+sets of ports attached to one or more Ethernet switches.
+When a switch receives a frame with an unknown or multicast destination,
+it forwards it over all the ports that belong to the same \textsc{vlan}.
+When a switch learns a source address on a port,
+it associates it to the \textsc{vlan} of this port.
+
+To allow switches to differentiate between \textsc{vlan}s,
+an identifier for each is placed inside the headers of the frames.
+The 802.1q header contains a \texttt{VLAN} field
+that contains the \textsc{vlan} identifier of each frame.
+
+\subsection{802.11 Wireless Networks}
+802.11 networks use the \textsc{csma/ca} Medium Access Control technique.
+There an two main types of WiFi networks:
+\begin{itemize}
+	\item \emph{independent} networks
+	compose of a set of devices that communicate with each other;
+	\item \emph{infrastructure} networks.
+\end{itemize}
+Infrastructure networks contains one or more access points
+attached to a fixed \textsc{lan} that is connected to other networks
+such as the Internet.
+An 802.11 access point is a relay that operates in the datalink layer.
+
+An 802.11 frame contains a fixed length header and a variable length payload.
+The header contains the following important fields:
+\begin{itemize}
+	\item The \texttt{Frame Control} field,
+	which contains flags that indicate various information about the frame.
+	\item The \texttt{Duration} reserves the transmission channel.
+	This field is usually set to the time required
+	to transmit one acknowledgment frame after a \textsc{sifs} delay.
+	\item The \texttt{Sequence Control} field contains a sequence number.
+	\item Three \texttt{Address fields}.
+	Their role is specified in the \texttt{Frame Control} field.
+\end{itemize}
+
+802.11 control frames contain a \texttt{Frame Control}, \texttt{Duration}
+and one or two \texttt{Address} fields.
+\texttt{RTS}/\texttt{CTS} frames are used to reserve the transmission channel.
+\texttt{RTS} frames contain a \texttt{Duration}
+and the transmitter and receiver addresses.
+\texttt{CTS} frames are similar to the acknowledgment frames.
+
+The 802.11 layer only provides an unreliable connectionless service.
+
+802.11 networks use various \emph{management frames}:
+\begin{itemize}
+	\item \emph{Beacon frames}.
+	These frames are broadcast regularly by access points
+	and contain information about their capabilities
+	and a Service Set Identity, \texttt{ssid}.
+	\item WiFi stations can send Probe Request frames
+	to force the access points to return a Probe Response frame.
+\end{itemize}
+Management frames are also used to allow WiFi stations
+to be associated with an access point.
+When it wants to be associated to an access point,
+a WiFi station sends an Association Request frame to this access point.
+This frame contains some parameters chosen by the station and
+the \textsc{ssid} that it requests to join.
+The access point replies with an Association Response frame
+if it accepts the station.
 \end{document}
