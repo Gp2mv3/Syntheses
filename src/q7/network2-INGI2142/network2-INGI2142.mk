@@ -1,4 +1,4 @@
-NAME=advSecu
+NAME=network2
 OPTION=INGI
-CODE=2144
+CODE=2142
 include $(BASE_DIR)../../q7.mk
