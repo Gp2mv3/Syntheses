@@ -1,3 +1,3 @@
 TYPE=summary
 NUM=2
-include $(BASE_DIR)../network-INGI1341.mk
+include ../network-INGI1341.mk
