@@ -4,8 +4,8 @@
 #PDFVIEWER=evince # GNOME
 #PDFVIEWER=okular # KDE
 #PDFVIEWER=xpdf # lightweight
-#PDFVIEWER=xdg-open # Default pdf viewer - GNU/Linux
-PDFVIEWER=open # Default pdf viewer - Mac OS
+PDFVIEWER=xdg-open # Default pdf viewer - GNU/Linux
+#PDFVIEWER=open # Default pdf viewer - Mac OS
 ifneq (,$(filter $(TYPE),exam test))
   MAIN_NAME=${NAME}-${OPTION}${CODE}-${TYPE}-${YEAR}-${MONTH}-${MINMAJ}
 else
