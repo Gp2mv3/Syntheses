@@ -1,2 +1,2 @@
 TYPE=summary
-include $(BASE_DIR)../offshoregeotech-GCIV2074.mk
+include ../offshoregeotech-GCIV2074.mk
