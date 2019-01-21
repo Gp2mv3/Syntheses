@@ -2140,7 +2140,7 @@ la structure ou la sparsité, par exemple.
 \subsection{Projection sur les espaces de Krylov}
 Les méthodes itératives détaillées ici se basent sur
 l'idée de projeter un problème $m$-dimensionnel
-dans un sous-ensemble de Krylov de dimension moins élevée.
+sur un sous-ensemble de Krylov de dimension moins élevée.
 Soit une matrice $A$ et un vecteur $b$.
 La \emph{séquence de Krylov} associée
 est l'ensemble de vecteurs $b, Ab, A^2b, \ldots$,
@@ -2170,7 +2170,7 @@ qui permet de mettre une matrice sous forme de Hessenberg.
 
 \subsection{Forme de Hessenberg}
 Une matrice $H$ est dite sous forme de Hessenberg
-si les entrées $h_{ij}$ sont nulles pour tout $i+1 < j \le m$.
+si les entrées $h_{ij}$ sont nulles pour tout $j+1 < i \le m$.
 Afin de mettre une matrice sous forme de Hessenberg,
 on commence avec une matrice $A$,
 et une réflecteur de Householder $Q_1^*$ qui laisse la première ligne inchangée.
@@ -2211,16 +2211,18 @@ A q_n = h_{1n} q_1 + \cdots + h_{nn}q_n + h_{n+1, n} q_{n+1}\,.
 \]
 
 Les vecteurs $\{\,q_k\,\}$
-forment une base orthogonale pour les sous-espaces successifs dy système $Ax=b$.
+forment une base orthonormale
+pour les sous-espaces successifs du système $Ax=b$.
 L'itération d'Arnoldi construit itérativement cette base.
 $\mathcal{K}_n = \langle b, Ab, A^2b, \ldots, A^{n-1}b \rangle =
 \langle q_1, \ldots, q_n \rangle \subseteq \Cm$.
 C'est la première interprétation de l'itération d'Arnoldi.
 Il en existe une deuxième,
 selon laquelle l'itération d'Arnoldi est un calcul de projections
-dans des espaces de Krylov successifs.
+sur des espaces de Krylov successifs.
 Pour le voir, on note que le produit $Q_n^* Q_{n+1}$
-est la matrice $n \times (n+1)$ avec des $1$ sur la diagonale principale
+est la matrice identité $n \times (n+1)$
+avec des $1$ sur la diagonale principale
 et des zéros dans toutes les autres positions.
 Par conséquent, $Q_n^* Q_{n+1} \tilde{H}_n$
 est la matrice de Hessenberg $n \times n$ obtenue
@@ -2230,8 +2232,8 @@ On a donc
 H_n = Q_n^* A Q_n\,.
 \]
 Cette matrice peut être interprétée
-comme la représentation de la base $\{\,q_1, q_2, \ldots, q_n\,\}$
-de la projection orthogonale de $A$ dans $\mathcal{K}_n$.
+comme la représentation dans la base $\{\,q_1, q_2, \ldots, q_n\,\}$
+de la projection orthogonale de $A$ sur $\mathcal{K}_n$.
 Considérons l'opérateur linéaire $\mathcal{K}_n \to \mathcal{K}_n$ suivant:
 soit $v \in \mathcal{K}_n$ ;
 on lui applique $A$,
@@ -2245,25 +2247,28 @@ La projection $P$ est orthogonale car $P = P^*$.
 
 Un autre raisonnement, similaire, est le suivant :
 si $v \in \Cm$,
-$Q_n^* v$ donne les composantes de la projection de $v$ dans l'espace
+$Q_n^* v$ donne les composantes de la projection de $v$ sur l'espace
 des $n$ colonnes de $Q_n$.
-$Q_n Q_n^* v = Pv$ est alors la projection de $v$ dans $Q_n$.
+$Q_n Q_n^* v = Pv$ est alors la projection de $v$ sur $Q_n$.
 La matrice $A$ est un ensemble de vecteurs colonnes ;
-sa projection dans $Q_n$ est donc
+sa projection sur $Q_n$ est donc
 \[
 PA = Q_n Q_n^* A\,.
 \]
-La projection du système $Ax = b$ dans $Q_n$ est donc
+La projection du système $Ax = b$ sur $Q_n$ est donc
 \begin{align*}
 Pb &= PA Px \\
 \iff Q_n Q_n^* b &= Q_n Q_n^* A Q_n Q_n^* x \\
-\iff Q_n^* b &= Q_n^* A Q_n Q_n^* x\,.
+\iff Q_n^* b &= Q_n^* A Q_n Q_n^* x\,,
 \end{align*}
+où le passage de la deuxième à la troisième ligne
+se fait en prémultipliant par $Q_n^*$.
 Dans cette équation,
 $Q_n^* b$ est la composante de $Pb$ dans $Q_n$,
 $Q_n^* x$ est la composante de $Px$ dans $Q_n$ et
-$Q_n^* A Q_n$ la projection de l'opérateur $A$ dans $Q_n$.
-On a alors
+$Q_n^* A Q_n$ la projection de l'opérateur $A$ sur $Q_n$.
+On a alors\footnote{En se rappelant que
+$Q_n^* Q_{n+1} \tilde{H}_n$ est  $\tilde{H}_n$ sans sa dernière ligne.}
 \[
 A Q_n = Q_{n+1} \tilde{H}_n \implies H_n = Q_n^* A Q_n\,,
 \]
@@ -2288,6 +2293,144 @@ grâce à un choix judicieux des vecteurs $q_k$.
 	\]
 \end{mytheo}
 
+\section{GMRES}
+L'itération d'Arnoldi peut être utilisée pour résoudre des systèmes.
+L'algorithme pour ceci s'appelle \textsc{gmres}.
+
+\subsection{Minimisation de résidu dans $\mathcal{K}_n$}
+On essaie de résoudre le système $Ax = b$, avec $A \in \Cmm$ et $b \in \Cm$.
+On essaie de trouver $x_* = A^{-1}b$.
+
+L'idée de l'algorithme est
+à l'itération $n$,
+on approxime $x_*$ par le vecteur $x_n \in \mathcal{K}_n$ qui minimise
+la norme du résidu $r_n = b - Ax_n$.
+Le vectuer $x \in \mathcal{K}_n$ s'écrit comme
+\[
+x = c_0 b + c_1 Ab + \cdots + c_{n-1} A^{n-1} b = q(A) b\,,
+\]
+où $q(z) = \sum_{i=0}^{n-1} c_i z^i$.
+Le résidu s'écrit alors $r_n = b - A x_n = p_n(A) b$,
+où $p_n \in P_n$, où $P_n$ est l'ensemble des polynômes $p$ de degré
+plus petit ou égal à $n$ tels que $p(0) = 1$.
+D'autres façons équivalentes d'écrire ceci existent:
+\begin{align*}
+	\min &\norm{r_n}\\
+	&\norm{b - Ax_n}\\
+	&\norm{AK_nc - b}\\
+	&\norm{p(A)b}\\
+	&\norm{AQ(n)y - b}\,.
+\end{align*}
+On résout donc un système linéaire (au sens des moindres carrés)
+de taille $m \times n$.
+On utilise l'itération d'Arnoldi $AQ_n = Q_{n+1} \tilde{H}_n$
+pour en réduire la taille.
+On note que le problème revient à résoudre
+\[
+\norm{Q_{n+1} \tilde{H}_n y - b} = \textnormal{minimum.}
+\]
+Comme les deux vecteurs dans la norme
+sont dans l'espace des colonnes de $Q_{n+1}$,
+multiplier à gauche par $Q_{n+1}^*$ ne change pas cette norme.
+On peut donc aussi minimiser la norme $\norm{\tilde{H}_n y - Q_{n+1}^*b}$.
+Enfin, on note que $Q_{n+1}^* b = \norm{b} (1, 0, 0, \ldots, 0)^*$,
+et on écrit la forme finale du problème de moindres carrés \textsc{gmres}:
+\[
+\norm{\tilde{H}_n y - \norm{b} e_1} = \textnormal{minimum.}
+\]
+À l'étape $n$, on résout ce problème pour trouver $y$,
+et on dit que $x_n = Q_n y$.
+On note que ce nouveau problème est de dimension $(n+1) \times n$.
+
+\subsection{Algorithme \textsc{gmres}}
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{Le problème matriciel $Ax = b$ symétrique défini positif.}
+\KwResult{Une solution approchée, $x_n$.}
+\Begin{
+	$q_1 \gets b/\norm{b}$\;
+	\For{$n = 1, 2, 3, \ldots$}{
+		Trouver $\tilde{H}_n$ par Arnoldi\;
+		Trouver $y$ qui minimise $\norm{\tilde{H}_n y - \norm{b} e_1}$\;
+		$x_n \gets Q_n y$\;
+	}
+	\Return $x_n$\;
+}
+\caption{Algorithme \textsc{gmres}\label{algo:gmres}}
+\end{algorithm}
+
+\subsection{\textsc{gmres} et approximation polynomiale}
+L'itéré s'écrit
+\[
+x_n = q_n(A)b\,,
+\]
+comme dit précedemment.
+Le résidu correspondant $r_n = b-Ax_n$ est $r_n = (I - Aq_n(A))b$.
+On peut donc dire
+\[
+r_n = p_n(A) b
+\]
+pour un certain polynôme $p_n \in P_n$ tel que $p_n(z) = 1 - zq(z)$.
+\textsc{gmres} choisit les coefficients du polynôme $p_n$
+de sorte à minimiser la norme du résidu
+et résout donc le problème d'approximation suivant.
+\begin{myprob}[Problème d'approximation \textsc{gmres}]
+	Trouver $p_n \in P_n$ tel que $\norm{p_n(A)b}$ soit minimum.
+\end{myprob}
+
+\subsection{Convergence de \textsc{gmres}}
+On commence par établir deux observations.
+L'algorithme converge de façon monotone:
+\[
+\norm{r_{n+1}} \le \norm{r_n}\,.
+\]
+Cela se voit par le fait que $\norm{r_n}$
+est le plus petit possible pour $\mathcal{K}_n$,
+et qu'en élargissant le sous-espace à $\mathcal{K}_{n+1}$,
+la solution optimale dans le nouvel ensemble
+ne peut que diminuer la norme du résidu, ou la laisser inchangée.
+La deuxième observation est qu'en arithétique exacte,
+le procédé doit converger en $m$ pas au plus:
+\[
+\norm{r_m} = 0\,,
+\]
+car la solution appartient à $\mathcal{K}_m = \Cm$.
+
+Le critèree de convergence se déduit de
+\[
+\norm{r_n} = \norm{p_n(A) b} \le \norm{p_n(A)} \norm{b}\,,
+\]
+et on définit le \emph{taux de convergence} comme
+\[
+\frac{\norm{r_n}}{\norm{b}} = \inf_{p_n \in P_n} \norm{p_n(A)}\,.
+\]
+
+\subsection{Polynômes petits sur le spectre}
+On suppose maintenant que la matrice $A$ est diagonalisable,
+c'est-à-dire $A = V \Lambda V^{-1}$.
+Cela implique que
+\[
+\norm{p(A)} \le \norm{V} \norm{p(\Lambda)} \norm{V^{-1}}
+= \kappa(V) \sup_{z \in \Lambda(A)} \abs{p(z)}\,.
+\]
+On a alors le théorème suivant :
+\begin{mytheo}
+	A l'étape $n$ de l'itération \textsc{gmres},
+	le résidu $r_n$ satisfait
+	\[
+	\frac{\norm{r_n}}{\norm{b}} \le \inf_{p_n \in P_n} \norm{p_n(A)}
+	\le \kappa(V) \adjustlimits\inf_{p_n \in P_n} \sup_{z \in \Lambda(A)} \abs{p_n(z)}\,,
+	\]
+	où $\Lambda(A)$ est le spectre des valeurs propres de $A$,
+	$V$ est une matrice non singulière de vecteurs propres.
+\end{mytheo}
+Si $A$ n'est pas trop différente d'une matrice normale,
+donc avec un conditionnement peu élevé,
+et si on peut trouver un polynôme $p_n(z) = 1 + \sum_{i=1}^n p_i z^i$
+dont le module sur le spectre de $A$ décroit rapidement avec $n$,
+alors \textsc{gmres} converge rapidement.
+
 \section{Gradients conjugués}
 \subsection{Minimiser la $A$-norme de l'erreur}
 On suppose que la matrice $A$ est symétrique définie positive.
@@ -2308,13 +2451,12 @@ avec la propriété qu'à chaque étape $n$, $\norm{e_n}_A$ est minimisé.}
 
 \begin{algorithm}[H]
 \DontPrintSemicolon
-\KwData{Une matrice $A \in \Rmm$, un vecteur $b \in \Rm$
-et une tolérance relative $t$.}
+\KwData{Une matrice $A \in \Rmm$, un vecteur $b \in \Rm$.}
 \KwResult{Une solution approchée de l'équation matricielle $Ax = b$.}
 \Begin{
 	$x_0 \gets 0$, $r_0 \gets b$, $p_0 \gets r_0$\;
 	\For{$n \gets 1, 2, 3, \ldots$}{
-		$\alpha_n \gets (r^T_{n-1} r_{n-1}) / (p^T_{n-1} A r_{n-1})$ \Comment*[]{Longueur de pas}
+		$\alpha_n \gets (r^T_{n-1} r_{n-1}) / (p^T_{n-1} A p_{n-1})$ \Comment*[]{Longueur de pas}
 		$x_n \gets x_{n-1} + \alpha_n p_{n-1}$ \Comment*[]{Solution approchée}
 		$r_n \gets r_{n-1} - \alpha_n A p_{n-1}$ \Comment*[]{Résidu}
 		$\beta_n \gets (r^T r_n) / (r^T_{n-1} r_{n-1})$ \Comment*[]{Amélioration à cette étape}
@@ -2385,7 +2527,7 @@ sont regroupées dans le Théorème~\ref{theo:cgiter}.
 	Pour prouver le fait que les directions de recherches sont conjuguées,
 	on applique la formule $p_n \gets r_n + \beta_n p_{n-1}$ pour calculer
 	\[
-	p_n^T A p_j = r_n^T A p_j + \beta_n p_{n-1} A p_j\,.
+	p_n^T A p_j = r_n^T A p_j + \beta_n p^T_{n-1} A p_j\,.
 	\]
 	Si $j < n - 1$, les deux termes à droite
 	sont nuls par l'hypothèse d'induction\footnote{En développant
@@ -2405,7 +2547,7 @@ sont regroupées dans le Théorème~\ref{theo:cgiter}.
 	ont un effet nul\footnote{Comme
 	$r_n^T (-\alpha_n A p_{n-1}) = r_n^T (r_n - r_{n-1}) = r_n^T r_n$ et
 	$p_{n-1}^T (\alpha_n A p_{n-1}) = r_{n-1}^T r_{n-1}$
-	en utilisant $\alpha_n = (r^T_{n-1} r_{n-1}) / (p^T_{n-1} A r_{n-1})$.}.
+	en utilisant $\alpha_n = (r^T_{n-1} r_{n-1}) / (p^T_{n-1} A p_{n-1})$.}.
 \end{proof}
 
 \subsection{Optimalité de \textsc{cg}}
@@ -2416,7 +2558,7 @@ sont regroupées dans le Théorème~\ref{theo:cgiter}.
 	Si l'itération n'a pas encore convergé (c'est-à-dire $r_{n-1} \ne 0$),
 	alors $x_n$ est le seul point dans $\mathcal{K}_n$
 	qui minimize $\norm{e_n}_A$.
-	La convergence est monotone, $\norm{e_n}_A \le \norm{e_{n-1}_A}$,
+	La convergence est monotone, $\norm{e_n}_A \le \norm{e_{n-1}}_A$,
 	et $e_n = 0$ est atteint pour un certain $n \le m$.
 \end{mytheo}
 \begin{proof}
@@ -2480,21 +2622,23 @@ On vérifie
 La fonction $\varphi(x_n)$ a donc bien sa valeur minimale
 pour le même $x = x_*$ que $\norm{e}_A^2$.
 L'itération des gradients conjugués peut donc être interprétée
-comme un procédé itératif de minimisation d'une fonction quadratique $\varphi(x)$.
+comme un procédé itératif de minimisation
+d'une fonction quadratique $\varphi(x)$.
 À chaque étape, l'itéré $x_n$, qui minimise $\varphi(x)$
-sur tout $x$ dans l'espace à une dimension $x_{n-1} + \langle p_{n-1} \rangle$.
-La propriété spéciale de \textsc{cg} est que minimiser $x$ sur cet espace
-minimise en fait $x$ dans $\mathcal{K}_n$.
+sur tout $x$
+dans l'espace à une dimension $x_{n-1} + \langle p_{n-1} \rangle$ est calculé.
+La propriété spéciale de \textsc{cg} est que minimiser la fonction $\varphi(x)$
+sur cet espace la minimise dans $\mathcal{K}_n$.
 
 \subsection{\textsc{cg} et approximation polynomiale}
 L'itération des gradients conjugués résout le problème d'approximation suivant.
 \begin{myprob}{Problème d'approximation \textsc{cg}}
 	Trouver $p_n \in P_n$ tel que
 	\[
-	\norm{p_n(A) e_0}_A \qaud \textnormal{soit minimisé.}
+	\norm{p_n(A) e_0}_A \quad \textnormal{soit minimisé.}
 	\]
 \end{myprob}
-Dans cette équation, $e_0$ dénote l'erreur initiale,
+Dans cette équation, $e_0 = x_* - x_0 = x_*$ dénote l'erreur initiale,
 alors que $P_n$ est l'ensemble des polynômes $p$
 de degré plus petit ou égal à $n$
 avec $p(0) = 1$.
@@ -2551,9 +2695,10 @@ mais sans supposer quoi que ce soit sur leur localisation.
 	comme le polynôme $p(x) = \prod_{j=1}^n (1-x/\lambda_j) \in P_n$ existe
 	et est nul en tous les points de l'ensemble $\{\,\lambda_j\,\}$,
 	\[
-	\frac{\norm{e_n}_A}{\norm{e_0}_A} = \inf_{p \in P_n} \frac{\norm{p(A)e_0}_A}{\norm{e_0}_A} = 0\,,
+	\frac{\norm{e_n}_A}{\norm{e_0}_A} = \inf_{p \in P_n} \frac{\norm{p(A)e_0}_A}{\norm{e_0}_A} \le \adjustlimits\inf_{p \in P_n} \max_{\lambda \in \Lambda(A)} \abs{p(\lambda)} = 0\,,
 	\]
-	donc $\norm{e_n}_A = 0$.
+	pour le polynôme proposé.
+	On conclut donc $\norm{e_n}_A = 0$.
 \end{proof}
 
 Supposons ensuite qu'on ne sait rien sur le groupement des valeurs,
@@ -2575,6 +2720,166 @@ Ce théorème implique que pour $\kappa$ suffisamment grand,
 la convergence peut être attendue en $\bigoh(\sqrt{\kappa})$ itérations.
 Il s'agit d'une borne supérieure,
 et la convergence peut être plus rapide.
+
+\section{Préconditionnement}
+Les méthodes itératives convergent rapidement
+si le conditionnement est peu élevé.
+En général, on peut améliorer le conditionnement
+en utilisant un préconditionneur.
+
+\subsection{Préconditionneurs pour $Ax = b$}
+Si on a le système $Ax = b$ à résoudre,
+on peut résoudre le système équivalent $M^{-1}Ax = M^{-1}b$,
+qui a la même solution.
+Sa convergence quant à elle dépend des propriétés de $M^{-1}A$.
+Si ce préconditionneur est bien choisi,
+le système peut être résolu beaucoup plus vite.
+On ne calcule jamais explicitement le produit $M^{-1}A$.
+Un bon préconditionneur est un préconditionneur tel que
+les valeurs propres de $M^{-1}A$ soient proches de $1$,
+et que $\norm{M^{-1}A - I}_2$ soit petit.
+
+\subsection{Préconditionneurs à gauche, à droite et hermitiens}
+L'exemple donné ci-dessus est un préconditionneur à gauche,
+mais on peut aussi le faire à droite:
+\[
+AM^{-1}\hat{x} = b\,, \quad \textnormal{avec} \quad x = M^{-1}\hat{x}\,.
+\]
+
+Si $A$ est hermitienne définie positive,
+on veut essayer de préserver cette propriété.
+On veut donc avoir $M^{-1} = CC^*$ pour un certain $C$.
+On écrit alors
+\begin{align*}
+Ax = b &\implies M^{-1} A x = M^{-1} b\\
+&\implies C^* A x = C^* b \\
+\implies \underbrace{C^*AC}_{\hat{A}}\underbrace{C^{-1}x}_{\hat{x}} = \underbrace{C^*b}_{\hat{b}}\,,
+\end{align*}
+où la matrice $\hat{A}$ est hermitienne définie positive.
+
+\subsection{Préconditionnement de \textsc{cg}}
+Pour l'algorithme \textsc{cg},
+le préconditionnement est plus efficace s'il est intégré dans les calculs.
+On commence par calculer le nouveau résidu,
+\[
+\hat{r}_n = \hat{b} - \hat{A}\hat{x}_n = C^* b - (C^*AC)(C^{-1} x_n) = C^* A x_n = C^* r_n\,,
+\]
+et on définit les abréviations
+\begin{align*}
+	\hat{p}_n &= C^{-1}p_n\,,\\
+	\tilde{r}_n &= M^{-1} r_n\,.
+\end{align*}
+
+L'initialisation de l'algorithme devient alors $\hat{x}_0 = C^{-1} x_0 = 0$ et
+\[
+\hat{r}_0 = \hat{b} \iff C^* r_0 = C^* b \iff r_0 = b\,.
+\]
+La direction de recherche initiale devient
+\begin{align*}
+	\hat{p}_0 = \hat{r}_0 &\iff C^{-1} p_0 = C^* r_0\\
+	&\iff p_0 = M^{-1} r_0 = \tilde{r}_0\,.
+\end{align*}
+La longueur de pas devient
+\begin{align*}
+\hat{\alpha_n} &= \Big(\hat{r}_{n-1}^* \hat{r}_{n-1}\Big) \Big/ \Big(\hat{p}_{n-1}^* \hat{A} \hat{p}_{n-1} \Big) \\
+&= \Big(\big(C^* r_{n-1}\big)^* C^* r_{n-1}\Big) \Big/ \Big(\big(C^{-1} p_{n-1}\big)^* \big(C^* A C\big) \big(C^{-1} p_{n-1}\big) \Big) \\
+&= \Big( r_{n-1}^* C C^* r_{n-1} \Big) \Big/ \Big( p_{n-1}^* C^{-*} C^* A C C^{-1} p_{n-1} \Big) \\
+&= \Big( r_{n-1}^* \underbrace{C C^*}_{M^{-1}} r_{n-1} \Big) \Big/ \Big( p_{n-1}^* A p_{n-1} \Big) \\
+&= \Big( r_{n-1}^* \tilde{r}_{n-1} \Big) \Big/ \Big( p_{n-1}^* A p_{n-1} \Big)\,.
+\end{align*}
+La solution approchée est calculée comme
+\begin{align*}
+\hat{x}_n = \hat{x}_{n-1} + \hat{\alpha}_n \hat{p}_{n-1} &\iff C^{-1} x_n = C^{-1} x_{n-1} + \hat{\alpha_n} C^{-1} p_{n-1} \\
+&\iff x_n = x_{n-1} + \hat{\alpha}_n p_{n-1}\,.
+\end{align*}
+Les résidus sont mis à jour comme
+\begin{align*}
+\hat{r}_n = \hat{r}_{n-1} - \hat{\alpha}_n \hat{A} \hat{p}_{n-1} &\iff C^* r_n = C^* r_{n-1} - \hat{\alpha}_n (C^* A C)C^{-1} p_{n-1} \\
+&\iff r_n = r_{n-1} - \hat{\alpha}_n A p_{n-1}\,.
+\end{align*}
+Le facteur de correction du gradient $\beta_n$ est transformé comme suit:
+\begin{align*}
+\hat{\beta}_n &= \Big( \hat{r}_n^* \hat{r}_n \Big) \Big/ \Big( \hat{r}_{n-1}^* \hat{r}_{n-1} \Big) \\
+&= \Big( \big( C^* r_n \big)^* \big( C^* r_n \big) \Big) \Big/ \Big( \big( C^* r_{n-1} \big)^* \big( C^* r_{n-1} \big) \Big) \\
+&= \Big( r_n^* \underbrace{C C^*}_{M^{-1}} r_n \Big) \Big/ \Big( r_{n-1}^* \underbrace{C C^*}_{M^{-1}} r_{n-1} \Big) \\
+&= \Big( r_n^* \tilde{r}_n \Big) \Big/ \Big( r_{n-1}^* \tilde{r}_{n-1} \Big)\,.
+\end{align*}
+Finalement, on trouve la direction de recherche
+\begin{align*}
+\hat{p}_n = \hat{r}_n + \hat{\beta}_n \hat{p}_{n-1} &\iff C^{-1}p_n = C^* r_n + \hat{\beta}_n C^{-1} p_{n-1} \\
+&\iff p_n = M^{-1} r_n + \hat{\beta}_n p_{n-1} \\
+&\iff p_n = \tilde{r}_n + \hat{\beta}_n p_{n-1}\,,
+\end{align*}
+où on a mulitplié par $C$ et utilisé la définition de $M$
+à l'avant-dernière étape.
+
+L'algorithme obtenu est le suivant.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{Une matrice $A \in \Cmm$, un vecteur $b \in \Cm$.}
+\KwResult{Une solution approchée de l'équation matricielle $Ax = b$.}
+\Begin{
+	$x_0 \gets 0$, $r_0 \gets b$\;
+	Résoudre $M \tilde{r}_0 = r_0$ pour $\tilde{r}_0$\;
+	$p_0 \gets \tilde{r}_0$\;
+	\For{$n \gets 1, 2, 3, \ldots$}{
+		$\alpha_n \gets \Big(r^*_{n-1} \tilde{r}_{n-1}\Big) \Big/ \Big(p^*_{n-1} A p_{n-1}\Big)$ \Comment*[]{Longueur de pas}
+		$x_n \gets x_{n-1} + \alpha_n p_{n-1}$ \Comment*[]{Solution approchée}
+		$r_n \gets r_{n-1} - \alpha_n A p_{n-1}$ \Comment*[]{Résidu}
+		Résoudre $M \tilde{r}_n = r_n$ pour $\tilde{r}_n$\;
+		$\beta_n \gets (r^* \tilde{r}_n) / (r^*_{n-1} \tilde{r}_{n-1})$ \Comment*[]{Amélioration à cette étape}
+		$p_n \gets \tilde{r}_n + \beta_n p_{n-1}$ \Comment*[]{Direction de recherche}
+	}
+}
+\caption{Itération des gradients conjugués préconditionnés\label{algo:cgprec}}
+\end{algorithm}
+
+Comme cet algorithme résout le système $M\tilde{r}_n = r_n$ à chaque itération,
+on veut que ce système puisse être résolu rapidement.
+
+On cite plusieurs préconditionneurs, avec $M = L + D + L^*$ :
+\begin{itemize}
+	\item préconditionnement de Jacobi : $M = D$ ;
+	\item préconditionnement de Gauss-Seidel : $M = L + D$ ;
+	\item préconditionnement
+	par factorisation incomplète (\textsc{ilu}, \textsc{ic}) ;
+	\item etc\ldots
+\end{itemize}
+Le choix du préconditionneur dépend du problème.
+
+\subsection{Préconditionnement par factorisation \textsc{lu} incomplète}
+On adapte l'algorithme de la factorisation \textsc{lu} légèrement.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{Une matrice $A \in \Cmm$.}
+\KwResult{Une factorisation incomplète, en place.}
+\Begin{
+	\For{$i \gets 2, \ldots, m$}{
+		\For{$k \gets 1, \ldots, i-1$ et $(i, k) \in \mathcal{P}$}{
+			$a_{ik} \gets a_{ik} / a_{kk}$\;
+			\For{$j \gets k+1,\ldots,m$
+			et $(i, j) \in \mathcal{P}$}{
+				$a_{ij} \gets a_{ij} - a_{ik}a_{kj}$\;
+			}
+		}
+	}
+}
+\caption{Factorisation incomplète \textsc{ilu}\label{algo:ilu}}
+\end{algorithm}
+
+On calcule donc uniquement la mise à jour des éléments
+dans un certain ensemble appelé \emph{zero-pattern}, $\mathcal{P}$.
+\[
+\mathcal{P} \subseteq \{\,(\alpha,\beta): 1 \le \alpha, \beta \le m\,\}\,.
+\]
+Cet ensemble peut être choisi de plusieurs façons.
+On présente ici le choix
+qui donne lieu à la factorisation dite \og \textsc{ilu}0 \fg{} :
+\[
+\mathcal{P} = \mathrm{NZ}(A) = \{\,(\alpha, \beta): 1 \le \alpha, \beta \le m \,,\ a_{\alpha, \beta} \ne 0\,\}\,.
+\]
 
 \part{Matrices creuses}
 \label{part:sparse}
