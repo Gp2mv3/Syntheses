@@ -22,7 +22,7 @@ else ifneq (,$(filter $(TYPE),exercises))
 else ifeq ($(strip ${TYPE}),mcq)
 	OUT_MAIN_NAME:=QCM-${NAME}-${OPTION}${CODE}
 else ifeq ($(strip ${TYPE}),errata)
-	OUT_MAIN_NAME:=Books-${NAME}-${OPTION}${CODE}
+	OUT_MAIN_NAME:=Errata-${NAME}-${OPTION}${CODE}
 else ifeq ($(strip ${TYPE}),test)
 	OUT_MAIN_NAME:=${OPTION}${CODE}-${YEAR}-${MONTH}
 else ifeq ($(strip ${TYPE}),formulaire)
@@ -58,8 +58,10 @@ endif
 ifneq (,$(filter $(TYPE),exam test exercises mcq))
   ALL=$(MAIN_NAME).pdf $(MAIN_NAME_SOL).pdf
   OUT_MAIN_NAME_SOL=${OUT_MAIN_NAME}-Sol
+  ALL_RELEASE=release_$(MAIN_NAME) release_$(MAIN_NAME_SOL)
 else
   ALL=${MAIN_NAME}.pdf
+  ALL_RELEASE=release_$(MAIN_NAME)
 endif
 
 define commit_function
@@ -78,7 +80,18 @@ all: $(ALL)
 
 pdf: $(ALL) cleanaux
 
-release: $(ALL) cleanaux
+release: $(ALL) cleanaux prerelease $(ALL_RELEASE)
+	echo $(ALL_RELEASE)
+
+prerelease:
+	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT}))
+	mkdir -p "${MYPATH}"
+
+release_$(MAIN_NAME):
+	cp "$(MAIN_NAME).pdf" "${MYPATH}/$(OUT_MAIN_NAME).pdf"
+
+release_$(MAIN_NAME_SOL):
+	cp "$(MAIN_NAME_SOL).pdf" "${MYPATH}/$(OUT_MAIN_NAME_SOL).pdf"
 
 $(MAIN_NAME).pdf: $(MAIN_NAME).tex
 	$(call commit_function,$(MAIN_NAME))
@@ -89,21 +102,11 @@ else
 	latexmk -pdf $(PVC) -pdflatex="pdflatex -shell-escape -enable-write18 '\def\DATUM{${DATE}} \
 	\def\COMMITID{${COMMIT_ID}} \def\COMMITINFOS{} \input{%S}'" -use-make $(MAIN_NAME).tex
 endif
-ifeq ($(MAKECMDGOALS),release)
-	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT}))
-	mkdir -p "${MYPATH}"
-	cp  "$(MAIN_NAME).pdf" "${MYPATH}/$(OUT_MAIN_NAME).pdf"
-endif
 
 $(MAIN_NAME_SOL).pdf: $(MAIN_NAME).tex
 	$(call commit_function,$(MAIN_NAME))
 	latexmk -pdf $(PVC) -pdflatex="pdflatex -jobname=$(MAIN_NAME_SOL) -shell-escape -enable-write18 '\def\Sol{true} \
 	\def\DATUM{${DATE}} \def\COMMITINFOS{} \def\COMMITID{${COMMIT_ID}} \input{%S}'" -use-make $(MAIN_NAME).tex -jobname=$(MAIN_NAME_SOL)
-ifeq ($(MAKECMDGOALS),release)
-	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT}))
-	mkdir -p "${MYPATH}"
-	cp "$(MAIN_NAME_SOL).pdf" "${MYPATH}/$(OUT_MAIN_NAME_SOL).pdf"
-endif
 
 # Supprime tout
 clean: cleanaux
@@ -112,4 +115,4 @@ clean: cleanaux
 # Supprime les fichiers auxilliaires
 cleanaux:
 	latexmk -c
-	rm -rf *.aux *.fdb_latexmk *.log *.out *.bbl *.run.xml *.toc *.bcf
+	rm -rf *.aux *.fdb_latexmk *.log *.out *.bbl *.run.xml *.toc *.bcf *.pygstyle *.pygtex

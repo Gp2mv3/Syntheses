@@ -19,10 +19,6 @@ OUT_MAIN_NAME=How_to_Contribute
 #default: all
 #default: show
 
-all: $(PDF_NAME)
-
-pdf: $(PDF_NAME) clean
-
 # MAIN LATEXMK RULE
 
 # -pdf tells latexmk to generate PDF directly (instead of DVI).
@@ -37,6 +33,8 @@ pdf: $(PDF_NAME) clean
 $(PDF_NAME): $(MAIN_NAME).tex
 	latexmk -pdf -pdflatex="pdflatex -shell-escape -enable-write18" -use-make $(MAIN_NAME).tex
 
+pdf: $(PDF_NAME) clean
+
 # Supprime les fichiers auxilliaires
 clean:
 	latexmk -c
@@ -45,7 +43,10 @@ clean:
 show: $(PDF_NAME)
 	$(PDFVIEWER) $(PDF_NAME) 2> /dev/null &
 
-release: all
+release: $(PDF_NAME) clean prerelease
+	cp "$(MAIN_NAME).pdf" "${MYPATH}/$(OUT_MAIN_NAME).pdf"
+	echo $(ALL_RELEASE)
+
+prerelease:
 	$(eval MYPATH:=$(shell python3 ../mysmartcp.py -1))
 	mkdir -p "${MYPATH}"
-	cp  "$(MAIN_NAME).pdf" "${MYPATH}/$(OUT_MAIN_NAME).pdf"
