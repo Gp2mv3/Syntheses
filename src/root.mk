@@ -81,7 +81,6 @@ all: $(ALL)
 pdf: $(ALL) cleanaux
 
 release: $(ALL) cleanaux prerelease $(ALL_RELEASE)
-	echo $(ALL_RELEASE)
 
 prerelease:
 	$(eval MYPATH:=$(shell python3 ${SMARTCP} ${INPUT}))
@@ -115,4 +114,5 @@ clean: cleanaux
 # Supprime les fichiers auxilliaires
 cleanaux:
 	latexmk -c
-	rm -rf *.aux *.fdb_latexmk *.log *.out *.bbl *.run.xml *.toc *.bcf *.pygstyle *.pygtex
+	rm -rf *.aux *.fdb_latexmk *.log *.out *.bbl *.run.xml *.toc *.bcf
+	rm -rf *.pygstyle *.pygtex _minted*
