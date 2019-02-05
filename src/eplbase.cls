@@ -81,6 +81,9 @@
 % For multiple columns like in beamer
 \RequirePackage{multicol}
 
+% \begin{figure}[H] to place the figure at the exact position
+\RequirePackage{float}
+
 \RequirePackage{tikz}
 \usetikzlibrary{positioning, calc}
 
