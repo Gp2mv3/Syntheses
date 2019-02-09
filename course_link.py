@@ -26,8 +26,7 @@ def main():
             titre = document['clients'][0]['output']['parameters'][0]['parameters'][5]['mapping'][name]
         except KeyError:
             titre = name
+    print(titre)
 
-    print(titre.encode('utf-8'))
-            
 if __name__ == "__main__":
     main()
