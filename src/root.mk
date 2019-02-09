@@ -35,7 +35,7 @@ else ifeq ($(strip ${TYPE}),formulaire)
 	endif
 else ifeq ($(strip ${TYPE}),exam)
 	OUT_MAIN_NAME:=${OPTION}${CODE}-${YEAR}-${MONTH}
-	ifneq (,$(filter $(strip ${MINMAJ}),Maj Majeure)) 
+	ifneq (,$(filter $(strip ${MINMAJ}),Maj Majeure))
 		OUT_MAIN_NAME:=$(strip $(OUT_MAIN_NAME))-Majeure
 	else ifneq (,$(filter $(strip ${MINMAJ}),Min Mineure))
 		OUT_MAIN_NAME:=$(strip $(OUT_MAIN_NAME))-Mineure
@@ -116,4 +116,4 @@ clean: cleanaux
 cleanaux:
 	latexmk -c
 	rm -rf *.aux *.fdb_latexmk *.log *.out *.bbl *.run.xml *.toc *.bcf
-	rm -rf *.pygstyle *.pygtex _minted*
+	rm -rf *.pygstyle *.pygtex _minted* *.pdf_tex svg-inkscape*
