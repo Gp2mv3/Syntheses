@@ -1,0 +1,218 @@
+\subsection{} % Exercise 1.
+Let \(S\) be the set of all satisfiable boolean formulas
+from propositional logic.
+Show that \(S\) is ND-recursive.
+Is \(S\) also recursive?
+
+\begin{solution}
+One can write an ND-program which decides \(S\):
+\begin{minted}[escapeinside=||]{julia}
+function P_S(F)
+	index = 1
+	for v |$\in$| vars(F)
+		v = choose(1)
+		if v == 1
+			values[index] = true
+		else
+			values[index] = false
+		end
+		index += 1
+	end
+	return F(values) # 1 if true, 0 if false.
+end
+\end{minted}
+The existence of this program proves that \(S\) is ND-recursive.
+Since any ND-program can be translated to a regular program,
+ND-recursive is equivalent to recursive.
+\(S\) is thus also recursive.
+Note however that while the ND-program has \(\bigoh(f(x))\) complexity,
+its deterministic counterpart has \(\bigoh(2^{f(x)})\) complexity.
+\end{solution}
+
+\subsection{} % Exercise 2.
+For the following languages, choose the suitable automaton formalism
+(finite or pushdown automaton),
+write its diagram or its transition table,
+and write the corresponding grammar
+(regular grammar, context-free grammar).
+For regular languages, write a corresponding regular expression.
+\begin{enumerate}
+	\item \(L \subset \{a, b\}^*\),
+	consisting of all non-empty words with a length divisible by \(3\).
+	\item \(L \subset \{(,)\}^*\),
+	consisting of well-balanced parentheses,
+	\item \(L = \{a^n b^m a^n \mid n, m \in \N, m \ge 1\}\).
+\end{enumerate}
+
+\begin{solution}
+	\begin{enumerate}
+		\item We use the finite automaton formalism.
+		The state diagram for is given in \figuref{6.2.a}.
+		\begin{figure}[H]
+			\centering
+			\begin{tikzpicture}[shorten >=1pt,node distance=4cm,on grid,auto]
+			\node[state,initial] (q) {$\ell = 0$};
+			\node[state] (q_0) [right=of q]  {$\ell \equiv 1 \mod 3$};
+			\node[state] (q_1) [above right=of q_0] {$\ell \equiv 2 \mod 3$};
+			\node[state, accepting] (q_2) [below right=of q_0,align=center] {$\ell \equiv 0 \mod 3$ \\ $\ell \ne 0$};
+			\path[->]
+			(q) edge node {$a, b$} (q_0)
+			(q_0) edge  node {$a, b$} (q_1)
+			(q_1) edge  node  {$a, b$} (q_2)
+			(q_2) edge  node {$a, b$} (q_0);
+			\end{tikzpicture}
+			\caption{State diagram for \(L \subset \{a, b\}^*\),
+			consisting of all non-empty words
+			with a length divisible by \(3\).
+			The length is of a word is indicated by \(\ell\).}
+			\label{fig:6.2.a}
+		\end{figure}
+
+		The corresponding regular grammar
+		is defined as follows:
+		\begin{align*}
+			\Sigma &= \{a, b\}\,,\\
+			S &\to \varepsilon\,,\\
+			S &\to aA\,,\\
+			S &\to bA\,,\\
+			A &\to aB\,,\\
+			A &\to bB\,,\\
+			B &\to aS\,,\\
+			B &\to bS\,.
+		\end{align*}
+
+		The regular expression defining this language is
+		\( L = ((a + b) \cdot (a + b) \cdot (a + b))*\).
+		\item We use the pushdown automaton formalism.
+		The state diagram is given in \figuref{6.2.b}.
+		\begin{figure}[H]
+		\centering
+		\begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,auto]
+		\node[state,initial,accepting] (bal) {bal};
+		\node[state] (fail) [above right=of q]  {fail};
+		\node[state] (not bal) [below right=of q] {not bal};
+		\path[->]
+		(bal) edge node {$), Z/Z$} (fail)
+		(bal) edge[bend left] node {$(, Z/(Z$} (not bal)
+		(not bal) edge[bend left] node {$\varepsilon, Z/Z$} (bal)
+		(not bal) edge[loop right] node[align=left] {$(, (/(($ \\ $), (/\varepsilon$} (not bal);
+		\end{tikzpicture}
+		\caption{State diagram for \(L \subset \{(,)\}^*\),
+		consisting of well-balanced parentheses.}
+		\label{fig:6.2.b}
+		\end{figure}
+
+		The context-free grammar for this language is
+		\begin{align*}
+			\Sigma &= \{(, )\}\,,\\
+			S &\to (S)S\,,\\
+			S &\to \varepsilon\,.
+		\end{align*}
+		\item We use the pushdown automaton formalism/
+		The state diagram is given in \figuref{6.2.c}.
+		\begin{figure}[H]
+		\centering
+		\begin{tikzpicture}[shorten >=1pt,node distance=4cm,on grid,auto]
+		\node[state,initial] (q_0) {$q_0$};
+		\node[state] (q_1) [above right=of q_0]  {$q_1$};
+		\node[state] (q_2) [right=of q_1] {$q_2$};
+		\node[state] (q_3) [below right=of q_2] {$q_3$};
+		\node[state,accepting] (q_4) [below left=of q_3] {$q_4$};
+		\node[state] (q_5) [left=of q_4] {$q_5$};
+		\path[->]
+		(q_0) edge[bend left] node {$b, a/a$} (q_1)
+		(q_0) edge[loop right] node[align=left] {$a, Z/aZ$ \\ $a, a/aa$} (q_0)
+		(q_0) edge[bend right] node {$b, Z/Z$} (q_5)
+		(q_1) edge[loop above] node {$b, a/a$} (q_1)
+		(q_1) edge[bend left] node {$a, a/\varepsilon$} (q_2)
+		(q_2) edge[loop above] node {$a, a/\varepsilon$} (q_2)
+		(q_2) edge[bend left] node {$b, a/a$} (q_3)
+		(q_2) edge[bend right] node {$\varepsilon, Z/Z$} (q_4)
+		(q_4) edge[bend right] node[align=left] {$a, Z/Z$ \\ $b, Z/Z$} (q_3)
+		(q_5) edge[bend right] node {$\varepsilon, Z/Z$} (q_4)
+		(q_5) edge[loop below] node {$b, Z/Z$} (q_5);
+		\end{tikzpicture}
+		\caption{State diagram for
+		\(L = \{a^n b^m a^n \mid n, m \in \N, m \ge 1\}\).}
+		\label{fig:6.2.c}
+		\end{figure}
+
+		The context-free grammar for this language is
+		\begin{align*}
+			\Sigma &= \{a, b\}\,,\\
+			S &\to aSa\,,\\
+			S &\to bB\,,\\
+			B &\to bB\,,\\
+			B &\to \varepsilon\,.
+		\end{align*}
+	\end{enumerate}
+\end{solution}
+
+\subsection{} % Exercise 3.
+Suppose we have two languages \(M\) and \(L\) accepted by some finite automata
+and their corresponding diagrams.
+Show by construction that the following languages are also accepted
+by a finite automaton:
+\begin{enumerate}
+	\item \(\bar{L}\);
+	\item \(L \cdot M\);
+	\item \(L \cup M\).
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+	\item In order to construct a finite automaton that accepts \(\bar{L}\),
+	one need simply make all accepting states non accepting,
+	and make all non accepting states accepting.
+	\item Start by linking the accepting states of \(L\)
+	to the initial state of \(M\) by an empty transition.
+	Next, make the accepting states of \(L\) not accepting.
+	The initial state of \(M\) is also no longer an initial state,
+	but simply a normal state.
+
+	Note that there is no need to know when a word of \(L\) ends;
+	one can introduce nondeterminism.
+	\item Create a new initial state which links
+	to the initial states of \(L\) and \(M\)
+	(which are no longer initial states).
+	Using nondeterminism, this automaton accepts \(L \cup M\).
+\end{enumerate}
+\end{solution}
+
+\subsection{} % Exercise 4.
+True or false?
+\begin{enumerate}
+	\item The interpreter of finite automata
+	can be represented by a finite automaton.
+	\item If a language can be decided by a pushdown automaton,
+	then this language can also be decided by a finite automaton.
+	\item All subsets of a language accepted by
+	a finite automaton are recursive.
+	\item All regular languages can be modeled by a pushdown automaton.
+	\item There exist ND-recursive sets that are not recursive.
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+	\item False.
+	By the Hoare--Allison theorem, this is not possible.
+	Finite automata can only compute total functions,
+	which in turn means it cannot compute all total functions
+	(with its interpreter being one of the uncomputable ones).
+	\item False.
+	For example, \(L = \{a^n b^n \mid n \in \N\}^*\)
+	can only be decided by a pushdown automaton.
+	\item False.
+	While a finite automaton can define the set of natural numbers,
+	not all subsets of \(\N\) are recursive
+	(for example, \(\HALT \subsetneq \N\) but \(\HALT\) is not recursive).
+	\item True.
+	All regular languages can be modeled by a finite automaton,
+	which in turn can be modeled by a pushdown automaton,
+	as this model is more powerful.
+	\item False.
+	ND-recursivity is equivalent to recursivity,
+	since any ND-program which ND-decides the set
+	can be made deterministic at the cost of complexity.
+\end{enumerate}
+\end{solution}
