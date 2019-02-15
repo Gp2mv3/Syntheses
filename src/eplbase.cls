@@ -81,6 +81,9 @@
 % For multiple columns like in beamer
 \RequirePackage{multicol}
 
+% \begin{figure}[H] to place the figure at the exact position
+\RequirePackage{float}
+
 \RequirePackage{tikz}
 \usetikzlibrary{positioning, calc}
 
@@ -224,7 +227,7 @@ echo $(git log -1 --pretty=format:\%h "$(basename $(ls *.stderr) .stderr).tex")
    You are invited to join the discussions.}
    {Ça permet à tout le monde de les voir, les commenter et agir
    en conséquence.
-   Vous êtes d'ailleurs invité à participer aux discussions.}
+   Vous êtes d'ailleurs invités à participer aux discussions.}
 
    \IfLanguageName{english}
    {You can also find informations on the wiki}
