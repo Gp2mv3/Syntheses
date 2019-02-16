@@ -32,6 +32,8 @@ def main():
         
             cycle = document['clients'][0]['output']['parameters'][0]['parameters'][0]['mapping'][quadri]
             option_map = document['clients'][0]['output']['parameters'][0]['parameters'][1]['mapping'][option]
+            if option_map == 'MAT' and quadri < 7:
+            	option_map = 'MAP'
             titre = document['clients'][0]['output']['parameters'][0]['parameters'][5]['mapping'][name]
             if typ == 'exam' or typ == 'test':
                 year = int(sys.argv[6])
