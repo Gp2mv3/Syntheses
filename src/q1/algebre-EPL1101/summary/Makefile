@@ -1,2 +1,2 @@
 TYPE=summary
-include $(BASE_DIR)../algebre-LEPL1101.mk
+include $(BASE_DIR)../algebre-EPL1101.mk
