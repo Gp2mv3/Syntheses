@@ -1,2 +1,2 @@
 TYPE=summary
-include $(BASE_DIR)../strat-ECGE1315.mk
+include ../strat-ECGE1315.mk

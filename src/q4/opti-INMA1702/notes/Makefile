@@ -1,2 +1,2 @@
 TYPE=notes
-include $(BASE_DIR)../opti-INMA1702.mk
+include ../opti-INMA1702.mk

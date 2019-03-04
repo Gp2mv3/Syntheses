@@ -1,2 +1,2 @@
 TYPE=notes
-include $(BASE_DIR)../archi-INGI2241.mk
+include ../archi-INGI2241.mk

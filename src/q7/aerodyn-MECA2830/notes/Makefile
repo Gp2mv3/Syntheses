@@ -1,2 +1,2 @@
 TYPE=notes
-include $(BASE_DIR)../aerodyn-MECA2830.mk
+include ../aerodyn-MECA2830.mk
