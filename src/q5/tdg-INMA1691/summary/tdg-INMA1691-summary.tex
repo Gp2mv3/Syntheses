@@ -1,0 +1,2701 @@
+\documentclass[fr]{../../../eplsummary}
+
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{../../../eplmath}
+\usepackage{stmaryrd}
+\usepackage{centernot}
+\usepackage[french,ruled,vlined]{algorithm2e}
+
+\newcommand{\contradiction}{\hspace*{\fill}$\lightning$}
+\DeclareMathOperator{\val}{\mathrm{val}}
+\DeclareMathOperator{\capa}{\mathrm{cap}}
+
+\SetKwComment{Comment}{$\triangleright$\ }{}
+
+% TODO rewrite the proof of Euler's Theorem
+% TODO proof of Prim's Algorithm's correctness
+% TODO add graphs of isomorphism property for complementary graphs of isomorphic graphs
+% TODO add tikz drawings
+% TODO complete proof of Theorem 5.3.8 (Whitney) in D. West Intro to Graph Theory
+% TODO add missing theorems and proofs, comment out unneeded ones
+% TODO add some Ramsey theory (e.g. Erdos-Szekeres general case)
+% TODO add proof of Turàn's Theorem and some other stuff about cliques and independent sets
+
+\hypertitle{Mathématiques discrètes I: Théorie et algorithmique des graphes}{5}{INMA}{1691}
+{Gilles Peiffer}
+{Raphaël Jungers}[
+\paragraph{Remarque} Ce document reprend les notes prises
+au cours de l'année 2018-2019.
+Lors de cette année, le Jean-Charles Delvenne a été supléé par Raphaël Jungers.
+Il est donc possible que certaines parties soient
+absentes ou incomplètes (ou superflues)
+par rapport aux années précédentes.
+]
+
+\section{Concepts fondamentaux}
+\subsection{Introduction}
+De façon informelle,
+on peut dire qu'un graphe
+est \og un réseau de sommets reliés par des arêtes\fg{}.
+Un exemple d'un graphe serait donc par exemple
+celui à la \figuref{graph}.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+	\node[draw, circle] at (-1,2)  (1) {};
+	\node[draw, circle] at ( 1,2)  (2) {};
+	\node[draw, circle] at (-1,0)  (3) {};
+	\node[draw, circle] at ( 1,0)  (4) {};
+
+	\draw[-] (2) edge node[anchor = north] {} (3);
+	\draw[-] (2) edge node[anchor = north east] {} (4);
+\end{tikzpicture}
+\caption{Un graphe à 4 sommets et 2 arêtes.}
+\label{fig:graph}
+\end{figure}
+
+Pourquoi est-il intéressant d'étudier la théorie des graphes?
+Grâce aux résultats de celle-ci,
+énormément de problèmes semblant initialement compliqués
+sont réduits à des problèmes relativement simples.
+En effet, un acronyme intéressant,
+très souvent valable en théorie des graphes,
+est \textsc{TONCAS}:
+\og \emph{The Obvious Necessary Condition is Also Sufficient}\fg{},
+c'est-à-dire que si une condition paraît intuitivement nécessaire,
+il y a de bonnes chances qu'elle soit également suffisante.
+
+\subsection{Définitions}
+\begin{mydef}[Graphe]
+	Un \emph{graphe} $G$ est un triplet ordonné $(V, E, \phi)$, où:
+	\begin{itemize}
+	\item $V$ est un ensemble dont les éléments sont appelés sommets ou n\oe{}uds;
+	\item $E$ est un ensemble dont les éléments sont appelés arêtes;
+	\item $\phi$ est une fonction, dite fonction d'incidence,
+	qui associe à chaque arête un sommet ou une \emph{paire} de sommets.
+	\end{itemize}
+\end{mydef}
+Prenons de nouveau un exemple de graphe (\figuref{graph_2}).
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+	\node[draw, circle] at ( 0, 2.82)  (u) {$u$};
+	\node[draw, circle] at ( 0, 0  )  (x) {$x$};
+	\node[draw, circle] at (-4, 0  )  (y) {$y$};
+	\node[draw, circle] at ( 2,-2  )  (v) {$v$};
+	\node[draw, circle] at (-2,-2  )  (w) {$w$};
+
+	\draw (u) -- (v) node [midway, right] {$e_1$};
+	\draw (u) -- (w) node [midway, right] {$e_2$};
+	\draw (v) -- (w) node [midway, above] {$e_3$};
+	\draw (x) -- (v) node [midway, above] {$e_4$};
+	\draw (x) -- (w) node [midway, right] {$e_5$};
+	\draw (x) -- (u) node [midway, left] {$e_6$};
+	\draw (x) -- (y) node [midway, above] {$e_7$};
+\end{tikzpicture}
+\caption{Un graphe à 5 sommets et 7 arêtes.}
+\label{fig:graph_2}
+\end{figure}
+
+Pour ce graphe, on a
+\begin{align*}
+	V &= \{\,u, v, w, x, y\,\}\,,\\
+	E &= \{\,e_1, e_2, \dots, e_7\,\}\,,\\
+	\phi(e_1) &= (u,v)\,,\\
+	\phi(e_2) &= (u,w)\,,\\
+	&\vdotswithin{=}\\
+	\phi(e_7) &= (x,y)\,.\\
+\end{align*}
+
+\begin{mydef}[Degré]
+	Le degré d'un sommet
+	est le nombre d'arêtes incidentes à celui-ci.
+\end{mydef}
+
+\begin{myexem}[Sous-graphe]
+	Un exemple de sous-graphe du graphe en \figuref{graph_2}
+	est le graphe en \figuref{subgraph}.
+	\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}
+		\node[draw, circle] at ( 0, 0  )  (x) {$x$};
+		\node[draw, circle] at (-4, 0  )  (y) {$y$};
+		\node[draw, circle] at ( 2,-2  )  (v) {$v$};
+		\node[draw, circle] at (-2,-2  )  (w) {$w$};
+		\draw (v) -- (w) node [midway, above] {$e_3$};
+		\draw (x) -- (w) node [midway, right] {$e_5$};
+		\draw (x) -- (y) node [midway, above] {$e_7$};
+	\end{tikzpicture}
+	\caption{Un graphe chemin à 4 sommets et 3 arêtes,
+	sous-graphe de celui à 5 sommets et 7 arêtes en \figuref{graph_2}.}
+	\label{fig:subgraph}
+	\end{figure}
+	En général, un \emph{sous-graphe} du graphe $(V, E, \phi)$
+	est un graphe $(V', E', \phi')$ avec:
+	\begin{itemize}
+	\item $V' \subseteq V$;
+	\item $E' \subseteq E$;
+	\item $\phi'$ est la restriction de $\phi$ à $E'$.
+	\end{itemize}
+\end{myexem}
+
+\begin{mydef}[Graphe simple]
+	Un graphe simple est un graphe sans boucle ni arête multiple.
+\end{mydef}
+
+Il faut noter qu'un graphe est une notion abstraite,
+indépendante de sa représentation.
+Le graphe $G$ aurait tout aussi bien pu être noté sous la forme
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+	\node[draw, circle] at ( 2, 2)  (u) {$b$};
+	\node[draw, circle] at ( 2,-2)  (x) {$d$};
+	\node[draw, circle] at ( 4, 0)  (y) {$k$};
+	\node[draw, circle] at (-2, 2)  (v) {$a$};
+	\node[draw, circle] at (-2,-2)  (w) {$c$};
+
+	\draw (u) -- (v) node [midway, above] {$e_1$};
+	\draw (u) -- (w) node [near end, right] {$e_2$};
+	\draw (v) -- (w) node [midway, left] {$e_3$};
+	\draw (x) -- (v) node [near start, left] {$e_4$};
+	\draw (x) -- (w) node [midway, above] {$e_5$};
+	\draw (x) -- (u) node [midway, left] {$e_6$};
+	\draw (x) -- (y) node [midway, left] {$e_7$};
+\end{tikzpicture}
+\caption{Le graphe de la \figuref{graph_2} représenté différemment.}
+\label{fig:graph_2_iso}
+\end{figure}
+
+L'\emph{isomorphisme} est
+\[
+\begin{array}{cc}
+	y & k \\
+	x & d \\
+	w & c \\
+	u & b \\
+	v & a
+\end{array}
+\]
+
+\subsection{Isomorphisme de graphes}
+\begin{mydef}[Isomorphisme de graphes]
+	Deux graphes $(V, E, \phi)$ et $(V', E', \phi')$
+	sont dits \emph{isomorphes} s'il existe
+	des bijections $f \colon V \to V'$ et $g \colon E \to E'$ telles que:
+	\[
+	\phi(e) = (u,v) \iff \phi(g(e)) = \big(f(u),f(v)\big)\,.
+	\]
+	Deux graphes sont isomorphes
+	s'il y a une bijection entre les n\oe{}uds et les arêtes.
+\end{mydef}
+
+\begin{mypropo}[La relation d'isomorphisme est une relation d'équivalence]
+	Toute relation d'équivalence satisfait à 3 conditions:
+	\begin{itemize}
+		\item elle est réflexive;
+		\item elle est symétrique;
+		\item elle est transitive.
+	\end{itemize}
+	Prouvons que la relation d'isomorphisme de graphes
+	est une relation d'équivalence.
+\end{mypropo}
+\begin{proof}
+	Commençons par prouver la réflexivité.
+	Cela revient à dire qu'il y a un isomorphisme
+	entre le graphe et lui-même.
+	Pour prouver cela,
+	il suffit de remarquer
+	qu'un isomorphisme satisfaisant cette propriété
+	est la permutation identité,
+	car elle satisfait $G_1 \cong G_2$.
+	\bigbreak
+	Prouvons maintenant la symétrie de l'isomorphisme.
+	Soit $f \colon V(G_1) \to V(G_2)$,
+	alors $f^{-1}$ est un isomorphisme de $G_2 \to G_1$.
+	En effet, on sait que
+	\[
+	uv \in E(G_1) \iff f(u)f(v) \in E(G_2)\,.
+	\]
+	On sait alors que $\forall x,y \in V(G_2)$
+	\[
+	f^{-1}(x)f^{-1}(y) \in E(G_1) \iff xy \in E(G_2)\,.
+	\]
+	\bigbreak
+	Finalement, prouvons la transitivité.
+	Supposons que $f \colon V(F) \to V(G)$
+	et $g \colon V(G) \to V(H)$.
+	On a alors
+	\begin{align*}
+		uv \in E(F) &\iff f(u)f(v) \in E(G)\\
+		\intertext{et}
+		f(u)f(v) \in E(G) &\iff g\big(f(u)\big)g\big(f(v)\big) \in E(H)\,.
+	\end{align*}
+	Cela implique que $g \circ f$
+	est une bijection,
+	ce qui implique à son tour $F \cong H$.
+	\bigbreak
+	En combinant ces trois résultats,
+	on remarque donc que l'isomorphisme de graphes
+	est une relation d'équivalence.
+\end{proof}
+
+\begin{mypropo}[$G \cong H \iff \widebar{G} \cong \widebar{H}$]
+	La preuve est immédiate en observant
+	que toute non-arête de $G$ sera également
+	une non-arête de $H$.
+	Ce petit truc permet parfois
+	de voir relativement facilement
+	si deux graphes sont isomorphes,
+	bien qu'en général,
+	cela reste une tâche compliquée.
+	% TODO add graphs
+\end{mypropo}
+
+\subsection{Théorème d'Euler}
+Un des nombreux théorèmes dus à Leonhard Euler
+est l'observation qu'un graphe connexe est eulérien
+si et seulement si le degré de tous ses sommets est pair.
+\begin{mytheo}[Théorème d'Euler]
+	Un graphe connexe est eulérien
+	si et seulement si le degré de chacun de ses sommets
+	est un nombre pair.
+\end{mytheo}
+\begin{proof}
+	Démontrons l'implication directe d'abord.
+	Considérons le problème eulérien
+	où en tout n\oe{}ud il y a
+	autant d'arêtes entrantes que sortantes.
+	(Il s'agit de la condition pour qu'un graphe soit eulérien.)
+	Le degré du n\oe{}ud est
+	la somme de ce nombre d'arêtes entrantes et sortantes.
+	Il sera donc égal à $2n$,
+	où $n$ est le nombre d'arêtes entrantes,
+	ce qui est toujours un nombre pair.
+	\bigbreak
+	L'implication indirecte se démontre par construction,
+	et se comprend intuitivement par construction.\footnote{C'est vague comme preuve,
+	mais il y en a des plus complètes sur Internet,
+	notamment dans le syllabus en ligne.}
+\end{proof}
+
+\subsection{Représentations d'un graphe}
+Soit le graphe $G$ de la \figuref{mat}.
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}
+	\node[draw, circle] at ( 0, 4)  (1)  {$1$};
+	\node[draw, circle] at ( 2, 0)  (2)  {$2$};
+	\node[draw, circle] at (-2, 0)  (3)  {$3$};
+
+	\draw[-] (1) edge [loop above] node {$a$} (1);
+	\draw[-] (1) edge [bend left] node [midway,right] {$b$} (2);
+	\draw[-] (1) edge [bend right] node [midway,left] {$c$} (2);
+	\draw[-] (2) edge node [midway,below] {$d$} (3);
+	\draw[-] (1) edge node [midway,left] {$e$} (3);
+	\end{tikzpicture}
+	\caption{Un graphe.}
+	\label{fig:mat}
+\end{figure}
+On peut représenter ce graphe de deux façons distinctes:
+\begin{itemize}
+	\item sa \emph{matrice d'incidence} et
+	\item sa \emph{matrice d'adjacence}.
+\end{itemize}
+\begin{mydef}[Matrice d'incidence d'un graphe non orienté]
+	La matrice d'incidence d'un graphe non orienté
+	est la matrice rectangulaire $M$ de taille $n \times m$
+	dont l'élément $m_{ij}$ est
+	\begin{itemize}
+		\item $1$ si le sommet $v_i$ est une extrémité de l'arête $e_j$;
+		\item $2$ si l'arête $x_{j}$ est une boucle sur $v_{i}$;
+		\item $0$ sinon.
+	\end{itemize}
+\end{mydef}
+\begin{mydef}[Matrice d'adjacence]
+	La matrice d'adjacence d'un graphe simple $G$ à $n$ sommets
+	est la matrice $n \times n$ booléenne $A$
+	dont l'élément $a_{ij}$ est
+	\begin{itemize}
+		\item $1$ si $v_i v_j \in E(G)$;
+		\item $0$ sinon.
+	\end{itemize}
+\end{mydef}
+\bigbreak
+Pour le graphe $G$ de la \figuref{mat},
+on a donc les représentations suivantes:
+\[
+A = \bordermatrix{  & 1 & 2 & 3 \cr
+                  1 & 1 & 2 & 1 \cr
+                  2 & 2 & 0 & 1 \cr
+                  3 & 1 & 1 & 0 \cr}\,,
+\quad
+M = \bordermatrix{  & a & b & c & d & e\cr
+                  1 & 2 & 1 & 1 & 0 & 1\cr
+                  2 & 0 & 1 & 1 & 1 & 0\cr
+                  3 & 0 & 0 & 0 & 1 & 1\cr}\,.
+\]
+
+\begin{mytheo}[Théorème des poignées de main]
+	La somme des degrés des n\oe{}uds d'un graphe
+	est deux fois le nombre d'arêtes.
+	Mathématiquement,
+	\[
+	\sum_{v_i \in V} d(v_i) = 2 \abs{E}\,.
+	\]
+\end{mytheo}
+\begin{proof}
+	\begin{align*}
+	\sum_{i}\sum_{j} M_{ij} &= \sum_{v_i \in V} d(v_i)\\
+	&= \sum_j 2\\
+	&= 2 \abs{E}\,.\qedhere
+	\end{align*}
+\end{proof}
+
+\begin{mytheo}[Matrice d'adjacence et nombre de parcours]
+	Soit $A$ la matrice d'adjacence d'un graphe.
+	Alors l'élément $a^k_{ij}$ de $A^k$ ($k \ge 0$)
+	est le nombre de parcours de longueur $k$
+	de $v_i$ vers $v_j$.
+\end{mytheo}
+\begin{proof}
+	Par induction.
+	\begin{description}
+		\item[Cas de base.]
+		Pour $k = 1$, c'est vrai
+		par la définition de la matrice d'adjacence.
+		\item[Cas inductif.]
+		Supposons la propriété vraie pour $k$.
+		Soit
+		\begin{itemize}
+			\item $i$ et $j$ deux n\oe{}uds,
+			\item $\pi^{k+1}_{ij}$ le nombre de parcours
+			de $i$ vers $j$ de longueur $k+1$,
+			\item  $\epsilon_{ij}$ le nombre d'arêtes
+			de $i$ vers $j$ et
+			\item $a^k_{ij}$ l'entrée en ligne $i$
+			et colonne $j$ de $A^k$.
+		\end{itemize}
+		On a alors
+		\begin{align*}
+		\pi^{k+1}_{ij} &= \sum_{l \in V} \pi_{il}^{k} \epsilon_{lj}\\
+		&= \sum_{l \in V} a^k_{il} a_{lj}\\
+		&= a^{k+1}_{ij}\,.\qedhere
+		\end{align*}
+	\end{description}
+\end{proof}
+
+\begin{myexem}[Suites de de Bruijn]
+\label{exem:code}
+Un autre exemple d'utilisation de la matrice d'adjacence
+est qu'elle permet par exemple de répondre à la question
+\og Combien de mots binaires de longueur $k$ ne contiennent pas ``$111$''?\fg{}\,.
+
+Prenons le graphe du problème (\figuref{code}),
+où chaque n\oe{}ud est la terminaison actuelle du mot,
+et où chaque arête indique la terminaison que l'on aurait
+en rajoutant soit un $0$ soit un $1$.
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}
+	\node[draw, circle] at (-2, -2)  (10)  {$10$};
+	\node[draw, circle] at (-2,  2)  (00)  {$00$};
+	\node[draw, circle] at ( 2,  2)  (01)  {$01$};
+	\node[draw, circle] at ( 2, -2)  (11)  {$11$};
+
+	\begin{scope}[every node/.style={fill=white,circle}]
+		\path[->] (00) edge [loop above] node {$000$} (00);
+		\path[->] (11) edge [loop below,red] node {$111$} (11);
+		\path[->] (00) edge node {$001$} (01);
+		\path[->] (10) edge node {$100$} (00);
+		\path[->] (10) edge [bend left] node {$101$} (01);
+		\path[->] (01) edge [bend left] node {$001$} (10);
+		\path[->] (01) edge node {$011$} (11);
+		\path[->] (11) edge node {$001$} (10);
+	\end{scope}
+	\end{tikzpicture}
+	\caption{Graphe de l'Exemple~\ref{exem:code}.
+	La seule arête qu'on ne compte pas est celle en rouge,
+	car c'est ce cas-là qu'on veut éviter.}
+	\label{fig:code}
+\end{figure}
+On construit la matrice d'adjacence (en ne comptant pas l'arête rouge):
+\[
+A = \begin{pmatrix}
+1 & 1 & 0 & 0\\
+0 & 0 & 1 & 1\\
+1 & 1 & 0 & 0\\
+0 & 0 & 1 & 0
+\end{pmatrix}\,.
+\]
+Maintenant, en calculant les valeurs propres de la matrice $A$,
+et en choisissant la plus grande ($\rho \approx 1.84$ en l'occurrence),
+on peut trouver la capacité du code.
+Pour une longueur $k$,
+le nombre de mots ne contenant pas la séquence $111$ est $\approx \rho^k$.
+\end{myexem}
+
+\subsection{Graphe biparti}
+\begin{mytheo}[Graphe biparti]
+\label{theo:bipartite}
+	Un graphe est biparti si et seulement si
+	tous ses cycles sont de longueur paire.
+\end{mytheo}
+\begin{proof}
+	\noindent
+	\newline
+	$\boxed{\implies}$
+	\newline
+	Soit un graphe $G$ biparti et un cycle $C = v_0, v_1, v_2, \dots, v_0$.
+	Supposons $v_0 \in V_0$, $v_1 \in V_1$, $v_2 \in V_0$,\dots
+	Tout cycle termine en $V_0$ et contient donc
+	un nombre pair d'arêtes.
+
+	\noindent
+	\newline
+	$\boxed{\impliedby}$
+	\newline
+	Soit $v_0$ un n\oe{}ud arbitraire.
+	On définit
+	\begin{align*}
+		V_0 &= \set{v \suchthat d(v,v_0) \textnormal{ est pair}}\\
+		V_1 &= \set{v \suchthat d(v,v_0) \textnormal{ est impair}}\,.
+	\end{align*}
+	Par contradiction.
+	Supposons sans perte de généralité $\exists u,v \in V_0$.
+	Soient $p,q$ les plus courts chemins
+	de $v_0$ à $u$ et $v$ respectivement.
+	\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}
+	\begin{scope}[every node/.style={fill=white,circle}]
+		\node[draw, circle] at (-4, 0)  (v0)  {$v_0$};
+		\node[draw, circle] at (-1, 0)  (w)  {$w$};
+		\node[draw, circle] at ( 2, 1)  (u)  {$u$};
+		\node[draw, circle] at ( 2,-1)  (v)  {$v$};
+
+		\draw[-] (v0) edge [bend left]  node {$q_1$} (w);
+		\draw[-] (v0) edge [bend right] node {$p_1$} (w);
+		\draw[-] (w) edge [bend left]  node {$p_2$} (u);
+		\draw[-] (w) edge [bend right] node {$q_2$} (v);
+		\draw[-] (u) edge node {$e$} (v);
+	\end{scope}
+	\end{tikzpicture}
+	\caption{Le graphe pour la preuve du Théorème~\ref{theo:bipartite}.}
+	\label{fig:bipartite}
+	\end{figure}
+	Soit $w$ le dernier n\oe{}ud dans $p \cap q$.
+	Notre \emph{claim} est que $p_2 e q_2$ est un cycle pair.
+	Cependant,
+	\begin{align*}
+	\abs{p_1 p_2 e q_2 q_1} &= \abs{p_1} + \abs{p_2 e q_2} + \abs{q_1}\\
+	d(v_0,u) + d(v_0,v) + 1 &= 2 \abs{p_1} + \abs{p_2 e q_2}\,.
+	\end{align*}
+	Comme le coté de gauche de cette équation est impair
+	($u$ et $v$ sont à une distance paire de $v_0$ car ils sont dans $V_0$),
+	et que $2 \abs{p_1}$ est évidemment pair,
+	le cycle $p_2 e q_2$ doit être impair.
+	C'est donc une contradiction,
+	ce qui termine la preuve.
+\end{proof}
+
+\begin{mytheo}[Théorème des amis et des étrangers]
+	Dans toute fête de six personnes,
+	soit au moins trois d'entre eux sont (par paires)
+	mutuellement des étrangers,
+	soit au moins trois d'entre eux sont (par paires)
+	mutuellement des amis\footnote{Ce théorème est un cas particulier
+	du Théorème de Ramsey, qui a donné lieu
+	à une nouvelle branche des mathématiques,
+	la théorie de Ramsey.}.
+\end{mytheo}
+\begin{proof}
+	Si on attribue à chaque personne un sommet dans un graphe,
+	et qu'on trace une arête rouge
+	si les deux sommets sont \og amis\fg{},
+	et une arête bleue si ils sont \og inconnus\fg{},
+	on peut raisonner sur ce problème
+	comme un problème de théorie des graphes.
+
+	Choisissons un sommet quelconque; appelons-le $P$.
+	Il y a cinq arêtes issues de $P$.
+	Elles sont de couleur rouge ou bleu.
+	Le principe des tiroirs dit
+	qu'au moins trois d'entre elles doivent être
+	de la même couleur,
+	car s'il y a moins de trois d'une couleur,
+	disons rouge, alors il y en a au moins trois qui sont bleues.
+
+	Soient $A$, $B$, $C$ les autres extrémités
+	de ces trois arêtes,
+	toutes de la même couleur, disons bleu.
+	Si parmi $AB$, $BC$, $CA$, l'une est bleue,
+	alors cette arête,
+	avec les deux arêtes joignant $P$
+	aux extrémités de cette arête forme un triangle bleu.
+	Si aucune parmi $AB$, $BC$, $CA$ n'est bleue,
+	alors les trois arêtes sont rouges
+	et nous avons un triangle rouge, à savoir, $ABC$.
+\end{proof}
+
+\section{Arbres et distance}
+\subsection{Propriétés de base}
+\begin{mytheo}
+	Le plus court parcours entre deux n\oe{}uds
+	est toujours un chemin.
+\end{mytheo}
+\begin{proof}
+	Soit $d'$ la longueur du plus court chemin
+	et $d$ la longueur du plus court parcours $P$.
+	Comme tout chemin est un parcours,
+	on a nécessairement $d' \ge d$.
+
+	Supposons, par l'absurde, $d' > d$.
+	$P$ n'est donc pas un chemin et contient un ou plusieurs cycles.
+	\[
+	p = u \ldots \underbrace{v_i \ldots v_i}_{\textnormal{cycle $C$}} \ldots v\,.
+	\]
+	Si on retire le cycle $C$,
+	on obtient le parcours $P' = u \ldots v_i \ldots v$.
+	Comme on considère tous les poids positifs,
+	on a deux cas possibles:
+	\begin{enumerate}
+		\item Le cycle $C$ possède au moins une arête
+		de poids $w_i > 0$
+		$\implies P'$ est plus court que $P$.
+		\hspace*{\fill} $\lightning$
+		\item Le cycle $C$ est de poids nul
+		$\implies P'$ et $P$ ont la même longueur.
+		On a donc deux sous-cas:
+		\begin{enumerate}[label=(\roman*)]
+			\item Il n'y a plus de cycle dans $P'$
+			$\implies P'$ est un chemin
+			de longueur $d = d'$.
+			\hspace*{\fill} $\lightning$
+			\item Il reste des cycles dans $P'$.
+			On recommence l'argument
+			en remplaçant $P$ par $P'$.
+			On finira éventuellement sur une contradiction
+			car le nombre de cycles dans $P$ est fini.
+		\end{enumerate}
+	\end{enumerate}
+\end{proof}
+
+\subsubsection{Algorithme de Dijkstra}
+\begin{myexem}
+	On cherche les distances à partir de $a$.
+	\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}
+		\node[draw, circle] at (0,  2) (a) {$a$};
+		\node[draw, circle] at (2,  1) (b) {$b$};
+		\node[draw, circle] at (1, -2) (c) {$c$};
+		\node[draw, circle] at (-1,-2) (d) {$d$};
+		\node[draw, circle] at (-2, 1) (e) {$e$};
+		\begin{scope}[every node/.style={fill=white,circle}]
+			\draw[->] (a) edge node {$50$} (b);
+			\draw[->] (c) edge node {$5$} (b);
+			\draw[->] (c) edge node {$50$} (d);
+			\draw[->] (e) edge node {$10$} (d);
+			\draw[->] (a) edge node {$10$} (e);
+			\draw[->] (d) edge node {$5$} (a);
+			\draw[->] (a) edge node {$30$} (c);
+			\draw[->] (d) edge node[near start] {$20$} (b);
+		\end{scope}
+	\end{tikzpicture}
+	\caption{Un exemple de digraphe pondéré.}
+	\label{fig:dijkstra_graph}
+	\end{figure}
+
+	Le graphe de la \figuref{dijkstra_graph} est défini par
+	\begin{align*}
+	V &= \{\,a,b,c,d,e\,\}\,,\\
+	E &= \{\,ab, cb, cd, ed, ae, da, ac\,\}\,.
+	\end{align*}
+
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{ccccccc}
+			\hline
+			$u'$ & $S$ & $\ell(a)$ & $\ell(b)$ & $\ell(c)$ & $\ell(d)$ & $\ell(e)$\\
+			\hline
+			$a$ & $\lbrace a \rbrace$ & $\boxed{0}$ & $\infty$ & $\infty$ & $\infty$ &$\infty$\\
+			$e$ & $\lbrace a,e \rbrace$ && 50 & 30 & $\infty$ & $\boxed{10}$\\
+			$d$ & $\lbrace a,e,d \rbrace$ && 50 & 30 & $\boxed{20}$ &\\
+			$c$ & $\lbrace a,e,d,c \rbrace$ && 40 & $\boxed{30}$ & &\\
+			$b$ & $\lbrace a,e,d,c,b \rbrace$ && $\boxed{35}$ & & &\\
+			\hline
+		\end{tabular}
+		\caption{Résultats de l'Algorithme de Dijkstra
+		pour le graphe de la \figuref{dijkstra_graph}.}
+		\label{tab:dijkstra}
+	\end{table}
+\end{myexem}
+
+\begin{myrem}
+	Les dernières arêtes utilisées pour joindre un sommet
+	forment les plus courts chemins.
+\end{myrem}
+
+En pseudocode,
+l'Algorithme de Dijkstra peut être implémenté comme suit:
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{$G$, le graphe, et $s$, le n\oe{}ud source.}
+\KwResult{Les plus courts chemins de $s$ vers tout autre n\oe{}ud du graphe.}
+\Begin{
+	crée l'ensemble des n\oe{}uds $\mathcal{Q}$\;
+	dist[$s$] $\gets$ 0 \Comment*[r]{Initialisation}
+
+	\ForEach{vertex $v$ in $G$}{
+		dist[$v$] $\gets \infty$ \Comment*[r]{Distance inconnue de $s$ à $v$}
+		prev[$v$] $\gets$ UNDEFINED \Comment*[r]{Prédécesseur de $v$ sur chemin optimal partant de $s$}
+		ajoute $v$ à $\mathcal{Q}$ \Comment*[r]{Tous les n\oe{}uds sont initialement dans $\mathcal{Q}$}
+	}
+	dist[$s$] $\gets 0$\;
+	\While{$\mathcal{Q}$ n'est pas vide}{
+		$u \gets$ n\oe{}ud dans $\mathcal{Q}$ avec $\min$ dist[$u$] \Comment*[r]{Enlève et retourne le n\oe{}ud avec la distance minimale dans $\mathcal{Q}$}
+		enlève $u$ de $\mathcal{Q}$\;
+		\ForEach{voisin $v$ de $u$}{
+			alt $\gets$ dist[$u$] $+$ length($u$, $v$)\;
+			\If{alt $<$ dist[$v$]}{
+				dist[$v$] $\gets$ alt\;
+				prev[$v$] $\gets u$\;
+			}
+		}
+	}
+	\Return dist[], prev[]\;
+}
+\caption{Dijkstra($G$, $s$)\label{algo:dijkstra}}
+\end{algorithm}
+
+L'Algorithme~\ref{algo:dijkstra} a une complexité de $\bigoh(\abs{V}^2)$.
+Il existe aussi des implémentations
+avec des structures de données différentes\footnote{Les min-priority queues.},
+permettant de réduire la complexité à $\bigoh(\abs{E} + \abs{V} \log \abs{V})$.
+
+\begin{mytheo}[Correction de l'Algorithme de Dijkstra]
+	L'Algorithme de Dijkstra est correct et efficace.
+\end{mytheo}
+\begin{proof}
+Par induction.
+On suppose les propriétés vérifiées à l'itération $i-1$
+et on veut les prouver pour l'itération $i$.
+Soit $S_i$ l'ensemble $S$ à l'itération $i$.
+\noindent
+\newline
+\fbox{Cas de base ($i = 1$)}
+\newline
+À la fin de l'initialisation,
+\begin{align}
+S &= \{\,u_0\,\}\,, \nonumber\\
+\ell(u_0) &= 0 = d(u_0,u_0)\,. \label{eq:dijkstra1}
+\end{align}
+Après la première mise à jour de $\ell$,
+\begin{align}
+\ell(v) &= \min(\ell(v), \underbrace{\ell(v_0)}_{0} {} + w(u_0 v))\,, \quad \forall v \in S \nonumber\\
+\implies \ell(v) &= \infty \textnormal{ s'il n'y a pas d'arête } v_0v. \label{eq:dijkstra2}
+\end{align}
+\noindent
+\newline
+\fbox{Cas inductif}
+\newline
+$u_i$ est le n\oe{}ud qui vient d'être rajouté à l'itération précédente.
+Il faut prouver qu'après avoir rajouté $u_i$ dans $S_i$,
+$\ell(u_i) = d(u_0, u_i)$.
+
+La condition~\eqref{eq:dijkstra1} est verifiée
+par les autres éléments de $S_i$
+par l'hypothèse d'induction.
+Supposons par l'absurde que l'algorithme
+n'ait pas trouvé le plus court chemin vers $u_i$
+et que donc $\ell(u_i) > d(u_0, u_i)$.
+
+Par la condition~\eqref{eq:dijkstra2} appliquée à l'itération $i-1$,
+$\ell(u_i)$ est la longueur du plus court chemin
+où tous les n\oe{}uds internes sont dans $S_{i-1}$.
+
+Si $\ell(u_i) \ne d(u_0, u_i)$,
+alors il y a un autre plus court chemin
+qui passe par un n\oe{}ud de $\widebar{S_{i-1}}$.
+Soit $v$ le premier n\oe{}ud de $\widebar{S_{i-1}}$ de ce chemin.
+Comme $u \ldots v \ldots u_i$ est un plus court chemin,
+$u_0 \ldots v$ en est aussi un.
+On sait que $\ell(v) = d(u_0, v)$
+car tous les n\oe{}uds internes de $u_0 \ldots v$
+sont uniquement dans $S_{i-1}$
+(par \eqref{eq:dijkstra2} à l'étape $i-1$).
+De plus, on sait que les poids sont $\ge 0$.
+\[
+\implies \ell(v) = d(u_0, v) \le d(u_0, u_i)\,.
+\]
+
+Mais $u_i$ est tel que
+\[
+\ell(u_i) = \min\limits_{u \in \widebar{S_{i-1}}}(\ell(u))\,.
+\]
+On a donc $\ell(u_i) \le \ell(v) \le d(u_0, u_i)$.
+\contradiction
+
+Commençons par montrer que
+\[
+\ell(v) \ge d(u_0, v)\,, \quad \forall v \in S\,.
+\]
+Les seuls $\ell(v)$ qui changent à cette itération
+sont égaux à
+\[
+\ell(v) = \underbrace{\ell(u_i)}_{d(u_0, u_i)} {} + w(u_i v)\,,
+\]
+qui ont la longueur du chemin $u_0 \ldots u_i v$.
+Donc, $\ell(v) \ge d(u_0, v)$.
+Montrons que $\ell(v)$ est la longueur du plus court chemin
+dont tous les n\oe{}uds internes sont dans $S$.
+
+Par \eqref{eq:dijkstra2} à l'étape $i-1$,
+$\ell(v)\,,\ \forall v \notin S_{i-1}$
+est longueur du plus court chemin de $u_0$ à $v$
+dont tous les n\oe{}uds internes appartiennent à $S_{i-1}$.
+
+Il faut juste considérer les chemins passant par $u_i$.
+Le plus court de ces chemins est le chemin fait
+du plus court chemin de $u_0$ à $u_i$ et de l'arête $u_i v$,
+de longueur $d(u_0, u_i) + w(u_i v)$.
+Le plus court chemin vers $v$ dont les n\oe{}uds internes
+sont dans $S_i$ a donc soit
+ses n\oe{}uds internes uniquement dans $S_{i-1}$ (longueur $\ell(v)$),
+soit il passe par $u_i$ (longueur $\ell(u_i) + w(u_i v)$).
+Cela correspond à la mise à jour de $\ell(v)$.
+\[
+\ell(v) = \min(\ell(v), \ell(u_i) + w(u_i v))\,.\qedhere
+\]
+\end{proof}
+
+\begin{mypropo}[Complexité de l'Algorithme de Dijkstra] \leavevmode
+	L'Algorithme de Dijkstra est en $\bigoh(\abs{V}^2)$
+\end{mypropo}
+\begin{proof}\leavevmode
+	\begin{itemize}
+		\item Après l'initialisation,
+		$\abs{\widebar{S}} = \abs{V}-1$
+		et à chaque passage de boucle décroit de $1$
+		$\implies \abs{V}-1$ itérations.
+		\item À chaque itération,
+		l'opération \og $\forall v \notin S$\fg{} est
+		$\bigoh(\abs{V} - \abs{S})$, tout comme
+		l'opération \og trouver $v_{\textnormal{min}}$\fg{}.
+		\item Le nombre total d'opérations est donc
+		$2 (\abs{V} - 1) + 2 (\abs{V} - 2) + \cdots + 2
+		\in \bigoh(\abs{V}^2)$.
+	\end{itemize}
+	L'algorithme est polynomial
+	et donc \emph{relativement} efficace.
+\end{proof}
+
+\subsubsection{Anneaux et semi-anneaux}
+
+\begin{mydef}[Semi-anneau]
+	Un \emph{semi-anneau} est un ensemble
+	muni de deux opérations ($\oplus,\otimes$)
+	et ses propriétés.
+\end{mydef}
+
+\begin{mydef}[Anneau]
+	Un \emph{anneau} est un ensemble
+	muni de trois opérations ($\oplus,\otimes,\ominus$)
+	et ses propriétés.
+\end{mydef}
+
+\begin{mydef}[Corps]
+	Un \emph{corps} est un ensemble
+	muni de quatre opérations ($\oplus,\otimes,\ominus,\oslash$)
+	et ses propriétés.
+\end{mydef}
+
+\begin{myform}[Autre formule pour le plus court chemin]
+	En prenant $A$ tel que $a_{ij} = w(i j)$
+	et $w(i j) = \infty$ s'il n'y a pas d'arête $ij$.
+
+	On a
+	\begin{align*}
+		A \oplus B &= \Big(a_{ik} \oplus b_{kj}\Big)_{ij}\,,\\
+		A \otimes B &= \Big(\sum_k a_{ik} \otimes b_{kj}\Big)_{ij}\,.
+	\end{align*}
+	Le $\oplus$ définit la somme matricielle
+	et le $\otimes$ définit le produit matriciel.
+	Prenons $\oplus = \min$ et $\otimes = +$.
+	Le neutre du minimum est $+\infty$
+	et le neutre de l'addition est $0$.
+	Définissons donc
+	\[
+	I =
+	\begin{pmatrix}
+	0 & +\infty & \cdots & +\infty\\
+	+\infty & \ddots & \ddots & \vdots\\
+	\vdots & \ddots & \ddots & +\infty\\
+	+\infty & \cdots & +\infty & 0
+	\end{pmatrix}\,.
+	\]
+
+	On définit alors
+	\begin{align*}
+		A \otimes A &= \Big(\min\limits_{k}\big(a_{ik} + a_{kj}\big)\Big)_{ij}\\
+		&= \min\limits_{k}\big(w(i k) + w(k j)\big)\\
+		&= \textnormal{plus court chemin de deux arêtes.}
+	\end{align*}
+	et en général, la matrice des plus courts chemins est donnée par
+	\[
+	(I \oplus A)^{\otimes n}\,.
+	\]
+	Pour calculer le plus court chemin,
+	on peut définir alors l'itération:
+	\begin{align*}
+	M_0 &= I\,,\\
+	M_1 &= I \oplus (M_0 \otimes A)\,,\\
+	M_2 &= I \oplus (M_1 \otimes A)\,,\\
+	&\vdotswithin{=}\\
+	M_{k+1} &= I \oplus (M_k \otimes A)\,.
+	\end{align*}
+	On a fini de converger quand $M_k = M_{k+1}$.
+	L'Algorithme de Dijkstra peut être vu
+	comme une manière efficace d'implémenter cette itération.
+\end{myform}
+
+\subsection{Arbres sous-tendants et énumération}
+\begin{mydef}[Arbre]
+	Un \emph{arbre} est un graphe connexe sans cycle.
+	Une \emph{forêt} est un graphe sans cycle.
+\end{mydef}
+\begin{mydef}[Sous-graphe sous-tendant]
+	Un \emph{sous-graphe sous-tendant} d'un graphe $G$
+	est un sous-graphe qui contient tous les sommets de $G$.
+\end{mydef}
+
+\begin{mytheo}
+	\label{theo:spanning_tree}
+	Tout graphe connexe contient un arbre sous-tendant.
+\end{mytheo}
+\begin{proof}
+Soit $G$ un graphe connexe.
+Parmi tous les sous-graphes sous-tendants connexes de $G$,
+on choisit un sous-graphe $G'$,
+minimal pour l'inclusion dans cet ensemble.
+Pour que $G'$ soit un arbre,
+il faut qu'il soit connexe et acyclique.
+\begin{itemize}
+	\item Il est connexe par construction.
+	\item Supposons que $G'$ ait un cycle.
+	Soit $e = uv$ une arête du cycle.
+	Si on enlève $e$,
+	le graphe est toujours connexe.
+	Pour tout parcours $x \ldots uv \ldots y$,
+	on peut remplacer $e$ par le reste du cycle.
+	\contradiction
+\end{itemize}
+\end{proof}
+
+\begin{mylem}[Feuilles d'un arbre]
+	\label{lem:leaves}
+	Tout arbre avec au moins deux sommets
+	a aux moins deux feuilles (n\oe{}uds de degré un)
+	et supprimer une feuille d'un arbre à $n$
+	n\oe{}uds produit un arbre à $n-1$ n\oe{}uds.
+\end{mylem}
+\begin{proof}
+	Dans un graphe acyclique avec au moins deux sommets,
+	les extrémités d'un chemin maximal n'ont pas d'autres voisins
+	que leurs voisins sur le chemin.
+	Ces extrémités sont donc des feuilles.
+
+	Soit $v$ une feuille d'un arbre $G = (V, E, \phi)$.
+	Soit $G' = (V', E', \phi') = G - v$.
+	Comme un sommet de degré un
+	n'appartient à aucun chemin reliant deux autres sommets,
+	pour tout $u,v \in V'$,
+	tout chemin de $u$ à $v$ dans $G$ est aussi dans $G'$.
+	$G'$ est donc connexe.
+
+	Puisque supprimer un sommet ne peut pas créer de cycle,
+	$G'$ est également acyclique.
+\end{proof}
+
+\subsubsection{Caractérisations des arbres}
+\begin{mytheo}[Caractérisations des arbres]
+	Soit $G$ un graphe à $n$ sommets et $m$ arêtes.
+	Alors les conditions suivantes sont équivalentes.
+	\begin{enumerate}[label=(\arabic*)]
+		\item \label{conn_acy} $G$ est connexe et sans cycle.
+		\item \label{acy_mn1} $G$ est sans cycle et $m = n - 1$.
+		\item \label{conn_mn1} $G$ est connexe et $m = n-1$.
+		\item \label{conn_del}$G$ est connexe
+		et supprimer une arête quelconque déconnecte $G$.
+		\item \label{acy_add} $G$ est sans cycle
+		et ajouter une arête quelconque crée un et un seul cycle.
+		\item \label{link} Deux n\oe{}uds de $G$ sont toujours reliés
+		par un seul chemin.
+	\end{enumerate}
+	La dernière condition implique que $G$ est sans boucle
+	(pour deux n\oe{}uds identiques).
+\end{mytheo}
+\begin{proof}
+	\noindent
+	\newline
+	\newline
+	\fbox{\ref{conn_acy} $\implies$ \ref{acy_mn1}}
+	\newline
+	Par récurrence sur $n$.
+	Pour $n = 1$, $m = 0$.
+	On a donc bien $m = n - 1$.
+
+	On suppose \ref{acy_mn1} vrai pour $n-1$.
+	Pour tout arbre de $n$ n\oe{}uds,
+	on trouve une feuille $x$.
+	On enlève $x$ et son arête
+	et on obtient par le Lemme~\ref{lem:leaves}
+	un arbre de $n-1$ n\oe{}uds
+	et $n-2$ arêtes (par la récurrence).
+	Tout arbre de $n$ n\oe{}uds a donc $n-1$ arêtes.
+
+	\noindent
+	\newline
+	\fbox{\ref{acy_mn1} $\implies$ \ref{conn_mn1}}
+	\newline
+	Soient $G_1 = (V_1, E_1, \phi_1),
+	\ldots, G_k = (V_k, E_k, \phi_k)$
+	les $k$ composantes connexes de $G = (V, E, \phi)$
+	avec $n_i = \abs{V_i}$ et $m_i = \abs{E_i}$
+	pour $i = 1, \ldots, k$.
+
+	On a
+	\[
+	\sum_{i=1}^{k} n_i = n
+	\quad \textnormal{et} \quad
+	\sum_{i=1}^{k} m_i = m\,.
+	\]
+	Chaque composante satisfait \ref{conn_acy},
+	et donc $m_i = n_i - 1$ pour $i = 1, \ldots, k$.
+	\begin{align*}
+		\implies m &= \sum_{i=1}^{k} m_i \\
+		&= \sum_{i=1}^{k} \big(n_i - 1\big) \\
+		&= n - k\,.
+	\end{align*}
+	Or $m = n - 1$,
+	ce qui implique $k = 1$.
+	Le graphe est donc connexe.
+
+	\noindent
+	\newline
+	\fbox{\ref{conn_mn1} $\implies$ \ref{conn_del}}
+	\newline
+	Supposons qu'en enlevant une arête $e$ à $G$,
+	le graphe $G' = G - e$ reste connexe.
+	Par le Théorème~\ref{theo:spanning_tree},
+	$G'$ a un arbre sous-tendant $A$.
+	Par \ref{conn_acy} $\implies$ \ref{acy_mn1},
+	$A$ a $n - 1$ arêtes.
+	$G'$ a au moins $n - 1$ arêtes et $G$ a au moins $n$ arêtes.
+	Or, $G$ a $n - 1$ arêtes,
+	ce qui implique que $G - e$ n'est pas connexe.
+	\contradiction
+
+	\noindent
+	\newline
+	\fbox{\ref{conn_del} $\implies$ \ref{acy_add}}
+	\newline
+	Supposons qu'il y ait un cycle dans $G$.
+	On peut alors supprimer une arête de ce cycle,
+	en gardant la propriété de convexité,
+	ce qui contredit l'hypothèse.
+	$G$ est donc acyclique.
+	\contradiction
+
+	Ajouter une arête quelconque crée un et un seul cycle.
+	\begin{itemize}
+		\item On montre qu'ajouter une arête $e$
+		entre $u$ et $v$ crée un cycle.
+		Par connexité,
+		il existe un chemin $C$ entre $u$ et $v$ dans $G$.
+		On a $u \ldots v e u$ qui est un cycle.
+		\item C'est le seul cycle.
+		Supposons qu'on ait obtenu au moins deux cycles
+		$C_1$ et $C_2$ en ajoutant $e$.
+		Si c'est le cas,
+		on peut adjoindre $C_1 - e$ et $\widebar{C_2 - e}$
+		pour former un parcours fermé $u \ldots v \ldots u$.
+		\contradiction
+	\end{itemize}
+
+	\noindent
+	\newline
+	\fbox{\ref{acy_add} $\implies$ \ref{link}}
+	\newline
+	Supposons qu'il existe deux chemins
+	$P_1 = u \ldots v$ et $P_2 = u \ldots v$,
+	alors $u \ldots v \ldots u$ est un parcours fermé
+	dont on peut extraire un cycle.
+	Il y a donc au plus un chemin entre $u$ et $v$.
+	\contradiction
+
+	Prouvons maintenant l'existence de ce chemin.
+	Si on ajoute une arête entre $u$ et $v$,
+	alors par hypothèse on crée un cycle $C$.
+	Cela implique que $C - e$ est un chemin entre $u$ et $v$.
+
+	\noindent
+	\newline
+	\fbox{\ref{link} $\implies$ \ref{conn_acy}}
+	\newline
+	$G$ est d'office connexe.
+	Il suffit donc de montrer qu'il est également acyclique.
+	Supposons qu'il existe un cycle.
+	Soient $x$ et $y$ deux n\oe{}uds de ce cycle.
+	Le cycle donne deux chemins différents de $x$ à $y$.
+	$G$ est donc sans cycle.
+	\contradiction
+
+\end{proof}
+
+\subsubsection{Énumération des arbres sous-tendants}
+\begin{myform}[Formule de Cayley]
+	Soit $\tau(G)$ le nombre d’arbres sous-tendants de $G$
+	et $e$ une arête quelconque de $G$
+	qui n’est pas une boucle.
+	Alors
+	\[
+	\tau(G) = \tau(G - e) + \tau(G \cdot e)\,.
+	\]
+	$G - e$ désigne le graphe avec l'arête $e$ enlevée.
+	$G \cdot e$ désigne le graphe
+	avec les n\oe{}uds reliés par $e$ fusionnés.
+\end{myform}
+\begin{proof}
+	On divise les arbres sous-tendants de $G$ en deux catégories:
+	\begin{enumerate}[label=(\alph*)]
+		\item \label{subtract} ceux qui ne contiennent pas $e$;
+		\item \label{contract} ceux qui contiennent $e$.
+	\end{enumerate}
+	On compte les arbres de chaque catégorie.
+	\begin{itemize}
+		\item Les arbres de \ref{subtract} sont en bijection
+		avec les arbres sous-tendants de $G - e$.
+		\item Les arbres de \ref{contract} sont en bijection
+		avec les arbres sous-tendants de $G \cdot e$.
+	\end{itemize}
+	On a donc
+	\[
+	\tau(G) = \tau(G - e) + \tau(G \cdot e)\,.\qedhere
+	\]
+\end{proof}
+
+\begin{mytheo}[Arbres sous-tendants de $K_n$]
+	Le \emph{graphe complet à $n$ n\oe{}uds}, noté $K_n$,
+	a $n^{n-2}$ arbres sous-tendants.
+	C'est également un théorème de Cayley.
+\end{mytheo}
+
+\subsubsection{Arbre sous-tendant de poids minimum}
+On a un algorithme naïf tournant en $\bigoh(n^{n-2})$ pour $n$ n\oe{}uds,
+mais on peut faire beaucoup mieux.
+
+\paragraph{Algorithme de Kruskal}
+Le premier algorithme que l'on présente est celui de Kruskal.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{$G$, une graphe pondéré à $n$ n\oe{}uds avec poids $\ge 0$.}
+\KwResult{Le graphe formé des arêtes $T$
+est un arbre sous-tendant de poids minimum.}
+\Begin{
+	sort($E$)\Comment*[r]{On trie les arêtes par poids croissant}
+	$T \gets \emptyset$\;
+
+	\While{$\abs{T} < n - 1$}{
+		$e \gets$ l'arête pas encore considérée de moindre poids\;
+		\If{$T \cup \{\,e\,\}$ acyclique}{
+			$T \gets T \cup \{\,e\,\}$\;
+		}
+	}
+	\Return $T$\;
+}
+\caption{Kruskal($G$)\label{algo:kruskal}}
+\end{algorithm}
+
+\begin{mytheo}[Correction de Kruskal]
+	L'Algorithme de Kruskal est correct et efficace.
+\end{mytheo}
+\begin{proof}
+	Soit $T = \{\,e_1, e_2, \ldots, e_m\,\}$
+	l'ensemble des arêtes de l'arbre trouvé par Kruskal,
+	avec les arêtes dans cet ordre.
+	C'est bien un arbre sous-tendant
+	car il a $n - 1$ arêtes et pas de cycle.
+
+	On suppose que $T$ n'est pas optimal
+	et que $T^*$ soit un arbre optimal.
+	Soit $e_i$ la première arête choisie pour $T$
+	mais absente dans $T^*$.
+
+	$T^*$ est un arbre optimal
+	qui contient $e_1, e_2, \ldots, e_{i-1}$ mais pas $e_i$.
+	Il y a donc un seul cycle dans $T^* + e_i$.
+	Il y a forcément une arête de ce cycle qui n'est pas dans $T$,
+	sinon $T$ aurait un cycle.
+	On l'appelle $e'$.
+
+	Montrons que le sous-graphe
+	avec les arêtes $e_1, e_2, \ldots, e_{i-1}, e'$
+	n'a pas de cycle puisqu'il est inclus dans $T^*$.
+	Au moment de choisir $e_i$,
+	l'algorithme n'a pas choisi $e'$,
+	qui pourtant ne crée pas de cycle (donc $w(e') \ge w(e_i)$).
+
+	On considère donc l'arbre $T^* + e_i - e'$.
+	C'est un arbre sous-tendant puisqu'il a $n - 1$ arêtes
+	et pas de cycles.
+	$T^* + e_i - e'$ est au moins aussi léger que $T^*$
+	et contient $\{\,e_1, e_2, \ldots, e_{i-1}, e_i\,\}$.
+	\contradiction
+
+\end{proof}
+
+C'est un algorithme glouton (\emph{greedy}),
+c'est-à-dire qu'à chaque itération,
+il vise l'optimum local.
+\begin{mypropo}[Complexité de l'Algorithme de Kruskal]
+	L'Algorithme de Kruskal requiert un temps de calcul
+	de l'ordre de $\bigoh(m \log m)$ sur un graphe à $m$ arêtes.
+	C'est le tri qui prend le plus de temps.
+	Une implémentation efficace de la détection de cycles utilise
+	une structure de données appelée \emph{ensembles disjoints}.
+\end{mypropo}
+
+\paragraph{Algorithme de Prim}
+Un autre algorithme est celui de Prim.
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{$G$, une graphe pondéré à $n$ n\oe{}uds avec poids $\ge 0$.}
+\KwResult{Le graphe formé des arêtes $T$
+est un arbre sous-tendant de poids minimum.}
+\Begin{
+	$T \gets v$\Comment*[r]{$v$ est un n\oe{}ud de départ arbitraire}
+
+	\While{$\abs{T} < n - 1$}{
+		$e \gets$ l'arête de moindre poids incidente à exactement un n\oe{}ud de $T$\;
+		$T \gets T \cup \{\,e\,\}$\;
+	}
+	\Return $T$\;
+}
+\caption{Prim($G$)\label{algo:prim}}
+\end{algorithm}
+
+\begin{mytheo}[Correction de Prim]
+	L'Algorithme de Prim est correct et efficace.
+	% TODO proof
+\end{mytheo}
+
+\begin{mypropo}[Complexité de l'Algorithme de Prim]
+	L'Algorithme de Prim requiert un temps de calcul
+	de l'ordre de $\bigoh(m + n \log n)$
+	sur un graphe à $n$ n\oe{}uds et $m$ arêtes.
+	Une implémentation efficace de la sélection d'arêtes utilise
+	une structure de données appelée \emph{file de priorité}
+	implémentée par un \og tas de Fibonacci\fg{}.
+\end{mypropo}
+
+\section{Couplages}
+\subsection{Couplages et couvertures}
+\subsubsection{Couplages maximums}
+\begin{mydef}[Couplage]
+	Un \emph{couplage} dans un graphe $G$ est un ensemble d'arêtes $M$
+	tel que $M$ ne contient pas de boucles et
+	que deux arêtes de $M$ n'ont jamais d'extrémité en commun.
+	Les n\oe{}uds incidents aux arêtes d'un couplage $M$ sont dits
+	\emph{saturés} par $M$; les autres sont \emph{insaturés}.
+	Un \emph{couplage parfait} dans un graphe
+	est un couplage qui sature tous les n\oe{}uds.
+\end{mydef}
+\begin{mydef}[Couplage maximal]
+	Un \emph{couplage maximal} dans un graphe est un couplage
+	qui ne peut pas être agrandi en ajoutant une arête.
+	Un \emph{couplage maximum} est un couplage de taille maximum
+	parmi tous les couplages du graphe.
+\end{mydef}
+\begin{myrem}
+	Tout couplage maximum est maximal, mais pas inversement.
+	Un couplage parfait, s'il existe, est un couplage maximum.
+\end{myrem}
+\begin{mydef}[Chemin $M$-alterné]
+	Soit un couplage $M$.
+	Un \emph{chemin $M$-alterné} est un chemin
+	qui alterne entre les arêtes de $M$ et les arêtes hors $M$.
+	Un chemin $M$-alterné dont les n\oe{}uds extrêmes
+	sont insaturés par $M$
+	est un \emph{chemin $M$-augmenté}.
+\end{mydef}
+\begin{mydef}[Différence symétrique]
+	Si $G$ et $H$ sont des graphes avec un ensemble de n\oe{}uds $V$,
+	alors la \emph{différence symétrique} $G \triangle H$
+	est le graphe avec $V$ pour ensemble de n\oe{}uds
+	dont les arêtes sont celles qui appartiennet soit à $G$, soit à $H$,
+	mais pas aux deux.
+	On utilise également cette définition pour les ensembles d'arêtes;
+	en particulier, si $M$ et $M'$ sont des couplages,
+	alors $M \triangle M' = (M \setminus M') \cup (M' \setminus M)$.
+\end{mydef}
+\begin{mylem}
+	\label{lem:symdif}
+	Toute composante de la différence symétrique
+	de deux couplages est un chemin ou un cycle pair.
+\end{mylem}
+\begin{proof}
+	Soient $M$ et $M'$ des couplages, et $F = M \triangle M'$.
+	Comme $M$ et $M'$ sont des couplages,
+	chaque n\oe{}ud a au plus une arête incidente appartenant à chaque.
+	$F$ a donc au plus deux arêtes à chaque n\oe{}ud.
+	Comme $\Delta(F) \le 2$,
+	toute composante de $F$ est un chemin, ou un cycle.
+	De plus, tout chemin ou cycle dans $F$ alterne entre
+	les arêtes de $M \setminus M'$ et celles de $M' \setminus M$.
+	Tout cycle est donc de longueur paire,
+	avec un nombre d'arêtes dans $M$ égal au nombre d'arêtes dans $M'$.
+\end{proof}
+\begin{mytheo}[Berge, 1957]
+	Un couplage $M$ dans un graphe $G$ est maximum dans $G$
+	si et seulement si $G$ n'a pas de chemin $M$-augmenté.
+\end{mytheo}
+\begin{proof}
+	On prouve la contraposée dans chaque sens:
+	$G$ a un couplage plus grand que $M$ si et seulement si
+	$G$ a un chemin $M$-augmenté.
+	\noindent
+	\newline
+	\fbox{$\implies$}
+	\newline
+	Soit un chemin $M$-augmenté $P$.
+	On peut remplacer les arêtes de $M$ dans $P$
+	par les autres de $P$
+	pour obtenir un nouveau couplage $M'$ avec une arête en plus.
+	Lorsque $M$ est un couplage maximum,
+	on n'a donc pas de chemin $M$-augmenté.
+	\noindent
+	\newline
+	\fbox{$\impliedby$}
+	\newline
+	Soit $M'$ un couplage dans $G$ plus grand que $M$.
+	On construit un chemin $M$-augmenté.
+	Soit $F = M \triangle M'$.
+	Par le Lemme~\ref{lem:symdif},
+	$F$ consiste de chemins et de cycles pairs;
+	les cycles pairs ont le même nombre d'arêtes dans $M$ que dans $M'$.
+	Comme $\abs{M'} > \abs{M}$,
+	$F$ doit avoir une composante avec plus d'arêtes dans $M'$
+	que dans $M$.
+	Une telle composante ne peut être qu'un chemin
+	qui commence et termine avec une arête de $M'$.
+	C'est donc un chemin $M$-augmenté dans $G$.
+\end{proof}
+
+\subsubsection{Condition de couplage de Hall}
+Soit un graphe biparti avec bipartition $X, Y$.
+Si un couplage $M$ sature $X$, alors pour tout $S \subseteq X$ il doit y avoir
+au moins $\abs{S}$ n\oe{}uds ayant des voisins dans $S$,
+parce que les n\oe{}uds couplés à $S$ doivent être choisis dans cet ensemble.
+\begin{mynota}[Voisinage ouvert]
+	On utilise $N(S)$ ou $N_G(S)$ pour dénoter
+	les n\oe{}uds ayant un voisin dans l'ensemble $S$.
+\end{mynota}
+La condition nécessaire
+\og Pour tout $S \subseteq X$, $\abs{N(S)} \ge \abs{S}$ \fg{}
+est la \emph{Condition de Hall}.
+Hall a prouvé que cette condition évidemment nécessaire
+est également suffisante (\textsc{toncas}).
+\begin{mytheo}[Théorème de Hall---P. Hall, 1935]
+	\label{theo:hall}
+	Un graphe biparti avec bipartition $X, Y$ a un couplage qui sature $X$
+	si et seulement si $\abs{N(S)} \ge \abs{S}$ pour tout $S \subseteq X$.
+\end{mytheo}
+\begin{proof}
+	La nécessité est triviale, comme dit ci-dessus:
+	les $\abs{S}$ n\oe{}uds couplés à $S$ doivent appartenir à $N(S)$.
+	Pour la suffisance,
+	on prouve la contraposée.
+	Si $M$ est un couplage maximum dans $G$,
+	et $M$ ne sature pas $X$,
+	alors on peut trouver un ensemble $S \subseteq X$
+	tel que $\abs{N(S)} < \abs{S}$.
+	Soit $u \in X$ un n\oe{}ud insaturé par $M$.
+	Parmi tous les n\oe{}uds atteignables à partir de $u$
+	au moyen de chemins $M$-alternés dans $G$,
+	soit $S$ l'ensemble de ceux-ci dans $X$,
+	et $T$ l'ensemble de ceux dans $Y$.
+	On note que $u \in S$.
+
+	On prétend que $M$ couple $T$ avec $S \setminus \{\,u\,\}$.
+	Les chemins $M$-alternés à partir de $u$ atteignent $Y$
+	le long des arêtes n'appartenant pas à $M$ et
+	retournent vers $X$ le long des arêtes dans $M$.
+	Ainsi, tout n\oe{}ud de $S \setminus \{\,u\,\}$
+	est atteint par une arête dans $M$ à partir d'un n\oe{}ud dans $T$.
+	Comme il n'y a pas de chemin $M$-augmenté,
+	tout n\oe{}ud de $T$ est saturé;
+	un chemin $M$-alterné atteignant $y \in T$
+	s'étend par $M$ à un n\oe{}ud de $S$.
+	Les arêtes de $M$ donnent alors une bijection
+	de $T$ à $S \setminus \{\,u\,\}$,
+	et on trouve $\abs{T} = \abs{S \setminus \{\,u\,\}}$.
+
+	Le couplage entre $T$ et $S \setminus \{\,u\,\}$
+	donne $T \subseteq N(S)$.
+	En fait, on a même $T = N(S)$.
+	Supposons que $y \in Y \setminus T$ ait un voisin $v \in S$.
+	L'arête $vy$ ne peut être dans $M$,
+	car $u$ est insaturé et que le reste de $S$ est couplé à $T$ par $M$.
+	Ajouter $vy$ à un chemin $M$-alterné atteignant $v$
+	donne un chemin $M$-alterné vers $y$.
+	Ceci contredit $y \notin T$,
+	et $vy$ ne peut donc pas exister.
+
+	Avec $T = N(S)$,
+	on a prouvé que $\abs{N(S)} = \abs{T} = \abs{S} - 1 < \abs{S}$,
+	pour ce choix de $S$,
+	ce qui termine la preuve de la contraposée.
+\end{proof}
+Lorsque les deux ensembles des la bipartition ont la même taille,
+le Théorème de Hall est le Théorème du Mariage.
+
+\begin{mydef}[Graphe $k$-régulier]
+	Un graphe est dit \emph{$k$-régulier}
+	si tous les n\oe{}uds sont de degré $k$.
+\end{mydef}
+\begin{mycorr}
+	\label{corr:hall}
+	Pour $k > 0$, tout graphe biparti $k$-régulier
+	possède un couplage parfait.
+\end{mycorr}
+\begin{proof}
+	Soit $G$ un graphe biparti $k$-régulier de bipartition $X, Y$.
+	En comptant les arêtes par extrémités dans $X$ et dans $Y$,
+	on trouve que $k \abs{X} = k \abs{Y}$, et donc $\abs{X} = \abs{Y}$.
+	Il suffit alors de vérifier la Condition de Hall;
+	un couplage qui sature $X$ saturera également $Y$ et est parfait.
+
+	Considérons $S \subseteq X$.
+	Soit $m$ le nombre d'arêtes de $S$ à $N(S)$.
+	Comme $G$ est $k$-régulier, $m = k \abs{S}$.
+	Ces $m$ arêtes sont incidentes à $N(S)$,
+	donc $m \le k \abs{N(S)}$.
+	On trouve donc $k \abs{S} \le k \abs{N(S)}$,
+	et donc $\abs{S} \le \abs{N(S)}$ lorsque $k > 0$.
+	Ayant choisi $S \subseteq X$ arbitrairement,
+	on a établi la Condition de Hall.
+\end{proof}
+
+\subsubsection{Théorèmes min-max}
+\begin{mydef}[Couverture de sommets]
+	Une \emph{couverture de sommets} d'un graphe $G$
+	est un ensemble $Q \subseteq V(G)$
+	qui contient au moins une extrémité de chaque arête.
+	Les n\oe{}uds dans $Q$ couvrent $E(G)$.
+\end{mydef}
+\begin{mytheo}[König, 1931; Egerváry, 1931]
+	Si $G$ est un graphe biparti,
+	alors la taille maximum d'un couplage dans $G$
+	est égale à la taille minimum d'une couverture des arêtes de $G$.
+\end{mytheo}
+\begin{proof}
+	Soit $G$ un graphe biparti de bipartition $X, Y$.
+	Comme des n\oe{}uds distincts doivent être utilisés
+	pour couvrir les arêtes d'un couplage,
+	$\abs{Q} < \abs{M}$ quand $Q$ est une couverture des n\oe{}uds
+	et $M$ est un couplage dans $G$.
+	Étant donné une couverture minimale $Q$ de $G$,
+	on construit un couplage de taille $\abs{Q}$
+	pour montrer que l'égalité peut toujours être atteinte.
+
+	On partitionne $Q$ en disant $R = Q \cap X$
+	et $T = Q \cap Y$.
+	Soient $H$ et $H'$ les sous-graphes de $G$
+	induits par $R \cup (Y \setminus T)$
+	et $T \cup (X \setminus R)$, respectivement.
+	On utilise le Théorème de Hall afin de montrer
+	que $H$ a un couplage qui sature $R$ vers $Y \setminus T$
+	et $H'$ a un couplage qui sature $T$.
+	Comme $H$ et $H'$ sont disjoints,
+	les deux couplages ensemble
+	forment un couplage de taille $\abs{Q}$ dans $G$.
+
+	Comme $R \cup T$ est une couverture d'arêtes,
+	$G$ n'a pas d'arête de $Y \setminus T$ vers $X \setminus R$.
+	Pour tout $S \subseteq R$,
+	on considère $N_H(S)$, qui est contenu dans $Y \setminus T$.
+	Si $\abs{N_H(S)} < \abs{S}$,
+	alors on peut substituer $N_H(S)$ pour $S$ dans $Q$
+	pour obtenir une couverture de sommets plus petite,
+	car $N_H(S)$ couvre toutes les arêtes incidentes à $S$
+	qui ne sont pas couvertes par $T$.
+
+	La minimalitee de $Q$ nous donne donc la Condition de Hall dans $H$,
+	et donc $H$ a un couplage qui sature $R$.
+	En appliquant le même argument à $H'$,
+	on trouve un couplage qui sature $T$.
+\end{proof}
+
+\begin{myrem}
+	Une \emph{relation min-max} est un théorème établissant l'égalité
+	entre les réponses à un problème de minimisation
+	et un problème de maximisation sur une classe d'instances.
+	Le Théorème de König-Egerváry est une telle relation
+	pour la couverture de sommets et le couplage dans les graphes bipartis.
+\end{myrem}
+
+\subsection{Algorithmes et applications}
+\subsubsection{Algorithme hongrois}
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{Une graphe biparti $G$ de bipartition $X, Y$.}
+\KwResult{Un couplage maximum dans $G$.}
+\Begin{
+	$M \gets$ couplage initial arbitraire\;
+	$U \gets \{\,u \in X\,,\ \textnormal{u non incident à $M$}\,\}$\;
+	\While{$U$ non vide}{
+		$C \gets$ chemin $M$-augmenté à partir de $u \in U$\;
+		\eIf{$C$ existe}{
+			$M \gets M \triangle C$\;
+		}{
+			\Return $M$\;
+		}
+	}
+	\Return $M$\;
+}
+\caption{Algorithme hongrois---Kuhn, 1955; Munkres, 1957 \label{algo:hung}}
+\end{algorithm}
+
+L'étape de mise à jour $M \leftarrow M \triangle C$
+consiste à inverser les arêtes qui font partie du couplage
+le long du chemin $M$-augmenté $C$ qui a été trouvé.
+
+\begin{myprop}
+	L'algorithme hongrois est de complexité $\bigoh(\abs{V}\abs{E})$.
+	On peut arriver à une complexité $\bigoh\big(\sqrt{\abs{V}}\abs{E}\big)$
+	en utilisant une stratégie plus intelligente
+	pour trouver les chemins augmentés (Algorithme de Hopcroft-Karp (1973)).
+\end{myprop}
+
+\begin{myprop}
+	L'algorithme hongrois peut être généralisé au problème pondéré:
+	trouver le couplage de poids maximum.
+	Pour les graphes non bipartis et non pondérés,
+	l'Algorithme d'Edmonds (1965) permet de trouver le couplage maximum
+	en $\bigoh(\abs{V}^2\abs{E})$.
+	Micali et Vazirani (1980) ont diminué cette complexité
+	en $\bigoh\big(\sqrt{\abs{V}}\abs{E}\big)$.
+\end{myprop}
+
+\section{Connectivité et chemins}
+\subsection{Coupes et connectivité}
+\subsubsection{Connectivité}
+\begin{mydef}
+	Une \emph{coupe de sommets} d'un graphe $G$
+	est un ensemble $S \subseteq V(G)$ tel que
+	$G \setminus S$ ait plus d'une composante.
+	La \emph{connectivité} de $G$,
+	notée $\kappa(G)$,
+	est la taille minimum d'un ensemble de n\oe{}uds $S$
+	tel que $G \setminus S$ soit déconnecté ou ait un seul n\oe{}ud.
+	Un graphe $G$ est \emph{$k$-connexe} si
+	sa connectivité est au moins $k$.
+\end{mydef}
+
+\begin{myexem}[Graphes de Harary]
+	Étant donné $k < n$,
+	on place $n$ n\oe{}uds autout d'un cercle, espacés uniformément.
+	On suppose $k$ pair
+	(pour $k$ impair, la construction est plus difficile),
+	et on forme $H_{k, n}$ en rendant chaque n\oe{}ud adjacent
+	aux $k/2$ n\oe{}uds les plus proches
+	dans chaque direction autour du cercle.
+\end{myexem}
+\begin{mytheo}[Harary, 1962]
+	$\kappa(H_{k, n}) = k$, et donc le nombre minimal d'arêtes
+	dans un graphe $k$-connexe à $n$ n\oe{}uds est $\lceil kn/2 \rceil$.
+\end{mytheo}
+\begin{proof}
+	Comme le graphe $G$ est $k$-connexe,
+	le degré minimal dans le graphe, $\delta(G)$,
+	est plus grand ou égal à $k$.
+	La somme des degrés est donc plus grande ou égale à $kn$,
+	ce qui implique que le nombre d'arêtes est plus grand ou égal à $kn/2$.
+	Cette borne est trivialement atteinte dans les graphes de Harary.
+\end{proof}
+
+\subsubsection{Arête-connectivité}
+\begin{mydef}
+	Une \emph{coupe d'arêtes}\footnote{En fait,
+	il s'agit d'un \emph{ensemble déconnectant},
+	et une \emph{coupe d'arêtes} est un ensemble déconnectant minimal.}
+	est un ensemble $F \subseteq E(G)$
+	tel que $G \setminus F$ a plus d'une composante.
+	Un graphe est \emph{$k$-arête-connexe}
+	si toute coupe d'arêtes a au moins $k$ arêtes.
+	L'\emph{arête-connectivité} de $G$,
+	notée $\kappa'(G)$,
+	est la taille minimale d'une coupe d'arêtes.
+\end{mydef}
+
+\begin{mytheo}[Whitney, 1932]
+	Si $G$ est un graphe simple, alors
+	\[
+	\kappa(G) \le \kappa'(G) \le \delta(G)\,.
+	\]
+\end{mytheo}
+\begin{proof}
+	Les arêtes incidentes à un n\oe{}ud $v$ de degré minimum
+	forment une coupe d'arêtes;
+	on a donc $\kappa'(G) \le \delta(G)$.
+	On doit alors montrer que $\kappa(G) \le \kappa'(G)$.
+
+	On observe que $\kappa(G) \le n(G) - 1$.
+	Considérons une coupe d'arêtes minimale $[S, \widebar{S}]$.
+	Si tout n\oe{}ud de $S$
+	est adjacent à tout n\oe{}ud de $\widebar{S}$, alors
+	$\abs{[S, \widebar{S}]} = \abs{S} \abs{\widebar{S}}
+	\ge n(G) - 1 \ge \kappa(G)$,
+	et l'inégalité désirée est satisfaite.
+
+	Sinon, on choisit $x \in S$ et $y \in \widebar{S}$
+	avec $x \centernot \leftrightarrow y$.
+	Soit $T$ l'ensemble des voisins de $x$ dans $\widebar{S}$
+	et des n\oe{}uds de $S \setminus \{\,x\,\}$
+	avec des voisins dans $\widebar{S}$.
+	Tout chemin entre $x$ et $y$ passe par $T$,
+	donc $T$ est une coupe de sommets.
+	On a également que choisir les arêtes de $x$ à $T \cap \widebar{S}$
+	et une arête de chaque n\oe{}ud de $T \cap S$ à $\widebar{S}$
+	donne $\abs{T}$ arêtes distinctes de $[S, \widebar{S}]$.
+	On a donc $\kappa'(G) = \abs{[S, \widebar{S}]}
+	\ge \abs{T} \ge \kappa(G)$.
+\end{proof}
+
+\subsection{Graphes $k$-connexes}
+\subsubsection{Graphes $2$-connexes}
+\begin{mytheo}[Whitney, 1932]
+	\label{theo:whitney}
+	Un graphe $G$ ayant au moins trois n\oe{}uds
+	est $2$-connexe si et seulement si
+	pour toute paire $u, v \in V(G)$
+	il existe des chemins entre $u$ et $v$
+	dont les n\oe{}uds internes sont distincts dans $G$.
+\end{mytheo}
+\begin{proof}
+	\emph{Suffisance.}
+	Quand $G$ a des chemins entre $u$ et $v$
+	dont les n\oe{}uds internes sont distincts,
+	enlever un n\oe{}ud ne peut pas déconnecter $u$ et $v$.
+	Comme cette condition est donnée pour toute paire $u, v$,
+	enlever un n\oe{}ud quelconque
+	ne peut pas déconnecter de paire de n\oe{}uds.
+	On conclut que $G$ est $2$-connexe.
+
+	\emph{Nécessité.}
+	Supposons que $G$ soit $2$-connexe.
+	On prouve par induction sur $d(u, v)$
+	que $G$ a des chemins entre $u$ et $v$
+	dont les n\oe{}uds internes sont distincts.
+
+	Cas de base ($d(u, v) = 1$).
+	Quand $d(u, v) = 1$,
+	le graphe $G - uv$ est connexe,
+	car $\kappa'(G) \ge \kappa(G) \ge 2$.
+	Un chemin entre $u$ et $v$ dans $G - uv$
+	a des n\oe{}uds internes distincts de ceux du chemin $u, v$
+	formé par l'arête elle-même dans $G$.
+
+	Cas inductif ($d(u, v) > 1$).
+	Soit $k = d(u, v)$.
+	Soit $w$ l'arête avant $v$ dans un plus court chemin entre $u$ et $v$;
+	on a $d(u, w) = k - 1$.
+	Par l'hypothèse d'induction,
+	$G$ a des chemins entre $u$ et $w$
+	dont les n\oe{}uds internes sont distincts, $P$ et $Q$.
+	Si $v \in V(P) \cup V(Q)$,
+	alors on trouve les chemins désirés dans le cycle $P \cup Q$.
+	Supposons que ce ne soit pas le cas.
+
+	Comme $G$ est $2$-connexe,
+	$G - w$ est connexe et contient un chemin $R$ entre $u$ et $v$.
+	Si $R$ évite $P$ ou $Q$,
+	on a fini,
+	mais il est possible
+	que $R$ partage des arêtes internes avec $P$ et $Q$.
+	Soit $z$ le dernier n\oe{}ud de $R$ avant $v$ appartenant à $P \cup Q$.
+	Par symétrie, on peut assumer que $z \in P$.
+	On combine le chemin entre $u$ et $z$ de $P$
+	avec le chemin entre $z$ et $v$ de $R$,
+	afin d'obtenir un chemin entre $u$ et $v$
+	dont les n\oe{}uds internes sont distincts de $Q \cup wv$.
+\end{proof}
+
+\subsubsection{Graphes $k$-connexes et $k$-arête-connexes}
+Le Théorème~\ref{theo:mengervertex} donne
+une généralisation du Théorème~\ref{theo:whitney}.
+\begin{mytheo}[Menger, 1927]
+	\label{theo:mengervertex}
+	Si $x$ et $y$ sont des sommets d'un graphe $G$,
+	et que $xy \notin E(G)$,
+	alors la taille minimum de la coupe $x,y$
+	est égale au nombre maximal de chemins
+	dont les n\oe{}uds internes sont distincts.
+\end{mytheo}
+
+\begin{mytheo}[Menger, 1927]
+	\label{theo:mengeredge}
+	Si $x$ et $y$ sont des n\oe{}uds distincts
+	d'un graphe $G$ orienté ou non orienté,
+	alors la taille minimum d'une coupe d'arêtes déconnectant $x$ et $y$
+	est égale au nombre maximum de chemins dont les arêtes sont distinctes.
+\end{mytheo}
+Une généralisation du Théorème~\ref{theo:mengeredge} est donnée
+par Ford-Fulkerson (Remarque~\ref{rem:mengerff}).
+
+\subsection{Problèmes de flots}
+\begin{mydef}
+	Un \emph{réseau} est un graphe dirigé
+	avec une \emph{capacité} non négative $c(e)$
+	sur chaque arête $e$ et des ensembles de \emph{sommets source}
+	et \emph{puits} $s$ et $t$.
+	Un sommet est également appelé \emph{n\oe{}ud}.
+	Un \emph{flot} $f$ assigne une valeur $f(e)$
+	à chaque arête $e$.
+	On écrit $f^+(v)$ pour le flot total des arêtes quittant $v$
+	et $f^-(v)$ pour le flot total des arêtes rentrant dans $v$.
+	Un flot est \emph{faisable}
+	s'il satisfait les \emph{contraintes de capacité} $0 \le f(e) \le c(e)$
+	pour chaque arête et
+	les \emph{contraintes de conservation} $f^-(v) = f^+(v)$
+	pour tout n\oe{}ud $v \notin \{\,s, t\,\}$.
+\end{mydef}
+
+\subsubsection{Flot maximum dans un réseau}
+
+\begin{mydef}
+	La \emph{valeur} $\val(f)$ d'un flot $f$
+	est le flot net $f^+(t) - f^-(t)$ entrant dans les n\oe{}uds puits.
+	Un \emph{flot maximum} est un flot faisable de valeur maximale.
+\end{mydef}
+On s'intéresse au problème du flot maximum,
+c'est-à-dire trouver le flot dont la valeur est maximale.
+
+\begin{mydef}
+	Lorsque $f$ est un flot faisable dans un réseau $N$,
+	un \emph{chemin $f$-augmentant} est un chemin d'un n\oe{}ud source
+	à un n\oe{}ud puits $P$ dans le graphe sous-jacent $G$
+	tel que pour tout $e \in E(P)$,
+	\begin{itemize}
+		\item si $P$ suit $e$ dans la direction avant,
+		alors $f(e) < c(e)$;
+		\item si $P$ suit $e$ dans la direction arrière,
+		alors $f(e) > 0$.
+	\end{itemize}
+	Soit $\varepsilon(e) = c(e) - f(e)$ quand
+	$e$ est suivi dans la direction avant dans $P$,
+	et $\varepsilon(e) = f(e)$ si $e$ est suivi
+	dans la direction arrière dans $P$.
+	La \emph{tolérance} de $P$ est $\min_{e \in E(P)} \varepsilon(e)$.
+\end{mydef}
+
+\begin{mylem}
+	Si $P$ est un chemin $f$-augmentant avec tolérance $z$,
+	alors changer le flot de $+z$
+	sur les arêtes suivies dans la direction avant par $P$,
+	et de $-z$ sur les arêtes suivies dans la direction arrière par $P$
+	produit un flot faisable $f'$ avec $\val(f') = \val(f) + z$.
+\end{mylem}
+\begin{proof}
+	La définition de la tolérance assure que $0 \le f'(e) \le c(e)$
+	pour toute arête $e$,
+	donc les contraintes de capacité sont satisfaites.
+	Pour les contraintes de conservation,
+	on doit uniquement vérifier les arêtes de $P$,
+	comme le flot n'a pas changé autre part.
+
+	Les arêtes de $P$ incidentes à un n\oe{}ud interne $v$ de $P$
+	arrivent dans un des quatre cas de figure ci-dessous.
+	Dans tous les cas, le changement de flot sortant de $v$
+	est le même que le changement de flot rentrant dans $v$,
+	donc le flot net sortant de $v$ reste $0$ dans $f'$.
+	Finalement, le flot net dans le puits $t$ augmente de $z$.
+\end{proof}
+\begin{figure}[H]
+	\centering
+	\begin{tikzpicture}
+		\node at (-3, 0.5) (u1) {};
+		\node[draw, circle] at (-2, 0.5)  (v1) {$v$};
+		\node at (-1, 0.5)  (w1) {};
+		\node at (1, 0.5)  (u2) {};
+		\node[draw, circle] at (2, 0.5)  (v2) {$v$};
+		\node at (3, 0.5)  (w2) {};
+		\node at (-3, -0.5)  (u3) {};
+		\node[draw, circle] at (-2, -0.5)  (v3) {$v$};
+		\node at (-1, -0.5)  (w3) {};
+		\node at (1, -0.5)  (u4) {};
+		\node[draw, circle] at (2, -0.5)  (v4) {$v$};
+		\node at (3, -0.5)  (w4) {};
+
+		\draw[->] (u1) edge node[above] {$+$} (v1);
+		\draw[->] (v1) edge node[above] {$+$} (w1);
+		\draw[->] (u2) edge node[above] {$+$} (v2);
+		\draw[->] (w2) edge node[above] {$-$} (v2);
+		\draw[->] (v3) edge node[above] {$-$} (u3);
+		\draw[->] (v3) edge node[above] {$+$} (w3);
+		\draw[->] (v4) edge node[above] {$-$} (u4);
+		\draw[->] (w4) edge node[above] {$-$} (v4);
+	\end{tikzpicture}
+\end{figure}
+
+\begin{mydef}
+	Dans un réseau, une \emph{coupe source/puits} $[S, T]$
+	consiste des arêtes d'un \emph{ensemble source} $S$
+	vers un \emph{ensemble puits} $T$,
+	où $S$ et $T$ partitionnent
+	l'ensemble des n\oe{}uds\footnote{C'est-à-dire
+	$S = \widebar{T}$ et $T = \widebar{S}$.},
+	avec $s_i \in S$ et $t_i \in T$.
+	La \emph{capacité} de la coupe $[S, T]$,
+	notée $\capa(S, T)$, est la somme des capacités des arêtes de $[S, T]$.
+\end{mydef}
+
+\begin{mylem}
+	\label{lem:flowval}
+	Si $U$ est un ensemble de n\oe{}uds dans un réseau,
+	alors le flot net sortant de $U$ est la somme des flots nets
+	sortant des n\oe{}uds de $U$.
+	En particulier, si $f$ est un flot faisable
+	et $[S, T]$ est un coupe source/puits,
+	alors le flot net sortant de $S$ et le flot net entrant dans $T$
+	sont égaux à $\val(f)$.
+\end{mylem}
+\begin{proof}
+	Mathématiquement, on veut prouver
+	\[
+	f^+(U) - f^-(U) = \sum_{v \in U} [f^+(v) - f^-(v)]\,.
+	\]
+
+	On considère la contribution du flot $f(xy)$
+	sur une arête $xy$ des deux cotés de la formule.
+	Si $x,y \in U$, alors $f(xy)$ n'est pas compté à gauche,
+	mais contribue positivement (par $f^+(x)$)
+	et négativement (par $f^-(y)$) à droite.
+	Si $x,y \notin U$, alors $f(xy)$ ne contribue à aucun des deux cotés.
+	Si $xy \in [U, \widebar{U}]$, alors l'arête contribue négativement
+	des deux cotés.
+	En sommant sur toutes les arêtes, on a l'égalité demandée.
+
+	Lorsque $[S, T]$ est un coupe source/puits
+	et que $f$ est un flot faisable,
+	le flot net des n\oe{}uds de $S$ vaut $f^+(s) - f^-(s)$,
+	et le flot net des n\oe{}uds de $T$
+	vaut $f^+(t) - f^-(t) = -\val(f)$.
+	Le flot net à travers chaque coupe source/puits est donc égale
+	au flot net sortant de $s$ et au flot net entrant dans $t$.
+\end{proof}
+\begin{mycorr}[Dualité faible]
+	Si $f$ est un flot faisable et $[S, T]$ est une coupe source/puits,
+	alors $\val(f) \le \capa(S, T)$.
+\end{mycorr}
+\begin{proof}
+	Par le Lemme~\ref{lem:flowval},
+	la valeur de $f$ est égale au flot net sortant de $S$.
+	On a donc
+	\[
+	\val(f) = f^+(S) - f^-(S) \le f^+(S)\,,
+	\]
+	comme le flot entrant dans $S$ n'est pas négatif.
+	Comme les contraintes de capacité demandent $f^+(S) \le \capa(S, T)$,
+	on trouve $\val(f) \le \capa(S, T)$.
+\end{proof}
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+\KwData{Un flot faisable $f$ dans un réseau.}
+\KwResult{Un chemin $f$-augmentant ou une coupe avec capacité $\val(f)$.}
+\Begin{
+	$R \gets \{\,s\,\}$\;
+	$S \gets \emptyset$\;
+	\While{true}{
+		$v \gets R - S$\;
+		\ForAll{arête sortante $vw$ avec $f(vw) < c(vw)$ et $w \notin R$}{
+			$R \gets R \cup \{\,w\,\}$\;
+		}
+		\ForAll{arête entrante $uv$ avec $f(uv) > 0$ et $u \notin R$}{
+			$R \gets R \cup \{\,u\,\}$\;
+		}
+		Annoter toute arête dans $R$ comme \og atteinte \fg{}\;
+		Ajouter $v$ comme le sommet atteignant cette arête\;
+		Après avoir exploré toutes les arêtes en $v$,
+		ajouter $v$ à $S$\;
+		\If{$t \in R$}{
+			Tracer le chemin pour atteindre $t$\;
+			\Return chemin $f$-augmentant construit\;
+		}
+		\If{$R = S$}{
+			\Return $[S, \widebar{S}]$\;
+		}
+	}
+}
+\caption{Algorithme de Ford-Fulkerson\label{algo:fordfulkerson}}
+\end{algorithm}
+
+\begin{mytheo}[Théorème Max-flow Min-cut---Ford et Fulkerson, 1956]
+	Dans tout réseau, la valeur maximum d'un flot faisable
+	est égale à la capacité minimum d'une coupe source/puits.
+\end{mytheo}
+\begin{proof}
+	Dans le problème max-flow,
+	le flot nul ($f(e) = 0$ pour tout $e$)
+	est toujours un flot faisable et nous donne un endroit où commencer.
+	Étant donnés un flot faisable,
+	on applique l'Algorithme de Ford-Fulkerson.
+	Celui-ci ajoute itérativement des n\oe{}uds à $S$,
+	et termine lorsque $t \in R$ ou $R = S$.
+
+	Dans le premier cas, on a un chemin $f$-augmentant
+	et on augmente la valeur du flot.
+	On répète alors l'algorithme.
+	Lorsque les capacités sont rationelles,
+	toute augmentation augmente le flot d'un multiple de $1/a$,
+	où $a$ est le plus petit commun multiple des dénominateurs,
+	donc après un nombre fini d'augmentations,
+	la capacité d'une certaine coupe
+	est atteinte\footnote{Comme
+	l'ensemble des rationnels $\mathbb{Q}$ est infini dénombrable.}.
+	L'algorithme termine alors avec $R = S$.
+
+	Lorsqu'on se termine de cette façon,
+	on dit que $[S, T]$ est une coupe source/puits avec capacité $\val(f)$,
+	où $T = \widebar{S}$ et $f$ est le flot actuel.
+	C'est une coupe car $s \in S$ et $t \notin R = S$.
+	Comme appliquer l'algorithme de Ford-Fulkerson au flot $f$
+	n'introduit pas de n\oe{}ud de $T$ dans $R$,
+	aucune arête de $S$ dans $T$ dépasse sa capacité,
+	et aucune arête de $T$ dans $S$ a un flot non nul dans $f$.
+	Par conséquent, $f^+(S) = \capa(S, T)$ et $f^-(S) = 0$.
+
+	Comme le flot net sortant d'un quelconque ensemble contenant les sources mais pas les puits est $\val(f)$,
+	nous avons prouvé
+	\[
+	\val(f) = f^+(S) - f^-(S) = f^+(S) = \capa(S, T)\,.\qedhere
+	\]
+\end{proof}
+
+\subsubsection{Flots intégraux}
+
+\begin{mycorr}[Théorème d'intégralité]
+	Si toutes les capacités dans un réseau sont entières,
+	alors il y a un flot maximum assignant un flot intégral à chaque arête.
+	De plus, un certain flot maximum peut être partitionné
+	en flots unitaires le long de chemins des sources aux puits.
+\end{mycorr}
+
+\begin{myrem}[Menger à partir de Max-flow Min-cut]
+	\label{rem:mengerff}
+	Lorsque $x$ et $y$ sont des sommets dans un graphe dirigé $D$,
+	on peut voir $D$ comme un réseau avec source $x$ et puits $y$,
+	et une capacité unitaire sur chaque arête
+	(afin d'assurer que les unités de flot de $x$ à $y$ correspondent
+	à des chemins de $x$ vers $y$ disjoints deux à deux dans $D$).
+	Un flot de valeur $k$ donne donc $k$ de ces chemins.
+
+	De façon similaire,
+	toute partition source/puits $S, T$ définit un ensemble d'arêtes qui,
+	si elles sont enlevées, déconnectent $x$ et $y$: l'ensemble $[S, T]$.
+	Comme chaque capacité vaut $1$,
+	la taille de cet ensemble est $\capa(S, T)$.
+
+	Les chemins et la coupe d'arêtes que nous avons obtenus
+	ne sont pas nécessairement optimaux,
+	mais par le Théorème Max-flow Min-cut,
+	on a
+	\[
+	\lambda'_D(x,y) \ge \max \val(f) = \min \capa(S, T) \ge \kappa_D'(x,y)\,,
+	\]
+	où $\lambda'_D(x,y)$ dénote
+	le nombre maximal de chemins arête-disjoints entre $x$ et $y$ dans $D$
+	et $\kappa'_D(x,y)$ dénote l'arête-connectivité de $x$ et $y$ dans $D$.
+	Comme on a toujours $\kappa'(x,y) \ge \lambda'(x,y)$,
+	l'égalité tient toujours.
+\end{myrem}
+
+\section{Coloriage de graphes}
+\subsection{Coloriage de n\oe{}uds et bornes supérieures}
+\subsubsection{Définitions et examples}
+\begin{mydef}
+	Un \emph{$k$-coloriage} d'un graphe $G$
+	est une annotation $f \colon V(G) \to S$,
+	où $\abs{S} = k$.
+	On annote chaque sommet avec une certaine \emph{couleur},
+	et on dit que les sommets d'une même couleur forment
+	une \emph{classe de couleurs}.
+	Un $k$-coloriage est \emph{propre} si des sommets adjacents
+	ont des couleurs différentes.
+	Un graphe est \emph{$k$-coloriable} s'il a un $k$-coloriage propre.
+	Le \emph{nombre chromatique} $\chi(G)$ est le plus petit $k$
+	tel que $G$ soit $k$-coloriable.
+\end{mydef}
+
+\begin{mydef}
+	Un graphe $G$ est \emph{$k$-chromatique} si $\chi(G) = k$.
+	Un $k$-coloriage propre d'un graphe $k$-chromatique
+	est un \emph{coloriage optimal}.
+\end{mydef}
+
+\begin{mydef}
+	Le \emph{nombre de clique} d'un graphe $G$, noté $\omega(G)$,
+	est la taille maximum
+	d'un ensemble de sommets adjacents deux à deux (clique) dans $G$.
+\end{mydef}
+
+\begin{mypropo}
+	Pour tout graphe $G$, $\chi(G) \ge \omega(G)$
+	et $\chi(G) \ge \frac{n(G)}{\alpha(G)}$.
+\end{mypropo}
+\begin{proof}
+	La première borne est respectée car les sommets d'une clique
+	requièrent des couleurs différentes.
+	La deuxième borne tient car chaque classe de couleurs
+	est un ensemble indépendant et a donc au plus $\alpha(G)$ sommets.
+\end{proof}
+
+\subsubsection{Bornes supérieures}
+Le \emph{coloriage glouton} relatif à
+un ordre des sommets $v_1, \ldots, v_n$ de $V(G)$ est obtenu
+en coloriant les sommets dans l'ordre $v_1, \ldots, v_n$,
+en assignant à $v_i$ la couleur avec l'indexe le plus petit
+qui ne soit pas encore utilisée pour ses voisins $v_j$ avec $j < i$.
+
+\begin{mypropo}
+	$\chi(G) \le \Delta(G) + 1$.
+\end{mypropo}
+\begin{proof}
+	Dans un ordre de sommets,
+	tout sommet a au plus $\Delta(G)$ voisins précédents,
+	donc le coloriage glouton ne peut pas être forcé
+	d'utiliser plus de $\Delta(G) + 1$ couleurs.
+	Ceci prouve par construction que $\chi(G) \le \Delta(G) + 1$.
+\end{proof}
+
+Une \emph{représentation intervalle} d'un graphe est une famille d'intervalles
+assignées aux sommets telle que les sommets soient adjacents si et seulement si
+les intervalles correspondants s'intersectent.
+Un graphe ayant une telle représentation est un \emph{graphe intervalle}.
+
+\begin{mypropo}
+	Si $G$ est un graphe intervalle, alors $\chi(G) = \omega(G)$.
+\end{mypropo}
+\begin{proof}
+	Trions les sommets par rapport à l'extrémité gauche
+	des intervalles dans une représentation intervalle.
+	Appliquons le coloriage glouton, et supposons que $x$ reçoive $k$,
+	la couleur maximale assignée.
+	Comme $x$ ne reçoit pas une couleur plus petite,
+	l'extrémité gauche $a$ de son intervalle appartient aussi
+	à des intervalles ayant déjà les couleurs $1$ à $k-1$.
+	Ces intervalles partagent tous le point $a$,
+	donc on a une $k$-clique consistant de $x$ et de ses voisins,
+	avec des couleurs de $1$ à $k-1$.
+	Par conséquent, $\omega(G) \ge k \ge \chi(G)$.
+	Comme on a toujours $\chi(G) \ge \omega(G)$, le coloriage est optimal.
+\end{proof}
+
+\subsubsection{Théorème de Brooks}
+
+\begin{mytheo}[Brooks, 1941]
+	Si $G$ est un graphe connexe autre
+	qu'un graphe complet ou un cycle impair\footnote{On parle ici
+	des graphes $C_{2k+1}$, pour $k \ge 0$.
+	Le graphe peut contenir des cycles impairs.},
+	alors $\chi(G) \le \Delta(G)$.
+\end{mytheo}
+\begin{proof}
+	Soit $G$ un graphe connexe, et soit $k = \Delta G$.
+	Nous pouvons supposer que $k \ge 3$,
+	comme $G$ est un graphe complet quand $k \le 1$
+	et $G$ est un cycle impair ou un graphe biparti quand $k = 2$,
+	impliquant que la borne tient dans ce cas.
+
+	Nous essayons d'ordonner les sommets tel que chaque sommet
+	ait au plus $k-1$ voisins le précédant.
+	Le coloriage glouton pour un tel ordre de sommets donne la borne.
+
+	Quand $G$ n'est pas $k$-régulier, nous pouvons choisir
+	un sommet de degré plus petit que $k$ comme $v_n$.
+	Comme $G$ est connexe, on peut construire un arbre sous-tendant
+	à partir de $v_n$, en assignant les indices en ordre décroissant.
+	Tout sommet autre que $v_n$ dans l'ordre résultant $v_1,\ldots,v_n$
+	a un voisin d'indice plus élevé
+	le long du chemin vers $v_n$ dans l'arbre.
+	Par conséquent, tout sommet a au plus $k-1$ voisins
+	d'indice moins élevé et le coloriage glouton
+	utilise au plus $k$ couleurs.
+
+	Dans le cas restant, $G$ est $k$-régulier.
+	Supposons d'abord que $G - x$ ne soit pas connexe,
+	et soit $G'$ un sous-graphe consistant
+	d'une composante de $G - x$
+	ensemble avec ses arêtes vers $x$.
+	Le degré de $x$ dans $G'$ est plus petit que $k$,
+	donc la méthode ci-dessus donne un $k$-coloriage propre de $G$.
+
+	On peut donc supposer que $G$ soit $2$-connexe.
+	Dans tout ordre de sommets,
+	le dernier sommet a $k$ voisins trouvés précédemment.
+	L'idée du coloriage glouton pourrait toujours fonctionner
+	si on fait en sorte que deux voisins de $v_n$ aient la même couleur.
+
+	En particulier, supposons qu'un certain sommet $v_n$
+	ait des voisins $v_1, v_2$ tels que $v_1 \centernot \leftrightarrow v_2$
+	et que $G - \{\,v_1, v_2\,\}$ soit connexe.
+	Dans ce cas, on indexe les sommets
+	d'un arbre sous-tendant $G - \{\,v_1, v_2\,\}$
+	avec $3, \ldots, n$. de telle sorte que les indexes augmentent
+	le long des chemins vers la racine $v_n$.
+	Comme avant, chaque sommet $v_n$ a
+	au plus $k-1$ voisins d'indexe plus bas.
+	Le coloriage glouton utilise au plus $k-1$ couleurs
+	sur les voisins de $v_n$,
+	comme $v_1$ et $v_2$ reçoivent la même couleur.
+
+	Il suffit donc de montrer que tout graphe $2$-connexe $k$-régulier
+	avec $k \ge 3$ a un tel triplet $v_1, v_2, v_n$.
+	Choisissons un sommet $x$.
+	Si $\kappa(G - x) \ge 2$,
+	laissons $v_1$ être $x$ et $v_2$ être un sommet
+	à une distance $2$ de $x$.
+	Un tel sommet $v_2$ existe car $G$ est régulier
+	et n'est pas un graphe complet;
+	soit $v_n$ un voisin commun à $v_1$ et $v_2$.
+
+	Si $\kappa(G - x) = 1$, laissons $v_n = x$.
+	Comme $G$ n'a pas de sommet qui déconnecte le graphe,
+	$x$ a un voisin dans chaque block feuille de $G - x$.
+	Les voisins $v_1, v_2$ de $x$ dans deux de ces blocks
+	ne sont pas adjacents.
+	Aussi, $G - \{\,x, v_1, v_2\,\}$ est connexe,
+	puisque les blocks n'ont pas de sommet déconnectant $G$.
+	Comme $k \ge 3$, le sommet $x$ a un autre voisin,
+	et $G - \{\,v_1, v_2\,\}$ est connexe.
+\end{proof}
+
+\subsection{Structure des graphes $k$-chromatiques}
+\subsubsection{Théorème de Turán}
+\begin{mytheo}[Turán, 1941]
+	Tout graphe $G$ ayant $n$ sommets, et ne contenant pas de clique
+	de taille plus grande que $r$
+	(c'est-à-dire ne contenant pas le graphe $K_{r+1}$)
+	possède au plus le nombre suivant d'arêtes:
+	\[
+	\frac{r-1}{r} \frac{n^2}{2} = \left( 1 - \frac{1}{r} \right) \frac{n^2}{2}\,.
+	\]
+	Cette borne est atteinte par le graphe de Turán $T_{n, r}$.
+\end{mytheo}
+
+\subsection{Aspects énumératifs}
+\subsubsection{Compter les coloriages propres}
+Pour un graphe $G$, le polynôme chromatique du graphe $G$, $\chi(G; k)$,
+est le nombre de coloriages propres différents à $k$ couleurs.
+On a donc $\chi(G) = \min \{\,k: \chi(G; k) > 0\,\}$.
+
+\begin{mytheo}[Récurrence chromatique]
+	Si $G$ est un graphe simple et $e \in E(G)$,
+	alors $\chi(G; k) = \chi(G - e; k) + \chi(G \cdot e; k)$.
+\end{mytheo}
+\begin{proof}
+	Tout $k$-coloriage propre de $G$
+	est un $k$-coloriage propre de $G - e$.
+	Un $k$-coloriage propre de $G - e$ est un $k$-coloriage propre de $G$
+	si et seulement si il donne des couleurs distinctes
+	aux extrémités $u$ et $v$ de $e$.
+	Ainsi, on peut compter le nombre de $k$-coloriages propres de $G$
+	en soustrayant de $\chi(G - e; k)$
+	le nombre de $k$-coloriages propres de $G - e$
+	qui donnent la même couleur à $u$ et $v$.
+
+	Les coloriages de $G - e$ dans lesquels $u$ et $v$ ont la même couleur
+	correspondent directement aux $k$-coloriages propres de $G \cdot e$,
+	dans lesquels la couleur du sommet contracté
+	est la couleur commune de $u$ et $v$.
+	Un tel coloriage colorie proprement toutes les arêtes de $G \cdot e$
+	si et seulement s'il colorie proprement
+	toutes les arêtes de $G$ autres que $e$.
+\end{proof}
+
+\begin{mytheo}[Whitney, 1933]
+	Le polynôme chromatique $\chi(G; k)$ d'un graphe simple $G$
+	a un degré $n(G)$, avec des coefficients entiers
+	alternant en signe et commençant avec $1, -e(G),\ldots$
+\end{mytheo}
+\begin{proof}
+	On utilise l'induction sur $e(G)$.
+	Le théorème est trivialement vrai lorsque $e(G) = 0$,
+	où $\chi(\widebar{K_n}; k) = k^n$.
+	On raisonne ensuite par induction sur le nombre d'arêtes.
+	% TODO complete, p.222
+\end{proof}
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{lc}
+		\hline
+		\hline
+		\multicolumn{1}{c}{Graphe} & Polynôme chromatique \\
+		\hline
+		\\
+		Graphe complet $K_n$ & $\chi(K_n; k) = k (k-1) \cdots (k - (n-1))$ \\
+		\\
+		Graphe cycle $C_n$ & $\chi(C_n; k) = (-1)^n (k-1) + (k-1)^n$ \\
+		\\
+		Arbre à $n$ sommets & $\chi(G; k) = k (k-1)^{n-1}$ \\
+		\hline
+		\hline
+	\end{tabular}
+	\caption{Polynômes chromatiques pour quelques graphes.}
+\end{table}
+
+\section{Graphes planaires}
+\subsection{Enchâssement et formule d'Euler}
+\subsubsection{Dessins dans le plan}
+
+\begin{mydef}
+	Un graphe est \emph{planaire} s'il est possible
+	de le dessiner dans le plan sans intersections.
+	Un tel dessin est un \emph{enchâssement planaire} de $G$.
+	Un \emph{graphe plan} est un enchâssement planaire particulier
+	d'un graphe planaire.
+\end{mydef}
+
+\begin{mypropo}
+	$K_5$ et $K_{3,3}$ ne peuvent pas être planaires.
+\end{mypropo}
+\begin{proof}
+	Considérons un dessin de $K_5$ ou $K_{3,3}$ dans le plan.
+	Soit $C$ un cycle sous-tendant.
+	Si le dessin n'a pas d'arêtes s'intersectant,
+	alors $C$ est dessiné comme une courbe fermée.
+	Les cordes de $C$ doivent être dessinées à l'intérieur
+	ou à l'extérieur de cette courbe.
+	Deux cordes sont en conflit
+	si leurs extrémités dans $C$ arrivent en ordre alternant.
+	Lorsque deux cordes sont en conflit,
+	on ne peut en dessiner qu'une à l'intérieur et une à l'extérieur de $C$.
+
+	Un $6$-cycle dans $K_{3,3}$ a
+	trois paires de cordes en conflit deux à deux.
+	On peut en mettre au plus une à l'intérieur et une à l'extérieur,
+	et ils n'est donc pas possible de compléter l'enchâssement.
+	Lorsque $C$ est un $5$-cycle dans $K_5$,
+	au plus deux cordes peuvent aller à l'intérieur ou à l'extérieur.
+	Comme il y a cinq cordes, il n'est de nouveau pas possible
+	de compléter l'enchâssement.
+	Par conséquent, aucun des ces graphes n'est planaire.
+\end{proof}
+
+\subsubsection{Graphes duaux}
+\begin{mydef}
+	Le \emph{graphe dual} $G^*$ d'un graphe plan $G$
+	est un graphe plan dont les sommets correspondent aux faces de $G$.
+	Les arêtes de $G^*$ correspondent aux arêtes de $G$ comme suit:
+	si $e$ est une arête de $G$ avec la face $X$ d'un coté
+	et la face $Y$ de l'autre,
+	alors les extrémités de l'arête duale $e^* \in E(G^*)$
+	sont les sommets $x,y$ de $G^*$
+	qui représentent les faces $X$ et $Y$ de $G$.
+	L'ordre dans le plan des arêtes incidentes à $x \in V(G)$
+	est l'ordre des arêtes longeant la face $X$ de $G$
+	le long d'une promenade sur son bord.
+\end{mydef}
+
+\begin{mydef}
+	La \emph{longueur}\footnote{Également appelée \emph{degré}.}
+	d'une face dans un graphe plan $G$
+	est la longueur totale d'une promenade fermée dans $G$
+	longeant la face.
+\end{mydef}
+
+\begin{mypropo}
+	\label{propo:facesum}
+	Si $l(F_i)$ dénote la longueur de la face $F_i$ dans un graphe plan $G$,
+	alors $2e(G) = \sum l(F_i)$.
+\end{mypropo}
+\begin{proof}
+	Les longueurs de face sont les degrés des sommets du dual.
+	Comme $e(G) = e(G^*)$,
+	dire que $2e(G) = \sum l(F_i)$ est donc équivalent à la formule
+	$2e(G) = \sum d_{G^*}(x)$ pour $G^*$.\footnote{Les deux sommes
+	comptent chaque arête en double.}
+\end{proof}
+
+\subsubsection{Formule d'Euler}
+\begin{mytheo}[Euler, 1758]
+	Si un graphe plan connexe a exactement
+	$n$ sommets, $e$ arêtes et $f$ faces, alors $n - e + f = 2$.
+\end{mytheo}
+\begin{proof}
+	Par induction sur $n$.
+	Si $n = 1$, le graphe $G$ est un \og bouquet \fg{} de boucles,
+	chacune une boucle fermée dans l'enchâssement.
+	Si $e = 0$, $f = 1$ et la formule est juste.
+	Chaque boucle ajoutée passe à travers une face
+	et coupe celle-ci en deux.
+	Ceci augmente $e$ de $1$ et $f$ de $1$,
+	et la formule tient pour $n=1$, peu importe le nombre d'arêtes.
+
+	Si $n > 1$, comme $G$ est connexe,
+	on peut trouver une arête qui ne soit pas une boucle.
+	Lorsqu'on contracte cette arête,
+	on obtient un graphe plan $G'$ avec $n'$ sommets,
+	$e'$ arêtes et $f'$ faces.
+	La contraction ne change pas le nombre de faces
+	(on a simplement raccourci les bords),
+	mais elle réduit le nombre de sommets et d'arêtes de $1$,
+	donc $n' = n-1$, $e' = e-1$ et $f' = f$.
+	Par l'hypothèse d'induction, on trouve
+	\[
+	n - e + f = n' + 1 - (e' + 1) + f' = n' - e' + f' = 2\,.\qedhere
+	\]
+\end{proof}
+
+\begin{mytheo}
+	Si $G$ est un graphe planaire simple avec au moins trois sommets,
+	alors $e(G) \le 3 n(G) - 6$.
+	Si en plus $G$ ne contient pas de triangles,
+	alors $e(G) \le 2 n(G) - 4$.
+\end{mytheo}
+\begin{proof}
+	Il est suffisant de ne s'occuper que des graphes connexes;
+	sinon, on pourrait ajouter des arêtes.
+	La formule d'Euler mettra en relation $e(G)$ et $n(G)$
+	si on peut disposer de $f$.
+
+	La Proposition~\ref{propo:facesum}
+	donne une inégalité entre $e$ et $f$.
+	Tout bord de face dans un graphe simple contient au moins trois arêtes
+	(si $n(G) \ge 3$).
+	En laissant $\{\,f_i\,\}$ être la liste des longueurs de face,
+	ceci donne $2e = \sum f_i \ge 3f$.
+	Substituant ceci dans $n - e + f = 2$ donne $e \le 3n - 6$.
+
+	Lorsque $G$ ne contient pas de trinagles,
+	les faces ont une longueur d'au moins $4$.
+	Dans ce cas,
+	$2e = \sum f_i \ge 4f$, et on obtient $e \le 2n - 4$.
+\end{proof}
+On note que les conditions ci-dessus sont nécessaires.
+
+\begin{mytheo}
+	\label{theo:mindeg}
+	Dans tout graphe planaire simple $G$,
+	il y a un sommet de degré plus petit ou égal à $5$.
+\end{mytheo}
+\begin{proof}
+	On montre la proposition équivalente
+	que le degré moyen est plus petit que $6$.
+	Si $n(G) < 3$, alors $d(v) \le n(G) - 1 < 2 < 5$
+	pour tout $v \in V(G)$.
+	Si $n(G) \ge 3$, on a $e(G) \le 3 n(G) - 6$.
+	Le degré moyen est donné par
+	\[
+	\frac{\sum_{v \in V(G)} d(v)}{n(G)} = \frac{6 n(G)-12}{n(G)} < 6\,.\qedhere
+	\]
+\end{proof}
+
+\begin{myrem}
+	Un graphe est planaire si et seulement s'il est représentable
+	sur la sphère sans croisement d'arêtes.
+\end{myrem}
+
+\begin{myexem}[Polyèdres réguliers]
+	De façon informelle,
+	on s'imagine un polyèdre régulier comme un solide
+	dont la frontière consiste en polygones réguliers de la même longueur,
+	avec le même nombre de faces se joignant en chaque sommet.
+	Lorsqu'on étire le polyèdre pour former une sphère,
+	et qu'on projette ensuite le dessin
+	dans le plan par projection stéréographique,
+	on obtient un graphe plan régulier avec des faces de la même longueur.
+	Le dual est donc aussi un graphe régulier.
+
+	Soit $G$ un graphe plan avec $n$ sommets, $e$ arêtes et $f$ faces.
+	Supposons que $G$ soit régulier de degré $k$,
+	et que toutes les faces aient une longueur $l$.
+	La formule pour la somme des degrés pour $G$ et $G^*$
+	donne alors $kn = 2e = lf$.
+	En substituant pour $n$ et $f$ dans la Formule d'Euler,
+	on obtient $e(2/k - 1 + 2/l) = 2$.
+	Comme $2$ et $e$ sont positifs,
+	l'autre facteur doit l'être également,
+	ce qui donne $2/k + 2/l > 1$,
+	et donc $2l + 2k > kl$.
+	Cette inégalité est équivalente à $(k-2)(l-2) < 4$.
+
+	Comme le dual d'un graphe $2$-régulier n'est pas simple,
+	on requiert que $k, l \ge 3$.
+	On a également que $(k-2)(l-2) < 4$ requiert $k,l \le 5$.
+	On a donc seulement cinq paires d'entiers satisfaisant ces équations,
+	et donc cinq solides platoniciens.
+\end{myexem}
+
+\subsection{Caractérisation des graphes planaires}
+\begin{mytheo}[Kuratowski, 1930]
+	Un graphe est planaire si et seulement s'il
+	ne contient pas une subdivision
+	(remplacement de chaque arête par un chemin)
+	de $K_5$ ou $K_{3, 3}$ comme sous-graphe.
+\end{mytheo}
+
+\subsection{Paramètres de planarité}
+\subsubsection{Coloriage des graphes planaires}
+\begin{mytheo}[Théorème des cinq couleurs---Heawood, 1890]
+	Tout graphe planaire est $5$-coloriable.
+\end{mytheo}
+\begin{proof}
+	On travaille par induction sur $n(G)$.
+
+	Il est trivial que pour $n(G) \le 5$,
+	tous les graphes $G$ sont $5$-coloriables.
+
+	Pour $n(G) > 5$,
+	on utilise le Théorème~\ref{theo:mindeg}.
+	Celle-ci implique que $G$ a un sommet de degré au plus $5$.
+	Par l'hypothèse d'induction,
+	$G - v$ est $5$-coloriable.
+	Soit $f \colon V(G - v) \to [5]$
+	un coloriage propre de $G - v$.
+	Si $G$ n'est pas $5$-coloriable,
+	alors $f$ assigne chaque couleur à un voisin de $v$, et donc $d(v) = 5$.
+	Soient $v_1, v_2, v_3, v_4, v_5$ les voisins de $v$
+	dans l'ordre horloger autour de $v$.
+	On nomme les couleurs de sorte à ce que $f(v_i) = i$.
+
+	Soit $G_{i,j}$ le sous-graphe de $G - v$
+	induit par les sommets de couleurs $i$ et $j$.
+	Échanger les deux couleurs sur une composante quelconque de $G_{i,j}$
+	donne un autre $5$-coloriage de $G - v$.
+	Si la composante de $G_{i,j}$ contenant $v_i$ ne contient pas $v_j$,
+	alors on peut échanger les couleurs dessus pour enlever $i$ de $N(v)$.
+	Donnant maintenant la couleur $i$ à $v$
+	produit un $5$-coloriage propre de $G$.
+	$G$ est donc $5$-coloriable à moins que pour tout choix de $i$ et $j$,
+	la composante $G_{i,j}$ contenant $v_i$ contient aussi $v_j$.
+	Soit $P_{i,j}$ un chemin dans $G_{i,j}$ de $v_i$ à $v_j$.
+
+	Considérons le cycle $C$ complété avec $P_{1, 3}$ par $v$;
+	ceci sépare $v_2$ de $v_4$.
+	Le chemin $P_{2,4}$ doit croiser $C$.
+	Comme $G$ est planaire,
+	les chemins ne peuvent se croiser qu'en des sommets partagés.
+	Les sommets de $P_{1,3}$ ont tous une couleur $1$ ou $3$,
+	alors que les sommets de $P_{2,4}$ ont tous une couleur $2$ ou $4$,
+	et ils n'ont donc pas de sommet en commun.
+
+	Par cette contradiction, $G$ est $5$-coloriable.
+\end{proof}
+
+\begin{mytheo}[Théorème des quatre couleurs---Appel \& Haken, 1976]
+	Tout graphe $G$ planaire est $4$-coloriable.
+\end{mytheo}
+
+\section{Arêtes et cycles}
+\subsection{Coloriage d'arêtes}
+\subsubsection{Coloriages d'arête}
+\begin{mydef}
+	Un \emph{$k$-coloriage d'arêtes} de $G$
+	est une annotation $f \colon E(G) \to S$,
+	où $\abs{S} = k$.
+	Les annotations sont des \emph{couleurs};
+	les arêtes d'une couleur forment une \emph{classe de couleur}.
+	Un $k$-coloriage d'arêtes est \emph{propre}
+	si les arêtes incidentes ont des couleurs différentes.
+	Un graphe est \emph{$k$-arête-coloriable}
+	s'il a un $k$-coloriage d'arêtes propre.
+	L'\emph{indice chromatique} $\chi'(G)$ d'un graphe sans boucle $G$
+	est le plus petit $k$ tel que $G$ soit $k$-arête-coloriable.
+\end{mydef}
+
+\begin{mytheo}
+	Pour tout graphe $G$, $\chi'(G) \ge \Delta(G)$.
+\end{mytheo}
+\begin{proof}
+	Les arêtes ayant un sommet en commum doivent être de couleur différente.
+\end{proof}
+
+\begin{mytheo}[König, 1916]
+	Si $G$ est biparti, alors $\chi'(G) = \Delta(G)$.
+\end{mytheo}
+\begin{proof}
+	Par le Corollaire~\ref{corr:hall},
+	on peut déduire que tout graphe régulier biparti $H$
+	peut être $\Delta(H)$-arête-colorié.
+	Il suffit donc de montrer que pour tout graphe $G$
+	avec un degré maximal $k$,
+	il y a un graphe biparti $k$-régulier $H$ contenant $G$.
+
+	Pour construire un tel graphe,
+	on ajoute d'abord des sommets à l'ensemble biparti de $G$ le plus petit,
+	afin d'égaliser les tailles.
+	Si le graphe résultant $G'$ n'est pas régulier,
+	alors chaque ensemble biparti a un sommet de degré plus petit que $k$.
+	On ajoute alors une arête entre ces deux sommets.
+	On continue d'ajouter de telles arêtes
+	tant que le graphe n'est pas $k$-régulier;
+	le graphe résultant est $H$.
+\end{proof}
+
+\begin{mytheo}[Vizing, 1964--1965 \& Gupta, 1966]
+	Si $G$ est un graphe simple,
+	alors $\chi'(G) \le \Delta(G) + 1$.
+\end{mytheo}
+\begin{proof}
+	Soit $f$ un $\Delta(G)+1$-arête-coloriage propre
+	d'un sous-graphe $G'$ de $G$.
+	Si $G' \ne G$, alors une certaine arête $uv$ n'est pas coloriée par $f$.
+	Après avoir recolorié potentiellement quelques arêtes,
+	ont peut étendre le coloriage pour inclure $uv$;
+	on parle d'\emph{augmentation}.
+	Après $e(G)$ augmentations,
+	on obtient un $\Delta(G)+1$-arête-coloriage propre de $G$.
+
+	Comme le nombre de couleurs excède $\Delta(G)$,
+	chaque sommet a une couleur
+	qui n'apparaît pas sur ses arêtes incidentes.
+	Soit $a_0$ une couleur manquante en $u$.
+	On génère un liste de voisins de $u$
+	et la liste de couleurs correspondante.
+	On commence avec $v_0 = v$.
+
+	Soit $a_1$ une couleur manquante en $v_0$.
+	On peut supposer que $a_1$ apparaît en $u$
+	sur une certaine arête $uv_1$;
+	sinon on utiliserait $a_1$ sur $uv_0$.
+
+	Soit $a_2$ une couleur manquante en $v_1$.
+	On peut supposer que $a_2$ apparaît en $u$
+	sur une certaine arête $uv_2$;
+	sinon on remplacerait la couleur $a_1$ avec $a_2$ sur $uv_1$
+	et puis on utiliserait $a_1$ sur $uv_0$ pour augmenter le coloriage.
+
+	Ayant sélectionné $uv_{i-1}$ avec couleur $a_{i-1}$,
+	soit $a_i$ la couleur manquante en $v_{i-1}$.
+	Si $a_i$ manque en $u$, alors on utilise $a_i$ sur $uv_{i-1}$
+	et on décale la couleur $a_j$ de $uv_j$ à $uv_{j-1}$
+	pour $1 \le j \le i-1$ afin de compléter l'augmentation.
+	On appelle ceci le \emph{décalage vers le bas à partir de $i$}.
+	Si $a_i$ apparaît en $u$ (sur une certain arête $uv_i$),
+	alors le procédé continue.
+
+	Comme on a seulement $\Delta(G) + 1$ couleurs parmi lesquelles choisir,
+	la liste de couleur sélectionnées se répète éventuellement
+	(ou on termine de compléter l'augmentation par décalage vers le bas).
+	Soit $l$ le plus petit indice tel que la couleur manquante en $v_l$
+	soit dans la liste $a_1, \ldots, a_l$;
+	soit cette couleur $a_k$.
+	Au lieu d'étendre la liste,
+	on utilise la répétition pour appliquer l'augmentation
+	dans l'une des différentes façons.
+
+	La couleur $a_k$ manquante en $v_l$ est aussi manquante en $v_{k-1}$
+	et apparaît sur $uv_k$.
+	Si $a_0$ n'apparaît pas en $v_l$, alors on décale vers le bas
+	à partir de $v_l$ et on utilise la couleur $a_0$ sur $uv_l$
+	pour compléter l'augmentation.
+	On peut donc supposer que $a_0$ apparaît en $v_l$.
+
+	Soit $p$ le chemin alternant maximal
+	des arêtes coloriées $a_0$ et $a_k$ commençant en $v_l$
+	le long de la couleur $a_0$.
+	Il n'y a qu'un seul de ces chemins,
+	car chaque sommet a au plus une arête incidente de chaque couleur
+	(on ignore les arêtes pas encore coloriées).
+	Pour compléter l'augmentation,
+	on interchange les couleurs $a_0$ et $a_k$ sur $P$
+	et on décale vers le bas à partir d'un voisin approprié de $u$,
+	dépendant de vers où va $P$.
+
+	Si $P$ atteint $v_k$,
+	alors il arrive en $v_k$ le long d'une arête de couleur $a_0$,
+	suit $v_k u$ de couleur $a_k$ et s'arrête en $u$,
+	qui n'a pas la couleur $a_0$.
+	Dans ce cas, on décale vers le bas à partir de $v_k$
+	et on échange les couleurs sur $P$.
+
+	Si $P$ atteint $v_{k-1}$, alors il l'atteint par la couleur $a_0$
+	et s'arrête là, car $a_k$ n'apparaît pas en $v_{k-1}$.
+	Dans ce cas, on décale vers le bas à partir de $v_{k-1}$,
+	on donne la couleur $a_0$ à $uv_{k-1}$
+	et on échange les couleurs sur $P$.
+
+	Si $P$ n'atteint ni $v_k$ ni $v_{k-1}$,
+	alors il s'arrête à un certain sommet
+	hors de $\{\,u, v_l, v_k, v_{k-1}\,\}$.
+	Dans ce cas, on décale vers le bas à partir de $v_l$,
+	on donne la couleur $a_0$ à $u v_l$ et on échange les couleurs sur $P$.
+
+	Dans tous les cas,
+	les échanges décrits donnent un $\Delta(G) + 1$-arête-coloriage propre
+	de $G' + uv$, et on a donc complété l'augmentation désirée.
+\end{proof}
+
+\subsection{Cycles hamiltoniens}
+\begin{mydef}
+	Un \emph{graphe hamiltonien} est un graphe
+	avec un cycle sous-tendant,
+	également appelé \emph{cycle hamiltonien}.
+\end{mydef}
+
+\subsubsection{Conditions nécessaires}
+\begin{mypropo}
+	Si $G$ a un cycle hamiltonien,
+	alors pour tout ensemble non-vide $S \subseteq V$,
+	le graphe $G \setminus S$ a au plus $\abs{S}$ composantes.
+\end{mypropo}
+\begin{proof}
+	Lorsqu'on quitte une composante de $G \setminus S$,
+	un cycle hamiltonien ne peut aller que dans $S$,
+	et les arrivées dans $S$ doivent utiliser des n\oe{}uds distincts.
+	$S$ doit donc avoir au moins autant de n\oe{}uds
+	que $G \setminus S$ a de composantes.
+\end{proof}
+
+\subsubsection{Conditions suffisantes}
+\begin{mytheo}[Dirac, 1952]
+	Si $G$ est un graphe simple avec au moins trois n\oe{}uds
+	et $\delta(G) \ge n(G)/2$,
+	alors $G$ est hamiltonien.
+\end{mytheo}
+\begin{proof}
+	La condition $n(G) \ge 3$ est nécessaire car $K_2$
+	satisfait $\delta(K_2) = n(K_2)/2$,
+	mais n'est pas hamiltonien.
+
+	La preuve est par contradiction et extrémalité.
+	S'il existe un graphe non hamiltonien
+	satisfaisant les hypothèses,
+	alors ajouter des arêtes ne peut réduire le degré minimum.
+	On peut donc s'occuper uniquement des graphes non hamiltoniens
+	maximaux avec degré minimal au moins $n/2$,
+	ou \og maximaux \fg{} signifie qu'ajouter des arêtes
+	joignant des n\oe{}uds non adjacents crée un cycle sous-tendant.
+
+	Lorsque $u \centernot \leftrightarrow v$ dans $G$,
+	la maximalité de $G$ implique que $G$ a un chemin sous-tendant
+	$v_1, \ldots, v_n$ de $u = v_1$ à $v = v_n$,
+	car tout cycle sous-tendant dans $G + uv$
+	contient la nouvelle arête $uv$.
+	Afin de prouver le théorème,
+	il suffit de changer quelque chose dans ce cycle
+	pour éviter d'utiliser l'arête $uv$;
+	on construit ainsi un cycle sous-tendant dans $G$.
+
+	Si un voisin de $u$ suit directement un voisin de $v$ sur le chemin,
+	tel que $u \leftrightarrow v_{i+1}$ et $v \leftrightarrow v_i$,
+	alors $(u, v_{i+1}, v_{i+2}, \ldots, v, v_i, v_{i-1}, \ldots, v_2)$
+	est un cycle sous-tendant.
+
+	Afin de prouver qu'un tel cycle existe,
+	on montre qu'il y a un indice commun dans les ensembles $S$ et $T$
+	definis comme $S = \{\,i: u \leftrightarrow v_{i+1}\,\}$
+	et $T = \{\,i: v \leftrightarrow v_i\,\}$.
+	En sommant la taille de ces ensembles,
+	on trouve
+	\[
+	\abs{S \cup T} + \abs{S \cap T} = \abs{S} + \abs{T} = d(u) + d(v) \ge n\,.
+	\]
+	Ni $S$ ni $T$ contient l'indice $n$.
+	On a donc $\abs{S \cup T} < n$, et donc $\abs{S \cap T} \ge 1$.
+	On a établi une contradiction
+	en trouvant un cycle sous-tendant dans $G$;
+	il n'y a donc pas de graphe maximal non hamiltonien
+	satisfaisant les hypothèses.
+\end{proof}
+
+\begin{mydef}
+	Un \emph{chemin hamiltonien} est un chemin sous-tendant.
+\end{mydef}
+
+\begin{myprob}[Problème du voyageur de commerce, \textsc{tsp}]
+	Dans un graphe pondéré, trouver le parcours fermé le plus court
+	qui passe par tous les n\oe{}uds au moins une fois.
+\end{myprob}
+\begin{myprob}[Problème du postier chinois]
+	Dans un graphe pondéré, trouver le parcours fermé le plus court
+	qui passe par toutes les arêtes au moins une fois.
+\end{myprob}
+
+\section{Optimisation et complexité}
+\subsection{Preuves de NP-complétude}
+Une \emph{transformation} d'un problème A vers un problème B
+est une procédure qui convertit les instances de A en instances de B
+telle que la réponse à A sur l'instance initiale
+est déterminée par la réponse à B sur l'instance transformée.
+Si on a un algorithme efficace (en temps polynomial) pour B,
+alors on a un algorithme efficace pour transformer A en B,
+alors on a un algorithme efficace pour A.
+On dit que A \emph{se réduit à} ou \emph{se transforme en} B.
+
+\begin{mydef}
+	Un problème A est dans P si et seulement s'il
+	existe une machine de Turing et un polynôme $p(x)$
+	tels que la machine de Turing termine en temps borné par $p(n)$ pour A,
+	où $n$ est la taille de l'instance et renvoie \og OUI \fg{}
+	si l'instance est positive et \og NON \fg{} sinon.
+
+	Un problème A est dans NP s'il existe une machine de Turing
+	qui prend deux entrées $m$ et $n$ et un polynôme $p(x)$
+	qui borne sa complexité tels que la machine de Turing termine
+	en temps borné par $p(\abs{m})$ et tel que la machine renvoie OUI
+	sur l'entrée $(m, n)$ si et seulement si $m$ est une instance positive.
+	Un problème A est NP-complet si tout problème dans NP
+	peut être réduit à une instance de A.
+\end{mydef}
+
+Si A est NP-dur et se réduit à B par un algorithme en temps polynomial,
+alors B est aussi NP-dur (un algorithme polynomial pour B
+donne un algorithme polynomial pour A et donc pour tout NP).
+Si B est aussi dans NP,
+alors on dit que B est NP-complet par \emph{réduction à partir de} ou
+\emph{par transformation de} A.
+Ceci est vrai car les polynomes sont fermés sous multiplication
+et sous composition.
+
+\begin{mytheo}[Cook, 1971]
+	SATISFAISABILITÉ est un problème NP-complet initial.
+\end{mytheo}
+
+\begin{mydef}[$3$-SATISFAISABILITÉ]
+	Un ensemble de variables logiques $U = \{\,u_i\,\}$
+	et un ensemble $C = \{\,c_i\,\}$ de clauses.
+	Chaque clause consiste de trois littéraux
+	étant des variables ou leur négation.
+
+	La question qu'on se pose est de savoir
+	si on peut assigner à chaque variable une valeur TRUE ou FALSE
+	tel que chaque clause soit satisfaite.
+\end{mydef}
+
+\begin{mytheo}[Karp, 1972]
+	$3$-SAT est NP-complet.
+\end{mytheo}
+
+\begin{mytheo}[Stockmeyer, 1973]
+	$k$-COLORABILITÉ est un problème NP-complet.
+\end{mytheo}
+
+\begin{mytheo}[Karp, 1972]
+	CLIQUE et ENSEMBLE INDÉPENDANT sont NP-complets.
+\end{mytheo}
+
+\begin{mytheo}
+	$k$-ARÊTE-COLORABILITÉ est NP-complet.
+\end{mytheo}
+
+\end{document}
