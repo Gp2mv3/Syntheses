@@ -11,6 +11,39 @@
 
 \newcommand{\SolutionLabel}{Solution \IfLanguageName{english}{to}{à} \QAlabel~\theQA}
 
+\RequirePackage{etoolbox}
+
+\newtoggle{eplqa@waitingforsolution}
+\newtoggle{eplqa@waitingforstatement}
+
+\newcommand{\@help@rtfm}{\IfLanguageName{english}{Read other documents to see how we use solutions}{Consultez d'autres documents pour voir comment on utilise les solutions}}
+\newcommand{\@checksol@errmsg}{\IfLanguageName{english}{%
+		Unexpected (no)solution here; possible explanation: double solution, or missing \\section to define statement
+	}{%
+		Utilisation de (no)solution au mauvais endroit; possible cause: double solution ou \\section manquante pour définir l'énoncé
+}}
+\newcommand{\@checkstatmt@errmsg}[2]{\IfLanguageName{english}{%
+		Unexpected #1 here; did you miss a \\begin{solution} ... \\end{solution} or a \\nosolution at the previous question?
+	}{%
+		#2 inattendu ici; n'avez-vous pas oublie un \\begin{solution} ... \\end{solution} ou un \\nosolution à la question précédente?
+}}
+\newcommand{\@checksolution}{%
+	\iftoggle{eplqa@waitingforsolution}{% OK: it defined and set to true
+		\global\togglefalse{eplqa@waitingforsolution}
+		\global\toggletrue{eplqa@waitingforstatement}
+	}{% KO: undefined, or more probably not set to true
+		\PackageError{eplqa}{\@checksol@errmsg}{\@help@rtfm}
+	}
+}
+\newcommand{\@checkstatement}{%
+	\iftoggle{eplqa@waitingforstatement}{%
+		\global\togglefalse{eplqa@waitingforstatement}
+		\global\toggletrue{eplqa@waitingforsolution}
+	}{%
+		\PackageError{eplqa}{\@checkstatmt@errmsg{statement}{Enonce}}{\@help@rtfm}
+	}
+}
+
 \usepackage[framemethod=tikz]{mdframed}
 % greyarrow has much better handling of page breaks, see the link on stackoverflow for more info
 \def\SolStyle{greyarrow}
@@ -27,10 +60,11 @@
 \ifthenelse{\isundefined{\Sol}}{\def\Sol{true}}{}
 \ifthenelse{\equal{\Sol}{false}}
 {
-  \newenvironment{solution}{\expandafter\comment}{\expandafter\endcomment}
+	\newenvironment{solution}{\expandafter\comment}{\expandafter\endcomment}
 }
 {
-  \newmdenv[style=mysquare]{solution}
+	\newmdenv[style=mysquare]{solution}
+	\AtBeginEnvironment{solution}{\@checksolution}
 }
 
 \NewDocumentEnvironment{solfig}{mm}
@@ -52,9 +86,13 @@ Vous êtes encouragés à en soumettre une à l'adresse suivante}
 \end{center}
 \IfLanguageName{english}{or by mail}{ou par mail}.
 }
+% \nosubsolution: used in itemize/enumerate
+% TODO check if correctly used inside an itemize/enumerate + the question is also an itemize/enumerate and has the same number of items
 \newcommand{\nosubsolution}{
 \missingsolutiontext{\IfLanguageName{english}{this sub-question}{cette sous-question}}
 }
+
+% \nosolution: used to mark that a statement doesn't have a solution for now.
 \ifthenelse{\equal{\Sol}{false}}
 {\newcommand{\nosolution}{}}
 {
@@ -65,6 +103,16 @@ Vous êtes encouragés à en soumettre une à l'adresse suivante}
 }
 }
 
+% May break at some point, as in theory \section is not a simple command. But surprisingly, it works for now.
+\apptocmd{\section}{\@checkstatement}{}{}
+
+% \nostatement: used to mark that a question doesn't have a statement yet.
+% We may have a solution nonetheless, so we must enforce the use of solution/nosolution
+% FIXME: if this semantic is not correct, it is possible to use the two toggles to implement more complex conditions.
+% Ex: nostatement would deactivate waitingforsolution,
+% then solution would only check that we are not waiting for a statement already,
+% and would deactivate waitingforsolution nonetheless, and set waitingforstatement,
+% and as the statements check that we have waitingforsolution disabled, and waitingforstatement enabled, then it's OK
 \newcommand{\nostatement}{
 \IfLanguageName{english}{Sadly}{Malheureusement},
 \QAlabel~\theQA{}
@@ -79,6 +127,7 @@ Vous êtes encouragés à en soumettre un à l'adresse suivante}
 \IfLanguageName{english}{or by mail}{ou par mail}.
 }
 
+% MCQ support -- maybe should be split in another package?
 \RequirePackage{longtable} % so that table can be over several pages
 \renewcommand{\arraystretch}{1.5} % to bring space to the table
 
@@ -103,6 +152,16 @@ Vous êtes encouragés à en soumettre un à l'adresse suivante}
   \multicolumn{2}{|p{\textwidth}|}{\emph{Justification:}
     \ifthenelse{\equal{#3}{}}{TODO}{#3}
   }}\\
+}
+
+%\AtBeginDocument{%
+\toggletrue{eplqa@waitingforstatement}
+\togglefalse{eplqa@waitingforsolution}
+%}
+\AtEndDocument{%
+\ifboolexpr{togl {eplqa@waitingforsolution} or not togl {eplqa@waitingforstatement}}{%
+	\PackageError{eplqa}{\@checkstatmt@errmsg{end of document}{Fin de document}}{\@help@rtfm}
+}{}
 }
 
 \endinput
