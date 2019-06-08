@@ -9,7 +9,6 @@
 args=("$@")
 nbr_arg=5
 section=( "summary" "notes" "exam" "test" "exercises" )
-sols="only none both"
 exammonths="Janvier Juin Septembre"
 testmonths="Février Mars Avril Mai Septembre Octobre Novembre Décembre"
 # On ne peut juste pas avoir de tests pendant les mois d'examen (blocus l'empêche), ni pendant les vacances d'été.
@@ -69,7 +68,7 @@ function subdirectory {
     fi
 
     if ! [ -f "$fulldir/Makefile" ]; then
-        sed "s/sol/$sol/g; s/section/$1/g; s/name/$name/g; s/minmaj/$minmaj/g; s/month/$month/g" ./"$scdir"templates/$makef >> "$fulldir/Makefile"
+        sed "s/section/$1/g; s/name/$name/g; s/minmaj/$minmaj/g; s/month/$month/g" ./"$scdir"templates/$makef >> "$fulldir/Makefile"
     fi
 
     import="epl$1"
@@ -131,17 +130,14 @@ if [ $# -lt $nbr_arg ] ||  [ $1 = "--help" ]; then
     echo "
     This command allows you to create a template for a new .tex document
     
-    use: bash add.sh quadri titre sigle code repertory sol year month minmaj
+    use: bash add.sh quadri titre sigle code repertory year month minmaj
     e.g: bash add.sh 1      math  EPL   1101 summary
     e.g: bash add.sh 1      math  EPL   1101 notes
-    e.g: bash add.sh 1      math  EPL   1201 exercises only
-    e.g: bash add.sh 1      info  EPL   1401 exam      both 2015 Juin  All
-    e.g: bash add.sh 6      mcp   INGI  1122 test      none 2018 Mars  Mineure
+    e.g: bash add.sh 1      math  EPL   1201 exercises
+    e.g: bash add.sh 1      info  EPL   1401 exam      2015 Juin  All
+    e.g: bash add.sh 6      mcp   INGI  1122 test      2018 Mars  Mineure
 
     where repertory is summary, notes, exam, test, exercises or all
-          sol       is only: only contains the solution
-                       none: only contains the statement
-                       both: contains both
           month     is Janvier, Juin or Septembre (if exam)
                        Février, Mars, Avril, Mai, Septembre, Octobre, Novembre or Décembre (if test)
           minmaj    is Mineure, Majeure or All"
@@ -173,44 +169,39 @@ if valid_section $5 ; then
     error=true
 fi
 
-if contains "exercises exam test" $5 && ! contains "${sols}" $6; then
-    echo "Please choose sol among \`\`${sols}''. You chose \`\`$6''."
-    error=true
-fi
-
 if [ $5 = exam ]; then
     error=true
     for s in ${exammonths}; do
-        if [ $8 = ${s} ]; then
+        if [ $7 = ${s} ]; then
             error=false
         fi
     done
     if $error; then
-        echo "Please choose the month among \`\`${exammonths}''. If you feel one is missing, let us know. You chose \`\`$8''."
+        echo "Please choose the month among \`\`${exammonths}''. If you feel one is missing, let us know. You chose \`\`$7''."
     fi
 fi
 
 if [ $5 = test ]; then
     error=true
     for s in ${testmonths}; do
-        if [ $8 = ${s} ]; then
+        if [ $7 = ${s} ]; then
             error=false
         fi
     done
     if $error; then
-        echo "Please choose the month among \`\`${testmonths}''. If you feel one is missing, let us know. You chose \`\`$8''."
+        echo "Please choose the month among \`\`${testmonths}''. If you feel one is missing, let us know. You chose \`\`$7''."
     fi
 fi
 
 if ([ $5 = test ] || [ $5 = exam ]) && ! $error; then
     error=true
     for s in ${minmajs}; do
-        if [ $9 = ${s} ]; then
+        if [ $8 = ${s} ]; then
             error=false
         fi
     done
     if $error; then
-        echo "Please choose minmaj among \`\`${minmajs}''. You chose \`\`$9''."
+        echo "Please choose minmaj among \`\`${minmajs}''. You chose \`\`$8''."
     fi
 fi
 
@@ -234,10 +225,9 @@ option=$3
 code=$4
 name=$short-$option$code
 ext=$5
-sol=$6
-year=$7
-month=$8
-minmaj=$9
+year=$6
+month=$7
+minmaj=$8
 
 if command -v python &>/dev/null; then
     coursename=`python "$scdir"course_link.py $scdir $short`
