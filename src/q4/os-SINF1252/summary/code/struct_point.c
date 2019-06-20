@@ -14,7 +14,7 @@ int main () {
   printf("Before\n");
   for (int i = 0; i < 3; i++) {
     triangle[i].x = i;
-    triangle[i].x = i+1;
+    triangle[i].y = i+1;
     printf("(%d, %d)\n", triangle[i].x, triangle[i].y);
   }
   printf("After\n");
