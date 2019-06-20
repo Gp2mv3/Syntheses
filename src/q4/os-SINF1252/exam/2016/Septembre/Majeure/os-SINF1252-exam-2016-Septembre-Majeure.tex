@@ -5,7 +5,7 @@
 \lstset{language={C}}
 
 \hypertitle{Systèmes informatiques}{4}{SINF}{1252}{2016}{Septembre}{Majeure}
-{Gilles Peiffer}
+{John de Wasseige\and Gilles Peiffer}
 {Olivier Bonaventure}
 
 % TODO : Partie théorique, vient avant INGInious (where are the questions though...).
@@ -55,7 +55,7 @@ int mp(int c, int d)
     int a = c;
     c += c;
     c += a;
-    if (d <= c)
+    if (d < c)
     {
         return d;
     }
@@ -150,49 +150,36 @@ int delete(list *l, int key)
 \begin{solution}
 
 \begin{lstlisting}
-node *runner = (l->start)->next;
+node* runner = l->start->next;
 int counter = 0;
-if (runner == NULL)
-{
-    return 0;
+
+if (runner == NULL) {
+    return counter;
 }
-while (runner != l->tail)
-{
-    node *tmp = runner->prev;
-    if (runner->data == key)
-    {
-        ++counter;
-        if (runner->next == NULL)
-        {
-            tmp->next = l->start;
-            l->start->prev = tmp;
-            l->tail = tmp;
-        }
-        else
-        {
-            tmp->next = runner->next;
-            (runner->next)->prev = tmp;
-        }
+
+while (runner->next != NULL) {
+    if (runner->data == key) {
+        runner->next->prev = runner->prev;
+        runner->prev->next = runner->next;
+        
         node *del = runner;
-        runner = runner->next;
+        runner = runner->next; 
+        
+        del->prev = NULL;
+        del->next = NULL;
         free(del);
-
-    }
-    else
-    {
-        runner = runner->next;
+        counter++;
+    } else {
+		runner = runner->next;
     }
 }
-if (runner->data == key)
-{
-    ++counter;
-    node *tmp = runner->prev;
-    tmp->next = NULL;
-    l->tail = tmp;
-    free(runner);
-}
+ if (runner->data == key) {
+     runner->prev->next = NULL;
+     l->tail = runner->prev;
+     free(runner);
+     counter++;
+ }
 return counter;
-
 \end{lstlisting}
 
 \end{solution}
@@ -372,119 +359,59 @@ if(i==j)
 {
     return 0;
 }
-int fd = open(filename, O_RDONLY);
-if(fd < 0)
-{
+
+int err;
+int fd;
+
+int max_idx = i;
+int min_idx = j;
+if (i < j) {
+    max_idx = j;
+    min_idx = i;
+}
+
+fd = open(filename, O_RDONLY, S_IRUSR|S_IWUSR);
+if (fd == -1) {
     return -1;
 }
-int r, w;
-double falseBuffer;
-double firstVal;
 
-int k;
-for(k = 0; k < i; k++)
-{
-    r = read(fd, (void*)&falseBuffer, sizeof(double));
-    if(r < 0)
-    {
-
-        close(fd);
-        return -1;
+double val[max_idx+1];
+for(int k=0; k <= max_idx; k++) {
+    err = read(fd, (void *) &(val[k]), sizeof(double));
+    if (err < 0) {
+        err = close(fd);
+        return(-1);
     }
 }
-r = read(fd, (void*)&firstVal,sizeof(double));
-if(r < 0)
-{
-    close(fd);
-    return -1;
+if(close(fd) == -1) {
+    return err;
 }
-if(close(fd) < 0)
-{
+
+fd = open(filename, O_WRONLY, S_IRUSR|S_IWUSR);
+if (fd == -1) {
     return -1;
 }
 
-double secondVal;
-fd = open(filename, O_RDONLY);
-if(fd < 0)
-{
-    return -1;
-}
-
-for(k = 0; k < j; k++)
-{
-    r = read(fd, (void*)&falseBuffer, sizeof(double));
-    if(r < 0)
-    {
-        close(fd);
-        return -1;
+double new_val;
+for(int k=0; k <= max_idx; k++) {
+    if (k == min_idx) {
+        new_val = val[max_idx];
+    } else if (k == max_idx) {
+        new_val = val[min_idx];
+    } else {
+        new_val = val[k];
+    }
+    err = write(fd, (void *) &new_val, sizeof(double));
+    if (err < 0) {
+        err = close(fd);
+        return(-1);
     }
 }
-r = read(fd, (void*)&secondVal,sizeof(double));
-if(r < 0)
-{
-    close(fd);
-    return -1;
-}
-if(close(fd) < 0)
-{
-    return -1;
-}
-
-fd = open(filename, O_RDWR);
-if(fd < 0)
-{
-    return -1;
-}
-
-for(k = 0; k < i; k++)
-{
-    r = read(fd, (void*)&falseBuffer, sizeof(double));
-    if(r < 0)
-    {
-        close(fd);
-        return -1;
-    }
-}
-w = write(fd, (void*)&secondVal,sizeof(double));
-if(w < 0)
-{
-    close(fd);
-    return -1;
-}
-if(close(fd) < 0)
-{
-    return -1;
-}
-
-fd = open(filename, O_RDWR);
-if(fd < 0)
-{
-    return -1;
-}
-
-
-for(k = 0; k < j; k++)
-{
-    r = read(fd, (void*)&falseBuffer, sizeof(double));
-    if(r < 0)
-    {
-        close(fd);
-        return -1;
-    }
-}
-w = write(fd, (void*)&firstVal,sizeof(double));
-if(w < 0)
-{
-    close(fd);
-    return -1;
-}
-if(close(fd) < 0)
-{
-    return -1;
+if(close(fd) == -1) {
+    return err;
 }
 
 return 0;
-
 \end{lstlisting}
 
 \end{solution}
