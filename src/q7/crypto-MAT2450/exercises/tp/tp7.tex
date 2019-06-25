@@ -1,0 +1,226 @@
+% This practical session was entirely corrected by the teaching assistants so, there is no need to correct the solutions.
+
+\section{}
+\subsection{Exercise 0}
+\copypaste{6}{2}
+\begin{solution}
+\begin{enumerate}
+	\item We show the correctness (if the signature is well formed, it is accepted).
+	\begin{align*}
+ [g^{u_1} y^{u_2} \mod p] \mod q = &[g^{H(m)\cdot s^{-1}} (g^x)^{r
+ 	\cdot s^{-1}} \mod p] \mod q,\\
+= &[g^{(H(m)+rx)	\cdot s^{-1}} \mod p] \mod q,\\
+= &[g^{k} \mod p] \mod q,\\
+= &r .\\
+	\end{align*}
+	
+	\item As the same $k$ was used for two signatures, we have the valid signatures $(r,s_1)$ where $s_1:=(H(m_1) + xr) \cdot k^{-1} \mod
+	q$ and $(r,s_2)$ where $s_1:=(H(m_2) + xr) \cdot k^{-1} \mod
+	q$. Now, we consider the quotient of $s_1$ divided by $s_2$ (the operations are modulo $q$), in order to cancel the part depending on $k$, note that we can do it with two signatures only because the same $k$ is reused:
+	\[\frac{s_1}{s_2}=\frac{(H(m_1) + xr) \cdot k^{-1}}{(H(m_2) + xr) \cdot k^{-1}}=\frac{H(m_1) + xr}{H(m_2) + xr} .\]
+	This is equivalent to: $s_1 (H(m_2) + xr)= s_2 (H(m_1) + xr)$, then: 
+	\[xr= \frac{s_1 H(m_2) - s_2 H(m_1)}{s_2-s_1}.\]
+	Finally, dividing by $r$ we get $x$ which is the secret key. As with non negligible probability (when the denominators are non null we can perform the operations described below) we can get $x$ and sign any other message, this variant of DSS is non secure.
+		
+\end{enumerate}
+
+\end{solution}
+
+
+\subsection{Exercise 1 (A variant of ElGamal Encryption.)}
+Let us consider the following variant of ElGamal encryption.  Let
+\begin{itemize}
+	\item $\Gen$ output a pair
+	$\langle pk, sk \rangle := \langle(\Gr, q, g, h), (\Gr, q, g, x)
+	\rangle$ as in traditional ElGamal encryption, except that $x$ is selected in $\Z_q - \{0\}$; 
+	\item $\Enc_{pk}(m) := \langle m\cdot g^y, h^y\rangle$ with $y \leftarrow \Z_q$ and $m \in \Gr$. 
+\end{itemize}
+
+\begin{enumerate}
+	\item Define the corresponding decryption operation. 	
+	\item Why did we exclude ``0'' from the set in which $x$ is selected? 	
+	\item Prove that this variant of ElGamal is CPA-secure if the DDH
+	problem is hard with respect to the group key generation algorithm $\Gr$. 
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+	\item	$\D_{sk}(c_1, c_2) = \frac{c_1}{c_2^{1/x}}$, where $1/x$ is the inverse of $x \bmod q$. 
+	\item We exclude ``0'' as  $0 \not \in \Z_q^*$, so it has no inverse mod $q$. 
+	\item The reduction $A'$ proceeds as follows, using an attacker $A$ of
+	the modified ElGamal scheme:
+	\begin{enumerate}
+		\item $A'$ starts an instance of $A$ and gets
+		$\mathbb{G}, q, g, g^x, g^y, g^z$ from the DDH challenger (where $z$
+		is or is not $xy$)
+		\item $A'$ checks if $g^x = 1$ (that is, if $x=0$). If it is the
+		case, it claims that it received a DDH tuple if $g^y = g^z$ (by
+		returning 1) and a random tuple otherwise (by returning 0) and
+		stops. The claim will be always correct, but this event will only
+		happen with probability $1/q$.
+		\item $A'$ forwards $(\mathbb{G},q, g, g^x)$ as ElGamal public key
+		to $A'$.
+		\item When $A'$ outputs two messages $m_0, m_1$, $A'$ flips a coin
+		$b$ and returns $(m_b g^y, g^z)$. 
+		\item When $A$ outputs its guess $b'$, $A'$ claims that it received
+		a DDH tuple if and only if $b = b'$, and returns ''1'' in this case. 
+	\end{enumerate}
+	If $A$ runs in PPT, then so does $A'$ (its extra operations are
+	clearly PPT). 
+	Let $X$ be the event that $A'$ outputs 1 when receiving a DDH tuple,
+	and $Y$ be the event that $A'$ outputs 1 when receiving a random
+	tuple. 
+	%Since DDH is hard, we know that $|\Pr[X] - \Pr[Y]|$ is a negligible quantity. 
+	Let us assume that $A$ wins the CPA
+	game with probability $\frac 1 2 + \epsilon(n)$.
+	
+	We can see that
+	$\Pr[X] = \Pr[X \wedge (x=0)] + \Pr[X \wedge (x\neq 0)] = \frac 1 q +
+	\frac{q-1}{q}(\frac 1 2 + \epsilon(n))$.
+	Indeed, when $x \neq 0$, $A$ exactly sees inputs that are
+	distributed exactly as he expects them. Furthermore,
+	$\Pr[Y] = \Pr[Y \wedge (x=0)] + \Pr[Y \wedge (x\neq 0)] = 0 +
+	\frac{q-1}{q} \frac 1 2$.
+	Indeed, when $x \neq 0$, the inputs of $A$ are independent of $b$, and
+	therefore $A'$ wins with probability exactly $\frac 1 2$. 
+	
+	As a result,
+	$|\Pr[X] - \Pr[Y]| = \frac 1 q + \frac{q-1}{q}\epsilon(n) $. If $\epsilon(n)$ is non negligible (\textit{i.e.} this ElGamal variant is non CPA secure), then $|\Pr[X] - \Pr[Y]|$ is non negligible and DDH does not hold in $\Gr$. Reciprocally, if DDH holds in $\Gr$, this ElGamal variant is CPA secure.
+\end{enumerate}
+
+\end{solution}
+
+\subsection{Exercise 2}
+Let $F$ be a PRF. Below, we describe three \textit{insecure} \emph{variable-length} message authentication codes (\textit{a.k.a.} MACs), $\Pi_1$, $\Pi_2$ and $\Pi_3$, which all use the same key generation algorithm $\G$. The message space is \emph{any (non negative) number} of message blocks in $\{0,1\}^n$, where $n$ is the security parameter. 
+%
+\begin{description}
+	\item[$\G(1^n)$] outputs a random key $k\gets\{0,1\}^n$.
+\end{description}
+%
+The scheme $\Pi_3$ is built from $\Pi_2$ which is itself built from $\Pi_1$ as an (unsuccessful) attempt to ``patch'' the previous scheme:
+%
+\begin{description}
+	\item[$\Pi_1=(\Gen,\Mac^1,\Vrfy^1)$:]
+	\emph{``Deterministic MAC -- Chaining PRFs''}
+	
+	$\Mac^1_k(m_1,\ldots,m_\ell)$ computes $t_1=F_k(m_1)$ as well as
+	$t_i=F_k(m_i\oplus t_{i-1})$, for $i=2$ to $\ell$, and returns $t:=t_\ell$ (note that only the last block is returned).
+	
+	$\Vrfy^1_k((m_1,\ldots,m_{\ell}),t)$ outputs $1$ if
+	$\Mac^1_k(m_1,\ldots,m_{\ell})=t$, and 0 otherwise.
+	\item[$\Pi_2=(\Gen,\Mac^2,\Vrfy^2)$:]
+	\emph{``Padding a random message block in the end''}
+	
+	$\Mac^2_k(m_1,\ldots,m_\ell)$ first picks a random $r\gets\{0,1\}^n$ and
+	then runs $t=\Mac_k^1(m_1,\ldots,m_\ell,r)$ and outputs $(r,t)$.
+	
+	$\Vrfy^2_k((m_1,\ldots,m_{\ell}),(r,t))$ outputs $1$ if
+	$\Mac^1_k(m_1,\ldots,m_{\ell},r)=t$, and 0 otherwise.
+	
+	\item[$\Pi_3=(\Gen,\Mac^3,\Vrfy^3)$:]
+	\emph{``Padding a random message block in the beginning''}
+	
+	$\Mac^3_k(m_1,\ldots,m_\ell)$ first picks a random $s\gets\{0,1\}^n$ and
+	then runs $(r,t)=\Mac_k^2(s,m_1,\ldots,m_\ell)$ and outputs $(r,s,t)$.
+	
+	$\Vrfy^3_k((m_1,\ldots,m_{\ell}),(r,s,t))$ outputs $1$ if
+	$\Mac^1_k(s,m_1,\ldots,m_{\ell},r)=t$, and 0 otherwise.
+\end{description}
+
+\begin{enumerate}
+	\item Describe $\Mac_k^3(m_1,\ldots,m_\ell)$ explicitly in term of computations
+	of $F_k$ (and $\oplus$ of course).
+	\item Show the correctness of $\Pi_3$.
+	\item Mount a forgery attack on these MACs.
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+		\item For random $r,s\leftarrow \{0,1\}^n$, 
+		$\Mac^3_k(m_1,\ldots,m_\ell)$ computes $t_0=F_k(s)$, then $t_i=F_k(m_i \oplus t_{i-1})$ for $i=1$ to $\ell$, and finally 
+		$t_{\ell+1}=F_k(r\oplus t_\ell)$. 
+		It outputs $(r,s,t)$ where $t:=t_{\ell+1}$.
+	
+		
+		\item Using the description of $\Mac^1_k$, on inputs $(s,m_1,\ldots,m_\ell,r)$ it gives $t'_1=F_k(s)$, for $i=1$ to $\ell$, $t'_{i+1}=F_k(m_i \oplus t'_i)$, and $t'_{\ell+2}=F_k(r \oplus t'_{\ell+1})$. $t'_{\ell+2}$ is the output, or equivalently:
+		\begin{align*}
+		F_k(r \oplus t'_{\ell+1})&=F_k(r \oplus (F_k(m_\ell \oplus F_k( m_{\ell-1} \oplus( \cdots F_k(m_1\oplus F_k(s)) )^{\ldots}         )))),\\
+		&=t.
+		\end{align*}
+		
+		
+		
+		\item These MACs are not even one-time secure:
+		\begin{description}
+			\item $\Pi_1$: (1) query $\Mac^1_k(m)$ on any $m\in\{0,1\}^n$ and get the tag $t=F_k(m)$; \\
+			(2) output $((m,m\oplus t),t)$. 
+			
+			$t_1=F_k(m)$, $t_2=F_k(m\oplus t \oplus t_1)= F_k(m \oplus 0)=t$.
+			
+			\item $\Pi_2$: (1) query $\Mac^2_k(m)$ on any $m\in\{0,1\}^n$ and get the tag $(r,t)$, where $t=F_k(F_k(m)\oplus r)$; \\
+			(2) output $((m,r,m\oplus t),(r,t))$.
+			
+			$t_1=F_k(m)$, $t_2=F_k(F_k(m)\oplus r)=t$, $t_3=F_k(t\oplus m \oplus t)=F_k(m)$, $t_4=F_k(F_k(m)\oplus r)=t$.
+			
+			\item $\Pi_3$: (1) query $\Mac^3_k(m)$ on any $m\in\{0,1\}^n$ and get the tag $(r,s,t)$, where $t=F_k( F_k(F_k(s) \oplus m)  \oplus r)$ \\
+			(2) output $((m,r,s\oplus t,m),(r,s,t))$.
+			
+			$t_1=F_k(s)$, $t_2=F_k(F_k(s) \oplus m)$, $t_3=F_k(F_k(F_k(s) \oplus m) \oplus r)=t$, $t_4=F_k(t \oplus s \oplus t)= F_k(s)$, $t_5=F_k(F_k(s)\oplus m)$, $t_6=F_k( F_k(F_k(s) \oplus m)  \oplus r)=t$.
+			
+		\end{description}
+	\end{enumerate}
+\end{solution}
+
+\subsection{Exercise 3}
+Let $F$ be a pseudorandom function, $G$ be a pseudorandom permutation, $T$ be a public $n$-bit constant, $k$ be a $n$-bit secret key, $m$ be a $n$-bit message, $IV$ be a $n$-bit random value chosen by the party computing the encryption (resp.~MAC) before each operation. Among the following constructions, determine the ones that would be acceptable and justify your answer. (Your justifications can rely on results that have been presented during the class.)
+
+\begin{enumerate}
+	\item $E_k(m):=F_k(m \oplus T)$ as an encryption scheme secure against
+	eavesdropping.
+
+	\item $E_k(m):=G_k(m \oplus T)$ as an encryption scheme secure against eavesdropping.
+	
+	\item $E_k(m):=G_k(m \oplus T)$ as an encryption scheme secure against a CPA-adversary.
+	
+	\item $E_k(m):=(IV,G_k(m \oplus T \oplus IV))$ as an encryption scheme secure against a CPA-adversary.
+
+	\item $\Mac_k(m):=F_k(m \oplus T)$ as a MAC scheme existentially unforgeable under an
+	adaptive chosen-message attack.
+	
+	\item $\Mac_k(m):=(IV,G_k(m\oplus IV \oplus T))$ as a MAC scheme
+	existentially unforgeable under an adaptive chosen-message attack.
+	
+\end{enumerate}
+\begin{solution}
+\begin{enumerate}
+\item No, decryption does not work in general, as we do not
+	necessarily know how to invert a PRF.
+	
+\item 	Yes, it is secure.  The reduction to the PRP security can work as follows:
+	the reduction gets $m_0$ and $m_1$ from the eavesdropper
+	adversary, picks a random bit $b$, sends $m_b \oplus T$ to the
+	PRP and receives a value $c$ that it sends back the eavesdropper
+	adversary. This adversary has a probability exactly $1/2$ to
+	guess $b$ if $c$ comes from a random permutation, and a
+	probability $1/2 + \epsilon$ to guess $b$ if $c$ comes from a
+	pseudorandom permutation. The reduction can therefore claim that
+	it sees a PRP every time the adversary makes a successful
+	guess. So, if $F$ is a PRP, $\epsilon$ must be negligible.
+
+\item 	No: it is not probabilistic. CPA security is not achievable with deterministic encryption. 
+
+\item We first observe that the $\oplus T$ does not matter:
+since $T$ is public, the adversary has the possibility to adapt
+its choice of $m$ in order to cancel it.  Now, if we abstract
+from $T$, this is exactly the CBC encryption mode, which we know
+to be CPA-secure.
+\item Again, we observe that the $\oplus T$ does not matter: since
+$T$ is public, the adversary has the possibility to choose exactly
+on which value $F_k$ will be applied. Now, if we abstract from $T$,
+this is exactly the basic MAC scheme from the class, which is secure.
+\item This is insecure. Given one tag $(IV, t)$ on a message
+$m$, the adversary can produce a valid tag $(IV', t)$ on the
+message $m' = m \oplus IV \oplus IV'$ for any $IV'$.
+	
+\end{enumerate}
+\end{solution}
