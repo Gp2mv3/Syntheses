@@ -1,0 +1,275 @@
+\section{}
+\subsection{Exercise 0 (Group order)}
+\copypaste{3}{5}
+
+\subsection{Exercise 1 (ElGamal Public Key Encryption and CCA Security)}
+\begin{enumerate}
+	\item Write the security definition of CCA security for a public key encryption scheme.
+	\item Let $(c_1,c_2)$ and $(c_1',c_2')$ be two ElGamal ciphertexts, of plaintext $m$ and $m'$ respectively. Can $(c_1 c_1',c_2 c_2')$ be a ciphertext relatively to this scheme? 
+	\item From $(c_1,c_2)$ a ciphertext of $m$, can you build another ciphertext valid for $m$ (remember that the public key is $(\mathbb{G},g,q,h=g^x)$)? If yes, what is its decryption? 
+
+	\item Show that ElGamal Public Key Encryption is not CCA secure.
+\end{enumerate}
+\begin{solution}
+\begin{enumerate}
+    \item 
+    Given  $\Pi := \langle$ Gen, Enc, Dec$\rangle$, and adversary $A$, define the following experiment $\text{ PrivK}^{cca}_{A, \Pi}$ : 
+    \begin{enumerate}
+        \item Gen probabilistically selects ($pk$, $sk$) $\leftarrow$ Gen(1$^n$). $pk / sk$ are the public/private key.
+        \item $A$ is given oracle access to $Dec_{sk}(\cdot)$.
+        \item $A$ outputs $m_0, m_1$ of same length.
+        \item Choose $b \leftarrow$ \{0, 1\}, and send $c := Enc_{pk}(m_b)$ to $A$.
+        \item $A$ is again given access to $Dec_{sk}(\cdot)$ but he cannot ask $Dec_{sk}(c)$.
+        \item $A$ outputs $b'$.
+        \item Define $\text{PrivK}^{cca}_{A, \Pi}(n) := 1$ iff $b=b'$
+    \end{enumerate}
+    $\Pi := \langle$ Gen, Enc, Dec$\rangle$ is CCA-secure for a public key encryption scheme if $\forall$ PPT $A, \exists \epsilon$ :
+    $$ Pr[\text{ PrivK}^{cca}_{A, \Pi}(n)] \leq \frac{1}{2} + \epsilon(n) $$
+    
+    \item (c$_1$c$_1$', c$_2$c$_2$') is a valid ciphertext for the message : m $\cdot$ m'. \newline
+    We can prove this like : 
+    $$Dec_{sk}(c_1c_1',c_2c_2') = \frac{c_2c_2'}{c_1^xc_1'^x} = \frac{mh^{y_1}m'h^{y_2}}{g^{xy_1}g^{xy_2}} = m \cdot m'$$
+    
+    \item Yes, if we think about this property : $m \cdot 1 = m$ and we combine it with the property found last exercise : $Dec_{sk}(c_1c_1',c_2c_2') = m \cdot m'$, it is easy to produce a new valid ciphertext. \newline
+    If we compute $Enc_{pk}(1) := (c_1', c_2')$ (we can do it since we are in a \textbf{public key encryption scheme}), the ciphertext (c$_1$c$_1$', c$_2$c$_2$') will be a valid ciphertext and its decryption will give : m.
+    \newline
+    \textbf{Other possibility} \newline
+    We can also simply choose $y' \leftarrow \mathbb{Z}_q$ and build the ciphertext $(c_1.g^{y'},c_2.h^{y'})=(g^{y+y'},m.g^{x(y+y')})$. The decryption gives m.
+    
+    \item Now, we are able to see why ElGamal does not hold CCA-security with the 2 properties found. \newline
+    If the adversary $A$, after received $c := (c_1, c_2)$, compute $Enc_{pk}(1) := (c_1', c_2')$ and make the following oracle access $Dec_{sk}(c_1c_1',c_2c_2') := m_x$, he will now be able to (really) easily determine b from $m_x$. Then we can say that :
+    $$ Pr[\text{ PubK}^{cca}_{A, ElGamal}(n)] = 1$$
+    Which means ElGamal does not hold CCA-security with public key encryption.
+    \newline
+    \textbf{Other possibility} \newline
+    We build an attacker A as follows : 
+    \begin{enumerate}
+        \item A outputs $m_0$, $m_1$ $\in M$.
+        \item A receives $(c_1,c_2)=Enc_{pk}(m_b)=(g^y,m_b.g^{xy})$
+        \item A queries the decryption of the transformed ciphertext $(c_1.g^{y'},c_2.h^{y'})$ for some arbitrary chosen y' from $\mathbb{Z}_q$, and receives directly $m_b$ as a response from his oracle.
+    \end{enumerate}
+\end{enumerate}
+\end{solution}
+
+\subsection{Exercise 2 (ElGamal in \texorpdfstring{$QR_p$}{QRp})}
+Let $p=2q+1$ with $q$ prime, let $\mathbb{G}=QR_p$ the group of squares modulo $p$, and $g$ be a generator of $\mathbb{G}$. 
+We define ElGamal encryption scheme in this group: The private key is $(\mathbb{G},g,q,x)$, the public key is $(\mathbb{G},g,q,h=g^x)$
+where $x \in \mathbb{Z}_{q}^*$ is chosen uniformly. To encrypt a message $m$ $\in \mathbb{Z}_{q}$, choose a uniform $r \in \mathbb{Z}_{q}$, compute $c_1=g^r \mod p$ and $c_2=h^r+m \mod p$ and let the ciphertext be $(c_1,c_2)$.
+
+\begin{enumerate}
+	\item What is the order of $g$?
+	\item Is this scheme CPA-secure? 
+
+	
+\end{enumerate}
+\begin{solution}
+\begin{enumerate}
+    \item As g is a generator of $\mathbb{G}$, then ord(g)=$|\mathbb{G}|$. According to \ref{subsec:4.6} and given the fact that $\mathbb{G}$ := $QR_p$, then $|\mathbb{G}| = \frac{p - 1}{2} = q =$  ord(g).
+    \item The scheme is CPA-Secure and we gonna prove it by assuming that $QR_p$ holds in DDH. \newline
+    Let's build a PPT adversary $\A$ which can solve $ElGamal$ in $QR_p$ with an advantage $\eta$. It works like this :
+    \begin{enumerate}
+        \item We send pk to $\A$ where pk = ($\mathbb{G}$, g, q, h = $g^x$).
+        \item $\A$ does q(n) queries to its oracle.
+        \item $\A$ is then doing the challenge : it outputs $m^*_0$, $m^*_1$ and send it to its $ElGamal$ oracle. 
+        \item The $ElGamal$ oracle picks a random $b \in \{0, 1\}$ and sends back $Enc_{pk}(m_b) = (c_1^b, c^b_2)$  to $\A$
+        \item $\A$ then outputs $b'$.
+    \end{enumerate}
+    We will use $\A$ to build a distinguisher $\D$ able to solve $DDH_{\D, \mathbb{G}}(n)$ : 
+    \begin{enumerate}
+        \item Run $\mathbb{G}$(n) to obtain ($\mathbb{G}$, q, g). 
+        \item We choose (x, y, z) $\xleftarrow{R} \mathbb{Z}^3_q$.
+        \item We set $h_1 = g^{x \cdot y}$, $h_0 = g^{z}$ and $b'' \leftarrow \{0, 1\}$. We forward then $((\mathbb{G}, q, g), (g^x, g^y, h_{b''}))$ to $\D$.
+        \item $\D$ will then build $pk  = (\mathbb{G}, q, g, g^x)$ and will forward $pk$ to $\A$.
+        \item $\A$ will then output its challenge queries $m^*_0$, $m^*_1$. $\D$ will pick $b \leftarrow \{0, 1\}$, and produce $c_b = (c_1^b, c^b_2) = (g^y, h_{b''} + m_b \text{ mod p})$. It will then forward $c_b$ to $\A$.
+        \item $\A$ will output $b'$.
+        \item $\D$ will output $ 1 \Leftrightarrow b = b'$.
+    \end{enumerate}
+    We analyse the chance of success to determine $Priv^{cpa}_{\A, ElGamal}$ : 
+    \begin{itemize}
+        \item if $b'' = 0$, then Pr[$\D$ outputs 1] = $\frac{1}{2}$.
+        \item if $b'' = 1$, then Pr[$\D$ outputs 1] = $\frac{1}{2}$ + $\eta(n)$.
+    \end{itemize}
+    It means that $\D$ will only has advantage $\eta(n)$ to solve DDH. But as it is assumed as hard, we can conclude that $\eta(n)$ is negligible. Therefore, $$Priv^{cpa}_{\A, ElGamal}(n) = \frac{1}{2} + negl(n) $$
+    By reduction, we just proved that this scheme is CPA-secure under DDH hardness assumption.
+\end{enumerate}
+\end{solution}
+
+
+\subsection{Exercise 3 (A Variation of ElGamal in \texorpdfstring{$PKE$}{PKE})}
+\label{subsec:varia-elgamal-pke}
+Let consider ElGamal public encryption scheme with Encryption algorithm modified in the following way, where $\mathcal{M}=\{0,1\}$:
+\begin{itemize}
+	\item If $b=0$ then choose a uniform $y\in \mathbb{Z}_{q}$ set $c_1=g^y$, $c_2=h^y$, and the ciphertext is $(c_1,c_2)$.
+	\item If $b=1$ then choose independent uniform $y,z \in \mathbb{Z}_{q}$ set $c_1=g^y$, $c_2=g^z$, and the ciphertext is $(c_1,c_2)$.
+\end{itemize}
+
+\begin{enumerate}
+	\item How is it possible to decrypt correctly such ciphertexts with the private key?
+	\item Show that this scheme is CPA secure if DDH holds in $\mathbb{G}$. 
+\end{enumerate}
+\begin{solution}
+\begin{enumerate}
+    \item We can define $Dec_{x}(c_1, c_2)$ as : $\begin{cases}
+    1 \textsc{ if } c_2 \neq c_1^x \\
+    0 \textsc{ if } c_2 = c_1^x\\
+\end{cases}$ 
+
+    We observe that Pr[$Dec_{x}(c_1, c_2)$ = 0 $|$ $(c_1, c_2) \leftarrow Enc(0)$] = 1 because the decryption is always correct.
+    
+    On the other hand, we observe that Pr[$ Dec_{x}(c_1, c_2) \neq 1$ $|$ $(c_1, c_2) \leftarrow Enc(1)$] = Pr[$ z = xy $] = $\frac{1}{|\mathbb{G}|}$ is negligible, then we conclude that the decryption is correct
+    
+    \item Assuming the DDH problem is hard in $\mathbb{G}$. \newline
+    Assume it exists a PPT adversary $\mathcal{A}$ for $\Pi$, we build a distinguisher D able to break DDH with non negligible probability as follows :
+    \begin{enumerate}
+        \item Run $(\mathbb{G},g,q) \leftarrow \mathcal{G}(1^n)$\\
+        Define $n:=|q|$\\
+        Choose uniformly at random $(x,y,z) \leftarrow \mathbb{Z}^3_q$\\
+        Choose at random $b\leftarrow\{0,1\}$\\
+        Compute $h_1:=g^{xy}\;h_0:=g^z$ and send $(\mathbb{G},g,q,g^x,g^y,h_b)$ to $\mathcal{A}'$
+        
+        \item $D$ defines $pk = (\mathbb{G},g,q,g^x)$ and sends it to $\mathcal{A}$
+        \item $\mathcal{A}$ sends $(m_0,m_1) = (0,1)$ to $D$
+        \item $D$ sends $c=(g^y,h_b)$ to $\mathcal{A}$
+        \item \textcolor{red}{Olivier : Pas d'accord à partir de là. C'est la probabilité de l'output b' qui varie en fonction de $h_b$ autrement dit b", je mets ma proposition en dessous.} $\mathcal{A}$ outputs $b'$ 
+            \begin{itemize}
+                \item if $b'=0\Rightarrow h_b=g^{xy}$
+                \item if $b'=1\Rightarrow h_b=g^z$
+            \end{itemize}
+            $D$ outputs $b''=\Bar{b'}$
+        \item Define : $$\text{PubK}^\text{cpa}_{\mathcal{A},\Pi}(n) = 1 \Leftrightarrow b'\neq b$$ $$\text{DDH}_{\mathcal{A}',\mathcal{G}}(n) = 1 \Leftrightarrow b''=b$$
+    \end{enumerate}
+    If we run the experiment, we have :
+    \begin{align*}
+        \text{Pr}[\text{PubK}^\text{cpa}_{\mathcal{A},\Pi}(n) = 1] &= \frac{1}{2}+\epsilon(n)\\
+        &= \text{Pr}[b'\neq b]\\
+        &= \text{Pr}[b''=b]\\
+        &= \text{Pr}[\text{DDH}_{\mathcal{A}',\mathcal{G}}(n) = 1]
+    \end{align*}
+    If $\epsilon(n)$ is non negligible, $\mathcal{A}'$ is a PPT adversary that can break DDH with non negligible probability, which contradicts the assumption. Therefore $\mathcal{A}$ is CPA secure if DDH is hard in $\mathbb{G}$.
+\end{enumerate}
+
+\textcolor{red}{Solution} 
+
+\begin{enumerate}
+    \item D outputs 1 $\Leftrightarrow b'=1$.
+    \item We observe : \newline
+    If $b=0 \Rightarrow Pr[D outputs 1]=\frac{1}{2}$ (as $g^z$ looks random in $\mathbb{G}$) \newline
+    If $b=1 \Rightarrow Pr[D outputs 1]=\frac{1}{2}+\eta(n)$.
+    \item We thus have D distinguishing between $g^z$ and $g^{xy}$ with advantage $\eta(n)$. As we assume that DDH holds in $\mathbb{G}$, $\eta(n)$ must be negligible and this scheme is CPA-secure.
+\end{enumerate}
+
+\end{solution}
+
+\subsection{Exercise 4 (Authenticated Encryption)}
+Consider the following scheme $\Pi=(\Gen,\Enc,\Dec)$ based on the strong pseudorandom permutation $\F:\mathcal{K} \times \lbrace 0,1 \rbrace^n$, defined as follow:
+\begin{itemize}
+\item $\mathcal{M}=\lbrace 0,1\rbrace^{\frac{n}{2}}$ (the message space)
+\item $\Gen$ picks a random key $k \in \mathcal{K}$
+\item $\Enc_k(m)$ picks a random value $r \in \lbrace 0,1\rbrace^{\frac{n}{2}}$, and computes $c \leftarrow \F_k(m \| r)$
+\item $\Dec_k(c)$ computes $(m\|r)=\F^{-1}_k(c)$ and outputs $m$ (the first half).
+\end{itemize}
+Answers the following questions:
+\begin{itemize}
+\item is $\Pi$ unforgeable?
+\item is $\Pi$ CCA-secure? (\emph{To do at home})
+\item is $\Pi$ an authenticated encryption scheme? (\emph{To do at home})
+\end{itemize}
+
+
+
+\paragraph{Definition 1} \label{def: sprp} (\emph{Strong PseudoRandom Permutation})
+
+A function $\F:\mathcal{K} \times \mathcal{M} \longmapsto \mathcal{M}$ is a $(q,t,\varepsilon)$-\emph{ strong pseudorandom permutation} ($\sprp$) if for any $(q,t)$-bounded adversary, the advantage:
+$$ \mathsf{Adv}^{\sprp}_{\adv}:=
+\left| \Pr\left[ \adv^{\F_k(\cdot),\F_k^{-1}(\cdot)}\Rightarrow 1 \right] -
+	\Pr\left[ \adv^{\f(\cdot,\cdot),\f^{-1}(\cdot,\cdot)}\Rightarrow 1 \right] \right| 
+\leq \varepsilon $$
+with $k$  and $\f$ picked uniformly at random from their domains, respectively $\mathcal{K}$ and the set of permutations $\mathcal{M} \rightarrow \mathcal{M}$.
+\begin{solution}
+\begin{enumerate}
+    \item It is not unforgeable because since $F_k$ is a PRP, it is bijective. 
+    \newline Then $\forall u \in \{0, 1\}, F_k^{-1}(u) = (u_1 || u_2)$ and $EncForge_{\A, \Pi} = 1$.
+    \item It is CCA-secure and we will prove it by assuming that the PRP F is strong. 
+    If we build the distinguisher $\D$ using the PPT adversary $\A$ capable of breaking the scheme $\Pi$ with advantage $\eta(n)$. At the start of the game, a random key k and a random bit b are picked by the oracle.
+    \begin{enumerate}
+        \item When $\A$ asks for the encryption of message $m_i$, $\D$ picks a random $r_i \leftarrow \{0, 1\}^{\frac{n}{2}}$ and queries its oracle on input ($m_i || r_i$) obtaining, if b=0 $c_i = f(m_i || r_i)$, else $c_i = F_k(m_i || r_i)$. 
+        $\D$ forwards $c_i$ to $\A$. This is repeated for each message $m_i$ issued for the first query phase.
+        \newline Also, when $\A$ asks for the decryption of ciphertext $c_i'$, $\D$ queries its oracle on input $c_i'$ obtaining, if b=0 $(m_i'||r_i') = f^{-1}(c_i')$, else $(m_i'||r_i') = F^{-1}_k(c_i')$, which $\D$ forwards to $\A$. This is repeated for each ciphertext $c_i'$ issued for the first query phase
+        \item When $\A$ does the challenge query on output $m^*_0$, $m^*_1$ with $|m^*_0| = |m^*_1|=\frac{n}{2}$ and $m^*_0 \neq m^*_1$,  $\D$ picks a random $r^* \leftarrow \{0, 1\}^{\frac{n}{2}}$ and a random $b'\leftarrow \{0, 1\}$. $\D$ queries then its oracle on input ($m^*_b || r^*$) obtaining, if b=0, $c^* = f(m^*_b || r^*)$, else $c^* = F_k(m^*_b || r^*)$.  $\D$ forwards $c^*$ to $\A$.
+        \item When $\A$ asks for the encryption of message $m_i$, $\D$ picks a random $r_i \leftarrow \{0, 1\}^{\frac{n}{2}}$ and queries its oracle on input ($m_i || r_i$) obtaining, if b=0 $c_i = f(m_i || r_i)$, else $c_i = F_k(m_i || r_i)$. 
+        $\D$ forwards $c_i$ to $\A$. This is repeated for each message $m_i$ issued for the second query phase.
+        \newline Also, when $\A$ asks for the decryption of ciphertext $c_i'$, $\D$ queries its oracle on input $c_i'$ obtaining, if b=0 $(m_i'||r_i') = f^{-1}(c_i')$, else $(m_i'||r_i') = F^{-1}_k(c_i')$, which $\D$ forwards to $\A$. This is repeated for each ciphertext $c_i' \neq c$ issued for the second query phase
+        \item At the end of the game, $\A$ outputs a bit b''. $\D$ outputs a bit $1 \Leftrightarrow b'' = b'$. 
+    \end{enumerate}
+    Now, Pr[$\D$] will depend on b : 
+    \begin{itemize}
+        \item if b = 0, Pr[$\D$ outputs 1] = $\frac{1}{2} + \frac{q(n)}{2^{\frac{n}{2}}}$ ($m||r$ found twice !)
+        \item if b = 1, Pr[$\D$ outputs 1] $\leq \frac{1}{2} + \eta(n)$
+    \end{itemize}
+    We can see that if $F_k(m)$ is replaced by a true random function $f(m)$, the scheme is CCA-secure (since $\frac{q(n)}{2^{\frac{n}{2}}}$ is negligible). 
+    
+    So now we check if the scheme is insecure, we can distinguish $F_k(m)$ from a true random function. $|Pr[\D^{F_k(\cdot),F_k^{-1}(\cdot)}(1^n)=1]-Pr[\D^{f(\cdot),f^{-1}(\cdot)}(1^n)=1]| \leq \eta(n) - \frac{q(n)}{2^{n/2}}$. Since $F_k(\cdot)$ is a strong PRP, then $\eta(n)$ is negligible and the scheme $\Pi$ is CCA-secure.
+    \item Since the scheme $\Pi$ is CCA-Secure but not unforgeable, then it is not an authenticated encryption
+\end{enumerate}
+\end{solution}
+
+
+\subsection{Exercise 5 (Authenticated Encryption)}
+Let $\Pi=(\Gen,\Enc,\Dec)$ be an authenticated encryption scheme where $ 0 \not \in \mathcal{C}$ (that is, the string $``0"$ is not a possible ciphertext for $\Pi$). Consider the following scheme $\Pi':=(\Gen',\Enc',\Dec')$ with:
+
+\begin{itemize}
+\item $\Gen'=\Gen$
+\item $\Enc'=\Enc$
+\item 	$ \forall k: \left\{ 	\begin{array}{l l}
+\Dec'(c)=\Dec(c) &\quad \text{ if } c \neq 0,\\
+ 0 &\quad  \text{ if } c = 0. 
+\end{array} \right.   $ 
+%\item $\Dec'(c)=\Dec(c)$ if $c \neq 0$, if $c=0$ $c \neq 0 ~ \forall$ key $k$.
+\end{itemize}
+
+\begin{enumerate}
+\item Is $\Pi'$ unforgeable?
+\item Is $\Pi'$ CCA secure?
+\end{enumerate}
+\begin{solution}
+    \begin{enumerate}
+        \item This is CCA-secure, since $\Pi$ is CCA-secure. (Insert proof here but it is 100\% sure it is CCA-secure).
+        \item This is not unforgeable. We can forge a new valid ciphertext if the PPT adversary $\A$ outputs 0, then this ciphertext will be considered as valid and Pr[EncForge$_{\A, \Pi'}$(n) = 1] = 1.
+    \end{enumerate}
+\end{solution}
+
+\subsection{Exercise 6 (Commitment scheme)}
+\label{subsec:commit-scheme}
+Define the bit-commitment scheme $\langle \G, \Com, \Open \rangle$ with the following PPT 
+algorithms :
+\begin{itemize}
+\item $\Gen(1^n)$ sets $pk$ as $(\PRG,R)$, where
+  \begin{itemize}
+  \item $\PRG$ is a random generator $\lbrace 0,1 \rbrace^n \longmapsto \lbrace 0,1\rbrace^{3n}$
+  \item $R$ is a random $3n$-bit string
+  \end{itemize}
+\item $\Com_{pk}(b)$ with $b\in\{0,1\}$ provides $(c,d)$ where: 
+  \begin{itemize}
+  \item $Y$ is an $n$-bit string
+  \item  if $b=0$ $c=\PRG(Y)$
+  \item if $b=1$, $c=\PRG(Y) \oplus R$
+  \item $d=(b,Y)$
+  \end{itemize}
+\item $\Open_{pk}(c,d)$ outputs $b$ if it can recompute $c$ from $d$ and $pk$, or $\bot$ otherwise
+\end{itemize}
+
+\begin{enumerate}
+  \item Is this scheme perfectly hiding?
+	\item Is this scheme computationaly binding? 	
+	\item If the committer choose $R$ is the scheme secure?
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+    \item To break the hiding property, an adversary would need to enumerate all possible outputs of G (requires $2^n$ steps) if $G(Y) \oplus R \notin \{x | \forall u : x = G(u)\}$. But this kind of event has a negligible chance of probability (Pr = $\frac{|G(Y)|}{|G(Y) \oplus R|} = \frac{2^n}{2^{3n}} = \frac{1}{2^{2n}} \in negl(n)$) so an adversary with an unbounded power of calculation can easily break the property of perfectly hiding.
+    \item It is computationally binding because : 
+    $$Pr[G(Y) = G(Y') \oplus R] = \frac{2^n\cdot2^n}{2^{3n}} = \frac{1}{2^n} \in negl(n)$$
+    Then we have Pr[Com$^{bind}_{\mathrm{A}, \Pi}$] $\leq \epsilon$, and the scheme is computationally secure. 
+    \item Not secure, because if $R = G(Y)$, then the opposite player can easily deduce the value of b. If c = 0, b = 1, else b = 0. 
+\end{enumerate}
+\end{solution}
