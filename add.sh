@@ -132,10 +132,10 @@ if [ $# -lt $nbr_arg ] ||  [ $1 = "--help" ]; then
     This command allows you to create a template for a new .tex document
     
     use: bash add.sh quadri titre sigle code repertory sol year month minmaj
-    e.g: bash add.sh 1      math  FSAB  1101 summary
-    e.g: bash add.sh 1      math  FSAB  1101 notes
-    e.g: bash add.sh 1      math  FSAB  1201 exercises only
-    e.g: bash add.sh 1      info  FSAB  1401 exam      both 2015 Juin  All
+    e.g: bash add.sh 1      math  EPL   1101 summary
+    e.g: bash add.sh 1      math  EPL   1101 notes
+    e.g: bash add.sh 1      math  EPL   1201 exercises only
+    e.g: bash add.sh 1      info  EPL   1401 exam      both 2015 Juin  All
     e.g: bash add.sh 6      mcp   INGI  1122 test      none 2018 Mars  Mineure
 
     where repertory is summary, notes, exam, test, exercises or all
