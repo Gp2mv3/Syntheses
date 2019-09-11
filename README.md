@@ -35,6 +35,14 @@ Pour une explication plus détaillée, lisez la partie *Utilisation linéaire de
 écrit par Benoît Legat.
 Voir aussi le [wiki](https://github.com/Gp2mv3/Syntheses/wiki) à ce sujet.
 
+Nous vous recommandons d'utiliser le système des *branches* de Git,
+qui permettent d'avoir en parallèle des changements différents sur des documents différents
+(par exemple, un changement sur la synthèse de physique 1 et un ajout d'examen en algèbre),
+avec la possibilité de facilement passer d'un groupe de changements à l'autre,
+et d'ainsi ouvrir plusieurs *pull requests*, une par groupe de changements/thématique.
+Cela vous permettra aussi de garder une branche *master* propre
+et qui peut facilement être mise à jour avec ce repository (*fast-forward*).
+
 Vous pouvez visualiser le statut des différentes synthèses
 [ici](https://github.com/Gp2mv3/Syntheses/wiki/Status).
 N'hésitez pas à en rajouter dans la liste :)
