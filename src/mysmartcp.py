@@ -34,6 +34,8 @@ def main():
             option_map = document['clients'][0]['output']['parameters'][0]['parameters'][1]['mapping'][option]
             if option_map == 'MAT' and quadri < 7:
             	option_map = 'MAP'
+            elif option_map == 'PHYS' and quadri < 7:
+            	option_map = 'Mineures externes'
             titre = document['clients'][0]['output']['parameters'][0]['parameters'][5]['mapping'][name]
             if typ == 'exam' or typ == 'test':
                 year = int(sys.argv[6])
