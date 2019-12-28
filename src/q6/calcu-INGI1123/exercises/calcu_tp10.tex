@@ -1,28 +1,293 @@
-% Exercice 1
-\subsection{}
+\subsection{} % Exercise 1.
+Give the complexity of the following algorithms.
+\begin{enumerate}
+\item
+\begin{minted}{julia}
+function sum(n)
+	sum = n*n*n
+	for i = 0:n
+		for j = 0:i
+			sum += 1
+		end
+	end
+end
+\end{minted}
+\item
+\begin{minted}{julia}
+function fun(n)
+	if n > 1
+		return fun(n/2) + fun(n/2)
+	else
+		return n
+	end
+end
+\end{minted}
+\end{enumerate}
 
-En supposant qu'on est un algorithme pour SAT en temps polynomial. Il faut trouver un algorithme qui trouve les valeurs qui rendent la formule vraie.
+\begin{solution}
+\begin{enumerate}
+	\item This function has to do two multiplications at the start,
+	and one addition
+	for every pass of the inner loop.
+	It satisfies the following recurrence relation:
+	\begin{align*}
+		T(0) &= 2\,,\\
+		T(n) &= T(n-1) + n + 1\,,\quad \forall n > 0\\
+		&= T(n-2) + n + n + 1\\
+		&= T(n-3) + n - 1 + n + n + 1\\
+		&= T(n-k) + \sum_{i = 0}^{k-2} (n - i) + n + 1\\
+		&= T(n-k) + (k-1)n - (k-2)(k-3)/2 + n + 1\,.
+	\end{align*}
+	We have a base case for \(T(0)\),
+	hence we want \(n-k = 0\), or \(k = n\).
+	Substituting this in the expression above,
+	we obtain
+	\(T(n) = 2 + n^2 - n - n^2/2 + 5n/2 - 3 + n + 1 =
+	\frac{1}{2} n^2 + \frac{5}{2} n \in \Theta(n^2)\).
+	\item This function's complexity satisfies the following recursion:
+	\begin{align*}
+		T(0) &= 1\,,\\
+		T(1) &= 1\,,\\
+		T(n) &= 2 T(n/2) + 1\,, \quad \forall n > 1\\
+		&= 2 (2 T(n/4) + 1) + 1\\
+		&= 2 (2 (2 T(n/8) + 1) + 1) + 1\\
+		&= 2^k T(n/2^k) + 2^k - 1\,.
+	\end{align*}
+	Since we have a base case for \(T(1)\),
+	we choose \(k\) such that \(n/2^k = 1\).
+	This means that \(k = \lg n\).
+	Plugging this in the expression above,
+	we find that \(T(n) = 2n-1 \in \Theta(n)\).
+\end{enumerate}
+\end{solution}
 
-\begin{framed}
-$Assign\{\}$
+\subsection{} % Exercise 2.
+Algorithmic versus functional reduction.
+\begin{enumerate}
+	\item Prove that for every set \(A, A \ared \bar{A}\).
+	\item Prove that for all sets \(A, B\) if \(A \fred B\)
+	and \(B\) is recursively enumerable,
+	then \(A\) is recursively enumerable.
+	\item Show an example for which the relation \(A \fred \bar{A}\)
+	does not hold.
+	\item Show an example for which the following relation does not hold:
+	if \(A \ared B\) and \(B\) is recursively enumerable,
+	then \(A\) is recursively enumerable.
+\end{enumerate}
 
-$\textbf{if}\ !SAT(f)\ \textbf{return}\ null$
+\begin{solution}
+	\begin{enumerate}
+		\item By definition, \(A \ared \bar{A}\)
+		means that if \(\bar{A}\) is recursive, then so is \(A\).
+		To see why this is true,
+		consider the characteristic function of \(\bar{A}\):
+		\[
+		f_{\bar{A}}(x) = \begin{cases} 1\,, & \textnormal{if } x\in \bar{A}\,,\\ 0\,, & \textnormal{otherwise.}\end{cases}
+		\]
+		For a recursive set, this function is computable.
+		We can then construct the function
+		\[
+		f_A(x) = 1 - f_{\bar{A}}(x)\,,
+		\]
+		which is also computable,
+		and decides \(A\).
+		This proves that \(A \ared \bar{A}\).
+		\item If \(B\) is recursively enumerable,
+		that means we have a computable partial function
+		\[
+		f_B(x) = \begin{cases} 1\,, & \textnormal{if } x\in B\,,\\ \bot\,, & \textnormal{otherwise.}\end{cases}
+		\]
+		Now,
+		\(A \fred B \implies \exists f \textnormal{ total and computable such that } a \in A \iff f(a) \in B\).
+		This means we can find a computable partial function \(f_A(x)\)
+		for \(A\) as follows:
+		\[
+		f_A(x) = f_B(f(x))\,.
+		\]
+		This function is computable because it is the composition
+		of \(f\) and \(f_B\), two computable functions.
+		\item Take for example \(A = \bar{K}\).
+		Assume we have \(\bar{K} \fred K\).
+		We know that \(K\) is recursively enumerable,
+		hence we can apply the result of the previous question
+		to show that \(\bar{K}\) is recursively enumerable.
+		However, we know this is not the case,
+		since \(\bar{K}\) is co-recursively enumerable,
+		hence \(\bar{K} \centernot\fred K\).
+		\item Take for example \(A = \bar{K}\).
+		We know that \(\bar{K} \ared K\),
+		and that \(K\) is recursively enumerable,
+		however \(\bar{K}\) is not recursively enumerable
+		(it is co-recursively enumerable).
+	\end{enumerate}
+\end{solution}
 
-$\textbf{else} \forall x \in Vars(f)$
+\subsection{} % Exercise 3.
+Prove the following relations.
+\begin{enumerate}
+	\item Does \(A \ared B\) imply \(A \fred B\)?
+	\item Does \(A \fred B\) imply \(A \ared B\)?
+\end{enumerate}
 
-$\{$
+\begin{solution}
+	\begin{enumerate}
+		\item Assume this is true.
+		Consider \(\bar{K} \ared K\),
+		which is true by the proof of Exercise~10.2.1.
+		Then it would imply \(\bar{K} \fred K\).
+		In Exercise~10.2.3,
+		we showed that \(\bar{K} \centernot\fred K\).
+		This shows that \(A \ared B \centernot\implies A \fred B\).
+		\item Let \(A \fred B\).
+		If \(B\) is recursive,
+		then we have a function \(f_B(x)\) such that
+		\[
+		f_B(x) = \begin{cases} 1\,, & \textnormal{if } x\in B\,,\\ 0\,, & \textnormal{otherwise.}\end{cases}
+		\]
+		We also know that we have a total computable function \(f\)
+		such that \(a \in A \iff f(a) \in B\),
+		by virtue of the functional reducibility.
+		Hence we can construct \(f_A(x)\) as follows:
+		\[
+		f_A(x) = f_B(f(x))\,.
+		\]
+		This function is total computable,
+		hence it decides \(A\).
+		This proves by construction that
+		\(A \fred B \implies A \ared B\).
+	\end{enumerate}
+\end{solution}
 
-$\textbf{if}\ SAT(F|_{Assign\cup \{x, true\}})$
+\subsection{} % Exercise 4.
+Let \(re = \{A \mid A \textnormal{ is recursively enumerable}\}\).
+\begin{enumerate}
+	\item State the conditions to prove that HALT is \(re\)-complete
+	with respect to \(\ared\).
+	\item Prove the conditions.
+\end{enumerate}
 
-$assign = assign \cup \{(x,true)\}$
+\begin{solution}
+	\begin{enumerate}
+		\item We have to prove two conditions:
+		\begin{itemize}
+			\item \(\mathrm{HALT} \in re\);
+			\item \(\forall B \in re, B \ared \mathrm{HALT}\).
+		\end{itemize}
+		\item Proving that HALT is recursively enumerable is simple:
+		write the following program,
+		which returns \(1\) if a given pair is in HALT,
+		and does not halt otherwise:
+\begin{minted}{julia}
+function P_HALT(n, x)
+	P_n(x)
+	return 1
+end
+\end{minted}
 
-$\textbf{else}\ assign = assign \cup \{(x,true)\}$
+		To prove that HALT is at least as hard to decide
+		as any other recursively enumerable set
+		is straightforward too.
+		Assume HALT is recursive.
+		This means that the halt function is total and computable:
+		\[
+		\halt(n, x) = \begin{cases} 1\,, & \textnormal{if } x\in \HALT\,,\\ 0\,, & \textnormal{otherwise.}\end{cases}
+		\]
+		Consider any set \(B \in re\).
+		This means that this set has a partial function \(f_B(x)\)
+		such that
+		\[
+		f_B(x) = \begin{cases} 1\,, & \textnormal{if } x\in B\,,\\ \bot\,, & \textnormal{otherwise.}\end{cases}
+		\]
+		Assume \(P_b(x)\) is the program that computes \(f_B(x)\).
+		We can then use \(\halt(n, x)\) to make \(f_B(x)\) total,
+		hence proving \(B\) is recursive:
+		\(f_B(x) = \halt(b, x)\).
+		This shows that if we assume \(\HALT\) is recursive,
+		then so is \(B\), for all \(B \in re\).
+		This is also written \(B \ared \HALT\).
 
-$\}$
+		Together, these proofs show that \(\HALT\) is \(re\)-complete.
+	\end{enumerate}
+\end{solution}
 
-$\textbf{return}\ assign$
-\end{framed}
+\subsection{} % Exercise 5.
+Let \(G\) be a non-directed graph of size \(\ge 3\).
+A Hamiltonian path (resp. cycle) is a path (resp. cycle)
+visiting each node of \(G\) exactly once.
+Show that the two following problems can be functionally reduced to each other:
+\begin{enumerate}
+	\item \(G\) admits a Hamiltonian cycle.
+	\item \(G\) admits a Hamiltonian path.
+\end{enumerate}
 
-% Exercice 2
-\subsection{}
-\nosolution
+\begin{solution}
+	Define the following sets
+	\begin{align*}
+	HP &= \{G : G \textnormal{ admits a Hamiltonian path}\}\,,\\
+	HC &= \{G : G \textnormal{ admits a Hamiltonian cycle}\}\,.\\
+	\end{align*}
+	\begin{enumerate}
+		\item Here, we want to show that \(HP \fred HC\).
+		This means that we want to show that
+		\(G \in HP \iff \exists f
+		\textnormal{ total and computable such that } f(G) \in HC\),
+		that is, show that if we can determine
+		whether a graph \(G\) contains a Hamiltonian cycle,
+		then we can also determine
+		whether \(G\) contains a Hamiltonian path,
+		by running the decision algorithm
+		on a modified version of the graph, \(f(G)\).
+
+		We use the following function \(f\):
+		let \(f\) be the function that adds one vertex to the graph,
+		say \(v\), and that adds edges between \(v\)
+		and all other vertices.
+		If \(G\) contains a Hamiltonian path,
+		then \(f(G)\) contains a Hamiltonian cycle.
+		To see why, simply take the Hamiltonian path,
+		which we assume starts at \(u\) and ends at \(w\),
+		and add \(wvu\) to the path.
+		This will be a Hamiltonian cycle.
+		\item Now, we want to show that \(HC \fred HP\).
+		This means we want to show that
+		\(G \in HC \iff \exists f
+		\textnormal{ total and computable such that } f(G) \in HP\),
+		that is, show that if we can determine
+		whether a graph \(G\) contains a Hamiltonian path,
+		then we can also determine
+		whether \(G\) contains a Hamiltonian cycle,
+		by running the decision algorithm
+		on a modified version of the graph, \(f(G)\).
+
+		We use the following function \(f\):
+		pick a random vertex of the graph, say \(v\).
+		Add a vertex \(u\), which only has an edge to \(v\),
+		and a vertex \(n\), which has edges to all neighbours of \(v\).
+		Finally, add a vertex \(w\) which only has an edge to \(n\).
+		If the graph \(f(G)\) obtained
+		by applying these manipulations
+		to \(G\) contains a Hamiltonian path,
+		then \(G\) contains a Hamiltonian cycle.
+		To see why, the following construction proves
+		that if one finds a Hamiltonian path in \(f(G)\),
+		then \(G\) must have a Hamiltonian cycle.
+		when we try to find a Hamiltonian path on this graph.
+		The path has to start (or end) at \(u\),
+		since otherwise there is no way we can ever reach this vertex
+		without getting stuck there (we cannot leave,
+		since then we would have to visit \(v\) a second time
+		which is not allowed).
+		This also means that \(v\) is the second vertex of the path.
+		The path also has to end (or start) at \(w\),
+		for the same reason as above.
+		This means that right before arriving at \(n\),
+		the path was at a neighbour of \(v\), say \(a\)
+		(since those are the only vertices with edges to \(n\)).
+		If we now cut out \(uv\) and \(anw\),
+		the remaining path visits all vertices of \(G\).
+		The final step is to notice that we have not yet used
+		the edge from \(a\) to \(v\),
+		meaning we can append \(av\) to the path
+		in order to obtain a Hamiltonian cycle.
+	\end{enumerate}
+\end{solution}
