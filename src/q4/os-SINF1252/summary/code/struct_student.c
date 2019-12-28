@@ -1,8 +1,8 @@
 // Definition d'une structure
 struct student {
   int matricule ;
-  char prenom [ 2 0 ] ;
-  char nom [ 3 0 ] ;
+  char prenom [20] ;
+  char nom [30] ;
 };
 // Declaration + Initialisation
 struct student linus = { 1 , "Linus" , "Torvalds" } ;
