@@ -1,11 +1,12 @@
 \documentclass[fr]{../../../eplsummary}
+\usepackage{../../../eplunits}
 
 \usepackage{graphicx}
 \usepackage{enumerate}
 \usepackage{standalone}
 \usepackage{listings}
 \usepackage{float}
-\usepackage{caption}
+%\usepackage{caption}
 \usepackage{rotating}
 \usepackage{booktabs}
 \usepackage{lscape}
@@ -16,8 +17,11 @@
 \usepackage[bottom]{footmisc}
 \usepackage{wrapfig}
 \geometry{hmargin=1.8cm, vmargin=1.8cm}
-\usepackage[oldvoltagedirection, american]{circuitikz}
+\usepackage[RPvoltages, american]{circuitikz}
 \usepackage{adjustbox}
+\usepackage{gensymb}
+\usepackage{mdframed}
+\usepackage{floatflt}
 
 \setcounter{tocdepth}{2}
 \counterwithin{figure}{section}
@@ -25,15 +29,16 @@
 % -------- MACROS -----------------
 \newcommand{\Lagr}{\mathcal{L}} % signe lagrangien
 \newcommand{\EvalAt}[1]{\biggr\rvert_{#1}} % pour faire la barre d'evaluation en un point (p. ex. \EvalAt{x=0}
-\newcommand{\Module}[1]{\vert #1 \vert} % pour la valeur absolue/module (p. ex. \Module{x}
-\newcommand{\Argex}[1]{e^{#1 j}} % pour expo avec angle dedans
+\newcommand{\Module}[1]{\abs{#1}} % pour la valeur absolue/module (p. ex. \Module{x}
+\newcommand{\Argex}[1]{\e^{\imagj #1}} % pour expo avec angle dedans
 \newcommand{\Polar}[2]{\Module{#1}\Argex{#2}} % pour une notation polaire rapide (p. ex. \Polar{V_{max}}{\phi}
 % J'aurais dû faire un macro pour les \stackrel{\triangle}{=} :'(
+\renewcommand{\imagj}{j} % It is better, sorry Peiffap
 
-\hypertitle{Circuits \& Mesures}
+\hypertitle{Circuits \& Mesures électriques}
 {4}{ELEC}{1370}
 {Philippe Greiner\and Vincent Schellekens}
-{Francis Labrique et Charles Trullemans}
+{Bruno Dehez, Christophe Craeye et Claude Oestges}
 
 \listoftodos
 \newpage
@@ -43,18 +48,42 @@
 \subsubsection{Loi de Ohm}
 La loi de Ohm relie la tension et le courant sur une résistance est simplement donnée par $\boxed{v(t) = R\cdot i(t)}$, où $R\ge 0$. On rappelle aussi la notion de \textbf{conductance}, avec $G = \frac{1}{R}$. Avec la conductance, la loi de Ohm est $v(t) = \frac{i(t)}{G}.$
 \paragraph{Puissance} On définit la puissance (instantanée) comme $p(t) = v(t) \cdot i(t)$\footnotemark. Dans le cas de la résistance, on peut facilement utiliser la loi de Ohm pour obtenir $p(t) = R\cdot i^2(t) = \frac{v^2(t)}{R}$.
-\footnotetext{Il est important de définir le courant et la tension sur le circuit de \textbf{directions opposées} pour cette formule, pour ne pas en changer le signe: le courant entre dans une résistance du côté \textbf{positif} à la borne positive de tension.}
+\paragraph{Convention de signe}
 
-\subsubsection{Kirchoff}
-On rappelle brièvement les deux lois de Kirchoff, indispendables pour la résolutions de circuits.
-\paragraph{Loi des noeuds (KCL)}
-La loi des noeuds, ou loi des courants, s'écrit $\sum^{N}_{j=1}i_j(t) = 0$: la somme de tous les courants en un noeud est nulle. Les courants doivent être soit tous divergents, soit convergents.
+\begin{wrapfigure}{r}{0.15\textwidth}
+	\vspace{-20pt}
+	%\begin{framed}
+	\centering
+		\begin{circuitikz}[scale=0.8, european voltages]
+			\draw
+			(0,0) to [short] (2, 0)
+			to[R] (2, 2)
+			to[short, i_<=$i$] (1, 2)
+			to[short] (0, 2)
+			(1, 0) to[open, v^>=$v$] (1, 2);
+		\end{circuitikz}
+		\label{fig:convention}
+	%\end{framed}
+\end{wrapfigure}
+De manière générale, toutes les puissances (efficaces, complexes\dots) sont calculées
+en considérant comme positif un courant qui va de la borne positive
+(tension la plus élevée) à la borne négative de l'élément.
+Cette convention, visible sur la figure ci-contre, est valable pour les résistances,
+les sources, les inductances, les impédances\ldots et entraine simplement des changements de signes:
+par exemple, pour une source fournissant de la puissance, le courant va se déplacer
+de la borne négative à la borne positive, et donc est dans le sens opposé à celui de la convention;
+on a donc une puissance négative, fournie par l'élément.
+
+\subsubsection{Kirchhoff}
+On rappelle brièvement les deux lois de Kirchhoff, indispensables pour la résolution de circuits.
+\paragraph{Loi des n\oe{}uds (KCL)}
+La loi des n\oe{}uds, ou loi des courants, s'écrit $\sum^{N}_{j=1}i_j(t) = 0$: la somme de tous les courants en un n\oe{}ud est nulle. Les courants doivent être soit tous divergents, soit convergents.
 \paragraph{Loi des mailles (KVL)}
-La loi des mailles s'exprime sur les tensions, et se formule de la manière suivante: $\sum^N_{j=1}v_j(t) = 0$, où les tensions sont prises dans une boucle fermée\footnote{On appelle boucle fermée tout parcours fermé dans le circuit, tel qu'aucun noeud n'est rencontré deux fois.} du circuit.
+La loi des mailles s'exprime sur les tensions, et se formule de la manière suivante: $\sum^N_{j=1}v_j(t) = 0$, où les tensions sont prises dans une boucle fermée\footnote{On appelle boucle fermée tout parcours fermé dans le circuit, tel qu'aucun n\oe{}ud n'est rencontré deux fois.} du circuit.
 \subsubsection{Résolution de circuits}
 Voici quelques cas typiques qui permettront de résoudre efficacement des circuits plus compliqués par la suite.
 \paragraph{Résistances en parallèle}
-Pour additioner plusieurs résistances branchées en parallèle, on a $\frac{1}{R_{eq}} = \frac{1}{R_1} + \dots + \frac{1}{R_n}$, ce qui donne $R_{eq} = \frac{R_1\ldots R_n}{R_1+\ldots+R_n}.$
+Pour additionner plusieurs résistances branchées en parallèle, on a $\frac{1}{R_{eq}} = \frac{1}{R_1} + \dots + \frac{1}{R_n}$.
 \paragraph{Diviseur de tension}
 Figure \ref{diviseurs} à gauche: la tension dans la résistance $R_1$ est de $v_{R_1} = v(t)\cdot\frac{R_1}{R_1+R_2}.$
 \paragraph{Diviseur de courant}
@@ -62,7 +91,7 @@ Figure \ref{diviseurs} à droite: le courant dans la résistance $R_1$ est de $i
 \begin{figure}[H]
 \centering
 \begin{circuitikz}[american]
-\draw (0,0) to [V = v(t)] (0,2) to[R=$R_1$] (2,2) to[R=$R_2$] (2,0) -- (0,0); 
+\draw (0,0) to [V = v(t)] (0,2) to[R=$R_1$] (2,2) to[R=$R_2$] (2,0) -- (0,0);
 \draw (5,0) to [I = i(t)] (5,2) -- (6,2) to [R=$R_1$,*-*] (6,0) -- (5,0);
 \draw (6,2) -- (7.5,2) to [R=$R_2$] (7.5,0) -- (6,0);
 
@@ -71,17 +100,20 @@ Figure \ref{diviseurs} à droite: le courant dans la résistance $R_1$ est de $i
 \label{diviseurs}
 \end{figure}
 
-\paragraph{Equivalence étoile $\longleftrightarrow$ triangle}
-Comme visible à la figure \ref{triangle}, il est aisé de convertir un triangle, en gardant les mêmes bornes. Cela facilitera grandement la résolution des circuits en triangles, en rendant les lois de Kirchoff plus facilement applicables.
-Pour passer de triangle à étoile, on remplace\footnotemark\ deux résistances($R_1$ et $R_2$) connectées à un même pôle par une seule résistance $$R_a = \frac{R_1\cdot R_2}{R_1+R_2+R_3}$$ connectée à ce même pôle. Pour la transformation inverse (beaucoup moins utile), on a $R_1 = \frac{R_aR_b + R_bR_c + R_aR_c}{R_b}$.
-\footnotetext{La démonstration n'est pas donnée ici, mais il suffit d'égaler les résistances équivalentes entre chaque borne puis de résoudre.}
+\paragraph{Équivalence étoile $\longleftrightarrow$ triangle}
+Comme visible à la figure \ref{triangle}, il est aisé de convertir un triangle, en gardant les mêmes bornes. Cela facilitera grandement la résolution des circuits en triangles, en rendant les lois de Kirchhoff plus facilement applicables.
+Pour passer de triangle à étoile, on remplace\footnote{La démonstration n'est pas donnée ici, mais il suffit d'égaler les résistances équivalentes entre chaque borne puis de résoudre.}
+deux résistances($R_1$ et $R_2$) connectées à un même pôle par une seule résistance
+\[R_a = \frac{R_1\cdot R_2}{R_1+R_2+R_3}\]
+connectée à ce même pôle. Pour la transformation inverse, on a
+\[R_1 = \frac{R_aR_b + R_bR_c + R_aR_c}{R_b}\]
 \begin{figure}[H]
 \centering
 \begin{circuitikz}[american]
-	\draw (0,0) node[left]{c} to[R=$R_1$,*-*] (2,2.82)node[above]{a} to[R=$R_2$,-*] (4,0) node[right]{b} to[R=$R_3$] (0,0); 
-	\draw (6,0) node[left]{a} to[R=$R_1$,-*](8,0.94);
-	\draw (8,2.82) node[above]{b} to[R=$R_2$](8,0.94);
-	\draw (10,0) node[right]{c} to[R=$R_3$](8,0.94);
+	\draw (0,0) node[left]{c} to[R=$R_1$,*-*] (2,3.46)node[above]{a} to[R=$R_2$,-*] (4,0) node[right]{b} to[R=$R_3$] (0,0);
+	\draw (6,0) node[left]{a} to[R=$R_a$,-*](8,1.15);
+	\draw (8,3.46) node[above]{b} to[R=$R_b$](8,1.15);
+	\draw (10,0) node[right]{c} to[R=$R_c$](8,1.15);
 \end{circuitikz}
 \caption{Circuit en triangle et en étoile}
 \label{triangle}
@@ -93,17 +125,27 @@ Pour passer de triangle à étoile, on remplace\footnotemark\ deux résistances(
 \centering
 
 \begin{circuitikz}[american]
-	\draw (0,0) node[op amp] (op){};
+	\draw (0,0) node[op amp] (op) {};
 	\draw (op.-) -- ++(-0.2,0) -- ++ (0,1) -- ++ (2.58,0) -- (op.out);
-	\draw (op.+) ++(-1,-1.5) node[ground]{} to[V=$V_s$] ++(0,1.5) -- (op.+);
+	\draw (op.+) ++ (-1, -1.5) node[ground] {} to[V=$V_S$] ++ (0, 1) |- (op.+);
 	\draw (op.out) -- ++(0.5,0) node[right]{$V_o$};
-	
-	\draw (4,-1) node[ground]{} to[V=$V_s$] (4,1) -- ++(1.5,0) to[R=$R_1$,v=$V_{in}$] ++(0,-1.75) -- ++(1,0)--++(0,1.75)--++(2,0) -- ++ (0,-1) -- ++(0.5,0)node[right]{$V_o$};
-	\draw (7,-2.5)node[ground]{} to[american controlled voltage source=$A_oV_{in}$] ++(0,2.5) to[R=$R_o$,-*] ++(1.5,0);
+
+	\draw (4,-1) node[ground] {}
+		to[V=$V_S$] (4,1)
+		-- ++(2,0)
+		to[R=$R_i$,v=$V_{in}$] ++(0,-1.75)
+		-- ++(1,0)
+		--++(0,1.75)
+		--++(2,0)
+		-- ++ (0,-1)
+		++ (-1.5, -2.5) node[ground] {}
+		to[american controlled voltage source=$A_oV_{in}$] ++(0, 2.5)
+		to[R=$R_o$, -*] ++(1.5, 0)
+		-- ++(0.5, 0) node[right] {$V_o$};
 \end{circuitikz}
 
 \caption{Amplificateur opérationnel: buffer à gain unitaire et modèle d'ampli op}
-\label{fig:aop}
+\label{fig:aopunitybuffer}
 \end{figure}
 
 \begin{figure}[h]
@@ -111,19 +153,22 @@ Pour passer de triangle à étoile, on remplace\footnotemark\ deux résistances(
 	
 	\begin{circuitikz}[american]
 		\draw (4,1)node[left]{$IN_+$} -- ++(1.5,0) to[R=$R_1$,v=$V_{in}$] ++(0,-1.75) -- ++(-1.5,0) node[left]{$IN_-$};
-		\draw (7,-2.5)node[ground]{} to[american controlled voltage source=$A_oV_{in}$] ++(0,2.5) to[R=$R_o$] ++(1.5,0)--++(0.5,0)node[right]{$V_o$};
+		\draw (9, -2) node[ground] {}
+			to[american controlled voltage source=$A_oV_{in}$] ++(0, 2.5)
+			to[R=$R_o$] ++(1.5, 0)
+			-- ++(0.5, 0) node[right] {$V_o$};
 	\end{circuitikz}
 	
 	\caption{Amplificateur opérationnel idéal}
 	\label{fig:aopgen}
 \end{figure}
-Sur la figure \ref{fig:aop}, le circuit de gauche est un montage basique avec un amplificateur opérationnel. Le circuit à droite représente un modèle équivalent au circuit. Plus précisément, on représente un amplificateur opérationnel (figure \ref{fig:aopgen}) par\footnote{Pour l'instant du moins, on parlera plus tard de certaines non idéalités} une résistance $R_i$ entre les bornes à l'entrée, et une source commandée par la tension aux bornes de cette résistance $V_{in}$ (avec un gain $A_o$), en série avec une résistance de sortie $R_o$. La relation entre tension d'entrée et de sortie est, d'après le modèle, donnée par $$\frac{V_o}{V_s} = \cfrac{1}{1+\cfrac{R_i}{R_o + A_oR_i}}.$$
+Sur la figure \ref{fig:aopunitybuffer}, le circuit de gauche est un montage basique avec un amplificateur opérationnel. Le circuit à droite représente un modèle équivalent au circuit. Plus précisément, on représente un amplificateur opérationnel (figure \ref{fig:aopgen}) par\footnote{Pour l'instant du moins, on parlera plus tard de certaines non idéalités} une résistance $R_i$ entre les bornes à l'entrée, et une source commandée par la tension aux bornes de cette résistance $V_{in}$ (avec un gain $A_o$), en série avec une résistance de sortie $R_o$. La relation entre tension d'entrée et de sortie est, d'après le modèle, donnée par \[\frac{V_o}{V_s} = \cfrac{1}{1+\cfrac{R_i}{R_o + A_oR_i}}.\]
 Pour obtenir le modèle de l'amplificateur opérationnel idéal, on va faire les approximations suivantes:
-$$\left\{ \begin{array}{c}
+\[\left\{ \begin{array}{c}
 A_o \longrightarrow \infty\\
 R_i \longrightarrow \infty\\
 R_o \longrightarrow 0
-\end{array}\right. $$
+\end{array}\right. \]
 
 Avec ces approximations, on observe un gain de 1 pour ce circuit. Les conséquences pratiques pour la résolution de circuits avec ce modèle idéal (montré à la figure \ref{fig:aopIO}) sont $\boxed{i_+ = i_- = 0}$ et $\boxed{v_+ = v_-}$. Ces simplifications seront extrèmement pratiques pour les circuits.
 
@@ -141,7 +186,14 @@ Avec ces approximations, on observe un gain de 1 pour ce circuit. Les conséquen
 \subsection{Dipôles équivalents}
 \label{dipoles}
 \todo[inline,color=blue]{Revoir éventuellement comment on introduit le bazar}
-Tout circuit contenant des résistances\footnote{Plus tard, on verra que c'est aussi vrai pour un circuit contenant tout types d'impédances. Dans ce cas, la résistance équivalente $R_{Th}$ est remplacée par une impédance équivalente $Z_{Th}$.} et des sources (on parle alors d'un \textit{circuit résistif}) peut être remplacé par un \textbf{dipôle équivalent de Norton ou de Thévenin} : les caractéristiques du circuit vues par \textit{l'extérieur} du circuit sont alors préservées. Le dipôle équivalent est constitué d'une source équivalente (de tension ou de courant) et d'une \textbf{résistance équivalente} $R_{Th}$.  Cela permet de simplifier grandement une partie du circuit qui ne nous intéresse pas beaucoup. Par exemple, si on étudie un circuit comportant une inductance et qu'on s'intéresse au courant passant par cette inductance, on peut construire le circuit équivalent aux bornes de celle-ci.
+Tout circuit contenant des résistances
+\footnote{Plus tard, on verra que c'est aussi vrai pour un circuit contenant tout type d'impédance.
+	Dans ce cas, la résistance équivalente $R_{Th}$ est remplacée par une impédance équivalente $Z_{Th}$.}
+et des sources (on parle alors d'un \textit{circuit résistif}) peut être remplacé par un \textbf{dipôle équivalent de Norton ou de Thévenin}:
+les caractéristiques du circuit (courant, tension) vues par \textit{l'extérieur} du circuit sont alors préservées.
+Le dipôle équivalent est constitué d'une source équivalente (de tension ou de courant) et d'une \textbf{résistance équivalente} $R_{Th}$.
+Cela permet de simplifier grandement une partie du circuit qui ne nous intéresse pas beaucoup.
+Par exemple, si on étudie un circuit comportant une inductance et qu'on s'intéresse au courant passant par cette inductance, on peut construire le circuit équivalent aux bornes de celle-ci.
 
 
 
@@ -157,11 +209,16 @@ Tout circuit contenant des résistances\footnote{Plus tard, on verra que c'est a
     	\draw (6,0) -- (7,0) to[open,*-*,v=$v_o$] (7,-2);
     	\draw [thick,latex-latex] (5, 2.5) -- (5,0.5) node[midway,right]{$V_{oc} = R_{th} I_{sc}$};
     \end{circuitikz}
-    \caption{Equivalents de Thévenin (droite, haut) et Norton (droite, bas).}
+    \caption{Équivalents de Thévenin (droite, haut) et Norton (droite, bas).}
      \label{thev}
 \end{figure}
 
-On parle d'\textbf{équivalent Thévenin} (en haut à droite de la figure \ref{thev}) si on a une source de tension $V_{OC}$. Cette tension $V_{OC}$ est la tension mesurée aux bornes du circuit à simplifier en circuit ouvert\footnote{\og Open Circuit\fg}. La résistance $R_{Th}$ est alors placée en série avec la source de tension. Par contre, dans un \textbf{équivalent de Norton} (en bas à droite de la figure \ref{thev}), la source est une source de courant $I_{SC}$, qui est le courant mesuré aux bornes du circuit en court circuit (on connecte les deux bornes du circuit)\footnote{\og Short Circuit\fg}. $R_{Th}$ est alors placée en parallèle avec la source. ATTENTION : la résistance $R_{Th}$ est la même dans les deux cas! On peut facilement passer de l'un à l'autre grâce à la relation :
+On parle d'\textbf{équivalent de Thévenin} (en haut à droite de la figure \ref{thev}) si on a une source de tension $V_{OC}$.
+Cette tension $V_{OC}$ est la tension mesurée aux bornes du circuit à simplifier en circuit ouvert\footnote{\og Open Circuit\fg}.
+La résistance $R_{Th}$ est alors placée en série avec la source de tension.
+Par contre, dans un \textbf{équivalent de Norton} (en bas à droite de la figure \ref{thev}), la source est une source de courant $I_{SC}$, qui est le courant mesuré aux bornes du circuit en court circuit (on connecte les deux bornes du circuit)\footnote{\og Short Circuit\fg}.
+$R_{Th}$ est alors placée en parallèle avec la source.
+La résistance $R_{Th}$ est la même dans les deux cas, et on peut facilement passer de l'un à l'autre grâce à la relation :
 \begin{equation}
 V_{OC} = R_{Th}I_{SC}
 \end{equation}
@@ -174,17 +231,31 @@ En pratique, comment construire un équivalent? Grâce à l'équation ci-dessus,
 
 \paragraph{Trouver $R_{Th}$} : ici la stratégie est plus subtile, car elle dépend des sources présentes dans le circuit.
 \begin{itemize}
-\item \textbf{Que des sources indépendantes} : $R_{Th}$ peut être évalué en annulant les sources\footnote{Une source de tension est remplacée par un fil, assurant une tension nulle, et une source de courant par un "trou", assurant un courant nul.}, puis en déterminant la résistance équivalente aux bornes du circuit. Bien sûr, si on veut, on peut toujours utiliser $R_{Th} = V_{OC}/I_{SC}$.
-\item \textbf{Sources dépendantes + indépendantes} : il faut obligatoirement, sauf cas particulier\footnote{Si on est certain que les sources dépendantes s'annulent si les sources indépendantes sont nulles.}, utiliser $R_{Th} = V_{OC}/I_{SC}$ si il y a des sources dépendantes. Cela provient du fait qu'on ne peut pas annuler arbitrairement une source dépendante sans être certain que la variable qui la contrôle est nulle aussi.
-\item \textbf{Que des sources dépendantes} : il faut utiliser une source "test" (par exemple d'un volt) que l'on place aux bornes du circuit. On peut ensuite calculer la résistance équivalente du circuit qui est égale à la tension aux bornes de la source test sur le courant passant par la source test. Remarquons aussi que dans le cas d'un circuit comportant uniquement des sources dépendantes, la source équivalente est toujours nulle (car il n'y a pas de source d'énergie dans le circuit isolé) et le dipôle équivalent se réduit toujours à une simple résistance.
+\item \textbf{Que des sources indépendantes}: $R_{Th}$ peut être évalué en annulant les sources\footnote{
+	Une source de tension est remplacée par un fil, assurant une tension nulle,
+	et une source de courant par un \og trou\fg{}, assurant un courant nul.
+}, puis en déterminant la résistance équivalente aux bornes du circuit.
+Bien sûr, si on veut, on peut toujours utiliser $R_{Th} = V_{OC}/I_{SC}$.
+\item \textbf{Sources dépendantes + indépendantes}: il faut obligatoirement, sauf cas particulier\footnote{
+	Si on est certain que les sources dépendantes s'annulent si les sources indépendantes sont nulles.
+}, utiliser $R_{Th} = V_{OC}/I_{SC}$ si il y a des sources dépendantes.
+Cela provient du fait qu'on ne peut pas annuler arbitrairement une source dépendante
+sans être certain que la variable qui la contrôle est nulle aussi.
+\item \textbf{Que des sources dépendantes}: il faut utiliser une source \og test\fg{}
+(par exemple d'un volt) que l'on place aux bornes du circuit.
+On peut ensuite calculer la résistance équivalente du circuit qui est égale
+à la tension aux bornes de la source test sur le courant passant par la source test.
+Remarquons aussi que dans le cas d'un circuit comportant uniquement des sources dépendantes,
+la source équivalente est toujours nulle (car il n'y a pas de source d'énergie dans le circuit isolé)
+et le dipôle équivalent se réduit toujours à une simple résistance.
 \end{itemize}
 
 \section{Analyse AC (1) : solutions sinusoïdales en régime (alias les phaseurs)}
 \subsection{Rappels : capacité et inductance}
 Avant d'introduire les phaseurs, voici un rapide rappel des circuits RC et RL de premier ordre. Pour obtenir la solution dans ces circuits, on doit résoudre une équation différentielle. A tout hasard, on rappelle aussi que
 \begin{align}
-\text{Capacité: }& i(t) = C\cdot \frac{dv(t)}{dt}\label{C}\\
-\text{Inductance: }& v(t) = L\cdot \frac{di(t)}{dt}\label{L}
+\text{Capacité: }& i(t) = C\cdot \fdif{v(t)}{t} \label{C}\\
+\text{Inductance: }& v(t) = L\cdot \fdif{i(t)}{t} \label{L}
 \end{align}
 
 
@@ -221,7 +292,7 @@ Le circuit étant en parallèle, la tension dans les deux branches est la même.
 V(t) = \frac{I_R(t)}{R} \stackrel{(\ref{IRL})}{=} \frac{I_s(t) - I_L(t)}{R} \label{VRL}
 \end{align}
 En utilisant (\ref{L}) et (\ref{VRL}), on obtient l'équation différentielle soit \begin{equation}
-RL\frac{dI_L(t)}{dt} = -(I_L(t) - I_s(t))\label{RLequa}.\end{equation}
+RL\fdif{I_L(t)}{t} = -(I_L(t) - I_s(t))\label{RLequa}.\end{equation}
 
 Ce sont des équations qui sont assez moches à résoudre, et il s'agit encore des circuits les plus simples, donc plutôt que de perdre du temps à ça, passons à la découverte de l'outil fantastique que sont les phaseurs.
 \subsection{Les phaseurs : un outil magique}
@@ -238,24 +309,39 @@ On peut dire que toutes les tensions/courants dépendants \begin{itemize}
 \item avec une amplitude différente
 \item avec un déphasage
 \end{itemize}
-On peut alors représenter toutes ces tensions/courants par des \textbf{phaseurs}, qui ne contiennent que les informations non triviales: l'amplitude et la phase. Par convention, on notera les phaseurs en gras\footnote{Mais il faut savoir qu'il existe aussi une notation "surlignée", du style $\overline{V}$ ou $\overline{I}$.}. On a alors
+On peut alors représenter toutes ces tensions/courants par des \textbf{phaseurs}, qui ne contiennent que les informations non triviales: l'amplitude et la phase. Par convention, on notera les phaseurs en gras\footnote{Mais il faut savoir qu'il existe aussi une notation \og surlignée\fg{}, du style $\overline{V}$ ou $\overline{I}$.}. On a alors
 \begin{align*}
 \textbf{V} &= V_{max}\Argex{{\psi_V}}\\
 \textbf{I} &= I_{max}\Argex{{\psi_I}}
 \end{align*}
-Pour pouvoir utiliser cette notation, on utilisera simplement la formule d'Euler: une fonction (co)sinusoïdale est la partie réelle d'une exponentielle complexe. Par conséquent, on peut ajouter 'artificiellement'\footnote{Pour retrouver la "vraie" solution, on ne prend que la partie réelle des solutions complexes. Pour ceux qui s'en rappellent, on a utilisé une technique identique en maths 2 pour... résoudre des EDO dont le terme indépendant (l'entrée) était une fonction sinusoïdale! Le monde des mathématiques est décidément parfois petit :)} une partie imaginaire afin de pouvoir écrire sous forme de phaseur.
-On peut donc transformer une tension en phaseur de cette manière-ci: $$Acos(\omega T + \phi) \longrightarrow Acos(\omega T + \phi) + jAsin(\omega T + \phi) = [Ae^{j\phi}]e^{jwt}$$
-Le terme entre crochets est le phaseur : il s'agit donc d'un phaseur contient pour seules informations la phase et l'amplitude (qui correspondent à la phase et à l'amplitude du nombre complexe). Notons qu'on peut aussi écrire un phaseur sous forme carthésienne $a + jb$, vu qu'un phaseur est un nombre complexe; c'est ce qu'on fait en pratique lors de la résolution de circuits. Voici les écritures "classiques" pour un phaseur d'amplitude $A$ et de phase $\phi$ :
+Pour pouvoir utiliser cette notation, on utilisera simplement la formule d'Euler: une fonction (co)sinusoïdale est la partie réelle d'une exponentielle complexe.
+Par conséquent, on peut ajouter \og artificiellement\fg{}\footnote{
+	Pour retrouver la \og vraie\fg{} solution, on ne prend que la partie réelle des solutions complexes.
+	Pour ceux qui s'en rappellent, on a utilisé une technique identique en maths 2 pour\dots
+	résoudre des EDO dont le terme indépendant (l'entrée) était une fonction sinusoïdale!
+	Le monde des mathématiques est décidément parfois petit :)
+}une partie imaginaire afin de pouvoir écrire sous forme de phaseur.
+On peut donc transformer une tension en phaseur de cette manière-ci:
+\[A\cos(\omega T + \phi) \longrightarrow A\cos(\omega T + \phi) + \imagj A\sin(\omega T + \phi) = [A\e^{\imagj\phi}]\e^{\imagj \omega t}\]
+Le terme entre crochets est le phaseur : un phaseur contient pour seules informations la phase et l'amplitude (qui correspondent à la phase et à l'amplitude du nombre complexe).
+Notons qu'on peut aussi écrire un phaseur sous forme cartésienne $a + \imagj b$,
+vu qu'un phaseur est un nombre complexe;
+c'est ce qu'on fait en pratique lors de la résolution de circuits.
+Voici les écritures \og classiques\fg{} pour un phaseur d'amplitude $A$ et de phase $\phi$ :
 
 \begin{equation}
-\textbf{A} = A e^{j \phi} = A \angle \phi
+\textbf{A} = A \e^{\imagj \phi} = A \angle \phi
 \end{equation}
 
-On voit directement l'avantage des phaseurs: les dérivées et intégrales présentes dans l'équation différentielle seront ici des multiplications et divisions par $j\omega$. Ainsi, on peut réécrire l'équation (\ref{RCequa}) avec des phaseurs, ce qui donne $$j\omega\cdot RC\textbf{V$_C$} = -(\textbf{V$_C$} - \textbf{V$_s$}).$$
-On a éliminé le terme $e^{jwt}$, l'équation étant vérifiée pour tous temps.
+On voit directement l'avantage des phaseurs: les dérivées et intégrales présentes dans l'équation différentielle seront ici des multiplications et divisions par $\imagj\omega$.
+Ainsi, on peut réécrire l'équation (\ref{RCequa}) avec des phaseurs, ce qui donne
+\[\imagj\omega\cdot RC\textbf{V$_C$} = -(\textbf{V$_C$} - \textbf{V$_s$})\]
+On a éliminé le terme $\e^{\imagj wt}$, l'équation étant vérifiée pour tous temps.
 
-Cette équation peut maintenant très facilement être réécrite en isolant $V_C$, ce qui donne $$\frac{\textbf{V$_C$}}{\textbf{V$_s$}} = \frac{1}{1 + j\omega RC}.$$
-On apppelle le rapport $\frac{\text{Tension de sortie}}{\text{Tension d'entrée}}$ la \textbf{fonction de transfert} du circuit. Cette fonction de transfert permettra de représenter facilement le diagramme fréquentiel (diagramme de bode) du circuit, ce qui sera expliqué dans la section 3 "Analyse fréquentielle".
+Cette équation peut maintenant très facilement être réécrite en isolant $V_C$, ce qui donne
+\[\frac{\textbf{V$_C$}}{\textbf{V$_s$}} = \frac{1}{1 + \imagj\omega RC}\]
+On appelle le rapport $\frac{\text{Tension de sortie}}{\text{Tension d'entrée}}$ la \textbf{fonction de transfert} du circuit.
+Cette fonction de transfert permettra de représenter facilement le diagramme fréquentiel (diagramme de bode) du circuit, ce qui sera expliqué dans la section \ref{sec:frequency_analysis}.% \og Analyse fréquentielle\fg{}.
 
 
 \subsection{Impédances et admittances}
@@ -276,12 +362,23 @@ On remarque donc que : le module $Z = V/I$ de l'impédance donne le rapport entr
 Maintenant, comment trouver cette fameuse impédance d'un élément?
 
 \begin{itemize}
-\item \textbf{Résistance :} $\textbf{Z} = R$ : l'impédance d'une résistance est purement réelle (aucun déphasage entre la tension et le courant). On trouve ceci simplement par la loi d'Ohm.
-\item \textbf{Inductance :} $\textbf{Z} = j \omega L$ : l'impédance d'une inductance est donc purement imaginaire (déphasage de $90^{\circ}$). Notons que son amplutide varie linéairement avec la fréquence. On trouve ce résultat en traduisant l'équation "classique" de la tension sur une inductance en termes de phaseurs. A très basse fréquence l'inductance se comporte donc comme un fil et à très haute fréquence comme un circuit ouvert.
-\item \textbf{Capacité :} $\textbf{Z} = -j \frac{1}{\omega C}$ : l'impédance d'une capacité est, elle aussi, purement imaginaire (mais le déphasage est ici de $-90^{\circ}$). L'amplitude de l'impédance est inversément proportionnelle à la fréquence. Une capacité se comporte donc comme un circuit ouvert à très basse fréquence et comme un fil à très haute fréquence.
+\item \textbf{Résistance :} $\textbf{Z} = R$:
+l'impédance d'une résistance est purement réelle (aucun déphasage entre la tension et le courant).
+On trouve ceci simplement par la loi d'Ohm.
+\item \textbf{Inductance :} $\textbf{Z} = \imagj \omega L$:
+l'impédance d'une inductance est donc purement imaginaire (déphasage de $90\degree$).
+Notons que son amplitude varie linéairement avec la fréquence.
+On trouve ce résultat en traduisant l'équation \og classique\fg{} de la tension sur une inductance en termes de phaseurs.
+A très basse fréquence l'inductance se comporte donc comme un fil et à très haute fréquence comme un circuit ouvert.
+\item \textbf{Capacité :} $\textbf{Z} = -\imagj \frac{1}{\omega C}$:
+l'impédance d'une capacité est, elle aussi, purement imaginaire (mais le déphasage est ici de $-90\degree$).
+L'amplitude de l'impédance est inversement proportionnelle à la fréquence.
+Une capacité se comporte donc comme un circuit ouvert à très basse fréquence et comme un fil à très haute fréquence.
 \end{itemize}
 
-Ensuite, pour des combinaisons de ces élémens, on peut utiliser les mêmes relations que pour les résistances, on additionne les impédances en série, et pour des impédance en parallèle on additionne les admittances. Par exemple, pour une résistance en série avec une inductance : $\textbf{Z} = R + j\omega L$.
+Ensuite, pour des combinaisons de ces éléments, on peut utiliser les mêmes relations que pour les résistances,
+on additionne les impédances en série, et pour des impédance en parallèle on additionne les admittances.
+Par exemple, pour une résistance en série avec une inductance : $\textbf{Z} = R + j\omega L$.
 
 \subsection{Diagrammes phasoriels}
 Les \textbf{diagrammes phasoriels} sont une représentation graphiques des phaseurs : ils permettent de visualiser facilement des déphasages entre plusieurs variables par exemple. De plus, dans certains cas simples, on peut résoudre un circuit uniquement en regardant le diagramme phasoriel.
@@ -290,36 +387,69 @@ Pour dessiner un diagramme phasoriel, il faut simplement dessiner les phaseurs, 
 
 On peut ensuite effectuer des opérations sur ces vecteurs du plan complexe, plus particulièrement les additionner et les soustraire.
 
-Souvent, on trace de manière mixte le diagramme phasoriel des tensions et courants. Rappelons que pour une inductance la tension est déphasée de $+90^{\circ}$ par rapport au courant (on dit que la tension est en \textit{avance} sur le courant), tandis que pour une capacité la tension est déphasée de $-90^{\circ}$ par rapport au courant (on dit que la tension est en \textit{retard} sur le courant).
+Souvent, on trace de manière mixte le diagramme phasoriel des tensions et courants.
+Rappelons que pour une inductance la tension est déphasée de $+90\degree$ par rapport au courant (on dit que la tension est en \textit{avance} sur le courant),
+tandis que pour une capacité la tension est déphasée de $-90\degree$ par rapport au courant (on dit que la tension est en \textit{retard} sur le courant).
 
 \section{Analyse fréquentielle}
+\label{sec:frequency_analysis}
 \subsection{Diagrammes de Bode}
-Le diagramme de Bode permet de montrer l'évolution de l'amplitude et de la phase en fonction de la fréquence. La spécificité du diagramme de Bode est de représenter ces caractéristiques dans un graphe semi-logarithmique. Avec $H(j\omega) = M(\omega)e^{j\Phi(\omega)}$, on a $M(\omega) = |H(j\omega)|$ et $\Phi(\omega)$ la phase. On représentera donc $20log_{10}(M(\omega))$ pour l'amplitude. Le logarithme permettra de décomposer les multiplications/divisions de la fonction en additions et soustractions, beaucoup plus faciles à dessiner.
-On distinguera 4 types de termes, que l'on discutera séparément: \begin{itemize}
+Le diagramme de Bode permet de montrer l'évolution de l'amplitude et de la phase en fonction de la fréquence.
+La spécificité du diagramme de Bode est de représenter ces caractéristiques dans un graphe semi-logarithmique.
+Avec $H(\imagj\omega) = M(\omega)\e^{\imagj\Phi(\omega)}$, on a $M(\omega) = \abs{H(\imagj\omega)}$ et $\Phi(\omega)$ la phase.
+On représentera donc $20\log_{10}(M(\omega))$ pour l'amplitude.
+Le logarithme permettra de décomposer les multiplications/divisions de la fonction en additions et soustractions, beaucoup plus faciles à dessiner.
+On distinguera 4 types de termes, que l'on discutera séparément:
+\begin{itemize}
 \item Constante (K)
-\item Pôle ou zéro ($j\omega/\omega_0$)
-\item Pôle ou zéro simple ($1 + j\omega/\omega_0$)
-\item Pôle ou zéro quadratique ($1 + 2\xi(j\omega/\omega_0) + (j\omega/\omega_0)^2$)
+\item Pôle ou zéro ($\imagj\omega/\omega_0$)
+\item Pôle ou zéro simple ($1 + \imagj\omega/\omega_0$)
+\item Pôle ou zéro quadratique ($1 + 2\xi(\imagj\omega/\omega_0) + (\imagj\omega/\omega_0)^2$)
 \end{itemize}
+Il est important que la fonction de transfert ne comprenne que des facteurs de la forme ci-dessus,
+sinon les différentes courbes ne seront pas aux bons endroits.
 \paragraph{Echelle} Avant de traiter les 4 cas cités ci-dessus, expliquons l'échelle (aussi bien en absisses qu'en ordonnées) de ce diagramme.
 
-En absisses, l'échelle est la \textbf{décade}: une graduation signifie que la valeur de omega est multipliée par 10.
+En abscisse, l'échelle est la \textbf{décade}: une graduation signifie que la valeur de $\omega$ est multipliée par 10.
 
-En ordonnées, l'échelle est en dB. Le décibel étant normalement utilisé pour mesurer des rapports de puissance, on a $$dB(\frac{V_2}{V_1}) \stackrel{\triangle}{=} 10log_{10}\frac{V_{2}^2}{V_{1}^2} = 20 log_{10}\frac{V_2}{V_1}.$$
-On prendra donc $20log_{10}(M(\omega))$ pour l'amplitude.
+En ordonnée, l'échelle est en \si{\decibel}.
+Le décibel étant normalement utilisé pour mesurer des rapports de puissance, on a
+\[\si{\decibel}\left(\frac{V_2}{V_1}\right) \stackrel{\triangle}{=} 10\log_{10}\frac{V_{2}^2}{V_{1}^2} = 20 \log_{10}\frac{V_2}{V_1}.\]
+On prendra donc $20\log_{10}(M(\omega))$ pour l'amplitude.
 
 \paragraph{Constante (K)}
-Le terme constant K est de loin le plus facile à traiter, puisqu'il se représente par une droite horizontale $20log_{10}K$. Pour $K>0$ il n'y a pas de déphasage; $K<0$ engendre un déphasage de $-\pi$.
-\paragraph{Pôle ou zéro ($j\omega/\omega_0$)}
-Ce terme donne, en amplitude, une droite de pente $\pm20db/dec,$ où le signe $-$ correspond au pôle. Le déphasage est constant et vaut $\pm\frac{\pi}{2}$, de nouveau avec le signe négatif pour le pôle.
+Le terme constant K est de loin le plus facile à traiter, puisqu'il se représente par une droite horizontale $20\log_{10}(K)$.
+Pour $K>0$ il n'y a pas de déphasage; $K<0$ engendre un déphasage de $-\pi$ (ou $90\degree$, selon vos préférences).
+\paragraph{Pôle ou zéro ($\imagj\omega/\omega_0$)}
+Ce terme donne, en amplitude, une droite de pente $\pm\SI{20}{\decibel}/\mathrm{dec}$ où le signe $-$ correspond au pôle.
+Le déphasage est constant et vaut $\pm\frac{\pi}{2}$, de nouveau avec le signe négatif pour le pôle.
 \paragraph{Pôle ou zéro simple ($1 + j\omega/\omega_0$)}
-Pour traiter ce terme, il faut faire des approximations. On considère dans un premier temps $\omega \ll \omega_0$, et on peut donc approximer la valeur à $20log_{10}1 = 0dB$. Dans un deuxième temps, on prend $\omega\gg\omega_0$, et on peut alors négliger le 1: on se retrouve alors dans la situation du pôle/zéro. A cause de l'approximation néanmoins, les valeurs ne sont pas exactes: en remplaçant $\omega = \omega_0$ on obtient $3dB$ et $\frac{\pi}{4}$. La phase est déjà à $26.6^{\circ}$ pour $\omega = \omega_0/2$, la transition phasorielle est donc très 'douce'.
-\paragraph{Pôle ou zéro quadratique ($1 + 2\xi(j\omega/\omega_0) + (j\omega/\omega_0)^2$)}
-On voit directement qu'ici, le terme est non seulement fonction de $\omega$ mais également de $\xi$, qu'on appelle le facteur d'amortissement. Les racines seront réelles et différentes si $\xi>1$, et égales si $\xi=1$. Dans ce cas, on peut simplement séparer les racines en pôles ou zéros simples: ces cas ont déjà été traités ci-dessus.
+Pour traiter ce terme, il faut faire des approximations.
+On considère dans un premier temps $\omega \ll \omega_0$, et on peut donc approximer la valeur à $20\log_{10}1 = \SI{0}{\decibel}$.
+Dans un deuxième temps, on prend $\omega\gg\omega_0$, et on peut alors négliger le 1:
+on se retrouve alors dans la situation du pôle/zéro.
+A cause de l'approximation néanmoins, les valeurs ne sont pas exactes:
+en remplaçant $\omega = \omega_0$ on obtient $\SI{3}{dB}$ et $\frac{\pi}{4}$.
+La phase est déjà à $26.6\degree$ pour $\omega = \omega_0/2$,
+la transition phasorielle est donc très \og douce \fg{}.
+\paragraph{Pôle ou zéro quadratique ($1 + 2\xi(\imagj\omega/\omega_0) + (\imagj\omega/\omega_0)^2$)}
+On voit directement qu'ici, le terme est non seulement fonction de $\omega$
+mais également de $\xi$, qu'on appelle le facteur d'amortissement.
+Les racines seront réelles et différentes si $\xi>1$, et égales si $\xi=1$.
+Dans ce cas, on peut simplement séparer les racines en pôles ou zéros simples:
+ces cas ont déjà été traités ci-dessus.
 
-Dans le cas $\xi<1$ par contre, on a deux racines complexes conjuguées. En faisant la même approximation que ci-dessus, on traite le cas $\omega \ll \omega_0$ qui donne 0 en amplitude et en phase. Pour $\omega \gg \omega_0$, on néglige les autres facteurs que le quadratique, ce qui donne $40log_{10}(\omega/\omega_0)$. Dès lors, pour $\omega \gg \omega_0$, on a une pente de $\pm40dB/dec$, selon qu'il s'agit d'un zéro ou d'un pôle. Le déphasage est de $\pm\pi$.
+Dans le cas $\xi<1$ par contre, on a deux racines complexes conjuguées.
+En faisant la même approximation que ci-dessus, on traite le cas $\omega \ll \omega_0$ qui donne 0 en amplitude et en phase.
+Pour $\omega \gg \omega_0$, on néglige les autres facteurs que le quadratique, ce qui donne $40\log_{10}(\omega/\omega_0)$.
+Dès lors, pour $\omega \gg \omega_0$, on a une pente de $\pm\SI{40}{dB}/\mathrm{dec}$,
+selon qu'il s'agit d'un zéro ou d'un pôle. Le déphasage est de $\pm\pi$.
 
-Entre ces deux extrêmes, la comportement dépend de la valeur de $\xi$. On assiste à un \og overshoot\fg de la fonction, centré en $\omega_0$. Cet overshoot sera d'autant plus important que $\xi$ se rapproche de 0. Concernant la phase, sa transition sera d'autant plus brusque (moins amortie) que $\xi$ se rapproche de 0. On observe ce comportement à la figure \ref{complexes}, en phase à gauche et en amplitude à droite.
+Entre ces deux extrêmes, la comportement dépend de la valeur de $\xi$.
+On assiste à un \og overshoot\fg{} de la fonction, centré en $\omega_0$.
+Cet overshoot sera d'autant plus important que $\xi$ se rapproche de 0.
+Concernant la phase, sa transition sera d'autant plus brusque (moins amortie) que $\xi$ se rapproche de 0.
+On observe ce comportement à la figure \ref{complexes}, en phase à gauche et en amplitude à droite.
 \begin{figure}[H]
 \centering
 \begin{minipage}{.45\linewidth}
@@ -329,12 +459,19 @@ Entre ces deux extrêmes, la comportement dépend de la valeur de $\xi$. On assi
 \begin{minipage}{.45\linewidth}
 \includegraphics[width=\linewidth]{ampl}
 \end{minipage}
-\caption{Influence de $\xi$ pour l'overshoot.}
+\caption{Influence de $\xi$ sur l'overshoot.}
 \label{complexes}
 \end{figure}
 
 \section{Quadripôles et les non idéalités de l'ampli op}
-Tout comme on a des dipôles équivalents pour les circuits à deux bornes, il existe des quadripôles équivalents\footnote{ATTENTION : le quadripôle dont on calcule un équivalent ne peut PAS contenir de sources indépendantes !} pour des circuits à quatre bornes. Pour un dipôle équivalent(voir section \ref{dipoles}), il fallait touver une équation liant les deux "variables" du circuit, $I$ et $V$. Pour les quadripôles, on a quatre "variables" : la tension $V_i$ et le courant $I_i$ à "l'entrée" (les deux premières bornes), et la tension $V_o$ et le courant $I_o$ à la "sortie" (les deux bornes restantes). Les sens de ces courants et tensions sont soumis à des conventions reprises figure \ref{quadriSens} : les tensions du bas vers le haut, les courants rentrant dans le quadripôle aux bornes du dessus.
+Tout comme on a des dipôles équivalents pour les circuits à deux bornes, il existe des quadripôles équivalents
+\footnote{Attention : le quadripôle dont on calcule un équivalent ne peut PAS contenir de sources indépendantes !}
+pour des circuits à quatre bornes.
+Pour un dipôle équivalent(voir section \ref{dipoles}), il fallait trouver une équation liant les deux \og variables\fg{} du circuit, $I$ et $V$.
+Pour les quadripôles, on a quatre \og variables\fg{} : la tension $V_i$ et le courant $I_i$ à \og l'entrée\fg{} (les deux premières bornes),
+et la tension $V_o$ et le courant $I_o$ à la \og sortie\fg{} (les deux bornes restantes).
+Les sens de ces courants et tensions sont soumis à des conventions reprises figure \ref{quadriSens} :
+les tensions du bas vers le haut, les courants rentrant dans le quadripôle aux bornes du dessus.
 
 
 \begin{figure}[h]
@@ -354,40 +491,69 @@ Tout comme on a des dipôles équivalents pour les circuits à deux bornes, il e
     \label{quadriSens}
 \end{figure}
 \subsection{Quadripôles équivalents et leurs propriétés}
-Dans le quadre du cours, nous avons étudié les quatre (il en existe 6) quadripôles équivalents suivants : $G$, $Y$, $Z$ et $H$. On considère un quadripôle équivalent comme une \textit{source commandée} avec des caractéristiques non idéales. Le choix d'un équivalent particulier détermine le type de source commandée (pour l'instant, considérons que ces sources sont idéales).
+Dans le cadre du cours, nous avons étudié les quatre (il en existe 6) quadripôles équivalents suivants : $G$, $Y$, $Z$ et $H$.
+On considère un quadripôle équivalent comme une \emph{source commandée} avec des caractéristiques non idéales.
+Le choix d'un équivalent particulier détermine le type de source commandée (pour l'instant, considérons que ces sources sont idéales).
 \begin{itemize}
-\item \textbf{Gain en tension $G$} : on considère une source de \textit{tension} commandée par une \textit{tension} d'entrée : $V_o = g_f V_i$
-\item \textbf{Transadmittance $Y$} : on considère une source de \textit{courant} commandée\footnote{On parle de transadmittance et transimpédance et pas juste d'admittance ou d'impédance car il s'agit bien de sources commandées et non d'admittances/impédances "réelles". Le seul lien avec les vrais éléments, c'est la forme de l'équation reliant les tensions et courants, ainsi que l'unité de la variable qui détermine le gain. Les préfixes "trans-" viennent de l'anglais "transfer admittance" et "transfer impedance".} par une \textit{tension} d'entrée : $I_o = y_f V_i$
-\item \textbf{Transimpédance $Z$} : on considère une source de \textit{tension} commandée par un \textit{courant} d'entrée : $V_o = z_f I_i$
-\item \textbf{Gain en courant $H$} : on considère une source de \textit{courant} commandée par un \textit{courant} d'entrée : $I_o = h_f I_i$
+\item \textbf{Gain en tension $G$} : on considère une source de \emph{tension} commandée par une \emph{tension} d'entrée : $V_o = g_f V_i$
+\item \textbf{Transadmittance $Y$} : on considère une source de \emph{courant} commandée
+\footnote{On parle de transadmittance et transimpédance et pas juste d'admittance ou d'impédance car il s'agit bien de sources commandées et non d'admittances/impédances \og réelles\fg{}.
+	Le seul lien avec les vrais éléments, c'est la forme de l'équation reliant les tensions et courants, ainsi que l'unité de la variable qui détermine le gain.
+	Les préfixes \og trans-\fg{} viennent de l'anglais \emph{transfer admittance} et \emph{transfer impedance}.}
+par une \emph{tension} d'entrée : $I_o = y_f V_i$
+\item \textbf{Transimpédance $Z$} : on considère une source de \emph{tension} commandée par un \emph{courant} d'entrée : $V_o = z_f I_i$
+\item \textbf{Gain en courant $H$} : on considère une source de \emph{courant} commandée par un \emph{courant} d'entrée : $I_o = h_f I_i$
 \end{itemize}
 
 
-Dans les équations ci-dessus, seules deux des quatre variables interviennent. Pour caractériser complètement un quadripôle quelconque, il faut considérer certaines non idéalités des sources commandées, ce qui nous conduira à un système de deux équations faisant apparaitre l'ensemble des variables. On utilise certaines notations \og standard\fg  pour ces systèmes, ce qui permettra de s'y retrouver plus vite: cela nous conduit à la \textbf{représentation matricielle d'un quadripôle}.
+Dans les équations ci-dessus, seules deux des quatre variables interviennent.
+Pour caractériser complètement un quadripôle quelconque, il faut considérer certaines non idéalités des sources commandées,
+ce qui nous conduira à un système de deux équations faisant apparaitre l'ensemble des variables.
+On utilise certaines notations \og standard\fg{}  pour ces systèmes, ce qui permettra de s'y retrouver plus vite:
+cela nous conduit à la \strong{représentation matricielle d'un quadripôle}.
 
 \subsubsection*{Représentation matricielle}
 
-Choisir un type d'équivalent fixe automatiquement les variables "indépendantes" supposées connues (Y dans l'équation ci-dessous) et "dépendantes" (X dans l'équation ci-dessous) qu'on va lier aux variables indépendantes par des équations dans la matrice. Dans les quatre modèles du cours, on choisit toujours une variable d'entrée et une variable de sortie comme variable dépendante (du coup, il reste une variable d'entrée et une variable de sortie indépendante). On écrit, de manière générale :
+Choisir un type d'équivalent fixe automatiquement les variables \og indépendantes\fg{} supposées connues (Y dans l'équation ci-dessous) et \og dépendantes\fg{} (X dans l'équation ci-dessous) qu'on va lier aux variables indépendantes par des équations dans la matrice.
+Dans les quatre modèles du cours, on choisit toujours une variable d'entrée et une variable de sortie comme variable dépendante
+(du coup, il reste une variable d'entrée et une variable de sortie indépendante).
+On écrit, de manière générale :
 
 \begin{equation}
 \left[ \begin{array}{c} X_i \\ X_o \end{array} \right] = \begin{bmatrix} a_i & a_r \\ a_f & a_o \end{bmatrix} \times \left[ \begin{array}{c} Y_i \\ Y_o \end{array} \right]
 \end{equation}
 
-\noindent Pour mieux comprendre comment est contruite une matrice, analysons brièvement chacun de ses éléments.
+\noindent Pour mieux comprendre comment est construite une matrice, analysons brièvement chacun de ses éléments.
 \begin{itemize}
-\item L'élément \textit{input} ($a_i$) lie les deux variables d'entrée. En terme de circuits, il s'agit toujours de l'impédance/l'admittance du dipôle équivalent à l'entée (voir plus loin pour la représentation circuit). Ses unités sont donc toujours des $\Omega$ ou des $\Omega^{-1}$.
-\item L'élément \textit{forward} ($a_f$) lie la variable de sortie dépendante à celle d'entrée indépendante. En termes de circuits, il s'agit toujours du gain de la source dépendante du dipôle équivalent à la sortie. C'est le seul élément non nul pour un amplificateur idéal comme ceux qu'on a vus plus haut.
-\item L'élément \textit{reverse} ($a_r$) lie la variable d'entrée dépendante à celle de sortie indépendante. En termes de circuits, il s'agit toujours du gain de la source dépendante du dipôle équivalent à l'entrée.
-\item L'élément \textit{output} ($a_o$) lie les deux variables de sortie. En termes de circuits, il s'agit toujours de l'impédance/l'admittance du dipôle équivalent à la sortie. Ses unités sont donc toujours des $\Omega$ ou des $\Omega^{-1}$.
+\item L'élément \emph{input} ($a_i$) lie les deux variables d'entrée.
+En terme de circuits, il s'agit toujours de l'impédance/l'admittance du dipôle équivalent à l'entrée (voir plus loin pour la représentation circuit).
+Ses unités sont donc toujours des $\si{\ohm}$ ou des $\si{\ohm}$.
+\item L'élément \emph{forward} ($a_f$) lie la variable de sortie dépendante à celle d'entrée indépendante.
+En termes de circuits, il s'agit toujours du gain de la source dépendante du dipôle équivalent à la sortie.
+C'est le seul élément non nul pour un amplificateur idéal comme ceux qu'on a vus plus haut.
+\item L'élément \emph{reverse} ($a_r$) lie la variable d'entrée dépendante à celle de sortie indépendante.
+En termes de circuits, il s'agit toujours du gain de la source dépendante du dipôle équivalent à l'entrée.
+\item L'élément \emph{output} ($a_o$) lie les deux variables de sortie.
+En termes de circuits, il s'agit toujours de l'impédance/l'admittance du dipôle équivalent à la sortie.
+Ses unités sont donc toujours des $\si{\ohm}$ ou des $\si{\ohm}$.
 \end{itemize}
 
 
 \subsubsection*{Représentation circuit (par des équivalents de Thévenin/Norton)}
-Chaque quadripôle équivalent possède une représentation \og circuit\fg : il s'agit de deux dipôles équivalents, un à l'entrée et un à la sortie, de Thévenin/Norton. Le type de dipôle équivalent à utiliser est dicté par la variable \textbf{dépendante} qu'on a : si c'est le courant, on choisira un équivalent de Norton, et on prend un équivalent de Thévenin si c'est la tension.
+Chaque quadripôle équivalent possède une représentation \og circuit\fg{} : il s'agit de deux dipôles équivalents, un à l'entrée et un à la sortie, de Thévenin/Norton.
+Le type de dipôle équivalent à utiliser est dicté par la variable \textbf{dépendante} qu'on a :
+si c'est le courant, on choisira un équivalent de Norton, et on prend un équivalent de Thévenin si c'est la tension.
 
-Par exemple, on choisit un équivalent type $Y$, une transadmittance donc. Ce qui veut dire que notre équation en cas "parfait" est $I_o = y_f V_i$, on en déduit que $I_o$ est une variable dépendante et $V_i$ non, donc la deuxième variable dépendante est $I_i$.\footnote{Remarque : pour Y, les deux variables dépendantes sont des courants et les deux variables indépendantes sont les deux tensions, donc tous les éléments de la matrice Y sont des "admittances" (en termes d'unités). Pour une transimpédance, de manière similaire, tous les éléments de Z sont des "impédances".}. En termes de circuits, on a donc deux équivalents Norton. Le tableau de la figure \ref{quadriTab} reprend les quatre matrices et leur équivalent circuit. Je vour propose de l'analyser attentivement et de vérifier que vous êtes capables de le refaire.
+Par exemple, on choisit un équivalent type $Y$, une transadmittance donc.
+Ce qui veut dire que notre équation en cas \og parfait\fg{} est $I_o = y_f V_i$, on en déduit que $I_o$ est une variable dépendante et $V_i$ non, donc la deuxième variable dépendante est $I_i$.
+\footnote{Remarque : pour Y, les deux variables dépendantes sont des courants et les deux variables indépendantes sont les deux tensions, donc tous les éléments de la matrice Y sont des \og admittances\fg{} (en termes d'unités).
+	Pour une transimpédance, de manière similaire, tous les éléments de Z sont des \og impédances\fg{}.}.
+En termes de circuits, on a donc deux équivalents Norton.
+Le tableau de la figure \ref{quadriTab} reprend les quatre matrices et leur équivalent circuit.
+Analysez-le attentivement et vérifiez que vous êtes capable de le faire.
 
 \begin{figure}[h]
+\def\eq{=}
 \centering
 \renewcommand{\arraystretch}{1.5}
 \begin{tabular}{c|c|l|l|}
@@ -418,23 +584,15 @@ V_i \\
 V_o
 \end{bmatrix}$\\
 \multicolumn{1}{|c|}{} & & \begin{adjustbox}{scale=0.7}\begin{circuitikz}\draw
-(0,0)  to[short,o-] (3,0) to[cI] (3,-2) to[short,-o] (0,-2)
-(1.5,0) to[generic, *-*] (1.5,-2)
-(1.3,-1) node[left]{Y = $g_i$}
-(3,-1.5) node[right]{$g_r\,I_o$}
-(7.5,-2) to[short, o-] (4.5,-2) to [cV]  (4.5,0) to[generic,-o] (7.5,0)
-(3.3,-0.5) node[right]{$g_f\,V_i$}
-(6,-0.6) node{Z = $g_o$}
+(0,0)  to[short,o-] (3,0) to[cI, l_=$g_rI_o$] (3,-2) to[short,-o] (0,-2)
+(1.2,-2) to[generic, l=$Y\eq g_i$,*-*] (1.2,0)
+(7.5,-2) to[short, o-] (4.5,-2) to [cV, l_=$g_fV_i$]  (4.5,0) to[generic, l_=$Z\eq g_o$, -o] (7.5,0)
 ;\end{circuitikz}\end{adjustbox} & 
 \begin{adjustbox}{scale=0.7}\begin{circuitikz} \draw
-(0,0)  to[short,o-] (3,0) to[cI] (3,-2) to[short,-o] (0,-2)
-(1.5,0) to[generic, *-*] (1.5,-2)
-(1.3,-1) node[left]{Y = $y_i$}
-(3,-1.5) node[right]{$y_r\,V_o$}
-(7.5,0) to[short, o-] (4.5,0) to [cI]  (4.5,-2) to[short,-o] (7.5,-2)
-(6,-2) to[generic,*-*] (6,0)
-(3.3,-0.5) node[right]{$y_f\,V_i$}
-(7,-1) node{Y = $y_o$}
+(0,0)  to[short,o-] (3,0) to[cI,l_=$y_rV_o$] (3,-2) to[short,-o] (0,-2)
+(1.2,-2) to[generic, l=$Y\eq y_i$, *-*] (1.2,0)
+(7.5,0) to[short, o-] (4.5,0) to [cI,l=$y_fV_i$]  (4.5,-2) to[short,-o] (7.5,-2)
+(6.3,0) to[generic, l=$Y\eq y_o$, *-*] (6.3,-2)
 ;\end{circuitikz}\end{adjustbox}\\
 \cline{2-4}
 \multicolumn{1}{|c|}{In} & \multirow{3}{*}{$I_i$} & Z : Transimpédance & H : Hybride \\
@@ -461,22 +619,14 @@ V_o
 \end{bmatrix}$
 \\
 \multicolumn{1}{|c|}{}& & \begin{adjustbox}{scale=0.7}\begin{circuitikz} \draw
-(0,-2)  to[short,o-] (3,-2) to[cV] (3,0) to[generic,-o] (0,0)
-(2.3,-0.6) node[left]{Z = $z_i$}
-(3,-1.5) node[right]{$z_r\,I_o$}
-(7.5,-2) to[short, o-] (4.5,-2) to [cV,]  (4.5,0) to[generic,-o] (7.5,0)
-(3.3,-0.5) node[right]{$z_f\,I_i$}
-(6,-0.6) node{Z = $z_o$}
+(0,-2)  to[short,o-] (3,-2) to[cV, l=$z_rI_o$] (3,0) to[generic, l_=$Z\eq z_i$, -o] (0,0)
+(7.5,0) to[generic, l=$Z\eq z_o$, o-] (4.5,0) to[cV, l=$z_fI_i$] (4.5,-2) to[short, -o] (7.5,-2)
 ;\end{circuitikz}\end{adjustbox}
  & 
  \begin{adjustbox}{scale=0.7}\begin{circuitikz} \draw
-(0,-2)  to[short,o-] (3,-2) to[cV] (3,0) to[generic,-o] (0,0)
-(2.3,-0.6) node[left]{Z = $h_i$}
-(3,-1.5) node[right]{$h_r\,V_o$}
-(7.5,0) to[short, o-] (4.5,0) to [cI]  (4.5,-2) to[short,-o] (7.5,-2)
-(6,-2) to[generic,*-*] (6,0)
-(3.3,-0.5) node[right]{$h_f\,I_i$}
-(7,-1) node{Y = $h_o$}
+(0,-2)  to[short,o-] (3,-2) to[cV, l=$h_rV_o$] (3,0) to[generic, l_=$Z\eq h_i$, -o] (0,0)
+(7.5,0) to[short, o-] (4.5,0) to [cI, l=$h_fI_i$]  (4.5,-2) to[short,-o] (7.5,-2)
+(6.3,0) to[generic, l=$Y\eq h_o$, *-*] (6.3,-2)
 ;\end{circuitikz}\end{adjustbox}\\ 
 \hline
 \end{tabular}
@@ -485,59 +635,112 @@ V_o
 \end{figure}
 
 \subsubsection*{C'est bien beau tout ça mais... comment déterminer les fameux coefficients de la matrice?}
-Si on développe les équations, on aura toujous que la variable dépendante est la somme des deux variables indépendantes multipliées par les coefficients recherchés. On va annuler successivement chaque variable indépendante (en court-circuitant pour la tension ou en laissant un circuit ouvert pour le courant) afin de calculer facilement les coefficients. La figure \ref{quadriEx} reprend un transparent du cours qui illustre très bien cette méthode.
+Si on développe les équations, on aura toujours que la variable dépendante est la somme des deux variables indépendantes multipliées par les coefficients recherchés.
+On va annuler successivement chaque variable indépendante (en court-circuitant pour la tension ou en laissant un circuit ouvert pour le courant) afin de calculer facilement les coefficients.
+La figure \ref{quadriEx} reprend un transparent du cours qui illustre très bien cette méthode.
 
 \begin{figure}[h]
 	\centering
-    \includegraphics[scale=0.75]{quadriEx}
+    \includegraphics[width=0.9\linewidth]{quadriEx}
     \caption{Exemple de calcul pour un quadripôle sous sa forme Y.}
     \label{quadriEx}
 \end{figure}
 
 \subsection{Non-idéalités de l'ampli op}
 \subsubsection*{Saturation}
-Il s'agit des limites de tension de sortie de l'amplificateur opérationnel : la tension de sortie ne peut pas sortir des limites de saturation. Par exemple, pour le TL082 utilisé dans le cadre du projet alimenté en +15/-15V, $ V_{out} \in [ -13.5V,+13.5V ] $. En général, on peut dire $$-V_{EE}<V_{Low}<V_{Out}<V_{High}<V_{CC}$$
+Il s'agit des limites de tension de sortie de l'amplificateur opérationnel : la tension de sortie ne peut pas sortir des limites de saturation.
+Par exemple, pour le TL082 utilisé dans le cadre du projet alimenté en +15/-15V, $ V_{out} \in [ \SI{-13.5}{\volt},\SI{+13.5}{\volt} ] $.
+En général, on peut dire
+\[-V_{EE}<V_{Low}<V_{Out}<V_{High}<V_{CC}\]
 
 \subsubsection*{Impédance d'entrée finie et de sortie non nulle}
-Dans le modèle idéal de l'ampli op (voir la première partie) nous avons considéré que la résistance d'entrée du montage était infinie, empêchant ainsi tout courant de passer; en réalité, cette résistance est finie et vaut $1T\Omega$ pour le TL082. On a aussi considéré que la résistance de sortie était nulle; en réalité elle tourne autour des $50\Omega$ en fonctionnement normal pour le TL082. Par contre si on quitte la zone linéaire (c'est-à-dire, l'amplificateur opérationnel sature), la résistance de sortie augmente et peut devenir gênante.
+Dans le modèle idéal de l'ampli op (voir la première partie) nous avons considéré que la résistance d'entrée du montage était infinie, empêchant ainsi tout courant de passer; en réalité, cette résistance est finie et vaut $\SI{1}{\tera\ohm}$ pour le TL082.
+On a aussi considéré que la résistance de sortie était nulle; en réalité elle tourne autour des $\SI{50}{\ohm}$ en fonctionnement normal pour le TL082.
+Par contre si on quitte la zone linéaire (c'est-à-dire, l'amplificateur opérationnel sature), la résistance de sortie augmente et peut devenir gênante.
 
 \subsubsection*{Courant de sortie limité}
 La limite du courant de sortie dépend de la charge branchée à la sortie. Dans le cas idéal, cette charge est nulle et l'amplificateur est donc une source de tension parfaite, à puissance infinie. En réalité, le courant est borné à une valeur maximale $I_{max}$. Hors saturation, l'approximation idéale reste bonne pour $I < I_{max}$. En saturation par contre, L'impédance de sortie augmente (comme vu ci-dessus), et en conséquence $I_{max}$ baisse. Il est donc important que l'impédance de charge soit grande, pour être importante par rapport à l'impédance de sortie.
 
 \subsubsection*{Réjection finie du mode commun}
-\begin{figure}[H]
-\begin{minipage}{.65\linewidth}
-Avec $V_{in+}$ et $V_{in-}$ les tensions d'entrées, on définit $V_{diff} \stackrel{\triangle}{=} V_{in+} - V_{in-}$ et la tension de mode commun $V_{comm}\stackrel{\triangle}{=} \frac{V_{in+} + V_{in-}}{2}$. La non idéalité étudiée ici concerne une légère différence de gain par rapport aux deux entrées, c'est-à-dire un écart par rapport gain idéal. On peut exprimer cela de la manière suivante: \begin{align*}
-V_{out} &= A_{vd}(1 +\frac{\epsilon}{2})V_{in+} - A_{vd}(1-\frac{\epsilon}{2})V_{in-}\\
-&= A_{vd}(V_{diff} + \epsilon V_{comm})
-\end{align*}
-\end{minipage}
-\begin{minipage}{.35\linewidth}
+%\begin{figure}[H]
+%\begin{minipage}{.6\linewidth}
+\begin{wrapfigure}{r}{0.35\textwidth}
+\centering
 \begin{circuitikz}[american]
 	\draw (0,0) node[op amp](op){};
 	\draw (op.+) ++(-2,0)node[left]{$V_{in+}$} to[V] ++(2,0);
 	\draw (op.-) ++(-2,0)node[left]{$V_{in-}$} -- ++(2,0);
 	\draw (0,0)node[]{$A_{vd}$};
 \end{circuitikz}
-\end{minipage}
-\end{figure}
-On définit en conséquence le taux de \textbf{réjection} du mode commun\footnote{Common Mode Rejection Rate} $CMRR \stackrel{\triangle}{=} \frac{1}{\epsilon}$. Ce taux de réjection doit être idéalement grand.
+\end{wrapfigure}
+Avec $V_{in+}$ et $V_{in-}$ les tensions d'entrées, on définit $V_\mathrm{diff} \triangleq V_{in+} - V_{in-}$ et la tension de mode commun $V_\mathrm{comm} \triangleq \frac{V_{in+} + V_{in-}}{2}$.
+La non-idéalité étudiée ici concerne une légère différence de gain par rapport aux deux entrées, c'est-à-dire un écart par rapport gain idéal.
+On peut exprimer cela de la manière suivante:
+\begin{align*}
+V_\mathrm{out} &= A_{vd}\left(1 +\frac{\epsilon}{2}\right)V_{in+} - A_{vd}\left(1-\frac{\epsilon}{2}\right)V_{in-}\\
+&= A_{vd}(V_\mathrm{diff} + \epsilon V_\mathrm{comm})
+\end{align*}
+%\end{minipage}
+%\begin{minipage}{.35\linewidth}
+%\begin{circuitikz}[american]
+%	\draw (0,0) node[op amp](op){};
+%	\draw (op.+) ++(-2,0)node[left]{$V_{in+}$} to[V] ++(2,0);
+%	\draw (op.-) ++(-2,0)node[left]{$V_{in-}$} -- ++(2,0);
+%	\draw (0,0)node[]{$A_{vd}$};
+%\end{circuitikz}
+%\end{minipage}
+%\end{figure}
+On définit en conséquence le taux de \strong{réjection} ou \strong{rejet} du mode commun\footnote{\emph{Common Mode Rejection Ratio}} $CMRR \triangleq \frac{1}{\epsilon}$.
+Ce taux de réjection doit être idéalement grand.
 
 \subsubsection*{Réponse en fréquence de l'amplificateur}
-Le modèle idéal considère un gain indépendant de la fréquence utilisée. Un modèle plus réaliste prend en compte une variation en fonction de la fréquence, sous la forme d'un pôle unique. On alors $A_A = A_{A0}\cfrac{1}{1 + \cfrac{j\omega}{\omega_{A0}}}$.
+Le modèle idéal considère un gain indépendant de la fréquence utilisée.
+Un modèle plus réaliste prend en compte une variation en fonction de la fréquence,
+sous la forme d'un pôle unique. On alors
+\[A_A = A_{A0}\cfrac{1}{1 + \cfrac{\imagj\omega}{\omega_{A0}}}.\]
 
 \begin{figure}[H]
 \begin{minipage}{.3\linewidth}
 \includegraphics[width=\linewidth]{GBW}
 \end{minipage}
-\begin{minipage}{.7\linewidth}
-En définissant maintenant le produit gain-bande passante $GBW \stackrel{\triangle}{=} |A_{A0}\omega_{A0}|$, on a que $A(GBW) \approx \frac{1}{j}$.
-Comme visible à la figure \ref{GBW} ci-dessous, on peut représenter ce pôle par un diviseur RC. On a alors que la constante de temps du diviseur vaut $1/\omega_{A0}$, et $g_f = A_{A0}$. Etant donné que $V_p = g_fV_{\epsilon}\cfrac{1}{1+j\omega CR}$, on a bien que $A = \frac{V_{out}}{V_{in}} = \cfrac{A_{A0}}{1+\cfrac{j\omega}{\omega_{0A}}}$.
+\begin{minipage}{.65\linewidth}
+En définissant maintenant le produit gain-bande passante
+\[GBW \stackrel{\triangle}{=} \abs{A_{A0}\omega_{A0}},\]
+on a que $A(GBW) \approx \frac{1}{\imagj}$.
+Comme visible à la figure \ref{GBW} ci-dessous, on peut représenter ce pôle par un diviseur RC.
+On a alors que la constante de temps du diviseur vaut $1/\omega_{A0}$, et $g_f = A_{A0}$.
+Étant donné que $V_p = g_fV_{\epsilon}\cfrac{1}{1+\imagj\omega CR}$, on a bien que
+\[A = \frac{V_{out}}{V_{in}} = \cfrac{A_{A0}}{1+\cfrac{\imagj\omega}{\omega_{0A}}}.\]
 \end{minipage}
 \end{figure}
 \begin{figure}[H]
 \centering
-\includegraphics[width=.6\linewidth]{GBW1}
+\begin{circuitikz}
+	\draw
+	(0, 0) to[cV_=$g_f V_\epsilon$] (0, 2)
+	       to[short] (2, 2)
+	       to[R=$R_p$, -*] (4, 2) node[above right] {$V_p$}
+	       to[C, l_=$C_p$] (4, 0)
+	       to[short] (0, 0)
+%	(0, 0) to[short] (4, 0)
+%	       to[C=$C_p$, *-*] (4, 2) node[above right] {$V_p$}
+%	       to[R=$R_p$] (2, 2)
+%	       to[short] (0, 2)
+%	       to[cV=$g_f V_\epsilon$] (0, 0)
+	(7, 0) to[short, o-] (6, 0)
+	       to[cV=$V_p$] (6, 2)
+	       to[short, -o] (7,2) node[right] {$V_{out}$}
+%	(7, 2) node[right] {$V_{out}$}
+%	       to[short, o-] (6, 2)
+%	       to[cV=$V_p$] (6, 0)
+%	       to[short, -o] (7, 0)
+	(6, 0) node[ground] {}
+	       to[short, *-*] (4, 0)
+	(0, 0) to[short, *-o] (-3, 0)%FIXME c'est bien moche
+	(-3, 2) to[short, o-] (-2, 2)
+	        to[open, o-o, v_=$v_\epsilon$] (-2, 0)
+	;
+\end{circuitikz}
 \caption{Illustration gain-bande passante avec un pôle}
 \label{GBW}
 \end{figure}
@@ -545,7 +748,7 @@ Comme visible à la figure \ref{GBW} ci-dessous, on peut représenter ce pôle p
 
 \section{Circuits magnétiques couplés}
 \subsection{Inductance propre et mutuelle, résoudre un circuit magnétiquement couplé}
-\subsubsection*{Rappel de base : qu'est-ce qu'une inductance "simple"}
+\subsubsection*{Rappel de base : qu'est-ce qu'une inductance \og simple\fg{}}
 \begin{figure}[h]
 	\centering
     \includegraphics[scale=0.65]{piotr-sobieski}
@@ -554,7 +757,7 @@ Comme visible à la figure \ref{GBW} ci-dessous, on peut représenter ce pôle p
 
 \begin{figure}[h]
 	\centering
-    
+
     \begin{circuitikz}[american]
     	\draw [thick,red,-latex,double](3,0.75) -- (3,-0.75)node[below]{$\phi$};
     	\draw [blue,latex-] (3.5,-0.75) to[bend left,in=170] (3.25,0.75);
@@ -583,17 +786,22 @@ Comme visible à la figure \ref{GBW} ci-dessous, on peut représenter ce pôle p
 L = \frac{\Phi (i)}{i} \Longrightarrow \Phi(i) = Li
 \end{equation}
 
-Munis de cette équation, nous pouvons calculer la tension sur notre fameuse bobine en utilisant la loi de Faraday. On fait l'hypothèse d'une inductance constante (c'est-à-dire l'abscence de saturation magnétique, comme précisé ci-dessus) ainsi que de résistance nulle de la bobine.
+Munis de cette équation, nous pouvons calculer la tension sur notre fameuse bobine en utilisant la loi de Faraday.
+On fait l'hypothèse d'une inductance constante (c'est-à-dire l'absence de saturation magnétique,
+comme précisé ci-dessus) ainsi que de résistance nulle de la bobine.
 
 \begin{equation}
-v_L = \frac{\mathrm{d} \Phi}{\mathrm{d}t} = L \frac{\mathrm{d} i}{\mathrm{d}t}
+v_L = \fdif{\Phi}{t} = L \fdif{i}{t}
 \end{equation}
 \subsubsection*{Interactions entre bobines, inductance propre/mutuelle}
 % ?? virer le paragraphe ci-dessous? un peu inutile mais bien pour la généralisation des résultats (genre en cours d'électroméca on a plus que 2 bobines)
 Pour un circuit à plusieurs bobines, chaque bobine \textbf{génère} un champ magnétique dû au courant qui la traverse, et \textbf{intercepte} les champs magnétiques générés par toutes les autres bobines. Pour simplifier, on alimente une seule bobine à la fois. Dans le cas général ou du courant circule dans plusieurs bobines, on applique le principe de superposition. Dans le cadre du cours cependant, on ne considère que des circuits à deux bobines.
 
-\textbf{L'inductance propre} $L_k$ d'une bobine $k$ est le facteur de proportionnalité entre le \textbf{flux capté par cette bobine quand aucune autre bobine n'est alimentée} et le \textbf{courant passant dans cette bobine}. Cette inductance correspond à l'inductance "simple" définie plus haut pour une bobine isolée. Pour un circuit à deux bobines, on a :
-
+L'\textbf{inductance propre} $L_k$ d'une bobine $k$ est le facteur de proportionnalité
+entre le \textbf{flux capté par cette bobine quand aucune autre bobine n'est alimentée}
+et le \textbf{courant passant dans cette bobine}.
+Cette inductance correspond à l'inductance \og simple\fg{} définie plus haut pour une bobine isolée.
+Pour un circuit à deux bobines, on a:
 \begin{equation}
 L_1 = \frac{\Phi_1}{i_1}\EvalAt{i_2 = 0} \; \; \mathrm{,} \; \; \; \; L_2 = \frac{\Phi_2}{i_2}\EvalAt{i_1 = 0}
 \end{equation}
@@ -608,19 +816,24 @@ M = L_{12} = \frac{\Phi_1}{i_2}\EvalAt{i_1 = 0} = L_{21} = \frac{\Phi_2}{i_1} \E
 Dans le cas général ou les deux courants sont non nuls, on peut désormais superposer les deux résultats pour obtenir les flux captés par chaque bobine en additionnant les contributions dues à chaque courant : par exemple $\Phi_1 = L_1 i_1 + M i_2$ pour la première bobine d'un circuit à deux bobines. Ce qu'il faut surtout retenir, c'est \textbf{l'expression des tensions sur les bobines} (obtenues par la loi de Faraday) :
 
 \begin{equation}
-V_1 = L_1 \frac{\mathrm{d} i_1}{\mathrm{d}t} + M \frac{\mathrm{d} i_2}{\mathrm{d}t}
+V_1 = L_1 \fdif{i_1}{t} + M \fdif{i_2}{t}
 \end{equation}
 \begin{equation}
-V_2 = M \frac{\mathrm{d} i_1}{\mathrm{d}t} + L_2 \frac{\mathrm{d} i_2}{\mathrm{d}t}
+V_2 = M \fdif{i_1}{t} + L_2 \fdif{i_2}{t}
 \end{equation}
 
-Dans le cadre du cours, on s'intéresse en pratique surtout aux régimes sinusoïdaux, il est donc intéressant d'écrire ces équations sous forme phasorielles : on trouve ainsi le \textbf{quadripôle Z équivalent d'un circuit magnétique couplé pour des courants sinusoïdaux}. C'est ce système d'équation qu'on utilisera en pratique pour résoudre des circuits magnétiquement couplés.
+Dans le cadre du cours, on s'intéresse en pratique surtout aux régimes sinusoïdaux,
+il est donc intéressant d'écrire ces équations sous forme phasorielle:
+on trouve ainsi le \textbf{quadripôle Z équivalent d'un circuit magnétique couplé pour des courants sinusoïdaux}.
+C'est ce système d'équation qu'on utilisera en pratique pour résoudre des circuits magnétiquement couplés.
 \begin{equation}
 \label{equaMagnet}
-\begin{bmatrix} \overline{V_1} \\ \overline{V_2} \end{bmatrix} = \begin{bmatrix} j \omega L_1 & j \omega M \\ j \omega M & j \omega L_2 \end{bmatrix} \begin{bmatrix} \overline{I_1} \\ \overline{I_2} \end{bmatrix}
+\begin{bmatrix} \overline{V_1} \\ \overline{V_2} \end{bmatrix}
+= \begin{bmatrix} \imagj \omega L_1 & \imagj \omega M \\ \imagj \omega M & \imagj \omega L_2 \end{bmatrix}
+\begin{bmatrix} \overline{I_1} \\ \overline{I_2} \end{bmatrix}
 \end{equation}
 \begin{figure}[H]
-	\begin{minipage}[c]{.5\linewidth}
+	\begin{minipage}[c]{.47\linewidth}
 		\begin{center}
 			\includegraphics[width=\linewidth]{bornes1}
         %\caption{}
@@ -629,7 +842,7 @@ Dans le cadre du cours, on s'intéresse en pratique surtout aux régimes sinuso�
 	\end{minipage}
 	\vrule
 	\
-	\begin{minipage}[c]{.5\linewidth}
+	\begin{minipage}[c]{.47\linewidth}
 		\begin{center}
 		    \includegraphics[width=\linewidth]{bornes2}
         %\caption{}
@@ -639,14 +852,24 @@ Dans le cadre du cours, on s'intéresse en pratique surtout aux régimes sinuso�
 	\caption{Circuits magnétiquement couplés - bornes homologues}
     \label{bornes}
 \end{figure}
-\paragraph{Bornes homologues} Les bobines ne sont pas forcément enroulées dans le même sens, donc le courant ne se propage pas forcément de la même manière dans chaque bobine. Les bornes homologues servent à prendre le sens de bobinage en compte. La \og boule\fg à côté des bobines de la figure \ref{bornes} représente le début du bobinage. Pour connaître le signe du terme mutuel dans les équations, il suffit de retenir ceci: \begin{itemize}
+\paragraph{Bornes homologues} Les bobines ne sont pas forcément enroulées dans le même sens,
+donc le courant ne se propage pas forcément de la même manière dans chaque bobine.
+Les bornes homologues servent à prendre le sens de bobinage en compte.
+La \og boule\fg{} à côté des bobines de la figure \ref{bornes} représente le début du bobinage.
+Pour connaître le signe du terme mutuel dans les équations, il suffit de retenir ceci:
+\begin{itemize}
 \item Quand le courant entre \textbf{par la borne homologue}, il induit une tension \textbf{positive à la borne homologue} de l'autre bobine.
 \item Quand le courant entre \textbf{par l'autre borne}, il induit une tension \textbf{positive à l'autre borne} de l'autre bobine.
 \end{itemize}
 Cette règle est illustrée à la figure \ref{bornes}.
 
-\paragraph{Circuit magnétiquement couplé} Pour résoudre un circuit magnétiquement couplé, on utilise toujours la méthode des mailles.\footnote{En soi la méthode des noeuds est bien sûr tout aussi valable. Mais pour les bobines on a les tensions en fonction des courants, et pas l'inverse. Donc en choississant les courants comme inconnues, on peut directement utiliser les équations des bobines.} %, alors qu'il faut effectuer de l'algèbre chiante pour trouver les relations des courants en fonction des tensions et faire la technique des noeuds.}
-Voici les étapes à suivre de manière synthétique :
+\paragraph{Circuit magnétiquement couplé} Pour résoudre un circuit magnétiquement couplé,
+on utilise toujours la méthode des mailles.\footnote{
+	En soi la méthode des n\oe{}uds est bien sûr tout aussi valable.
+	Mais pour les bobines on a les tensions en fonction des courants, et pas l'inverse.
+	Donc en choisissant les courants comme inconnues, on peut directement utiliser les équations des bobines.
+} %, alors qu'il faut effectuer de l'algèbre chiante pour trouver les relations des courants en fonction des tensions et faire la technique des noeuds.}
+Voici les étapes à suivre de manière synthétique:
 \begin{itemize}
 \item Pour chaque boucle, attribuer un nom et un sens au courant qui la traverse : ce sont les inconnues du problème.
 \item Pour chaque boucle, écrire $\sum v = 0$ en faisant bien attention aux signes. Pour les bobines, utiliser les équations \ref{equaMagnet} en faisant attention au signe devant $M$ : il dépend des bornes mais aussi du sens des courants, définis au point précédent. Les courants et tensions sur le couple de bobines sont définis selon les conventions des quadripôles.
@@ -675,7 +898,7 @@ On définit aussi le \textbf{coefficient de couplage} $k = 1 - \sigma$ qui mesur
     Couplage  & Optimal & Minimal \\ \hline
     $\sigma$ & 0 & 1  \\ \hline
     $k$ & 1 & 0   \\ \hline
-    $|M|$ & $\sqrt{L_1L_2}$ & 0  \\ \hline
+    $\abs{M}$ & $\sqrt{L_1L_2}$ & 0  \\ \hline
 
     \end{tabular}
 \end{center}
@@ -687,22 +910,20 @@ On définit aussi le \textbf{coefficient de couplage} $k = 1 - \sigma$ qui mesur
 
 \begin{figure}[h]
 	\centering
-	\begin{adjustbox}{scale = 1.5}
-		    \begin{circuitikz} \draw
-		    	(0,0) node[transformer] (T) {}
-		    	(T.base) node[above]{$N_1:N_2$};
-		    	\draw (T.A1) ++(-0.5,0) to[short,i=$i_1$] (T.A1);
-		    	\draw (T.A1) to[open,v=$V_1$] (T.A2) -- ++(-0.5,0);
-		    	\draw (T.B1) ++(0.5,0) to[short,i_=$i_2$] (T.B1);
-		    	\draw (T.B1) to[open,v^=$V_2$] (T.B2) -- ++(0.5,0);
-		    	\draw (-0.1,-1.5) -- (-0.1,-0.5);
-		    	\draw (0.1,-1.5) -- (0.1,-0.5);
-		    	\draw (0.6,-0.4)node[]{$\bullet$};
-		    	\draw (-0.6,-0.4)node[]{$\bullet$};
-		    \end{circuitikz}
-	\end{adjustbox}
-    \caption{Représentation schématique du transformateur. Notons particulièrement le sens de référence des courants/tensions et les bornes homologues qui ont une importance particulière.}
-    \label{transfo}
+	\begin{circuitikz}
+	\draw (0, 0) node[transformer] (T) {};
+	\draw (T.base) node[above] {$N_1:N_2$}
+		(T.A2) -- ++(-0.5, 0) coordinate (TA2)
+		(T.B2) -- ++(0.5, 0) coordinate (TB2)
+		(T.A1) ++(-0.5, 0) to[short, i=$i_1$] (T.A1)
+		(T.A1) ++(-0.5, 0) to[open, v^=$V_1$] (TA2)
+		(T.B1) ++(0.5, 0) to[short, i_=$i_2$] (T.B1)
+		(T.B1) ++(0.5, 0) to[open, v=$V_2$] (TB2)
+		(T.inner dot A1) node[circ] {}
+		(T.inner dot B1) node[circ] {};
+	\end{circuitikz}
+	\caption{Représentation schématique du transformateur. Notons particulièrement le sens de référence des courants/tensions et les bornes homologues qui ont une importance particulière.}
+	\label{transfo}
 \end{figure}
 
 
@@ -713,29 +934,39 @@ On fait les hypothèses suivantes :
 \item La perméabilité magnétique du noyau est infinie
 \end{itemize}
 
-On peut alors écrire\footnote{Pour la relation des tensions, on utilise $V_i = \frac{\mathrm{d}(N_i \phi)}{\mathrm{d}t}$, pour les courants on utilise la loi d'Ampère en effectuant un contour qui suit le noyau.} les rapports entrée-sortie du transformateur (ATTENTION : l'expression suivante est valable pour un transformateur à bornes homologues seulement; si ce n'est pas le cas, il faut remplacer $\frac{N_1}{N_2}$ par $-\frac{N_1}{N_2}$. On considère aussi que les sens des courants/tensions respectent les conventions habituelles\footnote{Indiquées à la figure \ref{transfo}, ce sont les mêmes conventions que pour les circuits magnétiques couplés généraux, ainsi que pour les quadripôles.}, sinon il faut bien évidemment adapter les signes des $V_i$ ou $I_i$.) :
+On peut alors écrire\footnote{
+	Pour la relation des tensions, on utilise $V_i = \fdif{\, (N_i\phi)}{t}$,
+	pour les courants on utilise la loi d'Ampère en effectuant un contour qui suit le noyau.
+} les rapports entrée-sortie du transformateur
+(ATTENTION : l'expression suivante est valable pour un transformateur à bornes homologues seulement;
+si ce n'est pas le cas, il faut remplacer $\frac{N_1}{N_2}$ par $-\frac{N_1}{N_2}$.
+On considère aussi que les sens des courants/tensions respectent
+les conventions habituelles\footnote{Indiquées à la figure \ref{transfo},
+ce sont les mêmes conventions que pour les circuits magnétiques couplés généraux, ainsi que pour les quadripôles.},
+sinon il faut bien évidemment adapter les signes des $V_i$ ou $I_i$.):
 \begin{equation}
 \frac{V_1}{V_2} = - \frac{I_2}{I_1} = \frac{N_1}{N_2}
 \end{equation}
 
-Ce qui implique que la puissance absorbée à l'entrée est égale à la puissance fournie à la sortie. Dans la limite de validité des hypothèses, le transfomateur ne cause donc aucune perte.
+Ce qui implique que la puissance absorbée à l'entrée est égale à la puissance fournie à la sortie.
+Dans la limite de validité des hypothèses, le transformateur ne cause donc aucune perte.
 
-En général, quand on résout un circuit avec un transformateur, il ne faut pas être gêné d'utiliser les deux équations (celle du rapport des courants et celle du rapport des tensions), on en a d'habitude besoin. Contrairement à un circuit magnétique couplé normal, on peut de manière indifférente utiliser la technique des noeuds (inconnues = tensions) ou des mailles (inconnues = courants).
+En général, quand on résout un circuit avec un transformateur, il ne faut pas être gêné d'utiliser les deux équations (celle du rapport des courants et celle du rapport des tensions), on en a d'habitude besoin. Contrairement à un circuit magnétique couplé normal, on peut de manière indifférente utiliser la technique des n\oe{}uds (inconnues = tensions) ou des mailles (inconnues = courants).
 \todo[inline,color=blue]{Resoudre un circuit avec un transformateur}
 \section{Analyse AC (2) : transitoire (alias résoudre des EDO avec Laplace)}
 Avec les phaseurs, on peut résoudre facilement des circuits en régime sinusoïdal. Dans le cas de sources non sinusoïdales (ou quand on s'intéresse à la solution transitoire du cas sinusoïdal) il faut résoudre des EDO avec des conditions initiales : la transformée de Laplace (unilatérale) est un outil particulièrement puissant pour cela.
 \subsection{Transformée de Laplace : définition et utilisation}
-\subsubsection*{Definition et méthodologie générale}
+\subsubsection*{Définition et méthodologie générale}
 La \textbf{transformée de Laplace unilatérale} $F(s)$ est définie comme étant :
 \begin{equation}
-F(s) = \Lagr\{f(t)\} = \int_{0^-}^{+ \infty} f(t) e^{-st} \mathrm{d}t
+F(s) = \Lagr\{f(t)\} = \int_{0^-}^{+ \infty} f(t) \e^{-st} \dif{t}
 \end{equation}
 
 Pour la résolution d'EDO, la \textbf{propriété de différentiation temporelle} de la transformée unilatérale de Laplace est particulièrement utile :
 
 \begin{equation}
 \label{diffLaplace}
-\Lagr \{ \frac{\mathrm{d}f}{\mathrm{d}t} \} = s \Lagr \{ f(t) \} - f(0)
+\Lagr \left\{ \fpart{f}{t} \right\} = s \Lagr \{ f(t) \} - f(0)
 \end{equation}
 
 Pour résoudre une EDO avec Laplace, il faut toujours suivre les étapes suivantes (pour un exemple complet, voir plus loin) :
@@ -748,12 +979,20 @@ $$ F(s) = \frac{P(s)}{Q(s)} $$
 \end{itemize}
 
 \subsubsection*{Réduction en fractions simples d'un quotient de polynômes}
-On souhaite réduire $F(s) = \frac{P(s)}{Q(s)}$. La première étape consiste à déterminer les racines du dénominateur en résolvant $Q(s) = 0$. Ensuite, selon la forme de chaque racine (ou "pôle" de $F(s)$), il faut se référer à un des cas suivants :
+On souhaite réduire $F(s) = \frac{P(s)}{Q(s)}$.
+La première étape consiste à déterminer les racines du dénominateur en résolvant $Q(s) = 0$.
+Ensuite, selon la forme de chaque racine (ou \og pôle \fg{} de $F(s)$),
+il faut se référer à un des cas suivants:
 
 \begin{itemize}
-\item \textbf{Pôle simple réel} : c'est le cas le plus simple; en temporel, chaque pôle simple réel donne une exponentielle réelle. Le terme associé au pôle $p_i$ et sa transformée inverse\footnote{Il n'est pas nécessaire de mémoriser les transformées inverse, elles sont dans le formulaire :-)} sont donnés par :
+\item \textbf{Pôle simple réel}: c'est le cas le plus simple;
+en temporel, chaque pôle simple réel donne une exponentielle réelle.
+Le terme associé au pôle $p_i$ et sa transformée inverse\footnote{
+	Il n'est pas nécessaire de mémoriser les transformées inverses,
+	elles sont dans le formulaire :-)
+} sont donnés par:
 \begin{equation}
-\frac{K_i}{s - p_i} \Longrightarrow K_i e^{p_it}
+\frac{K_i}{s - p_i} \Longrightarrow K_i \e^{p_it}
 \end{equation}
 On a donc bien une exponentielle, comme annoncé. Pour déterminer la constante réelle $K_i$, on utilise une petite astuce algébrique. On multiplie $F(s)$ et sa décomposition en fractions simples par $(s - p_i)$ (afin de 'retirer' le pôle du dénominateur) puis on évalue cette expression en $s = p_i$, ce qui annule toutes les fractions simples sauf celle qui nous intéresse. On a donc :
 \begin{equation}
@@ -761,14 +1000,35 @@ On a donc bien une exponentielle, comme annoncé. Pour déterminer la constante 
 K_i = (s-p_i)\frac{P(s)}{Q(s)} \EvalAt{s = p_i}
 \end{equation}
 \todo[inline,color=yellow]{Corriger cette section !!}
-\item \textbf{Pôles simples complexes (conjugés)} Les pôles complexes viennent toujours par paire conjuguée (du moins dans le contexte du cours) et donnent ensemble une sinusoïde amortie par une exponentielle. On aura donc toujours donc deux pôles $p_i = a + jb$ et $p_i^{*} = a - jb$. La décomposition en fraction simples et la détermination des constantes $K_i$ associées à celles-ci se fait de manière identique que dans le cas "pôle simple réel". La différence c'est qu'ici, les constantes ne seront plus réelles mais complexes; par contre on sait que ces constantes seront complexes conjuguées\footnote{Pour comprendre pourquoi, il faut se rappeler que $H(s)$ ne contient que des coefficients réels. Comme on introduit des coefficients complexes dans la décomposition en fractions simples, du type $\frac{K_i}{s - (a + jb)}$ et $\frac{K_i^{*}}{s - (a - jb)}$, il faut que les parties imaginaires de ceux-ci disparaissent quand on remet tout sur le même dénominateur, ce qui implique (un peu d'algèbre permet de le vérifier) les complexes conjugués au nominateur (en d'autres mots, $K_i$ et $K_i^{*}$ sont complexes conjuguées, comme leur notation l'indique).}, un "problème" qu'il faudra régler car on veut une réponse réelle. On sait donc qu'on aura des fractions du type :
+\item \textbf{Pôles simples complexes (conjugués)}
+Les pôles complexes viennent toujours par paire conjuguée (du moins dans le contexte du cours)
+et donnent ensemble une sinusoïde amortie par une exponentielle.
+On aura donc toujours donc deux pôles $p_i = a + \imagj b$ et $p_i^{*} = a - \imagj b$.
+La décomposition en fraction simples et la détermination des constantes $K_i$ associées à celles-ci
+se fait de manière identique que dans le cas \og pôle simple réel\fg{}.
+La différence c'est qu'ici, les constantes ne seront plus réelles mais complexes;
+par contre on sait que ces constantes seront complexes conjuguées\footnote{
+	Pour comprendre pourquoi, il faut se rappeler que $H(s)$ ne contient que des coefficients réels.
+	Comme on introduit des coefficients complexes dans la décomposition en fractions simples,
+	du type $\frac{K_i}{s - (a + \imagj b)}$ et $\frac{K_i^{*}}{s - (a - \imagj b)}$,
+	il faut que les parties imaginaires de ceux-ci disparaissent quand on remet tout sur le même dénominateur,
+	ce qui implique (un peu d'algèbre permet de le vérifier) les complexes conjugués au numérateur
+	(en d'autres mots, $K_i$ et $K_i^{*}$ sont complexes conjuguées, comme leur notation l'indique).
+}, un \og problème\fg{} qu'il faudra régler car on veut une réponse réelle.
+On sait donc qu'on aura des fractions du type :
 \begin{equation}
-\frac{\Polar{K_i}{\theta}}{s - (a + jb)} + \frac{\Polar{K_i}{- \theta}}{s - (a - jb)}
+\frac{K_i\e^{\imagj\theta}}{s - (a + \imagj b)} + \frac{K_i\e^{-\imagj\theta}}{s - (a - \imagj b)}
 \end{equation}
-ou, pour rappel, les constantes complexes conjuguées $\Polar{K_i}{\theta}$ et $\Polar{K_i}{-\theta}$ ont été déterminées en utilisant l'astuce algébrique présentée à l'équation \ref{astucePoleReel}. On peut bien sur effectuer la transformée inverse de manière identique, puis on utilise la définition du cosinus en terme d'exponentielles complexes\footnote{Rappelons que $\cos (\alpha) = \frac{1}{2} (e^{j \alpha} + e^{-j \alpha})$} pour obtenir une expression purement réelle. On a bien une sinusoïde amortie par une exponentielle, comme annoncé.
+ou, pour rappel, les constantes complexes conjuguées $K_i\e^{\imagj \theta}$ et $K_i\e^{-\imagj \theta}$
+ont été déterminées en utilisant l'astuce algébrique présentée à l'équation \ref{astucePoleReel}.
+On peut bien sur effectuer la transformée inverse de manière identique,
+puis on utilise la définition du cosinus en terme d'exponentielles complexes\footnote{
+	Rappelons que $\cos (\alpha) = \frac{1}{2} (\e^{\imagj \alpha} + \e^{-\imagj \alpha})$
+} pour obtenir une expression purement réelle.
+On a bien une sinusoïde amortie par une exponentielle, comme annoncé.
 
 \begin{equation}
-\frac{\Polar{K_i}{\theta}}{s - (a + jb)} + \frac{\Polar{K_i}{- \theta}}{s - (a - jb)} \Longrightarrow 2 \Module{K_i} e^{-at} \cos(bt + \theta)
+\frac{K_i\e^{\imagj\theta}}{s - (a + jb)} + \frac{K_i\e^{-\imagj \theta}}{s - (a - \imagj b)} \Longrightarrow 2 \Module{K_i} \e^{-at} \cos(bt + \theta)
 \end{equation}
 
 \item \textbf{Pôles multiples}
@@ -777,9 +1037,12 @@ Si un pôle $p$ est de multiplicité $r$, on lui associe $r$ fractions simples d
 \frac{K_0}{(s-p)^r} + \frac{K_1}{(s-p)^{r-1}} + ... + \frac{K_r}{(s-p)^1}
 \end{equation}
 
-Ce qui correspond, en temporel, à l'exponentielle du cas "pôle simple" multipliée par un polynôme de degré $r-1$ (voir le formulaire pour les transformations inverses exactes). Il faut maintenant déterminer non pas une mais $r$ constantes, ce qui rajoute une petite subtilité. Le cours donne cette formule plutôt indigeste :
+Ce qui correspond, en temporel, à l'exponentielle du cas \og pôle simple\fg{} multipliée par un polynôme de degré $r-1$
+(voir le formulaire pour les transformations inverses exactes).
+Il faut maintenant déterminer non pas une mais $r$ constantes, ce qui rajoute une petite subtilité.
+Le cours donne cette formule plutôt indigeste:
 \begin{equation}
-K_i = \frac{1}{i!}\frac{\mathrm{d}^i}{\mathrm{d}s^i}(s-p)^rF(s)\EvalAt{s=p}
+K_i = \frac{1}{i!} \fndif{}{s}{i} (s-p)^rF(s)\EvalAt{s=p}
 \end{equation}
 
 Ce qui correspond à suivre la démarche qui suit. Premièrement, il faut multiplier $H(s) = \frac{P(s)}{Q(s)}$ et sa décomposition en fraction simples par $(s-p)^r$ (et non pas $(s-p)$ comme pour le cas à racine simple on élimine tous les pôles du dénominateur). On évalue ensuite l'expression en $s = p$ : du côté des fractions simples, tout s'annule (à cause des $(s-p)^r$) sauf $K_0$ qu'on peut déterminer.
@@ -797,16 +1060,23 @@ La \textbf{puissance instantanée à l'instant $t$} d'un élément de circuit es
 p(t) = v(t)\cdot i(t)
 \end{equation}
 
-Le signe\footnote{ATTENTION : ici il est particulièrment important de suivre les conventions de sens pour les tensions et courants, sinon le résultat obtenu sera bien sûr l'inverse de la réalité! Il faut que le courant et la tension soient de signe OPPOSÉ!} de cette puissance a une importance particulière :
+Le signe\footnote{
+	ATTENTION : ici il est particulièrement important de suivre les conventions de sens pour les tensions et courants,
+	sinon le résultat obtenu sera bien sûr l'inverse de la réalité!
+	Il faut que le courant et la tension soient de signe OPPOSÉ!
+} de cette puissance a une importance particulière:
 \begin{itemize}
-\item $p(t) > 0$ : on parle de \textbf{puissance absorbée} : l'élément prélève de l'énergie du circuit (par exemple, une résistance a toujours $p(t) > 0$).
-\item $p(t) < 0$ : on parle de \textbf{puissance fournie} : l'élément donne de l'énergie au circuit (par exemple, une source de tension en fonctionnement "normal" (on n'est pas en train de la charger par exemple) a $p(t) < 0$).
+	\item $p(t) > 0$: on parle de \textbf{puissance absorbée}:
+	l'élément prélève de l'énergie du circuit (par exemple, une résistance a toujours $p(t) > 0$).
+	\item $p(t) < 0$: on parle de \textbf{puissance fournie}:
+	l'élément donne de l'énergie au circuit (par exemple, une source de tension en fonctionnement \og normal \fg{}
+	(on n'est pas en train de la charger par exemple) a $p(t) < 0$).
 \end{itemize}
 \hspace{0pt} \\
 Dans tout ce qui suit, on s'intéresse au cas particulier d'un courant périodique (c'est-à-dire, dans $99\%$ des cas en pratique une sinusoïde, mais restons général pour l'instant...).
 La \textbf{puissance moyenne} d'un signal périodique de période $T$ est la moyenne de ce signal sur une période, c'est-à-dire mathématiquement ($t_0$ est un temps pouvant être arbitrairement choisi) :
 \begin{equation}
-P_{moy} = \frac{1}{T} \int_{t_0}^{t_0 + T} p(t) \mathrm{d}t
+P_{moy} = \frac{1}{T} \int_{t_0}^{t_0 + T} p(t) \dif{t}
 \end{equation}
 
 On définit aussi la \textbf{valeur efficace}, ou valeur RMS\footnote{Root Mean Square, c'est à dire la racine de la moyenne du carré du signal.} $X_{eff}$ d'un signal $x(t)$ périodique de période $T$ :
@@ -824,7 +1094,7 @@ P_{moy} = I_{eff}^2 R = V_{eff}^2/R
 Dans le cas particulier des signaux sinusoïdaux, on peut relier la valeur efficace et la valeur maximale du courant et de la tension par la relation suivante :
 
 \begin{equation}
-I_{eff} = \frac{I_{max}}{\sqrt{2}} \;, \; \;  \; \; \; \; \; \; V_{eff} = \frac{V_{max}}{\sqrt{2}}
+I_{eff} = \frac{I_{max}}{\sqrt{2}} \qquad, \qquad V_{eff} = \frac{V_{max}}{\sqrt{2}}
 \end{equation}
 
 Plus particulièrement, on considère une tension avec un déphasage $\psi_v$ : $v(t) = V_{max}\cos(\omega t + \psi_v)$ et un courant  avec un déphasage $\psi_i$ : $i(t) = I_{max}\cos(\omega t + \psi_i)$. On note $\phi = \psi_v - \psi_i$ le déphasage relatif entre le courant et la tension. On peut calculer la puissance moyenne :
@@ -832,7 +1102,19 @@ Plus particulièrement, on considère une tension avec un déphasage $\psi_v$ : 
 P_{moy} = V_{eff}I_{eff}\cos(\phi)
 \end{equation}
 
-et la puissance instanée. On constate que la puissance instantanée est un cosinus d'amplitude $V_{eff}I_{eff}$ et de fréquence deux fois plus grande, avec une composante continue $P_{moy}$ (ce qui n'a rien d'étonnant, c'est la puissance \textit{moyenne} après tout)\footnote{Pour bien comprendre le sens de cette équation, prenons deux exemples extrêmes. Si l'élément considéré est une résistance pure, il n'y a pas de décalage entre le courant et la tension et $P_{moy} = V_{eff}I_{eff}$. On aura donc une puissance moyenne positive et maximale. Pour une inductance, le déphasage entre tension et courant vaut $\pi/2$ et la puissance moyenne est donc nulle (car $\cos(\phi) = 0$) : c'est parce qu'aucune énergie n'est dissipée dans une inductance, elle est seulement stockée sous forme d'énergie magnétique puis récupérée.}.
+et la puissance instantanée.
+On constate que la puissance instantanée est un cosinus d'amplitude $V_{eff}I_{eff}$
+et de fréquence deux fois plus grande, avec une composante continue $P_{moy}$
+(ce qui n'a rien d'étonnant, c'est la puissance \textit{moyenne} après tout)\footnote{
+	Pour bien comprendre le sens de cette équation, prenons deux exemples extrêmes.
+	Si l'élément considéré est une résistance pure, il n'y a pas de décalage
+	entre le courant et la tension et $P_{moy} = V_{eff}I_{eff}$.
+	On aura donc une puissance moyenne positive et maximale.
+	Pour une inductance, le déphasage entre tension et courant vaut $\pi/2$
+	et la puissance moyenne est donc nulle (car $\cos(\phi) = 0$):
+	c'est parce qu'aucune énergie n'est dissipée dans une inductance,
+	elle est seulement stockée sous forme d'énergie magnétique puis récupérée.
+}.
 
 \begin{equation}
 p(t) = P_{moy} + V_{eff}I_{eff}\cos(2 \omega t + \psi_v + \psi_i)
@@ -840,27 +1122,47 @@ p(t) = P_{moy} + V_{eff}I_{eff}\cos(2 \omega t + \psi_v + \psi_i)
 
 \todo[inline,color=red]{diagramme phasoriel}
 
-Pour finir, il est important de noter que $V_{eff} = \Module{Z} I_{eff}$. En se rappelant que pour une impédance générale $\Polar{Z}{\theta} = R + jX$ ou $R = \Module{Z}\cos(\phi)$ est la partie réelle de l'impédance, on peut écrire par exemple :
+Pour finir, il est important de noter que $V_{eff} = \Module{Z} I_{eff}$.
+En se rappelant que pour une impédance générale $\Polar{Z}{\theta} = R + \imagj X$
+où $R = \Module{Z}\cos(\phi)$ est la partie réelle de l'impédance,
+on peut écrire par exemple:
 \begin{equation}
 P_{moy} = I_{eff}^2R = \frac{V_{eff}^2\cos^2(\phi)}{R}
 \end{equation}
 
 Qui sont des équations très utiles en pratique quand il s'agit de trouver la puissance dissipée par un élément (dans un circuit triphasé par exemple).
 
-\subsection{Puissance complexe (et tout ce qui y est lié, puissances actives...)}
-On parle toujours de signaux sinusoïdaux; soient $\overline{V} = \Polar{V_{max}}{\psi_v}$ et $\overline{I} = \Polar{I_{max}}{\psi_i}$ les phaseurs associés à la tension et au courant d'un élément de circuit, respectivement, et $\phi = \psi_v - \psi_i$ le déphasage entre les deux. La partie qui suit donne plein (enfin, quatre) définitions de puissance différente et il est facile de s'y perdre, mais nous donnerons une représentation visuelle à la fin.
-\hspace{0pt} \\
-La \textbf{puissance complexe} $\overline{S}$ de cet élément est définie comme étant\footnote{Dans le cours, seule la première égalité est encadrée : je suppose que c'est la définition préférée de Bruno. Dans le livre, la définition est $\overline{S} = \overline{V_{eff}}\overline{I_{eff}}^*$. Personellement, je ne retiens que la dernière expression ($V_{eff}I_{eff}e^{j\phi}$) qui est, je trouve, plus facile à interpréter et utiliser même si elle est moins compacte.} :
+\subsection{Puissance complexe (et tout ce qui y est lié, puissances actives\dots)}
+On parle toujours de signaux sinusoïdaux;
+soient $\overline{V} = \Polar{V_{max}}{\psi_v}$ et $\overline{I} = \Polar{I_{max}}{\psi_i}$
+les phaseurs associés à la tension et au courant d'un élément de circuit,
+respectivement, et $\phi = \psi_v - \psi_i$ le déphasage entre les deux.
+La partie qui suit donne plein de définitions (enfin, quatre) de puissance différentes et il est facile de s'y perdre, mais nous donnerons une représentation visuelle à la fin.
+
+La \textbf{puissance complexe} $\overline{S}$ de cet élément est définie comme étant\footnote{
+	Dans le cours, seule la première égalité est encadrée:
+	je suppose que c'est la définition préférée de Bruno.
+	Dans le livre, la définition est $\overline{S} = \overline{V_{eff}}\overline{I_{eff}}^*$.
+	Personnellement, je ne retiens que la dernière expression
+	($V_{eff}I_{eff}\e^{\imagj\phi}$) qui est, je trouve,
+	plus facile à interpréter et utiliser même si elle est moins compacte.}:
 \begin{equation}
-\overline{S} = \frac{1}{2} \overline{V}\overline{I}^* = \frac{1}{2}V_{max}I_{max}e^{j(\psi_v - \psi_i)} = V_{eff}I_{eff}e^{j\phi} \; \; \; [VA]
+\overline{S} = \frac{1}{2} \overline{V}\overline{I}^* = \frac{1}{2}V_{max}I_{max}\e^{\imagj(\psi_v - \psi_i)} = V_{eff}I_{eff}\e^{\imagj\phi} \qquad [\si{VA}]
 \end{equation}
 
-Il s'agit donc bel et bien d'un nombre complexe. Les trois autres puissances qui vont suivres sont quant à elles strictement réelles. L'unité de la puissance complexe est, tout comme la puissance apparente (voir plus loin), le \textbf{volt-ampère $VA$} pour distinguer la puissance complexe d'une puissance normale "réelle".
+Il s'agit donc bel et bien d'un nombre complexe.
+Les trois autres puissances qui vont suivre sont quant à elles strictement réelles.
+L'unité de la puissance complexe est, tout comme la puissance apparente
+(voir plus loin), le \textbf{volt-ampère $VA$} pour distinguer
+la puissance complexe d'une puissance normale \og réelle\fg{}.
 
-\hspace{0pt} \\
-La \textbf{puissance active} $P$ est sans aucun doute le type de puissance le plus important. En effet, par défaut quand on parle de puissance d'une impédance, on parle de la puissance active. C'est parce que la puissance active traduit un échange d'énergie unilatéral entre la source et une charge : en d'autres mots, il s'agit de la puissance dissipée et "perdue" à tout jamais. Il s'agit de la partie réelle de la puissance complexe :
+La \textbf{puissance active} $P$ est sans aucun doute le type de puissance le plus important.
+En effet, par défaut quand on parle de puissance d'une impédance, on parle de la puissance active.
+C'est parce que la puissance active traduit un échange d'énergie unilatéral entre la source et une charge:
+en d'autres mots, il s'agit de la puissance dissipée et \og perdue\fg{} à tout jamais.
+Il s'agit de la partie réelle de la puissance complexe:
 \begin{equation}
-P = V_{eff}I_{eff}\cos(\phi) = \Re\{\overline{S}\} \; \; \; [W]
+P = V_{eff}I_{eff}\cos(\phi) = \Re\{\overline{S}\} \qquad [\si{W}]
 \end{equation}
 On constate aussi que la puissance active n'est rien d'autre que la puissance moyenne! L'unité de la puissance active est le Watt (bien évidemment aussi l'unité de la puissance moyenne).
 
@@ -868,13 +1170,13 @@ On constate aussi que la puissance active n'est rien d'autre que la puissance mo
 La \textbf{puissance réactive} $Q$ est, à l'opposé de la puissance active, la partie imaginaire de la puissance complexe. Cette puissance traduit un échange bilatéral d'énergie entre la source et la charge : en mots plus compréhensibles, cette puissance traduit la quantité d'énergie stockée et reçue de manière réversible dans l'impédance (il faut donc qu'elle possède des éléments inductifs ou capacitifs). L'unité de la puissance réactive est le \textbf{volt-ampère réactif $VAR$}.
 
 \begin{equation}
-Q = V_{eff}I_{eff}\sin(\phi) = \Im \{\overline{S}\} \; \; \; [VAR]
+Q = V_{eff}I_{eff}\sin(\phi) = \Im \{\overline{S}\} \qquad [\si{VAR}]
 \end{equation}
 
 Le dernier type de puissance est la \textbf{puissance apparente $S$}. Il s'agit maintenant du module de la puissance complexe : il traduit grosso modo combien d'énergie est échangée, peu importe la manière. Son unité est, comme la puissance complexe (ce qui est logique car il s'agit du module de celle-ci), le volt-ampère.
 
 \begin{equation}
-S = V_{eff}I_{eff} = \vert \overline{S} \vert \; \; \; [VA]
+S = V_{eff}I_{eff} = \abs{\overline{S}} \qquad [\si{VA}]
 \end{equation}
 
 \begin{figure}[h]
@@ -892,7 +1194,7 @@ S = V_{eff}I_{eff} = \vert \overline{S} \vert \; \; \; [VA]
 
 La figure \ref{puissanceComp} donne les liens géométriques entre la puissance complexe $\overline{S}$ et les trois autres puissances. Mathématiquement, on a bien évidemment :
 \begin{equation}
-\overline{S} = P + jQ = Se^{j\phi}
+\overline{S} = P + \imagj Q = S\e^{\imagj \phi}
 \end{equation}
 
 et
@@ -903,7 +1205,7 @@ S^2 = P^2 + Q^2
 Le \textbf{bilan de puissances complexes} sur un circuit isolé est toujours nul. On peut aussi remarquer que la partie réelle et la partie imaginaire doivent aussi être nulles donc le bilan de puissance active et réactive doit aussi être nul.
 
 \begin{equation}
-\sum \overline{S} = 0 \Longrightarrow \sum P = 0 \; \; \; \mathrm{et} \sum Q = 0
+\sum \overline{S} = 0 \implies \sum P = 0 \; \text{ et } \sum Q = 0
 \end{equation}
 
 Finissons cette partie par noter que pour maximiser la puissance dissipée dans une charge $Z_L$ aux bornes d'une source en série avec une impédance équivalente $Z_S$, on doit choisir $Z_L$ = $Z_S^*$. Le rendement (le rapport entre la puissance dissipée dans $Z_L$ et celle fournie par la source) est alors de $\eta = 50\%$. Il n'est pas possible d'obtenir un rendement plus grand.
@@ -917,19 +1219,28 @@ Une \textbf{source triphasée} est un ensemble de trois sources, généralement 
 
 \begin{figure}[h]
 	\centering
-    \begin{circuitikz}[american]
-    	\ctikzset{label/align = straight}
-    	\draw (4,0) node[right]{S} to[V,l_=$e_1$,*-*] (2,2.82)node[above]{R} to[V,l_=$e_3$,-*] (0,0) node[left]{T} to[V,l_=$e_2$] (4,0); 
-    	\draw (8,0.94) to[V=$e_1$,*-](6,0) node[left]{R};
-    	\draw (8,0.94) to[V=$e_2$](8,2.82) node[above]{S};
-    	\draw (8,0.94) to[V=$e_3$](10,0) node[right]{T};
-    	\draw (8,0.94) node[right]{N};
-    \end{circuitikz}
-    \caption{Les deux types de source triphasée. A gauche la source triangle et à droite la source étoile.}
-    \label{sourceTri}
+	\begin{circuitikz}[american]
+		\ctikzset{label/align = straight}
+		\draw (0, 0) node[left] {T} to[V_=$e_2$, *-] (4, 0) node[right] {S} to[V_=$e_1$, *-] (2, 3.46) node[above] {R} to[V_=$e_3$, *-] (0, 0);
+		\draw (8, 1.15) to[V=$e_1$, *-*] (6, 0) node[left] {T};
+		\draw (8, 1.15) to[V=$e_2$, -*] (8, 3.46) node[above] {R};
+		\draw (8, 1.15) to[V=$e_3$, -*] (10, 0) node[right] {S};
+		\draw (8, 1.15) node[above right]{N};
+	\end{circuitikz}
+	\caption{Les deux types de source triphasée. A gauche la source triangle et à droite la source étoile.}
+	\label{sourceTri}
 \end{figure}
 
-Pour passer d'un type de connexion à l'autre on utilise la relation\footnote{Petite démonstration (plus détaillée que "regarder le diagramme phasoriel") pour les motivés : pour y arriver, imaginons qu'on veuille passer d'une connexion étoile à une connexion triangle. Il suffit de calculer la tension aux bornes $V_{RS}$ (aussi appelée la tension de ligne, voir plus loin) qui vaut $V_R - V_S = e_1 - e_2$. Comme on ne s'intéresse pas au déphasage éventuel, il suffit de calculer le module de $e_1 - e_2 $. Considérons sans perte de généralité de module de $e_1$ et $e_2$ valant 1 et le déphasage de $e_1$ étant nul, on calcule alors $e_1 - e_2 = \cos(\omega t) - \cos (\omega t + 2 \pi /3) = (1+\frac{1}{2}) \cos(\omega t) + \frac{\sqrt{3}}{2} \sin(\omega t)$ et on trouve bien le facteur $\sqrt{(\frac{3}{2})^2 + (\frac{\sqrt{3}}{2})^2} = \sqrt{3}$, en utilisant la formule trigonométrique pour $\cos(a+b)$.} suivante concernant la valeur maximale/RMS des sources (on ne s'intéresse pas au changement de phase de celles-ci) :
+Pour passer d'un type de connexion à l'autre on utilise la relation\footnote{
+	Petite démonstration (plus détaillée que \og regarder le diagramme phasoriel\fg{}) pour les motivés:
+	pour y arriver, imaginons qu'on veuille passer d'une connexion étoile à une connexion triangle.
+	Il suffit de calculer la tension aux bornes $V_{RS}$ (aussi appelée la tension de ligne, voir plus loin) qui vaut $V_R - V_S = e_1 - e_2$.
+	Comme on ne s'intéresse pas au déphasage éventuel, il suffit de calculer le module de $e_1 - e_2 $.
+	Considérons sans perte de généralité de module de $e_1$ et $e_2$ valant 1 et le déphasage de $e_1$ étant nul,
+	on calcule alors $e_1 - e_2 = \cos(\omega t) - \cos (\omega t + 2 \pi /3) = (1+\frac{1}{2}) \cos(\omega t) + \frac{\sqrt{3}}{2} \sin(\omega t)$
+	et on trouve bien le facteur $\sqrt{(\frac{3}{2})^2 + (\frac{\sqrt{3}}{2})^2} = \sqrt{3}$,
+	en utilisant la formule trigonométrique pour $\cos(a+b)$.}
+suivante concernant la valeur maximale/RMS des sources (on ne s'intéresse pas au changement de phase de celles-ci):
 
 \begin{equation}
 e_{\Delta} = \sqrt{3} e_{Y}
@@ -938,7 +1249,10 @@ e_{\Delta} = \sqrt{3} e_{Y}
 Attention, cette relation n'est valable que pour une source triphasée de tension équilibrée! Pour des sources de courants, il faut inverser la relation ($ \sqrt{3} I_{\Delta} = I_{Y}$).
 
 \subsubsection*{Charges triphasées}
-Les \textbf{charges triphasées} existent dans les mêmes configurations (on remplace les sources de la figure \ref{sourceTri} par des impédances. Par contre, la transformation ne se déroule pas de la même manière : il s'agit de la transformation "classique" triangle-étoile (qui est dans le formulaire, au cas où...) vue tout au début avec des résistances (qu'on étend maintenant aux impédances). Pour une charge triphasée équilibrée, on trouve simplement la relation :
+Les \textbf{charges triphasées} existent dans les mêmes configurations (on remplace les sources de la figure \ref{sourceTri} par des impédances.
+Par contre, la transformation ne se déroule pas de la même manière: il s'agit de la transformation \og{}classique\fg{} triangle-étoile
+(qui est dans le formulaire, au cas où\dots) vue tout au début avec des résistances (qu'on étend maintenant aux impédances).
+Pour une charge triphasée équilibrée, on trouve simplement la relation:
 
 \begin{equation}
 Z_{\Delta} = 3 Z_{Y}
@@ -967,7 +1281,11 @@ Le tableau suivant donne le lien entre grandeurs de ligne et de phase dans les d
 \end{center}
 
 \subsubsection*{Puissance dans un circuit triphasé}
-Si $e_i$ et $i_i$ sont les tensions et courants de phase dans une charge triphasée, la puissance dissipée totale est $p(t) = \sum e_i(t)i_i(t)$. Dans le capitre sur la puissance, on a déjà démontré que $e(t)i(t) = P_{moy} + \cos(2 \omega t + \phi)$ à un déphasage près pour deux sources sinusoïdales. On peut montrer\footnote{Il s'agit d'une démonstration semblable à celle ou on montre que la somme des tensions d'une source triphasée est nulle.} que pour la somme des trois sinusoïdes s'annule pour tout t, et il reste dans la somme des trois puissances moyennes. La puissance dissipée dans la charge triphasée est donc constante et vaut :
+Si $e_i$ et $i_i$ sont les tensions et courants de phase dans une charge triphasée, la puissance dissipée totale est $p(t) = \sum e_i(t)i_i(t)$.
+Dans le chapitre sur la puissance, on a déjà démontré que $e(t)i(t) = P_{moy} + \cos(2 \omega t + \phi)$ à un déphasage près pour deux sources sinusoïdales.
+On peut montrer\footnote{Il s'agit d'une démonstration semblable à celle ou on montre que la somme des tensions d'une source triphasée est nulle.}
+que pour la somme des trois sinusoïdes s'annule pour tout t, et il reste dans la somme des trois puissances moyennes.
+La puissance dissipée dans la charge triphasée est donc constante et vaut:
 
 \begin{equation}
 P_{tri} = 3 P_{moy} = 3V_{eff}I_{eff}\cos(\phi)
@@ -1002,35 +1320,52 @@ L'\textbf{erreur relative} $e_r$ donne l'importance relative de l'erreur absolue
 e_r = \frac{e}{\xi} = \frac{x - \xi}{\xi}
 \end{equation}
 
-Le problème c'est qu'en général on ne connait pas la vraie valeur $\xi$ (bah sinon ça sert à rien de faire la mesure) et on ne dispose que de $x$. On s'intéresse donc à la fiabilité d'une telle mesure $x$ : c'est là qu'intervient l'incertitude. Avant de passer à ce sujet, notons qu'on peut souvent éliminer l'erreur systématique $\delta$ par \textbf{étallonnage} : on prend une série de mesures dont on connait la valeur vraie en faisant varier la valeur de $\xi$ : le grand nombre de mesures permet de prendre la moyenne et de négliger $\epsilon$ : on trouve ensuite $\delta$ en observant un offset constant entre $x$ et $\xi$.
+Le problème c'est qu'en général on ne connait pas la vraie valeur $\xi$ (bah sinon ça sert à rien de faire la mesure) et on ne dispose que de $x$.
+On s'intéresse donc à la fiabilité d'une telle mesure $x$: c'est là qu'intervient l'incertitude.
+Avant de passer à ce sujet, notons qu'on peut souvent éliminer l'erreur systématique $\delta$ par \textbf{étalonnage}:
+on prend une série de mesures dont on connait la valeur vraie en faisant varier la valeur de $\xi$;
+le grand nombre de mesures permet de prendre la moyenne et de négliger $\epsilon$;
+on trouve ensuite $\delta$ en observant un offset constant entre $x$ et $\xi$.
 
 \subsubsection*{Incertitudes}
-L'\textbf{incertitude} est une estimation des bornes maximales de l'erreur (qui dépendent des valeurs que $\epsilon$ peut prendre) : elle se traduit par un intervalle de valeurs. En faisant certaines hypothèses sur $\epsilon$ (et en négligeant $\delta$, qu'on aura pu éliminer par étallonage par exemple) cet intervalle est de la forme $[x - 2\sigma, x + 2\sigma]$ (par exemple $[1 - 0.2 V, 1 + 0.2 V]$. On est alors certain que la vraie valeur $\xi$ se situe avec une probabilité de $95\%$\footnote{Au Q5 tout cela deviendra probablement plus clair avec proba stat} dans cet intervalle. Cette valeur $2 \sigma$ est appelée l'\textbf{incertidue absolue} (l'incertude relative $ 2\sigma_r$ est définie de manière identique. On a aussi $\sigma_r = \sigma / \xi$).
+L'\strong{incertitude} est une estimation des bornes maximales de l'erreur (qui dépendent des valeurs que $\epsilon$ peut prendre) :
+elle se traduit par un intervalle de valeurs.
+En faisant certaines hypothèses sur $\epsilon$ (et en négligeant $\delta$, qu'on aura pu éliminer par étalonnage par exemple) cet intervalle est de la forme $[x - 2\sigma, x + 2\sigma]$ (par exemple $[1 - \SI{0.2}{V}, 1 + \SI{0.2}{V}]$.
+On est alors certain que la vraie valeur $\xi$ se situe avec une probabilité de $95\%$
+\footnote{Au Q5 tout cela deviendra probablement plus clair avec proba-stat} dans cet intervalle.
+Cette valeur $2 \sigma$ est appelée l'\textbf{incertitude absolue} (l'incertitude relative $ 2\sigma_r$ est définie de manière identique.
+On a aussi $\sigma_r = \sigma / \xi$).
 
-\hspace{0pt} \\
-Imaginons qu'on ait effectué plusieurs mesures A et B et qu'on ait caractérisé leurs incertutides absolues. Que valent les incertitudes absolues des opérations entre A et B? On suppose d'abord que les mesures A et B sont \textit{indépendantes}.
+Imaginons qu'on ait effectué plusieurs mesures A et B et qu'on ait caractérisé leurs incertitudes absolues.
+Que valent les incertitudes absolues des opérations entre A et B?
+On suppose d'abord que les mesures A et B sont \emph{indépendantes}.
 \begin{itemize}
 \item \textbf{Addition/soustraction A $\pm$ B} pour une différence de tension par exemple. Dans ce cas, on a\footnote{Pour ceux qui ont déjà fait un peu de stats, on additionne non pas les écarts types $\sigma$ mais les variances $\sigma^2$. Mais ceci sort du cadre de ce cours.} :
 \begin{equation}
 \sigma_{AB} = \sqrt{\sigma_A^2 + \sigma_B^2}
 \end{equation}
 
-Si on a une mesure B très précise ($\sigma_B$ très petit), on voit que l'incertitude finale peut être très grande si A n'est pas précis : c'est la mesure la moins précise qui détermine la précisiondu résultat final.
+Si on a une mesure B très précise ($\sigma_B$ très petit), on voit que l'incertitude finale peut être très grande si A n'est pas précis:
+c'est la mesure la moins précise qui détermine la précision du résultat final.
 
 \item \textbf{Multiplication/division A*B ou A/B}, pour un calcul de puissance par exemple.
 On a alors :
 \begin{equation}
-\sigma_{AB} = \xi_A \xi_B \sqrt{(\frac{\sigma_A}{\xi_A})^2 + (\frac{\sigma_B}{\xi_B})^2}
+\sigma_{AB} = \xi_A \xi_B \sqrt{\left(\frac{\sigma_A}{\xi_A}\right)^2 + \left(\frac{\sigma_B}{\xi_B}\right)^2}
 \end{equation}
-
-pour la multiplication (pour la division, il faut changer le facteur devant la racine par $\frac{\xi_A}{\xi_B}$) : on voit apparaitre les incertidues relatives dans la racine. Ici, c'est la plus grande incertitude relative qui domine.
+pour la multiplication (pour la division, il faut changer le facteur devant la racine par $\frac{\xi_A}{\xi_B}$) :
+on voit apparaitre les incertitudes relatives dans la racine.
+Ici, c'est la plus grande incertitude relative qui domine.
 \end{itemize}
-\hspace{0pt} \\
-Si les mesures A et B sont \textit{dépendantes}, on ne peut pas appliquer directement les formules ci-dessus. Par contre, on peut calculer les "valeurs extrêmes" du résultat en prenant les valeurs qui bornent les intervalles des mesures A et B qi donneront le plus grand et le plus petit résultat. On obtient ainsi un nouvel intervalle de valeurs comprenant la valeur vraie avec une probabilité de $95\%$; en écrivant ce nouvel intervalle sous une forme $[\xi_{AB} - 2 \sigma_{AB}, \xi_{AB} + 2 \sigma_{AB}]$, on peut déterminer la valeur de la nouvelle incertitude absolue $2 \sigma_{AB}$.
+
+Si les mesures A et B sont \emph{dépendantes}, on ne peut pas appliquer directement les formules ci-dessus.
+Par contre, on peut calculer les \og{}valeurs extrêmes\fg{} du résultat en prenant les valeurs qui bornent les intervalles des mesures A et B qui donneront le plus grand et le plus petit résultat.
+On obtient ainsi un nouvel intervalle de valeurs comprenant la valeur vraie avec une probabilité de $95\%$;
+en écrivant ce nouvel intervalle sous une forme $[\xi_{AB} - 2 \sigma_{AB}, \xi_{AB} + 2 \sigma_{AB}]$, on peut déterminer la valeur de la nouvelle incertitude absolue $2 \sigma_{AB}$.
 
 \subsection{Ponts de mesures}
-Le principe des ponts de mesure est de se baser sur une comparaison plutôt que sur une mesure absolute, ce qui est beaucoup plus précis.
-On pourra mesurer des impédances (exact à moins de 100ppm\footnote{Partie par million} près), ou des faibles variations (en fonction de la température etc.) d'impédance en comparant à une valeur standard (exact à quelques ppm près).
+Le principe des ponts de mesure est de se baser sur une comparaison plutôt que sur une mesure absolue, ce qui est beaucoup plus précis.
+On pourra mesurer des impédances (exact à moins de \SI{100}{ppm}\footnote{Partie par million} près), ou des faibles variations (en fonction de la température etc.) d'impédance en comparant à une valeur standard (exact à quelques \si{ppm} près).
 
 Les ponts de mesure ont deux objectifs distincts: \begin{itemize}
 \item mesure d'une légère variation d'impédance par mesure de tension
@@ -1048,7 +1383,7 @@ On résout le circuit du pont de Wheatstone (deux diviseurs de tension) pour tro
 $$ H = \frac{V_{AB}}{V_S} = \frac{R_{AY}}{R_{AX} + R{AY}} - \frac{R_{BY}}{R_{BX} + R{BY}}.$$
 L'objectif numéro 1, de mesurer une légère variation, s'exprime ainsi: $R_{AX} = (1+\alpha)R$ et $R_{AY} = R_{BX} = R_{BY} = R.$ On a alors $ H = -\frac{\alpha}{2(2+\alpha)}$. Le deuxième objectif est rempli quand $V_{AB} = 0 = H$, et on a alors effectivement $R_{AX} = R_{AY}$.
 
-Pour comparer cette mesure à celle d'un simple diviseur résistif, revenons à la figure \ref{pontmesures}. Pour $V_s = 10V$ et $\alpha=\pm 1\%$, la gamme de mesures nécessaire pour le pont de Wheatstone est de $\pm 50mV$, alors qu'elle est de 0 à 10V pour le diviseur résistif. On observera en sortie $V_M \approx \pm 25mV$ contre $V_M \approx 5\pm 25mV$. Avec des voltmètres d'une imprécision de 1\%, cela donne une précision de $1mV$ pour le pont de Wheatstone et de $100mV$ pour le diviseur résistif.
+Pour comparer cette mesure à celle d'un simple diviseur résistif, revenons à la figure \ref{pontmesures}. Pour $V_s = \SI{10}{V}$ et $\alpha=\pm 1\%$, la gamme de mesures nécessaire pour le pont de Wheatstone est de $\pm \SI{50}{mV}$, alors qu'elle est de 0 à \SI{10}{V} pour le diviseur résistif. On observera en sortie $V_M \approx \SI{\pm 25}{mV}$ contre $V_M \approx \SI[separate-uncertainty=true, multi-part-units=single]{5.0 \pm 0.025}{V}$. Avec des voltmètres d'une imprécision de 1\%, cela donne une précision de \SI{1}{mV} pour le pont de Wheatstone et de \SI{100}{mV} pour le diviseur résistif.
 
 Pour les ponts de mesure d'impédances, il faut garder à l'esprit que deux impédances sont égales si leur norme et phase sont égales.
 
