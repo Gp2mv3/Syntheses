@@ -87,8 +87,12 @@ function subdirectory {
 function mk {
     mk=$dir/$name.mk
     if ! [ -f $mk ]; then
-        echo "This course isn't in this repo yet, please update the file src/config.yml 
-by adding \""$short": <official name as written in EPL-Drive>\" in mapping list (around lines 255-344)"
+        echo "This course isn't in this repo yet, please enter the complete course name: EXACTLY as written
+in EPL-Drive (with uppercase letters where it is needed, e.g. 'Méthodes numériques')"
+        read -p "Official name: " coursename
+        echo "Thanks, don't forget to add the file src/config.yml in your commit!"
+        addedline="\ \ \ \ $short: $coursename"
+        sed -i "$ a $addedline" "$scdir"src/config.yml
         echo Create directory...
         sed "s/quadri/$quadri/g; s/name/$short/g; s/option/$option/g; s/code/$code/g" ./"$scdir"templates/mk.mk >> $mk
     fi
