@@ -1,2 +1,2 @@
 TYPE=summary
-include $(BASE_DIR)../cl-INGI2263.mk
+include ../cl-INGI2263.mk

@@ -2,7 +2,7 @@
 
 | **Documentation**  | **PDF** | **Chat** | **Forum** | **Git** |
 |:------------------:|:-------:|:--------:|:---------:|:-------:|
-| [<img src="https://cdn.pixabay.com/photo/2013/04/01/21/32/reading-99244_960_720.png" width="48">][doc-url] | [<img src="https://image.freepik.com/free-icon/pdf-file-format-symbol_318-45340.jpg" width="48">][pdf-url] | [![Join the chat at https://gitter.im/Gp2mv3/Syntheses](https://badges.gitter.im/Gp2mv3/Syntheses.svg)][chat-url] | [<img src="http://forum-epl.be/images/avatars/gallery/Photos/logo_phpBB.gif" width="96">][forum-url] | [<img src="https://www.codeschool.com/assets/custom/review/2014/2014-try-git-0090d74a62a5bff9e42f26762e76f5350fcafa9f835acfed59beb2028936c8f2.png" width="48">][git-url]
+| [<img src="https://cdn.pixabay.com/photo/2013/04/01/21/32/reading-99244_960_720.png" width="48">][doc-url] | [<img src="https://image.freepik.com/free-icon/pdf-file-format-symbol_318-45340.jpg" width="48">][pdf-url] | [![Join the chat at https://gitter.im/Gp2mv3/Syntheses](https://badges.gitter.im/Gp2mv3/Syntheses.svg)][chat-url] | [<img src="http://forum-epl.be/images/avatars/gallery/Photos/logo_phpBB.gif" width="96">][forum-url] | [<img src="https://gitforwindows.org/img/git_logo.png" width="48">][git-url]
 
 
 Les documents présents sur ce repository sont des documents
@@ -16,7 +16,7 @@ Les `.pdf` des synthèses et correctifs dans leur dernière version sont disponi
 Ce README donne quelques premières indications
 quant à l'utilisation de ce repository.
 Pour de plus amples informations,
-voir le
+voir
 le document [How_to_Contribute][doc-url]
 ou le [wiki](https://github.com/Gp2mv3/Syntheses/wiki).
 
@@ -35,9 +35,23 @@ Pour une explication plus détaillée, lisez la partie *Utilisation linéaire de
 écrit par Benoît Legat.
 Voir aussi le [wiki](https://github.com/Gp2mv3/Syntheses/wiki) à ce sujet.
 
+Nous vous recommandons d'utiliser le système des *branches* de Git,
+qui permettent d'avoir en parallèle des changements différents sur des documents différents
+(par exemple, un changement sur la synthèse de physique 1 et un ajout d'examen en algèbre),
+avec la possibilité de facilement passer d'un groupe de changements à l'autre,
+et d'ainsi ouvrir plusieurs *pull requests*, une par groupe de changements/thématique.
+Cela vous permettra aussi de garder une branche *master* propre
+et qui peut facilement être mise à jour avec ce repository (*fast-forward*).
+
 Vous pouvez visualiser le statut des différentes synthèses
 [ici](https://github.com/Gp2mv3/Syntheses/wiki/Status).
 N'hésitez pas à en rajouter dans la liste :)
+
+## Compiler automatiquement les documents en PDF
+Vous pouvez compiler automatiquement tous les documents dans leur destination (le dossier où se trouve le fichier `.tex`) en tapant en ligne de commande à la racine du repository (dossier `Syntheses`):
+* `make pdf` pour supprimer les fichiers de compilation
+* `make` pour laisser les fichiers de compilation
+* `make release` pour compiler **et** copier les documents automatiquement dans un dossier de destination à part, que vous aurez préalablement choisi en inscrivant le chemin absolu du dossier dans le fichier `compilation.yml` (copier et renommer `compilation.example.yml` en `compilation.yml`)
 
 ## License
 Sauf mention expresse, vous licensiez sous license [CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/)
@@ -45,12 +59,7 @@ tout le contenu que vous soumettez pour inclusion dans ce dépot.
 
 Si cette license vous pose problème, venez en discuter en ouvrant une [issue](https://github.com/Gp2mv3/Syntheses/issues/new).
 
-## Copier les synthèses à leur destination
-Vous pouvez copier les synthèses automatiquement vers leur destination à l'aide de `make release` mais pour cela il vous faut d'abord spécifier les destination dans un fichier de configuration `src/config.yml` et installer
-[`smartcp`](https://github.com/blegat/smartcp).
-Vous pouvez trouver une explication sur l'écriture du fichier dans le lien de `smartcp`.
-
-[pdf-url]: https://uclouvain-my.sharepoint.com/:f:/g/personal/pverbist_oasis_uclouvain_be/ElZP_ep3eAtMsNkXcBLj0vYB7CZpoJ-UzQu7pzHV6xGMYw
+[pdf-url]: https://uclouvain-my.sharepoint.com/:f:/g/personal/mbraquet_oasis_uclouvain_be/EsZVP62vNgpHgo02HE7RMx8BkQdOgtVrPLe70BSTUoOfqQ
 [doc-url]: https://drive.google.com/file/d/0B1axlYz3_XXKRzdGVWdGdUZ6UGs/view?usp=sharing
 [chat-url]: https://gitter.im/Gp2mv3/Syntheses?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [forum-url]: http://forum-epl.be

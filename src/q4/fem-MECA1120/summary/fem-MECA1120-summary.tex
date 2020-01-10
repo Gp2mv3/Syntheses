@@ -15,6 +15,8 @@
 \newcommand{\cmark}{\ding{51}}%
 \newcommand{\xmark}{\ding{55}}%
 
+\usepackage{../../../eplmath}
+
 % widehat pour parent et hat quand = 0 sur Gamma_D
 \newcommand{\hO}{\widehat{\Omega}}
 \newcommand{\nh}{\widehat{n}}
@@ -30,16 +32,27 @@
 \newcommand{\hU}{\hat{\mathbf{\mathcal{U}}}}
 \newcommand{\hUh}{\hat{\mathbf{\mathcal{U}}}^h}
 
-\newcommand{\inti}[2]{\langle#1,#2\rangle}
-\newcommand{\intb}[2]{\llangle#1,#2\rrangle}
-\newcommand{\intd}[2]{\llangle#1,#2\rrangle_D}
-\newcommand{\intn}[2]{\llangle#1,#2\rrangle_N}
+\DeclarePairedDelimiterX{\inti}[2]{{\langle}}{{\rangle}}{#1, #2}
+\DeclarePairedDelimiterX{\intb}[2]{{\llangle}}{{\rrangle}}{#1, #2}
+\DeclarePairedDelimiterX{\intd}[2]{{\llangle}}{{\rrangle_D}}{#1, #2}
+\DeclarePairedDelimiterX{\intn}[2]{{\llangle}}{{\rrangle_N}}{#1, #2}
 
-\hypertitle{Éléments finis}{4}{MECA}{1120}
-{Benoît Legat\and Léa Paulus}
+\newcommand{\Pe}{\mathrm{Pe}}
+\newcommand{\Peh}{\Pe^h}
+
+\hypertitle[']{Introduction aux méthodes d'éléments finis}{4}{MECA}{1120}
+{Benoît Legat\and Léa Paulus\and Gilles Peiffer}
 {Vincent Legat}
 
-\section{Maillage non-structuré}
+% TODO : - remove integration (?)
+%        - triangles de Turner
+%        - conditions ess. inhomogènes
+%        - éléments discrets (grains)
+%        - résolution de systèmes linéaires
+%        - théorie de l'approximation
+%        - advection-diffusion
+
+\section{Maillage non structuré}
 \subsection{Élément parent}
 On divise le domaine compliqué $\Omega$ avec coordonnées $(x,y)$ en une multitude d'éléments plus simples,
 e.g. triangles, quadrilatères.
@@ -47,8 +60,8 @@ On définit un élément parent $\hO$ dans lequel les coordonnées sont $(\xi,\e
 L'indice pour les éléments est typiquement $e$.
 Le maillage est composé de $n$ \emph{sommets} et chaque élément de $\nh$ sommets.
 
-$\Omega$ est l'union des éléments $\Omega^e$.
-$\Omega^e$ peut s'exprimer comme un isomorphisme de l'élément parent $\hO$
+$\Omega$ est l'union des éléments $\Omega_e$.
+$\Omega_e$ peut s'exprimer comme un isomorphisme de l'élément parent $\hO$.
 \begin{align*}
   x(\xi,\eta) & = \sum_{i=1}^{\nh} X_i \phi_i(\xi,\eta)\\
   y(\xi,\eta) & = \sum_{i=1}^{\nh} Y_i \phi_i(\xi,\eta).
@@ -56,119 +69,120 @@ $\Omega^e$ peut s'exprimer comme un isomorphisme de l'élément parent $\hO$
 
 Même si intuitivement, ça parait logique que les $\phi_i$ soient linéaires,
 ce n'est pas possible pour des éléments quadrilatères.
-Pour ces derniers on a des $\phi_i$ quadratique mais ils forment toujours une bijection si le quadrilatères $\Omega^e$ est convexe
-(ce n'est pas un ``noeud papillon'').
+Pour ces derniers on a des $\phi_i$ quadratiques mais ils forment toujours une bijection si le quadrilatère $\Omega_e$ est convexe
+(ce n'est pas un ``n\oe{}ud papillon'').
 
-\subsection{Interpolation: Valeurs nodales et fonction de formes locales}
-On définit des noeuds dans le maillage et on interpolera une fonction $u$ à l'aide des valeurs qu'elle prend à ces noeuds.
-Typiquement, on définit la position de noeuds dans l'élément parent et les noeuds de chaque élément du maillage sont obtenu par isomorphisme de ceux de l'élément parent.
-Supposons ici pour simplifier qu'on définit un noeud à chaque sommet.
+\subsection{Interpolation: valeurs nodales et fonctions de forme locales}
+On définit des n\oe{}uds dans le maillage et on interpolera une fonction $u$ à l'aide des valeurs qu'elle prend à ces n\oe{}uds.
+Typiquement, on définit la position des n\oe{}uds dans l'élément parent et les n\oe{}uds de chaque élément du maillage sont obtenus par isomorphisme de ceux de l'élément parent.
+Supposons ici pour simplifier qu'on définisse un n\oe{}ud à chaque sommet.
 
-On approche une fonction $u$ par les \emph{valeurs nodales globales} $U_j = u(\X_j)$ que prend la fonction $u$ à chaque noeud
-à l'aide de \emph{fonction de formes globales} $\tau_j$
+On approche une fonction $u$ par les \emph{valeurs nodales globales} $U_j = u(\X_j)$ que prend la fonction $u$ à chaque n\oe{}ud
+à l'aide de \emph{fonctions de forme globales} $\tau_j$
 \begin{equation}
   \label{eq:approx}
   u(\x) \approx u^h(\x) = \sum_{j=1}^n U_j\tau_j(\x).
 \end{equation}
-On aimerait au moins interpoler exactement aux valeurs nodales, c'est à dire $u(\X_j) = u^h(\X_j)$.
+On aimerait au moins interpoler exactement aux valeurs nodales, c'est-à-dire $u(\X_j) = u^h(\X_j)$.
 On impose donc que $\tau_j(\X_j) = 1$ et $\tau_j(\X_{j'}) = 0$ pour $j' \neq j$.
 
-Tout comme avec les splines cubiques ou les Bsplines (qui sont les fonctions de bases des splines cubiques),
-les fonctions de formes $\tau_j$ n'auront pas d'expression valable pour tout $\x \in \Omega$.
+Tout comme avec les splines cubiques ou les B-splines (qui sont les fonctions de base des splines cubiques),
+les fonctions de forme $\tau_j$ n'auront pas d'expression valable pour tout $\x \in \Omega$.
 Elle seront définies différemment dans chaque élément.
 \begin{itemize}
-  \item Dans un élément $e$ dont aucun sommet n'est $j$,
+  \item Dans un élément $\Omega_e$ dont aucun sommet n'est $j$,
     $\tau_j$ s'annule à tous les sommets.
-    On y impose donc que $\tau_j$ est nul.
-  \item Dans un élément $e$ dont un sommet est $j$,
+    On y impose donc que $\tau_j$ soit nul.
+  \item Dans un élément $\Omega_e$ dont un sommet est $j$,
     $\tau_j$ vaut 1 pour ce sommet et zéro pour les 2 autres.
-    $\tau_j$ ne sera donc pas nul dans cet élément vaudra $\phi_i^e$ (voir plus loin)
-    où $j$ est le sommet $i \in \{1,2,3\}$ de l'élément $e$.
+    $\tau_j$ ne sera donc pas nul dans cet élément mais vaudra $\phi_i^e$ (voir plus loin)
+    où $j$ est le sommet $i \in \{1,2,3\}$ de l'élément $\Omega_e$.
 \end{itemize}
-On donnera typiquement au $\phi_i^e$ un expression polynômiale.
-Le \emph{support} d'une fonction est l'ensemble des valeurs où elle est non-nulle.
-Le support d'une fonction $\tau_j$ est l'union des éléments $\Omega^2$ où $j$ est un des sommets.
+On donnera typiquement aux $\phi_i^e$ une expression polynomiale.
+Le \emph{support} d'une fonction est l'ensemble des valeurs où elle est non nulle.
+Le support d'une fonction $\tau_j$ est l'union des éléments $\Omega_e$ où $j$ est un des sommets.
 Les $\tau_j$ sont donc des fonctions polynomiales par morceau à support compact.
 
-% TODO phi_i degré p
 
-$u^h(\x)$ pour $\x \in \Omega^e$ est une interpolation des valeurs $U_i$ des sommets de l'éléments.
+$u^h(\x)$ pour $\x \in \Omega_e$ est une interpolation des valeurs $U_i$ des sommets de l'élément.
 Tout comme avec l'interpolation avec les fonctions de Lagrange,
-cette interpolation se fait à l'aide des \emph{fonctions de formes locales} $\phi_i^e$
+cette interpolation se fait à l'aide des \emph{fonctions de forme locales} $\phi_i^e$.
 \begin{align*}
   u^h(\x) & = \sum_{i=1}^{\nh} U_i \phi_i^e(\x)\\
           & = \sum_{i=1}^{\nh} U_i \phi_i(\bxi(\x))
 \end{align*}
-pour $i \in \Omega^e$.
+pour $i \in \Omega_e$.
 Notons qu'on a $\x(\bxi)$ mais pas $\bxi(\x)$.
-Heureusement, nous n'aurons jamais besoin de calculer la relation inverse $\bxi(\x)$ \cite[p.~10,13]{legat2015fem}.
+Heureusement, nous n'aurons jamais besoin de calculer la relation inverse $\bxi(\x)$ \cite[p.~10,13]{legat2018fem}.
 
 Si en faisant varier les $U_i$, on sait avoir tous les polynômes de degré $p$ ou moins,
 c'est à dire que les $\phi_i$ forment une famille génératrice de l'ensemble des polynômes de degré $p$ ou moins,
 on dit que que les fonctions de formes sont complètes à l'ordre $p$.
-Pour cela, il faut déjà que tous les monômes (e.g. $1, \xi, \eta, \xi^2, \xi\eta, \eta^2, \ldots$) de degré $p$ ou moins
+Pour cela, il faut déjà que tous les monômes (e.g. $1, \xi, \eta, \xi^2, \xi\eta, \eta^2, \dots$) de degré $p$ ou moins
 se retrouvent dans au moins un $\phi_i$ (voir le triangle de Pascal pour les monômes en dimension 2).
 
 Il est aussi adéquat de regarder si on sait former tous les polynômes d'ordre $p$ en $\x$.
-C'est à dire, l'ensemble des polynômes en $\bxi$ qu'on sait obtenir en remplaçant la valeur ce $\x$ par $\x(\bxi)$.
-On remarque que pour un élément quadrilatère, l'élément lagrangien à 9 noeuds et l'élément de Serendip à 8 noeuds sont tous les deux complets à l'ordre 2
-mais seulement le premier est complets à l'ordre 2 en $\x$ \cite[p.~15]{legat2015fem}.
+C'est à dire, l'ensemble des polynômes en $\bxi$ qu'on sait obtenir en remplaçant la valeur de ce $\x$ par $\x(\bxi)$.
+On remarque que pour un élément quadrilatère, l'élément lagrangien à 9 n\oe{}uds et l'élément de Serendip à 8 n\oe{}uds sont tous les deux complets à l'ordre 2
+mais seulement le premier est complet à l'ordre 2 en $\x$ \cite[p.~15]{legat2018fem}.
 
 \begin{myrem}
-  On distingue les sommets qui sont des éléments du maillage aux noeuds qui sont des points
-  où sont définit une valeur nodale de l'approximation~\cite[p.~5,8]{legat2015fem}.
+  On distingue les sommets qui sont des éléments du maillage aux n\oe{}uds qui sont des points
+  où est définie une valeur nodale de l'approximation~\cite[p.~5,8]{legat2018fem}.
 
   De la même manière,
   il est important de ne pas confondre les fonctions utilisées
-  pour la correspondance de $x,y$ avec $\xi,\eta$ et les fonctions de formes locales utilisées pour l'interpolation de $u$.
+  pour la correspondance de $x,y$ avec $\xi,\eta$ et les fonctions de forme locales utilisées pour l'interpolation de $u$.
 
   Les premières dépendent uniquement du maillage et des sommets,
   elles servent juste à faire un isomorphisme entre les éléments et l'élément parent.
-  Les deuxièmes dépendent des noeuds, elles servent à approximer $u$ en l'interpolant aux valeurs nodales,
-  il y a un intérêt à augmenter le nombre de noeuds et donc le nombre de fonctions de formes locales et leur degré
-  pour affiner l'interpolation ainsi que vérifier que de vérifier que les fonction de formes sont complètes.
+  Les deuxièmes dépendent des n\oe{}uds, elles servent à approximer $u$ en l'interpolant aux valeurs nodales,
+  il y a un intérêt à augmenter le nombre de n\oe{}uds et donc le nombre de fonctions de forme locales et leur degré
+  pour affiner l'interpolation ainsi que de vérifier que les fonction de forme soient complètes.
 
-  Elles sont souvent identiques lorsqu'on décide de mettre un noeud à chaque sommet ce n'est pas imposés.
+  Elles sont souvent identiques (lorsqu'on décide de mettre un n\oe{}ud à chaque sommet, mais ce n'est pas imposé).
 
   Elles doivent toutes les deux satisfaire la condition
-  $\phi_i(\X_i) = 1$ et $\phi_i(\X_{i'}) = 0$ pour $i \neq i'$. mais pour l'une c'est à chaque sommet et pour l'autre à chaque noeud.
+  $\phi_i(\X_i) = 1$ et $\phi_i(\X_{i'}) = 0$ pour $i \neq i'$. mais pour l'une c'est à chaque sommet et pour l'autre à chaque n\oe{}ud.
 
   En passant, on remarque que
-  la condition $\sum_{i=1}^3 \phi_i(\x_i) = 1$ $\forall \x_i \in \Omega^e$ s'interprète différemment dans les deux cas.
-  Pour les fonction utilisées pour l'isomorphisme, il faut l'imposer car elle garanti que
+  la condition $\sum_{i=1}^3 \phi_i(\x_i) = 1$ $\forall \x_i \in \Omega_e$ s'interprète différemment dans les deux cas.
+  Pour les fonction utilisées pour l'isomorphisme, il faut l'imposer car elle garantit que
   $\x$ est une combinaison convexe des $\X_i$.
-  C'est important car $\Omega^e$ est l'enveloppe convexe des sommets $X_i$.
+  C'est important car $\Omega_e$ est l'enveloppe convexe des sommets $X_i$.
   Si on avait $\sum_{i=1}^3 \phi_i(\x_i) \neq 1$,
   certains $\x$ pourraient sortir du triangle.
-  Pour les fonction de formes locales par contre, la condition $\sum_{i=1}^3 \phi_i(\x_i) = 1$
+  Pour les fonction de forme locales par contre, la condition $\sum_{i=1}^3 \phi_i(\x_i) = 1$
   assure juste qu'on interpole parfaitement les fonctions $u$ constantes.
 \end{myrem}
 
 \subsection{Intégration}
-On peut estimer l'intégrale d'une fonction dans un élément $e$ à l'aide de la somme des valeurs
-que prend la fonctions à différents points pondérés par des poids.
+
+% (???) TODO : remove this
+On peut estimer l'intégrale d'une fonction dans un élément $\Omega_e$ à l'aide de la somme des valeurs
+que prend la fonction à différents points pondérés par des poids.
 Supposons qu'on utilise $p$ points.
 On doit choisir où se situent ces $p$ points ainsi que le poids.
-En $N$ dimension, ça fait $(N+1)p$ degrés de libertés.
+En $N$ dimensions, ça fait $(N+1)p$ degrés de libertés.
 
 Dans la méthode de Gauss-Legendre, on impose un degré de précision $d$.
 C'est à dire qu'on veut intégrer exactement tous les polynômes de degré $d$ ou moins.
 Comme l'intégrale et notre approximation sont linéaires en la fonction à intégrer,
 on peut tout aussi bien imposer qu'on intègre parfaitement tous les monômes,
-i.e. $1, \xi, \eta, \zeta, \xi^2, \xi\eta, \ldots$.
-En effet, les monômes forment la base canonique de l'espaces des polynômes.
+i.e. $1, \xi, \eta, \zeta, \xi^2, \xi\eta, \dots$
+En effet, les monômes forment la base canonique de l'espace des polynômes.
 
 On dit qu'un monôme est de degré $d$ si la somme des exposants des différentes variables est $d$.
 Par exemple, $\xi^3\eta^2\zeta^3$ est de degré $3+2+3 = 8$.
 Un polynôme de degré $d$ est une combinaison linéaire de monômes de degré $d$ ou moins avec au moins un monôme de degré $d$.
-La dimension de l'ensemble des polynômes de degré $d$ est égal au nombre de monômes différent.
+La dimension de l'ensemble des polynômes de degré $d$ est égal au nombre de monômes différents.
 Il est d'ailleurs assez cocasse de remarquer que le nombre de monômes de degré $d$ ou moins à $N$ variables est \emph{égal}
 au nombre de monômes de degré $d$ à $N+1$ variables (on obtient une bijection en ajoutant une variable avec comme exposant ce qu'il manque pour faire $d$).
 En se souvenant du cours FSAB1101, on voit directement que le nombre de monômes de degré $d$ à $N+1$ variables est $B^*(N+1,d) = {N+d \choose d}$.
 Pour avoir un degré de précision $d$ en dimension $N$, il faut donc intégrer parfaitement ${N+d \choose d} = {N+d \choose N}$ monômes.
 
 Regardons ce que ça donne en dimension 2.
-On a $3p$ degré de liberté, et ${2+d \choose 2} = (d+1)(d+2)/2 = 1+2+3+\cdots+d+(d+1)$ contraintes.
+On a $3p$ degrés de liberté, et ${2+d \choose 2} = (d+1)(d+2)/2 = 1+2+3+\cdots+d+(d+1)$ contraintes.
 Pour avoir un degré de précision $d$ avec Gauss-Legendre il faut donc choisir un nombre de points $p$ tel que (voir \tabref{gl2})
 \[ \frac{(d+1)(d+2)}{2} \leq 3p. \]
 \begin{table}
@@ -191,15 +205,24 @@ Pour avoir un degré de précision $d$ avec Gauss-Legendre il faut donc choisir 
 \end{table}
 
 On définit une règle d'intégration en donnant les poids et les coordonnées $\xi, \eta$ des $p$ points dans l'élément parent.
-Pour intégrer dans un élément $e$, on se ramène à l'élément parent à l'aide de
-\[ \int_{\Omega^e} f(x,y) \dif x \dif y = \int_{\hO} f(x(\xi,\eta), y(\xi, \eta)) |J_e| \dif \xi \dif \eta. \]
-où $J_e$ est donné par
+Pour intégrer dans un élément $\Omega_e$, on se ramène à l'élément parent à l'aide de
+\[ \int_{\Omega_e} f(x,y) \dif x \dif y = \int_{\hO} f(x(\xi,\eta), y(\xi, \eta)) \abs{J_e(\bxi)} \dif \xi \dif \eta. \]
+où $J_e(\bxi)$ est donné par
 \[
-  J_e = \det ...
-\] % TODO
+  J_e(\bxi) = \det \begin{bmatrix}
+  \fpart{x}{\xi}(\xi,\eta) & \fpart{x}{\eta}(\xi,\eta)\\
+  \fpart{y}{\xi}(\xi,\eta) & \fpart{y}{\eta}(\xi,\eta)
+\end{bmatrix}
+\]
 
 \begin{myrem}
-  degré de précision est sur $fJ_e$, pas sur $f$ ! % TODO
+     Il est important de noter qu'en toute généralité, ce jacobien n'est pas
+     constant.
+\end{myrem}
+
+\begin{myrem}
+     Le degré de précision d'une méthode porte sur $fJ_e$, pas uniquement sur
+     $f$!
 \end{myrem}
 
 
@@ -210,114 +233,308 @@ les fonctions de $\U_s$ sont deux fois différentiables,
 les fonctions $v \in  \U$ sont telles que $v(\x) = t(\x)$ $\forall x \in \Gamma_D$ et
 les fonctions $v \in \hU$ sont telles que $v(\x) = 0$ $\forall x \in \Gamma_D$.
 
-On pourrait choisir que $\U = \{v \in \U_s | v(\x) = t(\x), \forall \x \in \Gamma_D\}$ et $\hU = \{v \in \U_s | v(\x) = 0, \forall \x \in \Gamma_D\}$ mais on ajoutera souvent d'autres restrictions~\cite[p.~22]{legat2015fem}.
+On pourrait choisir que $\U = \{v \in \U_s \suchthat v(\x) = t(\x), \forall \x \in \Gamma_D\}$ et $\hU = \{v \in \U_s \suchthat v(\x) = 0, \forall \x \in \Gamma_D\}$ mais on ajoutera souvent d'autres restrictions~\cite[p.~22]{legat2018fem}.
 
-\begin{myprob}[Strong formulation of Elliptic problem]
+\begin{myprob}[Formulation forte d'un problème elliptique]
   \label{prob:strong}
   Trouver $u(\x) \in \U_s$ tel que
-  \begin{align*}
-    \grad \cdot (a \grad u) + f & = 0, & \forall \x \in \Omega,\\
-    \n \cdot (a \grad u) & = g,        & \forall \x \in \Gamma_N,\\
-    u & = t,                           & \forall \x \in \Gamma_D
-  \end{align*}
-  où $a$ est strictement positif~\cite[pp.~24--25]{legat2015fem}.
+  \begin{equation*}
+       \left\{
+  \begin{array}{rcl@{\qquad}l}
+    \grad \cdot (a \grad u) + f & = & 0, & \forall \x \in \Omega,\\
+    \n \cdot (a \grad u) & = & g,        & \forall \x \in \Gamma_N,\\
+    u & = & t,                           & \forall \x \in \Gamma_D,
+  \end{array}
+  \right.
+  \end{equation*}
+  où $a$ est strictement positif~\cite[pp.~24--25]{legat2018fem}.
 \end{myprob}
 
 On introduit les 4 produits scalaires suivants%
-\footnote{Le $\cdot$ de la première définition est un produit scalaire pour si jamais $f$ et $g$ sont des vecteur (car on a pris un gradient par exemple comme avec $a$ définit juste après)}
+\footnote{Le $\cdot$ de la première définition est un produit scalaire pour si jamais $f$ et $g$ sont des vecteurs (car on a pris un gradient par exemple comme avec $a$ défini juste après).}
 \begin{align*}
   \inti{f}{g} & = \int_\Omega f \cdot g \dif \Omega\\
   \intb{f}{g} & = \int_{\partial\Omega} f g \dif s\\
   \intn{f}{g} & = \int_{\Gamma_N} f g \dif s\\
   \intd{f}{g} & = \int_{\Gamma_D} f g \dif s
 \end{align*}
-% TODO essentielle, naturelle
-% TODO matrice de raideur, forces nodales
 
 et les formes suivantes (ce sont des fonctions de fonction!)
 \begin{align*}
   a(v,w) & \eqdef \inti{\grad v}{a \grad w}\\
   b(v) & \eqdef \inti{f}{v} + \intn{g}{v}\\
-  J(v) & \eqdef \frac{1}{2} a(v,v) - b(v)
+  J(v) & \eqdef \frac{1}{2} a(v,v) - b(v),
 \end{align*}
 pour $v,w \in \U$.
 
-\begin{myprob}[Weak formulation of Elliptic problem]
+\begin{myprob}[Formulation faible d'un problème elliptique]
   \label{prob:weak}
   Trouver $u(\x) \in \U$ tel que
   \begin{align*}
-    a(\hu, u) & = b(\hu), & \forall \hu \in \hU,\\
+    a(\hu, u) & = b(\hu), & \forall \hu \in \hU.\\
   \end{align*}
 \end{myprob}
 
-\begin{myprob}[Minimization problem of Elliptic problem]
+On parle de conditions essentielles et naturelles pour les conditions de
+Dirichlet et de Neumann. Les conditions de Dirichlet sont dites
+``essentielles'' car elles sont imposées a priori dans l'espace fonctionnel,
+alors que les conditions de Neumann sont ``naturelles'' car elles peuvent être
+incluses naturellement dans l'écriture du principe variationnel.
+
+\begin{myprob}[Problème de minimisation d'un problème elliptique]
   \label{prob:min}
   Trouver $u(\x) \in \U$ tel que
   \begin{align*}
     J(u) & = \min_{v \in \U} J(v)
   \end{align*}
-  c'est à dire trouver une fonction $u \in \U$ qui minimise $J$.
+  c'est-à-dire trouver une fonction $u \in \U$ qui minimise $J$.
 \end{myprob}
 
-Problème~\ref{prob:weak} est une formulation faible de Problème~\ref{prob:strong}.
-C'est à dire que toute solution de Problème~\ref{prob:strong} est également solution de Problème~\ref{prob:weak}.
-Problème~\ref{prob:weak} et Problème~\ref{prob:min} sont des formulation équivalentes si $a$ est symétrique, ce qui est le cas pour un problème élliptique, Problème~\ref{prob:min} ne pourra pas être utilisé lorsqu'il y aura un terme $\grad u$ dans l'EDP.
+Le Problème~\ref{prob:weak} est une formulation faible du Problème~\ref{prob:strong}.
+C'est-à-dire que toute solution du Problème~\ref{prob:strong} est également solution du Problème~\ref{prob:weak}.
+Le Problème~\ref{prob:weak} et le Problème~\ref{prob:min} sont des formulations équivalentes si $a$ est symétrique, ce qui est le cas pour un problème elliptique; cependant, le Problème~\ref{prob:min} ne pourra pas être utilisé lorsqu'il y a un terme $\grad u$ dans l'EDP.
 
 \subsection{Approximation}
 En plus de travailler avec une formulation faible du problème de départ,
 on va travailler avec un modèle approximé à l'aide de l'approximation du $u$ donnée en \eqref{eq:approx}.
-Le Problème~\ref{prob:weak} s'appelle alors méthode de Galerkin et le Problème~\ref{prob:min} la méthode de Ritz.
+Le Problème~\ref{prob:weak} s'appelle alors méthode de Galerkin et le Problème~\ref{prob:min} la méthode de Ritz. Cependant, comme ces formulations sont équivalentes, on peut parler aussi de \emph{formulation discrète}.
 
-Dans nos deux formulations, on remplace $\U$ par $\Uh$ et $\hU$ par $\hUh$
+Dans nos deux formulations, on remplace $\U$ par $\Uh$ et $\hU$ par $\hUh$.
 
-Soit $I$ l'ensemble des noeuds qui ne sont pas à la frontière où on impose une condition de Dirichlet, i.e. $\X_i \notin \Gamma_D$.
+On a donc
+\begin{myprob}[Formulation discrète]
+     \label{prob:disc}
+     Trouver $u^h(\x) \in \Uh$ tel que
+
+     \begin{equation*}
+          \inti{\grad \huh}{a \grad \uh} = \inti{\huh}{f} + \intn{\huh}{g}, \qquad \forall \huh \in \Uh,
+     \end{equation*}
+
+     ou de manière équivalente
+
+     \begin{equation*}
+          J\left(\uh \right) = \min_{v^h \in \Uh} \left(\frac{1}{2} a\left(v^h,v^h\right) - b\left(v^h\right)\right).
+     \end{equation*}
+\end{myprob}
+
+Soit $I$ l'ensemble des n\oe{}uds qui ne sont pas à la frontière où on impose une condition de Dirichlet, i.e. $\X_i \notin \Gamma_D$.
 On remarque avec \eqref{eq:approx} que $\Uh$ est engendré par la base $\tau_1, \ldots, \tau_n$
 mais pour $v \in \hUh$, $V_i = 0$ pour $i \in \Gamma_D$.
 Dans la base de $\hUh$, il n'y a donc que les $\tau_i$ pour $i \in I$.
 
 La condition du Problème~\ref{prob:weak} devient
-\begin{align*}
-  a(\huh, \uh) & = b(\huh), & \forall \huh \in \hUh\\
-  \inti{\grad \huh}{a \grad \uh} & = \inti{f}{\huh} + \intn{g}{\huh}, & \forall \huh \in \hUh\\
-  \inti{\grad \tau_i}{a \sum_{j=1}^n U_j \tau_j} & = \inti{f}{\tau_i} + \intn{g}{\tau_i}, & \forall i \in I\\
-  \sum_{j = 1}^n \inti{\grad \tau_i}{a \grad \tau_j} U_j & = \inti{f}{\tau_i} + \intn{g}{\tau_i}, & \forall i \in I\\
-  \sum_{j = 1}^n a(\grad \tau_i, \grad \tau_j) U_j & = b(\tau_i), & \forall i \in I.
-\end{align*}
-Pour passer de la 2ième à la 3ième ligne, on a utilisé la linéarité de l'équation en $\huh$ pour dire que la condition est satisfaite
+\begin{equation*}
+\renewcommand{\arraystretch}{1.4}
+\begin{array}{rcl@{\qquad}l}
+  a(\huh, \uh) & = & b(\huh), & \forall \huh \in \hUh\\
+  \inti{\grad \huh}{a \grad \uh} & = & \inti{f}{\huh} + \intn{g}{\huh}, & \forall \huh \in \hUh\\
+  \inti{\grad \tau_i}{a \sum_{j=1}^n U_j \tau_j} & = & \inti{f}{\tau_i} + \intn{g}{\tau_i}, & \forall i \in I\\
+  \sum_{j = 1}^n \inti{\grad \tau_i}{a \grad \tau_j} U_j & = & \inti{f}{\tau_i} + \intn{g}{\tau_i}, & \forall i \in I\\
+  \sum_{j = 1}^n a(\grad \tau_i, \grad \tau_j) U_j & = & b(\tau_i), & \forall i \in I.
+\end{array}
+\end{equation*}
+Pour passer de la 2\ieme{} à la 3\ieme{} ligne, on a utilisé la linéarité de l'équation en $\huh$ pour dire que la condition est satisfaite
 pour tout $\huh$ si elle est satisfaite pour tout élément de la base de $\hUh$.
-Si on ajoute les conditions $U_j = t(\X_j)$ pour les noeuds $j \notin I$, on obtient un système linéaire de $n$ équations et $n$ inconnues $U_j$.
+Si on ajoute les conditions $U_j = t(\X_j)$ pour les n\oe{}uds $j \notin I$, on obtient un système linéaire de $n$ équations et $n$ inconnues $U_j$.
 
 Soit $U$ le vecteur des inconnues et $A$ et $b$ tels que le système linéaire est $AU = b$.
 
 On voit que $A_{ij} = a(\grad\tau_i, \grad \tau_j)$ si $i \in I$ et $A_{ij} = \delta_{ij}$ sinon.
-Notons que si $i$ et $j$ ne sont pas les noeuds d'un même élément, le support de $\tau_i$ et $\tau_j$ n'a aucune intersection et $a(\tau_i, \tau_j) = 0$.
+Notons que si $i$ et $j$ ne sont pas les n\oe{}uds d'un même élément, le support de $\tau_i$ et $\tau_j$ n'a aucune intersection et $a(\tau_i, \tau_j) = 0$.
 Sinon on utilise
-\[ a(\grad\tau_i, \grad\tau_j) = \sum_e a(\grad \phi_{i'}^e, \grad \phi_{j'}^e)  \]
-où on somme sur tous les éléments $e$ qui ont le noeuds $i$ et le noeuds $j$.
+\[ a(\grad\tau_i, \grad\tau_j) = \sum_{\Omega_e} a(\grad \phi_{i'}^e, \grad \phi_{j'}^e)  \]
+où on somme sur tous les éléments $\Omega_e$ qui ont le n\oe{}ud $i$ et le n\oe{}ud $j$.
 On leur donne respectivement les indices locaux $i'$ et $j'$.
 
 De la même manière, $b_i = b(\tau_i)$ si $i \in I$ et $b_i = t(\X_i)$ sinon.
 
-En faisant le résonnement pour le Problème~\ref{prob:min}, on obtient le même système à résoudre.
-On peut aussi obtenir ce résultat avec une méthode de résidus pondérés~\cite[pp.~27--29]{legat2015fem}.
+En faisant le raisonnement pour le Problème~\ref{prob:min}, on obtient le même système à résoudre.
+
+La matrice de raideur $A$ et le vecteur des forces nodales $B$ sont donc définis
+par
+
+\begin{align*}
+     A_{ij} &= \inti{\grad \tau_i}{\grad \tau_j},\\
+     B_i &= \inti{f}{\tau_i} + \intn{\tau_i}{g}.
+\end{align*}
+
+On peut aussi obtenir ce résultat avec une méthode de résidus pondérés~\cite[pp.~27--29]{legat2018fem}.
+
+\subsubsection{Construction du système algébrique}
+
+\paragraph{En 1D}
+
+En connaissant les fonctions de forme globales $\tau_i$ et la fonction $f$,
+nous devons calculer les composantes $A_{ij}$ de la matrice de raideur et $B_i$
+du vecteur de forces nodales.
+
+On sait qu'une fonction de forme $\tau_i$ est nulle en hors des éléments
+auxquels appartient le n\oe{}ud $i$. Au lieu de calculer les $A_{ij}$ et $B_i$
+sur le domaine $\Omega$, il suffit de sommer les matrices de raideur locales
+$A_{ij}^e$ pour trouver $A_{ij}$ et les vecteurs de forces nodales locaux
+$B_i^e$ pour trouver $B_i$.
+
+\begin{myrem}
+     On remarque le grand nombre de coefficients nuls de la matrice $A$. Dans
+     la plupart des problèmes, cette matrice est donc creuse, ce qui est
+     fondamental pour la résolution du système algébrique.
+\end{myrem}
+
+Ces $A_{ij}^e$ et $B_i^e$ sont donnés par
+
+\begin{equation*}
+\renewcommand{\arraystretch}{1.5}
+\begin{array}{rcccl}
+     A_{ij}^e & = & \int_{\Omega_e} \phi^e_{i,x}(x) \phi^e_{j,x}(x) \dif x & =
+     & \frac{2}{X_{e+1} - X_e} \int_{-1}^1 \phi_{i,\xi}(\xi) \phi_{j,\xi}(\xi)
+     \dif \xi,\\
+     B_i^e & = & \int_{\Omega_e} f(x) \phi^e_{i}(x) \dif x & = & \frac{X_{e+1}
+     - X_e}{2} \int_{-1}^1 \phi_{i}(\xi) f(x(\xi)) \dif \xi.\\
+\end{array}
+\end{equation*}
+
+\paragraph{En 2D}
+
+Lorsqu'on essaie de généraliser cette méthode aux éléments bidimensionnels, on
+remarque a priori deux aspects gênants dans le calcul des coefficients de la
+matrice $A_{ij}^e = \int_{\Omega_e} \grad \phi_i^e \cdot \grad \phi_j^e \dif
+\Omega$:
+
+\begin{itemize}
+     \item il faut effectuer l'intégration sur un élément aux frontières
+     quelconques;
+     \item on ne dispose pas d'une expression du gradient des fonctions de
+     forme par rapport aux coordonnées.
+\end{itemize}
+
+Pour contourner la première difficulté, il suffit de passer à l'élément parent
+$\hO$. Il faut alors tenir compte du jacobien de la transformation cependant.
+
+\begin{itemize}
+\item \textbf{Matrice jacobienne}
+\end{itemize}
+
+Elle est donnée par
+
+\begin{equation*}
+     J_e(\bxi) = \det \left( \fpart{\x}{\bxi}(\bxi) \right) = \det
+     \begin{bmatrix}
+     \fpart{x}{\xi}(\xi,\eta) & \fpart{x}{\eta}(\xi,\eta)\\
+     \fpart{y}{\xi}(\xi,\eta) & \fpart{y}{\eta}(\xi,\eta)
+     \end{bmatrix}.
+\end{equation*}
+
+On trouve donc que
+
+\begin{align*}
+\dif \Omega &= \det \left( \fpart{\x}{\bxi} \dif \xi \dif \eta \right)\\
+&= J_e \dif \hO.
+\end{align*}
+
+\begin{itemize}
+\item \textbf{Calcul du gradient des fonctions de forme}
+\end{itemize}
+
+On observe que
+
+\[
+\fpart{\phi_i}{\x} = \fpart{\phi_i}{\bxi} \cdot \left( \sum_{i=1}^n
+\mathbf{X}_i^e \fpart{\phi_i^x}{\bxi}(\bxi) \right)^{-1}.
+\]
+
+L'inverse du gradient de la transformation (c'est-à-dire de la somme
+vectorielle ci-dessus) est donné par
+
+\[
+\fpart{\bxi}{\x} =
+\begin{bmatrix}
+\fpart{\xi}{x}(\xi,\eta) & \fpart{\xi}{y}(\xi,\eta)\\
+\fpart{\eta}{x}(\xi,\eta) & \fpart{\eta}{y}(\xi,\eta)
+\end{bmatrix}
+= \frac{1}{J_e(\xi,\eta)}
+\begin{bmatrix}
+\fpart{y}{\eta}(\xi,\eta) & -\fpart{x}{\eta}(\xi,\eta)\\
+-\fpart{y}{\xi}(\xi,\eta) & \fpart{x}{\xi}(\xi,\eta)
+\end{bmatrix}.
+\]
+
+Finalement, on trouve alors ce qu'on recherchait :
+
+\begin{align*}
+\fpart{\phi_i}{\x} &= \fpart{\phi_i}{\bxi} \cdot \fpart{\bxi}{\x}\\
+\begin{bmatrix}
+\fpart{\phi_i}{x}(\xi,\eta)\\
+\fpart{\phi_i}{y}(\xi,\eta)
+\end{bmatrix}^T
+&=
+\begin{bmatrix}
+\fpart{\phi_i}{\xi}(\xi,\eta)\\
+\fpart{\phi_i}{\eta}(\xi,\eta)
+\end{bmatrix}^T
+\cdot
+\begin{bmatrix}
+\fpart{\xi}{x}(\xi,\eta) & \fpart{\xi}{y}(\xi,\eta)\\
+\fpart{\eta}{x}(\xi,\eta) & \fpart{\eta}{y}(\xi,\eta)
+\end{bmatrix}.
+\end{align*}
+
+\begin{myrem}
+     On voit qu'il n'a pas été nécessaire de construire la transformation
+     inverse $\bxi(\x)$.
+\end{myrem}
+
+Le calcul des coefficients de la matrice se réduit alors à intégrer sur le
+triangle parent la fonction suivante:
+
+\begin{align*}
+     A_{ij}^e &= \int_{\Omega_e} \grad \phi_i^e \cdot \grad \phi_j^e \dif
+     \Omega\\
+     &= \int_{\hO} \left( \fpart{\phi_i}{x}(\xi, \eta) \fpart{\phi_j}{x}(\xi,
+     \eta) + \fpart{\phi_i}{y}(\xi, \eta) \fpart{\phi_j}{y}(\xi, \eta) \right)
+     J_e(\xi,\eta) \dif \hO.
+\end{align*}
+
+Pour ce type d'intégration, on a recours aux techniques de l'intégration
+numériqe.
+
+\subsubsection{Triangles de Turner}
+
+% TODO
+
+\subsubsection{Traitement de conditions essentielles inhomogènes}
+
+% TODO
+
+\section{Éléments discrets}
+
+% TODO
+
+\section{Techniques de résolution des systèmes linéaires}
+
+% TODO
+
+\section{Théorie de la meilleure approximation}
+
+% TODO
 
 \subsection{Analyse}
 On remarque que $a$ est une forme bilinéaire et symétrique (ce n'aurait pas été le cas s'il y avait eu un terme en $\grad u$ dans l'EDP).
-Pour que $a$ soit un produit scalaire, il faut également que $a(\grad v, \grad v) \Rightarrow v = 0$ pour $v \in \U$.
+Pour que $a$ soit un produit scalaire, il faut également que $a(\grad v, \grad v) \implies v = 0$ pour $v \in \U$.
 
-On remarque que $a(\grad v, \grad v) = 0 \Rightarrow \int_\Omega a(\grad v)^2 = 0$.
+On remarque que $a(\grad v, \grad v) = 0 \implies \int_\Omega a(\grad v)^2 \dif \Omega = 0$.
 Si $a$ est strictement positif et que les fonction de $\U$ sont continues, ça signifie que $\grad v = 0$.
-Seulement, cela n'implique pas que $v = 0$, en effet, souvenons-nous qu'une primitive est définie à une constante prêt.
+Seulement, cela n'implique pas que $v = 0$. En effet, souvenons-nous qu'une primitive est définie à une constante près.
 Par contre si on impose que pour qu'une fonction $u \in \U$, il faut que $u = 0$ pour tout $\x \in \partial\Omega$,
 on a bien que $v$ doit être la fonction nulle.
 
-$a$ est donc un produit scalaire si $\U = \{v \in H^1(\Omega) \mathbin{\mathrm{et}} v(\x) = 0, \forall \x \in \partial \Omega\}$.
+$a$ est donc un produit scalaire si $\U = \{v \in H^1(\Omega) \mathbin{\mathrm{ et }} v(\x) = 0, \forall \x \in \partial \Omega\}$.
 En fait, pour un tel $\U$, $a$ est également coercive.
 Comme $a$ est continue et que $b$ est linéaire et continue,
-le Théorème de Lax-Milgram permet de garantir que la formulation faible (Problème~\ref{prob:weak} ou Problème~\ref{prob:min}) ont une solution unique.
+le Théorème de Lax-Milgram permet de garantir que la formulation faible (Problème~\ref{prob:weak} ou Problème~\ref{prob:min}) a une solution unique.
 
 \section{Éléments finis pour des problèmes d'advection-diffusion}
-\section{Théorie de la meilleure approximation}
+
+% TODO
 
 \biblio
 

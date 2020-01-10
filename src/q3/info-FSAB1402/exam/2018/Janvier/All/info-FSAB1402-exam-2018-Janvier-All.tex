@@ -1,0 +1,242 @@
+\documentclass[fr]{../../../../../../eplexam}
+\usepackage{../../../../../../eplcode}
+\usepackage{amsmath}
+\lstset{language=Oz}
+
+\hypertitle[']{Informatique
+}{3}{FSAB}{1402}{2018}{Janvier}{All}
+{Jean-Martin Vlaeminck\thanks{Merci à Antonio Gasos, Romain Rezs\"ohazy et Fred Verhaegen pour avoir transmis les questions}}
+{Peter Van Roy}
+
+\section{Programmation}
+\begin{enumerate}
+	\item Définissez une fonction \lstinline|Premiers| qui prend en argument
+	une liste de listes $[L_1, L_2,\dots,L_n]$ et qui renvoie une liste de listes
+	$[M_1,M_2,\dots,M_m]$ contenant dans $M_1$ les premiers éléments des listes
+	$L_i$, dans $M_2$ les deuxièmes éléments, \dots, dans $M_m$ les $m$-ièmes
+	et derniers éléments des listes.
+	\item Définissez une fonction \lstinline|Derniers| qui prend en argument
+	une liste de listes $[L_1,L_2,\dots,L_n]$ et qui renvoie une liste de listes
+	$[M_1,M_2,\dots,M_m]$ telle que $M_1$ contient les derniers éléments
+	des listes $L_i$, $M_2$ les avant-derniers éléments, \dots, et $M_m$
+	les premiers éléments des listes.
+\end{enumerate}
+
+\nosolution
+
+\section{Langage noyau et sémantique}
+
+Soit le programme suivant:
+\lstinputlisting{src/q2.oz}
+
+\begin{enumerate}
+	\item Qu'affiche ce programme?
+	\item Traduisez ce programme en langage noyau. Attention à donner une traduction complète!
+	\item Donnez les environnements contextuels de toutes les procédures.
+	\item Donnez un pas d'exécution de la machine abstraite pour montrer
+	\begin{itemize}
+		\item la création d'une cellule,
+		\item l'affectation d'une cellule,
+		\item la lecture d'une cellule,
+		\item la définition d'une procédure,
+		\item l'appel d'une procédure.
+	\end{itemize}
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+	\item Il affiche $8$.
+	\item Le code suivant donne une traduction.
+	\lstinputlisting{src/q2-sol.oz}
+	\item Il y a 3 procédures dignes d'intérêt:
+	\[ CE_{f_1} = \{ \texttt{NewCell} \rightarrow nc \} \]
+	\[ CE_{f_2} = \{ \texttt{C} \rightarrow c \} \]
+	\[ CE_{f_3} = \{ \texttt{F2} \rightarrow f2 \} \]
+	A noter que les variables $c$ et $f2$ sont des variables qui sont déclarées
+	lors de l'exécution des fonctions définies dans $f_1$ et $f_3$.
+	\item Dans ce qui suit, on donne l'ensemble des pas d'exécution
+	de la machine abstraite lors de l'exécution du programme.
+	Les étapes à fournir à l'examen sont indiquées comme telles.
+	On ignore également toute variable ou cellule déclarée par Mozart
+	et non utilisée dans le programme.
+
+	On définit l'opération d'adjonction de deux ensembles $A$ et $B$,
+	notée $A+B$, comme suit:
+	\begin{itemize}
+		\item Pour tout identificateur $\langle x \rangle \in A$
+		et $\langle x \rangle \in B$ commun aux deux ensembles,
+		$A+B$ contient uniquement le mapping venant de $B$.
+		\item Pour tous les autres identificateurs, ils se retrouvent tels quels dans $A+B$.
+	\end{itemize}
+	Il s'agit d'une union avec remplacement des anciennes valeurs.
+
+	\begin{enumerate}[label=\arabic*.]
+		\newcommand{\procc}[1]{\texttt{proc \{\$ #1\}}}
+		\newcommand{\End}{\texttt{end}}
+		\newcommand{\var}[1]{\texttt{#1}}
+		\newcommand{\map}[2]{\,\var{#1} \rightarrow #2 \,}
+		\item
+		\begin{multline*}
+		\Big( \big[ (<l1-l28>, E_1=\{ \map{Browse}{bb}, \map{NewCell}{nc}, \dots \}) \big], \mu_1 = \emptyset,\\
+		\sigma_1 = \big\{ bb = (\procc{X} \dots \End, CE_{bb}), nc = (\procc{A R} \dots \End, CE_{nc}), \dots \big\} \Big)
+		\end{multline*}
+		\'Etat initial du programme. A noter que normalement $\mu$ vient après $\sigma$ mais faute de place il est inversé ici.
+		\item \emph{Avant la déclaration d'une procédure}.
+		\[
+		\Big( \big[ (<l2-l20>, E_2 = E_1 + \{ \map{F1}{f_1}, \map{F3}{f_3} \}), (<l21-l27>, E_2) \big], \sigma_2 = \sigma_1 + \big\{ f_1, f_3 \big\}, \mu_1 \Big)
+		\]
+		Exécution du local: déclaration des variables $f_1$ et $f_3$.
+		Composition d'instructions: ne l'oubliez pas à l'examen!
+		\item \emph{Après la déclaration d'une procédure}.
+		\[
+		\Big( \big[ (<l21-l27>, E_2) \big], \sigma_4 = \sigma_2 + \big\{ f_1 = (\procc{A R1} <l3-l19> \End, CE_{f_1}) \big\}, \mu_1 \Big)
+		\]
+		Déclaration de la procédure $f_1$, qui capture dans $CE_{f_1}$ les mappings des identificateurs qu'il ne définit pas, à savoir \texttt{NewCell}.
+		\item \emph{Avant l'appel d'une procédure}.
+		\begin{multline*}
+		\Big( \big[ (\texttt{\{F1 A4 F3\}}, E_5 = E_2 + \{ \map{A4}{a_4}, \map{A5}{a_5}, \map{A6}{a_6} \}), (<l24-l26>, E_5) \big],\\
+		\sigma_6 = \sigma_4 + \big\{ a_4 = 2, a_5, a_6 \big\}, \mu_1 \Big)
+		\end{multline*}
+		Exécution du local et déclaration des variables $a_4$, $a_5$, $a_6$.
+		Composition d'instructions.
+		Affectation de la variable $a_4$ à la valeur $2$.
+		Nouvelle composition d'instructions.
+		\item \emph{Après l'appel d'une procédure}.
+		\[
+		\Big( \big[ (<l3-l19>, E_7=\{ \map{A}{a_4}, \map{R1}{f_3}, \map{NewCell}{nc} \}), (<l24-l26>, E_5) \big], \sigma_6, \mu_1 \Big)
+		\]
+		L'environnement $E_4$ est construit en fusionnant l'environnement contextuel
+		$CE_{f_1}$ avec l'environnement construit à partir des arguments de la procédure.
+		\item \emph{Avant la création d'une cellule}.
+		\begin{multline*}
+		\Big( \big[ (\texttt{\{NewCell A C\}}, E_8 = E_7 + \{ \map{C}{c}, \map{F2}{f_2} \}) (<l5-l18>, E_8), (<l24-l26>, E_5) \big],\\
+		\sigma_8 = \sigma_6 + \big\{ c, f2 \big\}, \mu_1 \Big)
+		\end{multline*}
+		Exécution du local avc création des variables $c$ et $f_2$.
+		Composition d'instructions.
+		\item \emph{Après la création d'une cellule}.
+		\[
+		\Big( \big[ (<l5-l18>, E_8), (<l24-l26>, E_5) \big],
+		\sigma_9 = \sigma_8 + \big\{ c = \zeta \big\}, \mu_9 = \big\{ \zeta \colon a_4 \big\} \Big)
+		\]
+		Création d'une cellule, dans $c$.
+		\item \emph{Avant la déclaration d'une procédure}.
+		\[
+		\Big( \big[ (<l5-l12>, E_8), (<l13-l18>, E_8), (<l24-l26>, E_5) \big],
+		\sigma_9, \mu_9 \Big)
+		\]
+		Composition d'instructions.
+		\item \emph{Après la déclaration d'une procédure}.
+		\begin{multline*}
+		\Big( \big[ (<l13-l18>, E_8), (<l24-l26>, E_5) \big],\\
+		\sigma_{11} = \sigma_9 + \big\{ f_2 = (\procc{B R2} <l6-l11>, CE_{f_2} = \{ \map{C}{c} \}) \big\}, \mu_9 \Big)
+		\end{multline*}
+		Cette fois c'est la procédure $f_2$, qui capture $c$, la cellule.
+		\item \emph{Après la déclaration d'une (autre) procédure}.
+		\begin{multline*}
+		\Big( \big[ (<l24-l26>, E_5) \big],\\
+		\sigma_{12} = \sigma_{11} + \big\{ f_3 = (\procc{X R3} <l14-l17>, CE_{f_3} = \{ \map{F2}{f_2} \}) \big\}, \mu_9 \Big)
+		\end{multline*}
+		Cette fois c'est la procédure $f_3$ (rappelons que $\map{R1}{f_3}$), qui capture $f_2$.
+		\item \emph{Avant l'appel d'une procédure}
+		\[
+		\Big( \big[ (\texttt{\{F3 A5 A6\}}, E_5), (<l26>=\texttt{\{Browse A6\}}, E_5) \big],
+		\sigma_{13} = \sigma_{12} + \big\{ a_5 = 3 \big\}, \mu_9 \Big)
+		\]
+		Composition d'instructions.
+		Affectation de la variable $a_5$ à la valeur $3$.
+		Re-composition.
+		\item \emph{Après l'appel d'une procédure}
+		\begin{multline*}
+		\Big( \big[ (<l14-l17>, E_{14} = \{ \map{X}{a_5}, \map{R3}{a_6}, \map{F2}{f_2} \}), (<l26>, E_5) \big],\\
+		\sigma_{13} = \big\{ a_5 = 3, \dots \big\}, \mu_9 \Big)
+		\end{multline*}
+		Appel de $f_3$.
+		\item \emph{Avant l'appel d'une (autre) procédure}
+		\begin{multline*}
+		\Big( \big[ (<l16>=\texttt{\{F2 A3 R3\}}, E_{15} = E_{14} + \{ \map{A3}{a_3} \}), (<l26>, E_5) \big],\\
+		\sigma_{15} = \sigma_{13} + \big\{ a_3 = 6 \big\}, \mu_9 \Big)
+		\end{multline*}
+		Exécution du local et déclaration de la variable $a_3$.
+		Composition.
+		Affectation de la variable $a_3$ à sa valeur, $6$.
+		\item \emph{Après l'appel d'une (autre) procédure}
+		\[
+		\Big( \big[ (<l6-l11>, E_{16} = \{ \map{B}{a_3}, \map{R2}{a_6}, \map{C}{c} \}), (<l26>, E_5) \big],
+		\sigma_{15}, \mu_9 \Big)
+		\]
+		L'environnement $E_{16}$ est de nouveau construit à partir des arguments
+		(avec $\var{B} = \map{A3}{a_3}$ et $\var{R2} = \map{R3}{a_6}$)
+		et de l'environnement contextuel $CE_{f_2}$.
+		\item \emph{Avant la lecture d'une cellule}
+		\begin{multline*}
+		\Big( \big[ (\texttt{A1=@C}, E_{17} = E_{16} + \{ \map{A1}{a_1}, \map{A2}{a_2} \}), (<l8-l10>, E_{17}), (<l26>, E_5) \big],\\
+		\sigma_{17} = \sigma_{15} + \big\{ a_1, a_2 \big\}, \mu_9 = \big\{ \zeta \colon (a_4 = 2) \big\} \Big)
+		\end{multline*}
+		Exécution du local et déclaration des variables $a_1$ et $a_2$.
+		Composition d'instructions.
+		\item \emph{Après la lecture d'une cellule}
+		\[
+		\Big( \big[ (<l8-l10>, E_{17}), (<l26>, E_5) \big],
+		\sigma_{18} = \sigma_{17} + \big\{ a_1 = a_4 = 2 \big\}, \mu_{9} = \big\{ \zeta \colon a_4 \big\} \Big)
+		\]
+		Lecture du contenu de la cellule $c$, dont le contenu (la variable $a_4$) est lié à la variable $a_1$.
+		\item \emph{Avant l'affectation d'une cellule}
+		\[
+		\Big( \big[ (\texttt{C:=A2}, E_{17}), (\texttt{R2=@C}, E_{17}), (<l26>, E_5) \big],
+		\sigma_{19} = \sigma_{18} + \big\{ a_2 = 8 \big\}, \mu_{9} = \big\{ \zeta \colon a_4 \big\} \Big)
+		\]
+		Composition.
+		Affectation dans $a_2$ de la somme de $a_1 = 2$ et de $a_3 = 6$.
+		Composition.
+		\item \emph{Après l'affectation d'une cellule}
+		\[
+		\Big( \big[ (\texttt{R2=@C}, E_{17}), (<l26>, E_5) \big],
+		\sigma_{19}, \mu_{20} = \big\{ \zeta \colon a_2 \big\} \Big)
+		\]
+		Affectation dans $c$ de la variable $a_2$; l'association entre
+		$\zeta$ et son contenu ($a_2$ qui remplace $a_4$) change donc.
+		\item \emph{Après la lecture d'une cellule}
+		\[
+		\Big( \big[ (<l26>=\texttt{\{Browse A6\}}, E_5) \big],
+		\sigma_{21} = \sigma_{19} + \big\{ a_6 = a_2 = 8 \big\}, \mu_{20} \Big)
+		\]
+		Lecture du contenu de $c$ ($a_2$) dans $a_6$ (référé par \texttt{R2})
+		et unification entre $a_2$ et $a_6$, qui prennent tous deux la valeur $8$.
+		\item
+		\[
+		\big( [ \; ], \sigma_{21}, \mu_{20} \big)
+		\]
+		Affichage (via le Browser) de $8$.
+		Et fin du programme.
+	\end{enumerate}
+
+	Petite remarque concernant le garbage collector et les environnements:
+	dans le cas d'une exécution pas à pas, on ne représente pas l'action du garbage collector
+	car on ne sait pas à quels instants celui-ci va s'exécuter:
+	il est en effet susceptible de s'exécuter à chaque étape du programme.
+
+	Néanmoins, on peut prendre en compte une exécution du garbage collector
+	en supprimant du \emph{store} toutes les variables qui ne sont présentes
+	dans aucun environnement, et en supprimant du \emph{mutable store}
+	toutes les cellules ne possédant aucune référence dans le \emph{store}.
+	Cela suppose néanmoins que chaque environnement ne contient que les mappings
+	absolument requis pour l'instruction spécifiée; ce n'est pas demandé à l'examen.
+\end{enumerate}
+\end{solution}
+
+\section{Définitions}
+Définissez les termes suivants:
+\begin{enumerate}
+	\item portée statique d'une occurrence d'un identificateur;
+	\item lien dynamique dans un objet; % wat ?
+	\item non-déterminisme;
+	\item problème NP-complet;
+	\item notation $\bigoh$.
+\end{enumerate}
+
+\begin{solution}
+Consultez les nombreux documents donnant des définitions de ces termes.
+\end{solution}
+
+\end{document}

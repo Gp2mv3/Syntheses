@@ -1,2 +1,2 @@
 TYPE=summary
-include $(BASE_DIR)../analog-ELEC2532.mk
+include ../analog-ELEC2532.mk
