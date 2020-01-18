@@ -1,9 +1,9 @@
 #define MSG_LEN 10
-int g;   // initialise par le compilateur
+int g; // initialise par le compilateur
 int g_init=1252;
 const int un=1;
 int tab[3]={1,2,3};
-int array[10000];
+int array[10000]; // initialise par le compilateur
 char cours[]="SINF1252";
 char msg[MSG_LEN]; // initialise par le compilateur
 

@@ -1,0 +1,271 @@
+\subsection{} % Exercise 1
+Let \(X\) and \(Y\) be two recursive sets.
+Which of the following operations are preserving recursivity:
+union, intersection and complement?
+Prove your answer.
+Same question for \(X\) and \(Y\) being recursively enumerable sets.
+
+\begin{solution}
+	For union, one can simply define the characteristic function
+	\(f_{X \cup Y} \colon \N \to \{0, 1\}\) as
+	\begin{equation}
+		f_{X \cup Y}(x) = f_X(x) + f_Y(y) - f_X(x)f_Y(x)\,.
+	\end{equation}
+	Similarly, for intersection,
+	\begin{equation}
+		f_{X \cap Y}(x) = f_X(x)f_Y(x)\,.
+	\end{equation}
+	Finally, for complement,
+	\begin{equation}
+		f_{\overline{X}}(x) = 1 - f_X(x)\,.
+	\end{equation}
+	Since \(X\) and \(Y\) are recursive sets, \(f_X\) and \(f_Y\)
+	are total computable functions,
+	hence so are \(f_{X \cup Y}\),
+	\(f_{X \cap Y}\) and \(f_{\overline{X}}\).
+	This means \(X \cup Y\), \(X \cap Y\) and \(\overline{X}\)
+	are recursive sets as well.
+
+	If we instead take \(X\) and \(Y\) to merely be recursively enumerable,
+	we arrive at a slightly different conclusion:
+	for union, we define the characteristic function as
+	\begin{equation}
+		f_{X \cup Y}(x) =
+		\begin{cases}
+			1\,, & \textnormal{if } f_X(x) = 1 \textnormal{ or } f_Y(x) = 1\,,\\
+			0\,, & \textnormal{otherwise.}
+		\end{cases}
+	\end{equation}
+	Again, we only depend on \(f_X(x)\) and \(f_Y(x)\) telling us
+	whether \(x \in X\) or \(x \in Y\).
+	This information is available, as the characteristic function
+	for a recursively enumerable set provides it.
+	Similarly, for intersection,
+	\begin{equation}
+		f_{X \cap Y}(x) =
+		\begin{cases}
+			1\,, & \textnormal{if } f_X(x) = 1 \textnormal{ and } f_Y(x) = 1\,,\\
+			0\,, & \textnormal{otherwise.}
+		\end{cases}
+	\end{equation}
+	By much the same reasoning,
+	we again find that recursive enumerability is conserved, as with union.
+	However, for the complement, we give a counterexample:
+	the set \(K = \{n : P_n(n) \textnormal{ halts}\}\)
+	is recursively enumerable, while \(\overline{K}\) is not.
+\end{solution}
+
+\subsection{} % Exercise 2
+Show that all monotonically decreasing total functions
+\(f \colon \N \to \N\) are computable.
+
+\begin{solution}
+Since the function is monotonically decreasing,
+there must exist \(n_0\) such that
+for all \(n \ge n_0\), \(f(n) = f(n_0) \ge 0\),
+that is, the function has a nonnegative lower bound.
+Similarly, for all \(n \ge 0\), \(f(n) \le f(0) < +\infty\).
+We know that \(n_0\) is finite, hence we could technically ``hard-code''
+the different values of the function,
+giving a proof of its computability, as such:
+\begin{minted}{julia}
+# f: array of size n0 + 1 with hard-coded values from 0 to n0.
+function compute_monotonically_decreasing(n)
+	return f[min(n, n0)]
+end
+\end{minted}
+This only works because there are finitely many values to be hard-coded.
+\end{solution}
+
+\subsection{} % Exercise 3
+Let \(X \subseteq \N\) and \(f(n)\) a total function defined by
+\begin{equation}
+	f(n) = \# \{x \in X : x < n\}\,,
+\end{equation}
+where \(\# A\) is the cardinal of \(A\).
+Show that \(X\) is recursive if and only if \(f\) is computable.
+
+\begin{solution}
+We start by showing that if \(X\) is recursive, then \(f\) must be computable.
+For this, we write a short program, using the fact
+that the characteristic function of a recursive set is total computable.
+We assume that \mintinline{julia}{f_X}
+computes the characteristic function of \(X\).
+\begin{minted}[escapeinside=||]{julia}
+function f(n)
+	cardinality = 0
+	for i |$\in$| 1:n
+		cardinality += f_X(i)
+	end
+	return cardinality
+end
+\end{minted}
+
+Next we must show that if the function is computable,
+then the set must be recursive.
+We can again write a simple program for this, using the function defined above:
+\begin{minted}{julia}
+function f_X(n)
+	if n == 0
+		return f(1)
+	else
+		return f(n+1) - f(n)
+	end
+end
+\end{minted}
+
+These programs prove the required implications.
+\end{solution}
+
+\subsection{} % Exercise 4
+Let \(X \subseteq \N\).
+Show that the following propositions are equivalent
+(show it at least for (a), (b) and (c)):
+\begin{enumerate}
+	\item \(X\) is recursively enumerable.
+	\item There is a computable partial function \(f\)
+	such that \(X = \dom f\).
+	\item There is a \java{} program that enumerates \(X\).
+	\item \(X = \emptyset\) or there is a total computable function \(f\)
+	such that \(X = \image f\).
+\end{enumerate}
+
+\begin{solution}
+We first show (a) implies (b).
+\begin{proof}
+	One can simply take the characteristic function of \(X\),
+	which is by definition computable and partial,
+	with \(X = \dom f\).
+\end{proof}
+
+Next, we show (b) implies (c).
+\begin{proof}
+We can assume without loss of generality
+that \(f\) is the characteristic function.
+We can then write the following program,
+using the \mintinline{julia}{@distributed for} macro
+which launches a for loop in multiple threads,
+and assumes \mintinline{julia}{f_X}
+computes the characteristic function of \(X\).
+\begin{minted}[escapeinside=||]{julia}
+function enumerate_X()
+	if isempty(X)
+		return
+	else
+		@distributed for i |$\in$| 1:Inf
+			f_X(i) == 1 ? continue : println(i)
+		end
+	end
+end
+\end{minted}
+To prove we can launch this potentially countably infinite number of threads,
+we can follow this execution scheme:
+\[
+\begin{array}{c|cccc}
+	& f_X(1) & f_X(2) & f_X(3) & \cdots \\
+	\hline
+	1 & f_X(1)_1 & f_X(2)_1 & f_X(3)_1 & \cdots\\
+	2 & f_X(1)_2 & f_X(2)_2 & f_X(3)_2 & \cdots\\
+	3 & f_X(1)_3 & f_X(2)_3 & f_X(3)_3 & \cdots\\
+	\vdots & \vdots & \vdots & \vdots & \ddots
+\end{array}
+\]
+The parenthesized number denotes the value of \mintinline{julia}{i},
+while the subscript denotes which operation of
+the computation of \(f_X(i)\) is being done.
+We can zig-zag through this table as such:
+\((f_X(1)_1 \to f_X(2)_1 \to f_X(1)_2 \to f_X(1)_3 \to \cdots\).
+This way, all threads will eventually finish.
+\end{proof}
+
+Now, we show (c) implies (d).
+\begin{proof}
+Call the enumeration program \(P_d\),
+and define \(\phi_d\) as the (computable) function it computes.
+Since the program enumerates \(X\),
+the return values are simply the elements of \(X\).
+This means that \(\image \phi_d = X\).
+\end{proof}
+
+Finally, we show that (d) implies (a).
+\begin{proof}
+If \(X\) is empty, it is trivially recursively enumerable.
+If a total computable function \(f\) such that \(X = \image f\) exists,
+then one has the following characteristic function for \(X\):
+\[
+f_X(x) = \begin{cases}
+1\,, & \textnormal{if } \exists i \in \N \textnormal{ such that } f(i) = x\,,\\
+\bot\,, & \textnormal{ otherwise.}
+\end{cases}
+\]
+The second possibility, \(f_X(x) = \bot\),
+is a consequence of having to try all naturals as possible inputs for \(f\)
+in case \(x \notin X\).
+\end{proof}
+\end{solution}
+
+\subsection{} % Exercise 5
+True or false?
+\begin{enumerate}
+	\item If the domain of a function is finite,
+	then the function is computable.
+	\item If a function is computable, then its domain is recursive.
+	\item \(X\) is recursive if and only if
+	both \(X\) and \(\overline{X}\) are recursively enumerable.
+	\item \(X\) is recursive if and only if \(\overline{X}\) is recursive.
+	\item A function whose table can be defined in a finite way
+	is necessarily computable.
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+	\item True.
+	One must simply hard-code the finite number of values
+	and return the requested one when the function is called,
+	in a similar manner to what was used in Exercise~2.2.
+	\item True.
+	If this were false, then one could use this function to decide the set,
+	which would be absurd.
+	\item True.
+	If \(X\) is recursive, then so is \(\overline{X}\).
+	This proves the implication in the first direction.
+	If both sets are recursively enumerable,
+	then one can combine their partial characteristic functions
+	in order to obtain a total characteristic function for \(X\)
+	(or for \(\overline{X}\)).
+	Having this total characteristic function implies recursivity.
+	\item True.
+	As shown in Exercise~2.1,
+	the complement operation preserves recursivity.
+	\item True
+	(assuming ``finite way'' means
+	``as a finite set of input-output pairs'').
+	One should simply hard-code all the possible cases
+	in the function definitions,
+	in a similar manner to what was used in Exercise~2.2.
+\end{enumerate}
+\end{solution}
+
+\subsection{} % Exercise 6
+Construct a monotonically increasing total function that is not computable.
+(Hint: use HALT.)
+
+
+\begin{solution}
+We can construct the following function:
+\[
+f(n) = \sum_{i = 0}^n \halt(i, i)\,.
+\]
+This function is total because \(\mathrm{halt}\) is total,
+and is increasing because \(\mathrm{halt}\) is always non negative,
+but is not computable.
+To see why, one simply has to observe that if it were computable,
+then one could decide \(K\) by doing \(f_K(n) = f(n) - f(n-1)\),
+where \(f_K(n)\) would be the total computable characteristic function of \(K\).
+
+Alternatively, a slightly more complicated function
+is the busy beaver function,
+also called the Radó Sigma,
+which is not only monotonically increasing,
+but grows faster than any computable function!
+\end{solution}

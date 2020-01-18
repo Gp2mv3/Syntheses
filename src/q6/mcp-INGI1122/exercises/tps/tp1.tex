@@ -1,0 +1,254 @@
+\section{Axiomes et logique de Hoare}
+Dans les exercices suivants, toutes les variables sont de type entier.
+On raisonne sur les entiers illimités,
+sans tenir compte des problèmes de dépassement.
+\subsection{Triplets de Hoare}
+Pour rappel, un triplet de Hoare $[P]S[Q]$
+est une proposition logique valide ou invalide.
+Un triplet est valide si et seulement si,
+si $P$ est vrai avant l'exécution de $S$,
+alors l'exécution se termine et $Q$ est vrai après.
+
+Déterminez la validité de chacun des triplets suivants
+($\texttt{abs}(x)$ calcule la valeur absolue de $x$).
+\begin{multicols}{2}
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\item $[i = 1]\ \texttt{j := i;}\ [i = j = 1]$.
+	\item $[x > 0]\ \texttt{x,y := y,x;}\ [y \ge 0]$.
+	\item $[a > 0 \land b < 0]\ \texttt{c := a * b;}\ [c \ge 0]$.
+	\item $[0 \le t < N]\ \texttt{t := t+1;}\ [0 < t \le N]$.
+	\item $[m = 2 \land n = 10 \land o = m^n]\ \texttt{n := m;}\ [o = 4]$.
+	\item $[p = -1]\ \texttt{p := abs(p);}\ [\false]$.
+	\item $[p = -1]\ \texttt{p := abs(p);}\ [\true]$.
+	\item $[\true]\ \texttt{p := abs(p);}\ [p > 0]$.
+\end{enumerate}
+\end{multicols}
+
+Soit la fonction $\texttt{fib}(n)$ qui calcule le $n$-ième nombre de Fibonacci
+pour $n \ge 0$, et \emph{ne se termine pas} si $n < 0$.
+Déterminez la validité de chacun des triplets suivants.
+
+\begin{multicols}{2}
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\setcounter{enumi}{8}
+	\item $[\true]\ \texttt{p := fib(p);}\ [\true]$.
+	\item $[\false]\ \texttt{p := fib(p);}\ [p < 0]$.
+	\item $[ab > 0]\ \texttt{p := fib(a+b);}\ [p \ge 0]$.
+	\item $[a \ge b]\ \texttt{p := fib(a-b);}\ [p \ge 0]$.
+\end{enumerate}
+\end{multicols}
+
+\begin{solution}
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\item Valide.
+	\item Valide (il s'agit d'une affectation simultanée).
+	\item Invalide.
+	\item Valide (si rien n'est précisé,
+	on suppose que les variables sont entières).
+	\item Invalide (la valeur de $o$ n'est pas changée).
+	\item Invalide.
+	\item Valide.
+	\item Invalide (ne fonctionne pas si $p = 0$).
+	\item Invalide (si $p < 0$, le programme ne termine pas).
+	\item Valide.
+	\item Invalide (il suffit de prendre $a, b < 0$).
+	\item Valide.
+\end{enumerate}
+\end{solution}
+
+\subsection{Variables auxiliaires}
+Les variables auxiliaires, aussi dites fantômes ou rigides,
+sont des variables qui n'apparaissent pas dans le programme
+en cours de vérification et dont la valeur ne change pas
+durant l'exécution de ce dernier.
+
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\item Complétez le triplet suivant afin d'exprimer
+	que la valeur de $n$ a été doublée.
+	\[
+	[?]\ \texttt{n := n * 2;}\ [?]\,.
+	\]
+	\item Complètez le triplet suivant afin qu'il soit valide,
+	qu'il exprime que la valeur de $a + b$ reste inchangée
+	et que $b$ ne devient jamais négatif.
+	\[
+	[?]\ \texttt{a, b := a+1, b-1;}\ [b \ge 0 \land{} ?]\,.
+	\]
+	\item Concevez un programme qui \og trie \fg{} deux variables $a$ et $b$
+	en les modifiant pour que $a$ contienne la plus petite des deux valeurs,
+	et $b$ contienne l'autre.
+	Bref, pour qu'il réponde à la spécification suivante
+	(où $S$ est une variable auxiliaire).
+	\[
+	[a + b = S]\ \texttt{?}\ [a + b = S \land a \le b]\,.
+	\]
+	\item La spécification formelle précédente
+	n'est pas suffisamment complète par rapport
+	à la description en français.
+	Trouvez la faille dans les pré/posts formelles, et corrigez-les.
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\item $[n = N_0]\ \texttt{n := n * 2;}\ [n = 2N_0]$.
+	\item $[a + b = S_0 \land b \ge 1]\ \texttt{a, b := a+1, b-1;}\ [b \ge 0 \land a + b = S_0]$.
+	\item $[a + b = S]\ \texttt{a, b = min(a,b), max(a,b);}\ [a + b = S \land a \le b]$.
+	\item La faille est que
+	le code \texttt{a, b = min(a, b) - 1, max(a, b) + 1}
+	satisfait également les conditions, mais ne fait pas ce qui est demandé.
+	Pour corriger, on pourrait utiliser le triplet suivant:
+	\[
+	\Big[a + b = S_0 \land a = A_0 \land b = B_0\Big]\ \texttt{...}\ \Big[a+b = S_0 \land a \le b \land \big((a = A_0 \land b = B_0) \lor (a = B_0 \land b = A_0)\big)\Big]\,.
+	\]
+\end{enumerate}
+\end{solution}
+
+\subsection{Affectations}
+On donne pour illustration le code suivant qui permute trois variables.
+\[
+\texttt{a, b, c := b, c, a;}
+\]
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\item \label{item:3a} Donnez une spécification formelle de ce programme
+	sous forme d'un triplet de Hoare valide.
+	\item Pour des raisons historiques,
+	ce fragment de programme a en fait été implémenté comme suit.
+	Annotez ce code à l'aide d'assertions afin d'obtenir un tableau complet
+	(contenant au moins une assertion entre chaque instruction).
+	Assurez-vous que chaque triplet ainsi formé soit valide.
+	\begin{align*}
+		&\texttt{a := a + b + c;}\\
+		&\texttt{c := a - b - c;}\\
+		&\texttt{b := a - b - c;}\\
+		&\texttt{a := a - b - c;}
+	\end{align*}
+	\item Enfin, prouvez que la spécification donné au point~\ref{item:3a}
+	est compatible avec votre tableau.
+	Quelles sont les implications logiques à prouver pour y parvenir?
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\item
+	\begin{align*}
+	&[a = A_0 \land b = B_0 \land c = C_0] \\
+	&\texttt{a, b, c := b, c, a;} \\
+	&[a = B_0 \land b = C_0 \land c = A_0] \\
+	\end{align*}
+	\item
+	\begin{align*}
+		&[a = A_0 \land b = B_0 \land c = C_0] \\
+		&\texttt{a := a + b + c;} \\
+		&[a = A_0 + B_0 + C_0 \land b = B_0 \land c = C_0] \\
+		&\texttt{c := a - b - c;} \\
+		&[a = A_0 + B_0 + C_0 \land b = B_0 \land c = A_0] \\
+		&\texttt{b := a - b - c;} \\
+		&[a = A_0 + B_0 + C_0 \land b = C_0 \land c = A_0] \\
+		&\texttt{a := a - b - c;} \\
+		&[a = B_0 \land b = C_0 \land c = A_0]
+	\end{align*}
+	\item L'assistant avait dit que la question était mal posée (ambigüe),
+	et qu'on ne savait donc pas y répondre.
+\end{enumerate}
+\end{solution}
+
+\subsection{Spécifications}
+Donnez une spécification formelle pour chacun des problèmes suivants:
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\item calculer la taille d'un tableau $a$ donné;
+	\item calculer la somme des éléments d'un tableau $a$;
+	\item calculer la racine carrée de $x-5$ où $x$ est donné et
+	\item calculer le minimum de $x$, $y$ et $z$ et le placer dans $r$.
+\end{enumerate}
+
+\begin{solution}
+On considère que $\abs{a}$ dénote la taille du tableau $a$,
+que $a[i]$ dénote l'élément à la position $i$ de $a$
+et que le résultat du programme est toujours stocké dans $r$.
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\item
+	\begin{align*}
+		&[\abs{a} = N_0] \\
+		&\texttt{...} \\
+		&[r = \abs{a} = N_0]\,.
+	\end{align*}
+	\item
+	\begin{align*}
+		&\left[\sum_{i=0}^{\abs{a} - 1} a[i] = S_0\right] \\
+		&\texttt{...} \\
+		&\left[r = \sum_{i=0}^{\abs{a} - 1} a[i] = S_0\right]\,.
+	\end{align*}
+	\item
+	\begin{align*}
+		&\Big[x = X_0\Big] \\
+		&\texttt{...} \\
+		&\Big[x = \sqrt{X_0 + 5}\Big]\,.
+	\end{align*}
+	\item
+	\begin{align*}
+		&[x = X_0 \land y = Y_0 \land z = Z_0] \\
+		&\texttt{...} \\
+		&[r \le X_0 \land r \le Y_0 \land r \le Z_0 \land (r = X_0 \lor r = Y_0 \lor r = Z_0)]\,.
+	\end{align*}
+\end{enumerate}
+\end{solution}
+
+\subsection{Théorie du problème}
+Décrivez précisement les préconditions et postconditions nécessaires
+pour spécifier correctement les problèmes suivants.
+Si nécessaire, précisez d'abord le problème:
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\item trier un tableau d'entiers;
+	\item trouver le maximum d'un tableau et
+	\item déterminer si un tableau est une permutation d'un autre.
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}[label={\textbf{\alph*.}}]
+	\item Pré: $\emptyset$.
+
+	\noindent Post: tout élément du tableau est plus petit ou égal
+	à ceux qui le succèdent et le tableau de sortie
+	est une permutation du tableau en entrée.
+	\item Pré: le tableau est non vide.
+
+	\noindent Post: le résultat est dans le tableau
+	et est plus grand ou égal à toutes les entrées du tableau.
+	\item Pré: $\emptyset$.
+
+	\noindent Post (première formulation):
+	il existe une bijection entre les tableaux.
+	Post (seconde formulation): tout élément du premier tableau
+	est présent dans l'autre tableau avec la même multiplicité.
+\end{enumerate}
+\end{solution}
+
+\subsection{}
+On a deux tableaux $a$ et $b$ de même taille $\abs{a} = \abs{b} = N$
+(indicés de $0$ à $N - 1$).
+Soit le programme suivant qui remplit $b$
+de sorte que $b[i] = a[0] + a[1] + \cdots + a[i]$.
+Écrivez la spécification formelle du programme
+(préconditions et postconditions).
+\begin{align*}
+&\texttt{b[0] := a[0];} \\
+&\texttt{var i := 1;} \\
+&\texttt{while i < N \{}\\
+&\qquad\texttt{b[i] := a[i] + b[i-1];} \\
+&\qquad\texttt{i := i + 1;} \\
+&\texttt{\}}
+\end{align*}
+
+\begin{solution}
+Le triplet de Hoare associé au programme est le suivant.
+\begin{align*}
+&\Bigg[\abs{a} = \abs{b} = N\Bigg] \\
+&\texttt{b[0] := a[0];} \\
+&\texttt{var i := 1;} \\
+&\texttt{while i < N \{}\\
+&\qquad\texttt{b[i] := a[i] + b[i-1];} \\
+&\qquad\texttt{i := i + 1;} \\
+&\texttt{\}} \\
+&\Bigg[b[i] = \sum_{j=0}^i a[j]\,, \quad \forall i \in \{\,0, \ldots, \abs{a} - 1\,\}\Bigg]\,.
+\end{align*}
+\end{solution}
