@@ -1,7 +1,7 @@
 \documentclass[en]{../../../../../../eplexam}
 
 \usepackage{../../../../../../eplunits}
-\usepackage[american]{circuitikz}
+\usepackage[american,RPvoltages]{circuitikz}
 \usepackage{bm}
 
 \hypertitle{Power Electronics}{7}{ELEC}{2660}{2019}{Janvier}{All}
@@ -39,8 +39,24 @@
     \item Écrivez l'équation du transfert de puissance complexe entre deux sources de courant alternatives $U_1$ et $U_2$ liées par une inductance $L$.
 \end{itemize}
 
-\nosolution
-
+\begin{solution}
+  \begin{itemize}
+  \item Vrai
+  \item Permet de doubler le courant, sans rentrer dans la zone de saturation magnétique.
+  \item $V_c = V_{in} = \frac{\pi}{2} 50 = \SI{78.53}{\volt}$
+  \item 2*3*50 = 300 Hz
+  \item Vrai
+  \item  
+  $$\Delta T = R_{thj-c} * V * I_{avg} = 0.15*0.85*50*0.3 = \SI{1.9}{\celsius}$$
+  $$T_{max} - \Delta T - T_a = \Delta T_{r} = \SI{73.1}{\celsius}$$
+  $$R_r = \frac{\Delta T_r}{P} = \SI{5.73}{\celsius\per\watt}$$
+\item 
+  $$\theta = \frac{25}{100} = 0.25$$
+  $$\frac{\Delta i}{2} \leq i_{avg} \Rightarrow R \leq \frac{2Lf}{1-\theta} = \SI{66.6}{\ohm}$$
+  $$P = \frac{V^2}{R} = \SI{9.38}{\watt}$$
+\item $$S_1 = \frac{U_1U_2}{\omega L}\sin(\alpha) + j \left(\frac{U_1U_2}{\omega L} \cos(\alpha) - \frac{U_1^2}{\omega L}\right)$$
+  \end{itemize}
+\end{solution}
 \section{Exercice  /4}
 
 On considère un Boost avec les caractéristiques suivantes :
@@ -53,14 +69,42 @@ On considère un Boost avec les caractéristiques suivantes :
 \end{itemize}
 Déterminez le nombre de capacités ($C = \SI{100}{\micro F}$, $r = \SI{100}{m\Omega}$) mises en sortie pour que le ripple de la tension de sortie ne dépasse pas $150$ mV (peak to peak).
 
-\nosolution
+\begin{solution}
+On va approximer le ripple maximum par
+$$\max(\Delta u) = \max(\Delta u_r) + \max(\Delta u_c) $$
+$$\max(\Delta u_r) = r (i_{c,max} - i_{c,min}) = r\left(\frac{i_{ch}}{1-\theta} + \frac{\Delta i}{2} \right)$$
+$$\max(\Delta u_c) = \frac{\theta T i_{ch}}{C}$$
+$$\Delta i = \frac{E\theta T}{L}$$
+$$i_{ch} = \SI{1}{\ampere}$$
+En mettant les capacités en parallèle, on va diviser r par n, et multiplier C par n
+$$\frac{r\left(\cfrac{i_{ch}}{1-\theta} + \frac{\Delta i}{2} \right) + \cfrac{\theta T i_{ch}}{C}}{\max(\Delta U)} \leq n$$
+ $$1.83 \leq n$$
+ On doit mettre 2 capacités en parallèle. (Rmq: sans la résistance, une seule capacité aurait suffit).
+\end{solution}
 
 \section{Question de théorie  /6}
     
 On considère ici un convertisseur Flyback dans lequel on a rajouté un \textit{snubber}\footnote{Le \textit{snubber} a été vu en séance d'exercice sous la forme d'un projet dédié à la conception d'un transformateur.}. Expliquez le fonctionnement du snubber et comment choisir ses composants. Commentez, dessinez les formes d'ondes, schémas, etc.
 
-\nosolution
+\begin{solution}
+Le snubber permet d'éviter le pic de tension dû à l'inductance de fuite. Nous avons besoin de réduire ce pic de tension pour protéger le transistor.
 
+On va retrouver une évolution différentes des courants dans le transformateur et de la tension aux bornes du transistor.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{Snubber1.png}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\textwidth]{Snubber2.png}
+\end{figure}
+
+$$R_{sn} = \frac{2 T_{sw} \alpha (\alpha - 1) \left(\frac{n_1}{n_2} V_{out} \right)^2}{L_f i^2_{mag,max}}$$
+Avec généralement $\alpha \in \left[2, 2.5\right]$ 
+$$C_{sn,min} = \frac{v_{sn,max}}{\Delta v_{sn,max} R_{sn} f_{sw}}$$
+\end{solution}
 \section{Superbuck  /6}
 
 Soit le convertisseur suivant :
@@ -84,6 +128,52 @@ Soit le convertisseur suivant :
 
 Écrivez la matrice dynamique des états moyennés $\bm{A}$, en fonction du rapport cyclique.
 
-\nosolution
+\begin{solution}
+  \begin{center}
+        \begin{circuitikz}
+                \draw[thick]
+                (0,0) node[nmos, rotate = 90](nmos){}
+                (nmos.D) to[short] (-2,0)
+                (nmos.S) to[short] (5,0)
+                (1.5,-2) to[diode] (1.5,0)
+                (-1.5,-2) to[short] (1.5,-2)
+                (-4,0) to[american voltage source,a=$V_{\mathrm{g}}$,right] (-4,-4) -- (5,-4)
+                (5,0) to[R, l_=$R$] (5,-4)
+                (-4,0) to[L=$L_1$,i>=$I_1$] (-2,0)
+                (3,-4) to[C=$C_1$,v>=$V_1$] (3,0)
+                (0,-4) to[L=$L_2$, i<=$I_2$] (0,-2)
+                (-1.5,-2) to[C=$C_2$, v>=$V_2$] (-1.5,0);
+        \end{circuitikz}
+\end{center}
+\begin{center}
+\begin{tabular}{c|c|c}
+&Ton&Toff\\
+\hline
+  $I_{C_1} = \frac{C_1dV_1}{dt}$&$ I_1 - I_2 -V_1/R$&$ I_1 - I_2 - V_1/R$\\
+  $I_{C_2} = \frac{C_2dV_2}{dt}$&$ I_2 $&$ I_1$\\
+  $V_{L_1} = \frac{L_1dI_1}{dt}$&$ V_g - V_1$&$V_g - (V_1 + V_2)$\\
+  $V_{L_2} = \frac{L_2dI_2}{dt}$&$ V_1 - V_2$&$ V_1$
+\end{tabular}
+\end{center}
+
+  $$\begin{bmatrix}
+  \frac{dV_1}{dt}\\
+  \frac{dV_2}{dt}\\
+  \frac{dI_1}{dt}\\
+  \frac{dI_2}{dt}\\
+\end{bmatrix}= 
+  \begin{bmatrix}
+    \frac{-1}{RC_1}& 0& \frac{1}{C_1}& \frac{-1}{C_1} \\
+    0 & 0 & \frac{1-\theta}{C_2}& \frac{\theta}{C_2}\\
+    \frac{-1}{L_1} & \frac{-1(1-\theta)}{L_1} 0 & 0\\
+    \frac{1}{L_2} & \frac{-\theta}{L_2} & 0 &0
+  \end{bmatrix}
+  \begin{bmatrix}
+   V_1\\
+   V_2\\
+   I_1\\
+   I_2\\
+  \end{bmatrix}$$
+\end{solution}
 
 \end{document}
