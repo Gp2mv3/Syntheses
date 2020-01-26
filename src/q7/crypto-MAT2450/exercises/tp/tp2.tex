@@ -1,472 +1,322 @@
+
+
 \section{}
 
-\subsection{Exercise 0 (Reduction and/or attacks)}
-\copypaste{1}{7}
+\subsection{Exercise 1 (Security model.)}
 
-\subsection{Exercise 1 (Variable-length MAC)}
-Considering a known hash function $h^s:\{0,1\}^{2l}\rightarrow\{0,1\}^{l}$,
-let's note by $H^s$ the corresponding Merkle-Damg{\aa}rd transform hash function, 
-\emph{i.e.} 
-
-\begin{center}
-\begin{tikzpicture}[scale=0.5]
-\tikzstyle{every node}=[text centered, inner sep = 2pt]
-
-    \trapeze{$h^s$}{\position}
-    \draw [->] \position +(-3,0) node [left] {$IV$} -- +(-1,0);
-    \draw [<-] \position + (-1,1) -| ++(-2,3) node [above] {\mylabel};
-    \draw \position + (1,0) -- +(2,0) node {};
-    \renewcommand{\position}{(4,0)}
-    \renewcommand{\mylabel}{$x_2$}
-    \trapeze{$h^s$}{\position}
-    \draw [->] \position +(-2,0) node [below] {} -- +(-1,0);
-    \draw [<-] \position + (-1,1) -| ++(-2,3) node [above] {\mylabel};
-    \draw [->]\position + (1,0) -- +(2,0) node [right] {$\ldots$};
-    \renewcommand{\position}{(9.5,0)}
-    \renewcommand{\mylabel}{$x_n$}
-    \trapeze{$h^s$}{\position}
-    \draw [->] \position +(-2.2,0) node [below] {} -- +(-1,0);
-    \draw [<-] \position + (-1,1) -| ++(-2,3) node [above] {\mylabel};
-    \draw \position + (1,0) -- +(2,0) node {};
-    \renewcommand{\position}{(13.5,0)}
-    \renewcommand{\mylabel}{$\left|x\right|$}
-    \trapeze{$h^s$}{\position}
-    \draw [->] \position +(-2,0) node [below] {} -- +(-1,0);
-    \draw [<-] \position + (-1,1) -| ++(-2,2.95) node [above] {\mylabel};
-    \draw [->] \position + (1,0) -- +(2,0) node [right] {$H^s(x)$};
-\end{tikzpicture}
-\end{center}
-%
-when $x=x_1||\cdots||x_n$ for some integer $n$ and when the $x_i$'s are 
-$l$-bit strings.
-
-Show why, with a private key $k$ of length $l$, the MAC scheme 
-$$t:=H^s(k||m),$$
-is \emph{not} existentially unforgeable under an adaptive chosen-message attack.
-
-
-\medskip
-\begin{solution}
-  If we have the tag of $p$, which is (let's consider that $k$ and $p$ are $l$ bits long for simplicity)
-  \[ t_p = H^s(k\|p) = h^s(h^s(h^s(IV \| k) \| p) \| 2l) \]
-  we can find the tag of $p\|2l\|w$ (where $w$ is $l$ bits long for simplicity)
-  without knowing $k$ since we know $h^s$.
-  It is
-  \begin{align*}
-    H^s(k\|p\|2l\|w)
-    & = h^s(h^s(h^s(h^s(h^s(IV \| k) \| p) \| 2l) \| w) \| 4l)\\
-    & = h^s(h^s(H^s(k \| p) \| w) \| 4l)\\
-    & = h^s(h^s(t_p \| w) \| 4l)
-  \end{align*}
-  Since $p\|2l\|w \neq p$, this gives us an existential forgery.
-\end{solution}
-
-\subsection{Exercise 2 (Fixed-length MAC)}
-Consider the fixed-length MAC $\Pi:=\langle\Gen,\Mac,\Vrfy\rangle$
-defined as follows:
-\medskip
-\begin{itemize}
-  \item $\Gen$: choose random $k\leftarrow \{0,1\}^n$  \smallskip
-  \item $\Mac$: on input $m,k \in\{0,1\}^n$, output $t:=F_k(m)$  \smallskip
-  \item $\Vrfy$: on input $k, m, t \in \{0,1\}^n$ output 1 iff $t=F_k(m)$
-\end{itemize}
-\medskip
-%
-Prove that, if $F$ is a PRF, $\Pi$ is existentially unforgeable under
-an adaptive chosen-message attack. Hint:
-\medskip
-%
+Let $\negl$ denote a negligible function.
+Remember that $\Pi \define \langle \Gen, \Enc, \Dec \rangle$ has \emph{indistinguishable
+multiple encryption in the presence of eavesdroppers} if $\forall$
+PPT $\A$, $\exists$ $\negl$:
+  \[\Pr[\PrivKmult(n)=1]\leq\frac12+\negl(n) \,,\]
+where $\PrivKmult(n)$ is defined as follows.
 \begin{enumerate}
-  \item Consider the scheme $\Pi'$ defined as $\Pi$ except that a truly
-        random function is used instead of a pseudo-random one. Show that
-        $\Pi'$ is existentially unforgeable under an adaptive chosen-message
-        attack.  \smallskip
-  \item Consider a PPT adversary who can produce an adaptive forgery on
-        $\Pi$ with non negligible probability $\epsilon(n)$. Using this
-        adversary, show that $F$ cannot be a PRF.
+\item   $\A$ outputs $M_0=(m_0^1,\ldots,m_0^t),
+M_1=(m_1^1,\ldots,m_1^t)$
+\item Choose $k \leftarrow \G(1^n)$ and $b \leftarrow \{0,1\}$, and send
+  $(\Enc_k(m_b^1),\ldots,\Enc_k(m_b^t))$ to $\A$
+\item $\A$ outputs $b'$
+\item Define $\PrivKmult(n) \define 1$ iff $b=b'$
 \end{enumerate}
 
-% homework 2 of Dan Boneh, Winter 2011, Problem 2 
-\begin{solution}
-  \begin{itemize}
-    \item
-      Let $\tilde{\Pi} = \langle \tilde{\Gen}, \tilde{\Mac}, \tilde{\Vrfy} \rangle$, defined as:
-      \begin{itemize}
-        \item $\tilde{\Gen}$: chooses a random $f$.
-        \item $\tilde{\Mac}$: on input $m$, outputs $f(m)$.
-        \item $\tilde{\Vrfy}$: on input $(m,t)$, outputs $1$ iff $f(m) = t$.
-      \end{itemize}
-
-      Let's analyse the maximum value of $\Pr[\MacForge_{\A, \tilde{\Pi}}(n) = 1]$ for an adversary $\mathcal{A}$.
-      If after $q$ different queries (it gains no info doing the same query twice),
-      $m_1, \ldots, m_q$, $\A$ outputs $(m, t)$, what are its chances of success ?
-      Let $f:\{0,1\}^n \to \{0,1\}^n$.
-      There are $(2^n)^{2^n}$ different $f$ and we pick a random one uniformly.
-      However, there are only $(2^n)^{2^n-q}$ experiments such that $\A$ have received $(m_i,t_i)$ for $i = 1, \ldots, q$ because
-      there are $(2^n)^{2^n-q}$ $f$ such that $f(m_i) = t_i$ for $i = 1, \ldots, q$.
-      We could be in any of them.
-      Among them, only $(2^n)^{2^n-(q+1)}$ are such that $f(m) = t$.
-      Since $f$ is selected uniformly, we have
-
-      \begin{align*}
-        \Pr[\MacForge_{\A, \tilde{\Pi}}(n) = 1]
-        & = \Pr[f(m) = t | f(m_i) = t_i, \forall i = 1, \ldots, q]\\
-        & = \frac{\Pr[f(m) = t, f(m_i) = t_i, \forall i = 1, \ldots, q]}{\Pr[f(m_i) = t_i, \forall i = 1, \ldots, q]}\\
-        & = \frac{\frac{(2^n)^{2^n-(q+1)}}{(2^n)^{2^n}}}{\frac{(2^n)^{2^n-q}}{(2^n)^{2^n}}}\\
-        & = \frac{(2^n)^{2^n-(q+1)}}{(2^n)^{2^n-q}}\\
-        & = \frac{1}{2^n}.
-      \end{align*}
-      A shortcut would have been to argued that since, $f(m)$ is independent of the $f(m_i)$ so
-
-      \begin{align*}
-        \Pr[\MacForge_{\A, \tilde{\Pi}}(n) = 1]
-        & = \Pr[f(m) = t | f(m_i) = t_i, \forall i = 1, \ldots, q]\\
-        & = \Pr[f(m) = t]\\
-        & = \frac{(2^n)^{2^n-1}}{(2^n)^{2^n}}\\
-        & = \frac{1}{2^n}.
-      \end{align*}
-
-      It is quite surprising that instead of a upper bound
-      on $\Pr[\MacForge_{\A, \tilde{\Pi}}(n) = 1]$
-      depending on $\A$ (and reached for $\A$ super smart),
-      it is actually independent of $\A$.
-    \item
-      Let's now suppose that we have an adversary $\A$
-      that win with non-negligible probability against a PRF $F$
-      and show that under this assumption we can build
-      a distinguisher $\D$ for $F$.
-
-      $\D$ will simply take a function $g$ as input
-      and run $\A$ using $g$ to create the tags.
-      He has $g$ so he can see if $\A$ wins or lose.
-      If $\A$ wins, $\D$ outputs $1$, otherwise, it outputs $0$.
-
-      We know that if $g$ is a pseudo random function,
-      $\Pr[\MacForge_{\A, \Pi_g} = 1] = \frac{1}{2^n}$
-      and if $g$ is a PRF
-      $\Pr[\MacForge_{\A, \Pi_g} = 1] = \eta(n)$
-      where $\eta$ is non-negligible.
-      We have therefore
-      \[
-        |\Pr[\D^{F_k}(1^n) = 1] - \Pr[\D^{f}(1^n) = 1]|
-        = \left|\eta(n) - \frac{1}{2^n}\right|
-      \]
-      which is non-negligible.
-
-      % Not sure it works
-%    \item
-%      Another simpler solution is possible. Using the first Hint, we can say that if $F_k$ is a PRF, it has a maximum of $2^n$ possible outputs
-%      where a truly random function has exactly $2^n$ outputs. So if we suppose $\Pi$ secure with a PRF, then $\tilde{\Pi}$ is also secure because
-%      $\epsilon_{\tilde{\Pi}}  = \frac{1}{2^n} \geq \epsilon_{\Pi}$. We then can play the PRF game to prove the security of $\Pi$ with the second hint.
-  \end{itemize}
-
-\end{solution}
-
-\subsection{Exercise 3 (Hash functions from\ldots hash functions)}
-Let $H_2:\{0,1\}^{2l}\rightarrow\{0,1\}^{l}$ and $H_3:\{0,1\}^{3l}\rightarrow\{0,1\}^{l}$ be
-collision resistant hash functions. For $2l$-bit strings $x_i$'s, consider the following two constructions.
-\medskip
-\begin{itemize}
-	\item $H_4:\{0,1\}^{4l}\rightarrow\{0,1\}^{l}$ ; 
-	      $x=x_1||x_2\rightarrow H_2\left(H_2(x_1)||H_2(x_1\oplus x_2)\right)$
-	      \smallskip
-	\item $H_6:\{0,1\}^{6l}\rightarrow\{0,1\}^{l}$ ; 
-	      $x=x_1||x_2||x_3\rightarrow H_3\left(H_2(x_1\oplus x_2)||H_2(x_2\oplus x_3)||H_2(x_3\oplus x_1)\right)$
-\end{itemize}
-\medskip
-Determine whether these hash functions are still collision resistant or not.
-
-\begin{solution}
-  \begin{itemize}
-    \item
-      Let's show that from a collision of $H_4$, we generate a collision for $H_2$
-      which prove that $H_4$ is collision resistant since $H_2$ is so.
-      Let's suppose that we have $x_1\|x_2 \neq y_1\|y_2$ are such that $H_4(x_1\|x_2) = H_4(y_1\|y_2)$.
-      \begin{itemize}
-        \item
-          If $H_2(x_1) \| H_2(x_1 \xor x_2) \neq H_2(y_1) \| H_2(y_1 \xor y_2)$,
-          we have a collision for $H_2$ since their image by $H_2$ is identical.
-        \item
-          If $H_2(x_1) \| H_2(x_1 \xor x_2) = H_2(y_1) \| H_2(y_1 \xor y_2)$,
-          we have $H_2(x_1) = H_2(y_1)$ \emph{and} $H_2(x_1 \xor x_2) = H_2(y_1 \xor y_2)$.
-          \begin{itemize}
-            \item If $x_1 \neq y_1$, we have a collision for $x_2$ since $H_2(x_1) = H_2(y_1)$.
-            \item If $x_1 = y_1$, then $x_2 \neq y_2$ since $x_1\|x_2 \neq y_1\|y_2$.
-              Therefore $x_1 \xor x_2 \neq y_1 \xor y_2$ and we have collision on $H_2$.
-          \end{itemize}
-      \end{itemize}
-    \item
-      $H_6$ is not collision resistant since $H_6(x_1\|x_2\|x_3) = H_6((x_1 \xor w)\|(x_2 \xor w)\|(x_3 \xor w))$
-      for all $w$ (collision if $w\neq 0^{2l}$). 
-      Indeed, since $\xor$ is associative and commutative,
-      \begin{align*}
-        & = H_6((x_1 \xor w)\|(x_2 \xor w)\|(x_3 \xor w))\\
-        & = H_3(H_2((x_1 \xor w) \xor (x_2 \xor w))\|H_2((x_2 \xor w) \xor (x_3 \xor w))\|H_2((x_3 \xor w) \xor (x_1 \xor w)))\\
-        & = H_3(H_2(x_1 \xor (w \xor w) \xor x_2)\|H_2(x_2 \xor (w \xor w) \xor x_3)\|H_2(x_3 \xor (w \xor w) \xor x_1)))\\
-        & = H_3(H_2(x_1 \xor x_2)\|H_2(x_2 \xor x_3)\|H_2(x_3 \xor x_1)))\\
-        & = H_6(x_1\|x_2\|x_3).
-      \end{align*}
-  \end{itemize}
-\end{solution}
-
-
-\subsection{Exercise 4 (Hash-MAC)}
-Suppose $H_0$ and $H_1$ are compression functions but only one is beleived to be collision resistant.
-Besides, suppose $\textsc{Mac}_0$ and $\textsc{Mac}_1$ are message authentication codes but only one
-of the both schemes is known to be unforgeable. Is it possible to build a secure ''hash-MAC'' from these
-inputs? Justify your answer.
-%Homework 2 of Dan Boneh, Winter 2011, Problem 5 (DVD security)
-\begin{solution}
-  We build $H(m) = H_0(m)\|H_1(m)$.
-  If we have $m_1 \neq m_2$ such that $H(m_1) = H(m_2)$ then $H_0(m_1) = H_0(m_2)$ and
-  $H_1(m_1) = H_1(m_2)$ so the collision resistant hash function has a collision whichever it is.
-  However, $H$ is no more a compression function and we cannot use Merkle-Damg\aa{}rd.
-
-  The input of $H$ therefore cannot have arbitrary length but its output is twice the length of the output of $H_0$ and $H_1$ so it is twice the size of a tag.
-
-  The output of $\Mac_0$ and $\Mac_1$ are the size of a tag so we can use the tag
-  $H(\Mac_0(k,m)\|\Mac_1(k,m))$ for our Hash-MAC scheme.
-  If we are able to output an existential forgery $(m, t)$, since $H$ is collision resistant, that means that we have found $\Mac_0(k,m)\|\Mac_1(k,m)$ and therefore we have found an existential forgery for both $\Mac_0$ \emph{and} $\Mac_1$ which is absurd since one of them is believed to be unforgeable.
-
-  Our Hash-MAC scheme is therefore unforgeable.
-\end{solution}
-
-\subsection{Exercise 5 (MAC length extension)}
-Let $\Pi':=\langle\Gen',\Mac',\Vrfy'\rangle$ be a secure fixed-length MAC. We define a variable-length MAC $\Pi:=\langle\Gen,\Mac,\Vrfy\rangle$ as follows:
-
-\begin{itemize}
-%
-\item $\Gen$: choose random $k\leftarrow \{0,1\}^n$
-\item $\Mac$: on input $k \in\{0,1\}^n$ and $m \in \{0,1\}^*$ of length $l<2^\frac n4$
-\begin{itemize}
-\item Parse $m$ into blocks $m_1,\ldots,m_d$ of length $\frac n4$ each (pad with 0's if necessary)
-\item Choose random $r\leftarrow \{0,1\}^\frac n4$
-\item Compute $t_i:=\Mac_k(r||l||i||m_i)$ for $1\leq i\leq d$, with $|r|=|l|=|i|=\frac n4$
-\item Output $t:=\langle r,t_1,\ldots,t_d\rangle$
-\end{itemize}
-\item $\Vrfy$: on input $k, m, t=\langle r,t_1,\ldots,t_{d'}\rangle$,
-\begin{itemize}
-\item Parse $m$ into blocks $m_1,\ldots,m_d$ of length $\frac n4$ each
-\item Output 1 iff $d=d'$ and, $\forall 1\leq i\leq d$, $\Vrfy'_k(r||l||i||m_i,t_i)=1$
-\end{itemize}
-%
-\end{itemize}
-
-The goal of this exercise is to prove by reduction that $\Pi$ is existentially unforgeable. Let $\A$ (resp. $\A'$) be an adversary attacking the unforgeability of $\Pi$ (resp. $\Pi'$) and let $\epsilon = \textsc{MacForge}_{\A,\Pi}(n)$ (resp. $\epsilon' = \textsc{MacForge}_{\A',\Pi'}(n)$) denotes its advantage.
+Also remember that $\Pi \define \langle \Gen, \Enc, \Dec \rangle$ has \emph{indistinguishable
+encryption under a chosen-plaintext attack} if $\forall$ PPT $\A$,
+$\exists$ $\negl$:
+  \[\Pr[\PrivKcpa(n)=1]\leq\frac12+\negl(n) \,,\]
+where $\PrivKcpa(n)$ is defined as follows.
 
 \begin{enumerate}
-  \item Make a quick draw sketching the proof.
-  \item Describe formally how $\A'$ should react to a query $\textsc{Mac}_k(m)$.
-  \item Define what is a mac forgery for the scheme $\Pi$. Does it necessarily implie a forgery on the scheme $\Pi'$ (justify your answer).
-  \item Express $\epsilon$ in function of $\epsilon'$ and conclude.
+  \item Choose $k\leftarrow \Gen(1^n)$
+  \item \textbf{$\A$ is given oracle access to $\Enc_k(\cdot)$}
+  \item $\A$ outputs $m_0, m_1 \in \M$
+  \item Choose $b\pick \bset$ and send $\Enc_k(m_b)$ to $\A$
+  \item \textbf{$\A$ is again given oracle access to $\Enc_k(\cdot)$}
+  \item $\A$ outputs $b'$
+  \item Define $\PrivKcpa(n) \define 1$ iff $b=b'$
 \end{enumerate}
 
+Define the concept of indistinguishable \emph{multiple} encryption under a chosen-plaintext attack.
+
+
 \begin{solution}
-  (Interesting demonstration on the security of this scheme assuming F is a PRF : See reference book p117-118).
+%Sending it once (in a vector) or with a loop is exactly the same, so I think only one definition is sufficient...
+  Two definition can be proposed.
+  The first one is the one given in the reference \cite[p.~84]{katz2007introduction}.
+
+  $\Pi \define \langle\Gen, \Enc, \Dec\rangle$ has indistinguishable \emph{multiple} encryption under a chosen-plaintext attack
+  if $\forall$ PPT $\A$, $\exists$ negl. $\epsilon$:
+  \[ \Pr[\PrivKmultcpa(n) = 1] \leq \frac{1}{2} + \epsilon(n), \]
+  where $\PrivKmultcpa(n)$ is defined as follows. This is the challenger's viewpoint.
   \begin{enumerate}
-    \item TODO
-    \item $\A'$ should pick a random $r\leftarrow \{0,1\}^{\frac{n}{4}}$, parse m into d blocks $m_1,...,m_d$ and send to its oracle $d$ queries $r\|l\|i\|m_i$ for $i = 1, \ldots, d$.
-      After the $d$ queries made to its oracle $O'$, $\A'$ computes $\langle r, t_1, \ldots, t_d \rangle$ where $t_i$ is the answer of the oracle to its $i$th query. He then sends it as an answer to $\A$s query.
-    \item For $\Pi$, a forgery is a pair $(m, \langle r, t_1, \ldots, t_d \rangle)$ where $m$ has not been queried before
-      and $t_i = \Mac'_k(r\|l\|i\|m_i)$ for $i = 1, \ldots, d$ where $l$ is the length of $m$ and $m = m_1\| \cdots \|m_d$.
-      \begin{itemize}
-        \item
-          If none of its previous query has the same $r$ and $l$, $r\|l\|1\|m_1$ cannot be a query made by $\A'$ and
-          $(r\|l\|1\|m_1, t_1)$ is an existential forgery for $\Pi'$ that $\A'$ can output.
-        \item
-          If 2 previous queries have both $r$ and $l$, then we do not necessarily have an existential forgery.
-          However, since $r$ is picked at random ($\A'$ could cheat and make sure that the same $r$ is not picked twice)
-          the probability (birthday paradox) of this to happen (if all $m$ have the same $l$ which is the worst case) is approximately
-          $\frac{q(n)^2}{2 \cdot 2^n}$ where $q(n)$ is the number of queries made by $\A$.
-        \item
-          If one unique previous query $m^j$ has this $r$ and $l$, since $m$ is not one of the previous query, there must be $i$
-          such that $m_i \neq m_i^j$.
-          We know therefore that $r\|l\|j\|m_j$ has never been queried by $\A'$ so $(r\|l\|j\|m_j, t_j)$ is an existential forgery for $\Pi$.
-      \end{itemize}
-    \item In conclusion, we have
-      \begin{align*}
-        \Pr[\MacForge_{\A,\Pi}(n) = 1]
-        & \leq \Pr[\MacForge_{\A',\Pi'}(n) = 1] + \frac{q(n)}{2^{n+1}}\\
-        \epsilon(n)
-        & \leq \epsilon'(n) + \frac{q(n)}{2^{n+1}}
-      \end{align*}
-      so since $\epsilon'(n)$ and $\frac{q(n)}{2^{n+1}}$ are negligible,
-      $\epsilon(n)$ is negligible.
+    \item Choose $k \leftarrow \Gen(1^n)$
+    \item $\A$ is given oracle access to $\Enc_k(\cdot)$
+    \item $\A$ outputs $M_0 = (m_0^1, \ldots, m_0^t)$, $M_1 = (m_1^1, \ldots, m_1^t)$
+    \item Choose $b \leftarrow \{0,1\}$, and send $(\Enc_k(m_b^1), \ldots, \Enc_k(m_b^t))$ to $\A$
+    \item $\A$ is again given oracle access to $\Enc_k(\cdot)$
+    \item $\A$ outputs $b'$
+    \item Define $\PrivKmultcpa(n) \define 1$ iff $b = b'$
   \end{enumerate}
+
+  An additional definition can be found in the reference book \cite[p.~75]{katz2007introduction}.
+  Both are equally good since it can be proven they are equivalent to the definition of indistinguishably of a \emph{single} encryption
+  under CPA.
+  Proving that, if $\Pi$ has indistinguishable \emph{multiple} encryption under CPA then it also has indistinguishable \emph{single} encryption,
+  is trivial.
+  The other way is quite tricky.
+  However in public key cryptosystems, CPA is the same as EAV since $\A$ has the public key and therefore oracle access to $\Enc_k$.
+  There is therefore the same property in asymmetric crypto for EAV than for symmetric crypto with CPA:
+  equivalence of single- and multiple-message security.
+  This is stated by \cite[theorem~11.6]{katz2007introduction} where it is proven.
+  The proof is very similar to the proof needed to show the equivalence of single-message CPA and multiple-message CPA so if you are in doubt, just check it out.
 \end{solution}
 
-\subsection{Exercise 6 (Block-cipher based hash function)}
-Considering a block cipher
-$E:\mathcal{K}\times\mathcal{M}\rightarrow\mathcal{C}$; $(k,m)\rightarrow E(k,m)=Enc_k(m)$
-with $\mathcal{K}=\mathcal{M}=\mathcal{C}=\left\{0,1\right\}^l$, one may try to construct
-a collision resistant compression function from $\left\{0,1\right\}^{2l}$ to $\left\{0,1\right\}^{l}$.
-Show that the following methods do not work :
-$$ f_1(x,y)=E(y,x)\oplus y \quad\mbox{ and }\quad f_2(x,y)=E(x,x)\oplus y $$
-That is, show an efficient algorithm for constructing collisions for $f_1$ and $f_2$.
-Recall that the block cipher E and the corresponding decryption algorithm D are both
-known to you (and they are bijective functions).
+
+
+\subsection{Exercise 2 (Pseudorandomness.)}
+
+Let $F\colon \bset^* \times \bset^* \mapsto \bset^*$ be a
+(length-preserving) pseudorandom function, that is, if $k$ is selected
+uniformly at random in $\bset^n$, then $F_k(\cdot)$ is
+computationnaly indistinguishable from a function $f$ selected randomly in the set of
+functions from $\bset^n$ to $\bset^n$. More formally, $\forall$ PPT $\D$, $\exists$ negl. $\negl$:
+\[\left|\Pr[\D^{F_k(\cdot)}(1^n)=1]-\Pr[\D^{f(\cdot)}(1^n)=1]\right|\leq\negl(n)\]
+
+Show that $F$ cannot seem random in front of an adversary who has an unbounded computational power,
+in the sense that she can distinguish it from a random function.
+
+
 \begin{solution}
-  We will give 2 collisions for $f_1$ and $f_2$.
+  There are $|\bset^n|^{|\bset|^n} = {2^n}^{2^n}$ function from $\bset^n$ to $\bset^n$.
+  However, since there are only $2^n$ different $k$, $F_k$ can only be $2^n$ different functions.
+  If the distinguisher $D^g$ is unbounded, he can just check the output of $g$ for every possible input and for all $k \in \bset^n$, he can check if it has the same output of $g$.
+  If it has the same output of $F_k$ for at least one $k$, then $D^g(1^n) = 1$, else $D^g(1^n) = 0$.
+  More formally
+  \[
+    D^g(1^n) \overset{\Delta}{=}
+    \left\{ \begin{array}{rl}
+        1 & \mbox{if }\exists k \in \{0,1\}^n, \forall m \in \bset^n, F_k(m) = g(m)\\
+		0 & \mbox{otherwise.}\\
+    \end{array} \right.
+  \]
+  If $g$ is indeed a pseurorandom function, we can see that
+  \[ \Pr[D^{F_k}(1^n) = 1] = 1 \]
+  for all $k \in \bset^n$: we are guaranteed to detect it as we enumerate all possible $F_k$.
 
-  We know that $E(k, \cdot)$ is surjective because it must be injective and $\M = \C$.
-  Therefore the decryption exists for all $c \in \C$ ! We will use it for the second collision of $f_1$.
+  If $g$ is a true random function, then the only case where we may be wrong is if the random function ``mimics'' one of the pseudorandom function, that is $\exists k\colon \forall m \in \bset^n \colon f(m)=F_k(m)$. Let's evaluate the probability that it happens:
+  \[ |\{f \colon \{0,1\}^n \mapsto \{0,1\}^n \suchthat \exists k \in \bset^n, \forall m \in \bset^n f(m) = F_k(m) \}| \leq 2^n. \]
+  (the inequality is there to represent the fact that there could be $k_1,k_2$ such that $F_{k_1}(m) = F_{k_2}(m)$ for all $m \in \{0,1\}^n$.)
+  Therefore
+  \[ \Pr[D^{f}(1^n) = 1] \leq \frac{2^n}{{2^n}^{2^n}} = \frac{1}{2^{n(2^n-1)}}. \]
+  Then, the difference between the probabilities is
+  \[ \abs{\Pr[D^{F_k}(1^n)=1] - \Pr[D^f(1^n)=1]} = 1-\frac{1}{2^{n(2^n-1)}} \approx 1 \text{ for large values of } n \]
+  which is clearly non-negligible.
 
-  For $f_1$, we have the 2 following collisions
-
-  \begin{align*}
-    f_1(D(E(y,x),y), E(y,x))
-    & = E(E(y,x), D(E(y,x), y)) \xor E(y,x)\\
-    & = y \xor E(y,x)\\
-    & = E(y,x) \xor y\\
-    & = f_1(x, y)\\
-    f_1(D(0, E(y,x) \xor y), 0)
-    & = E(0, D(0, E(y, x) \xor y)) \xor 0\\
-    & = E(y, x) \xor y\\
-    & = f_1(x, y).
-  \end{align*}
-  and for $f_2$ we have
-
-  \begin{align*}
-    f_2(x, E(x,x)) & = E(x,x) \xor E(x,x)\\
-                   & = 0 & \forall x \in \{0,1\}^l\\
-    f_2(y, E(x,x)) & = E(y,y) \xor E(x,x)\\
-                   & = E(x,x) \xor E(y,y)\\
-                   & = f_2(x, E(y,y)).
-  \end{align*}
-  \\
-  \textbf{Other approach:}\\
-  For $f_1$ : Let's define $k_1$ and $k_2$ such that $k_2$ is equal to $k_1$ except for the last bit which is flipped. Let's now take an arbitrary $x_1$ for which we ask the encryption $T_{x_1} = E(k_1,x_1)$. Now let's flip the last bit of $T_{x_1}$ and call the result $T_{x_2}$. We can now ask for the decryption of $T_{x_2}$ given $k_2$ as input key, which we know exists since D is bijective and $\C = \{0,l\}^{l}$. We then obtain $x_2$. We can now observe that:
-  \begin{align*}
-    f_1(x_1, k_1) & = E(k_1,x_1) \xor k_1\\
-                   & = T_{x_1}  \xor k_1\\
-    f_1(x_2, k_2) & = E(k_2,x_2) \xor k_2\\
-                   & = T_{x_2} \xor k_2\\
-                   & = (T_{x_1} \xor 0^{l-1}||1 )\:\xor\: (k_1 \xor 0^{l-1}||1)\\
-                   & = T_{x_1}  \xor k_1\\
-  \end{align*}
-  For $f_2$ : We can ask for $T_x \:= \:E(x,x)$ and $T_y\: =\: E(y,y)$ for two arbitrary (but different) x and y.  We can see that:
-  \begin{align*}
-    f_2(y, T_x) & = E(y,y) \xor T_x\\
-                   & = T_y  \xor T_x\\
-    f_2(x, T_y) & = E(x,x) \xor T_y\\
-                   & = T_x \xor T_y\\
-  \end{align*}
-  Which are both equal with different input, this is a collision
-  
+  (Note that there is a slight chance that the distinguisher makes a mistake, but this probability decreases more than exponentially when $n$ increases.)
 \end{solution}
 
-\subsection{Exercise 7 (Blue-ray security)}
-The movie industry wants to protect digital content distributed on DVD's. We study
-one possible approach. Suppose there are at most a total of $n$ DVD players in the world (e.g.
-$n=2^{32}$). We view these n players as the leaves of a binary tree of height $\log_2 n$. 
-Each node $\nu_j$ in this binary tree contains an AES key $K_j$ such that 
-$\mathrm{Enc}_{K_j}:\{0,1\}^l\rightarrow\{0,1\}^l$ is assumed to be a \emph{secure} encryption. 
-These keys are kept secret from consumers and are fixed for all time. 
-At manufacturing time each DVD player is assigned a serial number $i\in\left[0,n-1\right]$.
-Consider the set $S_i$ of $\log_2(n+1)$ nodes along the path from the root to leaf number
-$i$ in the binary tree. The manufacturer of the DVD player embeds in player number $i$ the
-$\log_2(n+1)$ keys associated with the nodes in $S_i$. In this way each DVD player ships with 
-$\log_2(n+1)$ keys embedded in it (these keys are supposedly inaccessible to consumers).
 
-\begin{enumerate}
-	\item Since all DVD players have the key \emph{root} (noted $K_{root}$), 
-	      find a way to protect the content $M\in\{0,1\}^l$ of a DVD such that all players can decrypt 
-	      the movie (and then read it).
-	\item Now suppose that a hacker has been able to extract the key $K_{root}$ embedded in his 
-	      DVD player and has published it on the Internet. 
-	      Show how the movie industry can encrypt the contents of a new DVD $M\in\{0,1\}^l$ such that only 
-	      the owners of a DVD player can read it.
-	      Note that the movie indutry does not want to produce several encryptions of the
-	      same content $M$ \emph{i.e.} there will be a single manner to protect the DVD.
-	\item Suppose the $\log_2n$ keys embedded in DVD player number $r$ are exposed by hackers 
-	      and published on the Internet. Show that when the movie industry is about to 
-	      distribute a new DVD movie they can encrypt the contents of the DVD using a 
-	      ciphertext of size $l\!\cdot\!(1+\log_2n)$ so that all DVD players can decrypt the movie except
-	      for player number $r$. In effect, the movie industry disables player number $r$.
-	      \\
-	      \emph{Hint: the DVD will contain $\log_2n$ ciphertexts where each ciphertext is the 
-	      encryption of a unique K under certain $\log_2n$ keys from the binary tree.}
-\end{enumerate}
+
+\subsection{Exercise 3 (Reduction.)}
+
+Let $\Pi \define \langle \Gen,\Enc,\Dec\rangle$ be an encryption scheme having
+indistinguishable encryption under a chosen plaintext attack. Suppose we
+define a new scheme $\Pi' \define \langle \Gen',\Enc',\Dec'\rangle$ as follows.
+\smallskip
+\begin{itemize}
+  \item $\Gen' \define \Gen$
+  \item $\Enc_k'(m) \define \Enc_k(m)||1$ (i.e. a `1' bit is appended to the ciphertext)
+  \item $\Dec_k'(c) \define \Dec_k(c_1)$, where $c_1$ is obtained by discarding the last bit of $c$.
+\end{itemize}
+\smallskip
+Is $\Pi'$ also a CPA secure encryption scheme? Provide either an (efficient) attack/adversary
+or a (polynomial) reduction, depending on your claim.
+
+
 \begin{solution}
+  $\Pi$ is a secure encryption scheme under CPA. $\Pi$ is public, only the key is hidden from $\A$. Adding a 1 at the end will just give no information to $\A$.
+
+  %To prove it rigorously, we can prove that ``if $\Pi'$ is insecure then $\Pi$ is insecure'' since it is the contraposition of ``if $\Pi$ is secure then $\Pi'$ is secure''. % Perso je trouve la formulation rend confus
+  This proof methodology is called ``reduction''.
+
+    %TODO define more clearly the interface with the adversary and with the oracle
+  Let $\C$ be the adversary trying to break $\Pi$ and an efficient adversary $\A$ that can break $\Pi'$ with a non-negligible probability. $\O$ is the oracle that gives $\C$ the challenge to break the scheme $\Pi$.
   \begin{enumerate}
-    \item Encrypt all the DVDs with $K_\text{root}$, i.e. build the ciphertext : $c_{root}=Enc_{K_{root}}(M)$
-    \item At the beginning of the DVD, encrypt a random key $K$ twice (using $K_2$ and then $K_3$): $Enc_{K_2}(K)$ and $Enc_{K_3}(K)$.
-
-      We then encrypt all the content $M$ of the DVD using $K$. (We suppose $K_1$ is $K_{\text{root}}$)
-      $K_2$ and $K_3$ are the keys associated to the 2 childs of the root. \\
-      \textbf{Other possibility}
-      \\
-      Simply encrypt the contents of the new DVD M as : $Enc_{K2}(M)||Enc_{K3}(M)$. This way, each DVD player is still able to decrypt the content, but nobody that only has $K_{root}$.
-    \item
-      For every node $i$ on the path from the root to $r$, we must add an encryption of $K$ with the key of its child that is not in the path.
-      For example, if $r = 10$ and $n = 16$, we must include the bold keys,
-      so we will include the encryption of $K_7$ in a DVD which is quite something.
-      \\
-      \textbf{Expressed differently}
-      \\
-      If we want to disable the DVD player 11 for example, we can create a new ciphertext as : $c_{disable} = Enc_{K_2}(M)||Enc_{K_7}(M)||Enc_{K_{12}}(M)||Enc_{K_{player10}}(M)$ 
-      
-      \begin{center}
-        \Tree [.{$K_{\text{root}} = K_1$}
-          [.{$\mathbf{K_2}$}
-            [.{$K_4$}
-              [.{$K_8$}
-                [.{0} ]
-                [.{1} ]
-              ]
-              [.{$K_9$}
-                [.{2} ]
-                [.{3} ]
-              ]
-            ]
-            [.{$K_5$}
-              [.{$K_{10}$}
-                [.{4} ]
-                [.{5} ]
-              ]
-              [.{$K_{11}$}
-                [.{6} ]
-                [.{7} ]
-              ]
-            ]
-          ]
-          [.{$K_3$}
-            [.{$K_6$}
-              [.{$\mathbf{K_{12}}$}
-                [.{8} ]
-                [.{9} ]
-              ]
-              [.{$K_{13}$}
-                [.{\textbf{10}} ]
-                [.{11} ]
-              ]
-            ]
-            [.{$\mathbf{K_7}$}
-              [.{$K_{14}$}
-                [.{12} ]
-                [.{13} ]
-              ]
-              [.{$K_{15}$}
-                [.{14} ]
-                [.{15} ]
-              ]
-            ]
-          ]
-        ]
-      \end{center}
+    \item $\O$ is given $1^n$ as input as $\C$ that will transmit it to $\A$.
+    \item First query phase:
+      \begin{itemize}
+        \item $\A$ outputs $m_i$ as message to $\C$.
+        \item $\C$ outputs $m_i$ as message to $\O$.
+        \item $\O$ outputs $c_i = Enc_k(m_i)$ as message to $\C$.
+        \item $\C$ sends back $c_i||1$ to $\A$.
+      \end{itemize}
+    \item Challenge phase:
+      \begin{itemize}
+        \item $\A$ outputs $m_0^\ast, m_1^\ast$ to $\C$.
+        \item $\C$ outputs $m_0^\ast, m_1^\ast$ as message to $\O$.
+        \item $\O$ choose randomly $b \leftarrow \{0,1\}$.
+        \item $\O$ outputs $c^\ast = Enc_k(m_b^\ast)$ to $\C$.
+        \item $\C$ sends back $c^\ast||1$ to $\A$.
+      \end{itemize}
+    \item Second query phase: same as the first one.
+    \item $\A$ outputs $b'$ to $\C$.
+    \item $\C$ outputs $b'$.
   \end{enumerate}
+  We have:
+  \[\Pr[b'=b] = \Pr[\A \text{ wins over } \Pi']\]
+  If $\A$ has a non-negligible probability to win against the $\Pi'$ scheme then $\C$ has also a non negligible probability to win against the $\Pi$ scheme. We can conclude that $\Pi'$ is also a secure scheme.
 \end{solution}
 
-\subsection{Exercise 9 (Mode of operation)}
-Show formally that ECB-mode encryption does not have indistinguishable encryptions in the presence of an eavesdropper.
+
+
+\subsection{Exercise 4 (Reduction and/or attacks.)}
+
+Let $\Pi_1=\langle \Gen^1,\Enc^1,\Dec^1\rangle$ and $\Pi^2=\langle \Gen^2,\Enc^2,\Dec^2\rangle$ be an encryption scheme with $\Enc^1 \colon \K\times \M^1 \mapsto \C^1$ and $\Enc^2 \colon \K\times \M^2 \mapsto \C^2$
+\begin{enumerate}[label=\alph*.]
+\item If $\C^1 = \M^2$, let $\Pi=\langle \Gen,\Enc,\Dec\rangle$ with
+\begin{itemize}
+  \item $\Gen\define(\Gen_1,\Gen_2)$ (that is, we obtain two different keys $(k_1,k_2)$
+  \item $\Enc_{(k_1,k_2)}(m)\define\Enc_{k_2}^2(\Enc^1_{k_1}(m))$
+  \item $\Dec_{(k_1,k_2)}(c)\define\Dec^1_{k_1}(\Dec^2_{k_2}(c))$
+\end{itemize}
+
+\begin{enumerate}[label=\arabic*.]
+\item If $\Pi^1$ is CPA secure, is it $\Pi$ CPA secure?
+\item If $\Pi^2$ is CPA secure, is it $\Pi$ CPA secure?
+\item If $\Pi$ is CPA secure, is it $\Pi^1$ CPA secure?
+\item If $\Pi$ is CPA secure, is it $\Pi^2$ CPA secure?
+\end{enumerate}
+\item If $\M^1 = \M^2$ and $\C^1 = \C^2$. let $\Pi'=\langle \Gen',\Enc',\Dec'\rangle$ with
+\begin{itemize}
+  \item $\Gen' \define (\Gen^1,\Gen^2)$ (that is, we obtain two different keys $(k_1,k_2)$
+  \item $\Enc'_{(k_1,k_2)}(m) \define (c_1,c_2)$ with $c_1=\Enc^1_{k_1}(m),~c_2=\Enc^2_{k_2}(m))$
+  \item $\Dec'_{(k_1,k_2)}(c) \define \Dec_{k_1}(c_1)$ with $c=c_1\|c_2$ ($c_1$ is the first half of $c$)
+\end{itemize}
+
+\begin{enumerate}[resume*]
+\item If $\Pi^1$ is CPA secure, is it $\Pi'$ CPA secure?
+\item If $\Pi^2$ is CPA secure, is it $\Pi'$ CPA secure?
+\item If $\Pi'$ is CPA secure, is it $\Pi^1$ CPA secure?
+\item If $\Pi'$ is CPA secure, is it $\Pi^2$ CPA secure?
+\end{enumerate}
+\end{enumerate}
+
+
 \begin{solution}
-  Let say we have to split the message into $m$ messages of $n$ bits.
-  Choosing $m_0 = M_0 \| M_0 \| \cdots \| M_0$ and $m_1 = M_1 \| M_2 \| \cdots \| M_m$ with $M_i \neq M_j$ for $i \neq j$,
-  if $b = 0$, $\A$ will get $c = C_0 \| C_0 \| \cdots \| C_0$ for some $C_0 \in \C$. But if b=1, $\A$ will get $c = C_1 \| C_2 \| \cdots \| C_m$ for some $C_i \in \C$.
+\begin{enumerate}
+	\item Let's assume $\Pi$ is not CPA secure: There exist an adversary A.\\
+	We build an adversary $A^1$ for $\Pi_1$
+	\begin{align*}
+		\Pr[b''=b;b''\leftarrow a^1] &= \Pr[b'=b;b'\leftarrow a]\\
+		\Pr[b''=b] &= \Pr[b'=b] \le 1/2+\negl
+	\end{align*}
+	We will prove this by reduction.
+	Let's assume we have a PPT adversary $\A_\Pi$ against $\Pi$ with advantage $\negl$.
+	We build an adversary $\A^1 \define \A_{\Pi^1}$ against $\Pi'$, running $\A_\Pi$ inside.
+	$\A_{\Pi^1}$ has oracle access to $\O_{\Pi^1}$.
+	We then run the following experiment (viewpoint of the adversary $\A_{\Pi^1}$):
+	\begin{enumerate}[label=(\arabic*)]
+		\item The challenger-oracle chooses $k_1 \pick \K$.
+		\item We, the adversary $\A_{\Pi^1}$, choose $k_2 \pick \K$.
+		\item Query phase: for every request for encryption of message $m\in\M_1$ made by $\A_\Pi$ to an ``oracle'' $\O_\Pi$ (played by us), we redirect this request to our oracle $\O_{\Pi^1}$ and receive $c=\Enc^1_{k_1}(m)$. We then compute $c'=\Enc^2_{k_2}(c)=\Enc^2_{k_2}(\Enc^1_{k_1}(m))=\Enc_{(k_1,k_2)}(m)$ and forward it to the ``emulated'' adversary $\A_\Pi$.
+		\item Challenge phase: the adversary $\A_\Pi$ outputs two messages $m_0$ and $m_1 \in \M^1$, we output both to the challenger-oracle.
+		\item The challenger-oracle chooses $b \pick \{0,1\}$ and sends $c^*=\Enc^1_{k_1}(m_b)$ to us. We compute $c^{*'}=\Enc^2_{k_2}(c^*)=\Enc_{(k_1,k_2)}(m_b)$ and send it to $\A_\Pi$.
+		\item Second query phase, similar to the first one.
+		\item $\A_\Pi$ outputs its guess $b'$. We output $b'' \define b'$.
+	\end{enumerate}
+	From the point of view of $\A_\Pi$, it has discuted with an oracle and challenger for $\Pi$: it has thus executed in the correct conditions and so, its advantage is $\negl$. In addition, our constructed adversary $\A_{\Pi^1}$ has only executed PPT algorithms in addition to $\A_\Pi$, so the overall adversary is PPT.
+	We can then compute the probability of success of our adversary $\A_{\Pi^1}$:
+	\[ \Pr[\PrivKcpa[\A_{\Pi^1}, \Pi^1](n)=1] = \Pr[b''=b] = \Pr[b'=b] = \Pr[\PrivKcpa(n)=1] = \frac12 + \negl(n), \]
+	the same probability as $\A_\Pi$. As we know that $\Pi^1$ is CPA-secure, then it means that $\negl(n)$ is negligible, and so $\Pi$ is also CPA-secure.
 
-  An adversary $\A$ can output $b = 0$ iff all the $C_i$s are equals.
-  We have
-  $$ \Pr[\PrivK^{\text{eav}}_{\A,\text{ECB}}(nm)] = \frac{1}{2} + \frac{1}{2} = 1 $$
-  since the $C_i$ cannot be equal if $b = 1$ since we use a PRP.
-  If two different $M_i$ were encrypted as same $C_i$, decryption wouldn't be possible.
+	\item The proof is similar to the above, but we send $m'=\Enc^1_{k_1}(m)$ to our oracle for $\O_{\Pi^2}$ and directly get $c=\Enc^2_{k_2}(\Enc^1_{k_1}(m))=\Enc_{(k_1,k_2)}(m)$.
+
+	\textbf{If $\Pi^2$ is CPA secure, is it $\Pi$ CPA secure?}
+
+	We ($\D$) define an oracle ($O(\Pi^2)$) that can securely encode a message with $\Pi^2$ and instantiate an Attacker ($\A$). As we have to challenge the $\Pi$ scheme knowing the $\Pi^2$ is CPA secure we will proceed as follow.
+	\begin{description}
+		\item[First learning phase:] We begin by encrypting the messages from the attacker with $\Pi^1$ to send them to the oracle. The oracle responds by encrypting the message received with $\Pi^2$ and we just pass this response to the attacker.
+		\item[Challenge phase:] The attacker choose two messages and we transmit the two messages with the first encryption. The oracle will choose witch message to encrypt and will respond with one of the two messages encrypted that we will send back to the attacker.
+		\item[Second learning phase:] Same as the first one.
+	\end{description}
+	\begin{center}
+		\begin{tikzpicture}[scale=0.8]
+			%structure
+			\draw[rounded corners=10pt,thick] (0,0) rectangle (5,10);
+			\draw[rounded corners=10pt,thick] (0.5,0.5) rectangle (2,8.5);
+			\draw[rounded corners=10pt,thick] (13,0) rectangle (17,10);
+			\node[above right] at (0,10) {$\D$};
+			\node[above right] at (0.5,8.5) {$\A$};
+			\node[above left] at (17,10) {$O(\Pi^2)$};
+			\node[below left] at (5,10) {$k_1 \pick \Gen^1(1^n)$};
+			\node[below left] at (17,10) {$k_2 \pick \Gen^2(1^n)$};
+
+			%train phase
+			\flect (2,8) -- (4,8) \mess {$m_i$};
+			\flect (4,7) -- (2,7) \mess {$c_i$};
+			\flect (5,8) -- (13,8) \mess {$m_i' \define \Enc_{k_1}^1(m_i)$};
+			\flect (13,7) -- (5,7) \mess {$c_i \define \Enc_{k_2}^2(m_i')$};
+
+			%challenge phase
+			\flecc (2,5.5) -- (4,5.5) \mess {$m^{\ast}_0,m^{\ast}_1$};
+			\flecc (4,4.5) -- (2,4.5) \mess {$c^\ast$};
+			\flecc (5,5.5) -- (13,5.5) \mess {$m
+			_0^{\ast\prime} \define \Enc_{k_1}^{1}(m_0^\ast), m_1^{\ast\prime} \define \Enc_{k_1}^{1}(m_1^{\ast})$};
+			\flecc (13,4.5) -- (5,4.5) \mess {$c^\ast \define \Enc_{k_2}^{2}(m_b^{\ast\prime})$};
+			\node[below right] at (13,5.5) {$b \pick \bset$};
+
+			%train phase
+			\flect (2,3) -- (4,3) \mess {$m_i$};
+			\flect (4,2) -- (2,2) \mess {$c_i$};
+			\flect (5,3) -- (13,3) \mess {$m_i' \define \Enc_{k_1}^1(m_i)$};
+			\flect (13,2) -- (5,2) \mess {$c_i \define \Enc_{k_2}^2(m_i')$};
+
+			% output
+			\flec (2,1) -- (3,1) node[pos=1,right] {$b'$};
+			\flec (5,1) -- (6,1) node[pos=1,right] {$b''=b'$};
+		\end{tikzpicture}
+	\end{center}
+	As we can see in every case, the distinguisher will have the same probability to find the message encrypted by the oracle than the attacker to break the scheme. As the attacker can only have a probability of $1/2 + \negl$ to succeed the distinguisher will have the same probability. So, the scheme $\Pi$ is secure.
+
+	\item As seen in the previous development, if $\Pi^2$ is CPA secure, $\Pi$ is CPA secure. There is no restriction on $\Pi^1$ in that case. Therefore $\Pi^1$ could be such that $\Enc^1_{k_1}(m)\define m$ which is obviously not CPA secure. So the proposition is false.
+
+	\item Idem
+
+	\item The $\Pi'$ scheme is CPA secure if and only if $\Pi^2$ is also CPA secure. For example, if $\Enc_{k_2}^2(m) = m$ then the scheme $\Pi'$ is obviously not CPA secure.
+
+	More formally: Let's define the following experiment (the viewpoint is that of the adversary $\A$):
+	\begin{enumerate}[label=(\arabic*)]
+		\item The challenger chooses $k_1, k_2 \pick \K \times \K$.
+		\item No query phase takes place
+		\item We output $m_0=0^\abs{\M_1}$ and $m_1=1^\abs{\M_2}$ to the challenger.
+		\item The challenger chooses $b \pick \bset$ and returns $c=(\Enc^1_{k_1}(m_b), m_b)$ (recall that $\Enc^2_{k_2}(\cdot)$ is the identity here).
+		\item We output $b'=$ last bit of $c$.
+	\end{enumerate}
+	Then it is clear that $\Pr[\PrivKcpa[\A, \Pi'](1^n)=1] = \Pr[b'=b] = 1$.
+
+	\item Similar to the previous one: assume $\Enc^1$ is the identity.
+
+	\item We will proof this by reduction. Again, let's suppose we have a PPT adversary $\A_{\Pi^1}$ for $\Pi^1$ with advantage $\negl$, and let's build another PPT adversary $\A_{\Pi'}$ against $\Pi'$. The adversary $\A_{\Pi'}$ has access to an oracle $\O_{\Pi'}$ for $\Pi'$, and runs the adversary $\A_{\Pi^1}$ inside. We then run the following experiment (viewpoint of $\A_{\Pi'}$):
+	\begin{enumerate}[label=(\arabic*)]
+		\item $\A_{\Pi^1}$ chooses the security parameter $n$, sends it to $\A_{\Pi'}$, which sends it to the oracle. \emph{(Note: I'm not entirely sure of this one.)}
+		\item The oracle chooses $k_1, k_2 \pick \K \times \K$.
+		\item First query phase: When $\A_{\Pi^1}$ sends a query for encryption of message $m$ to its ``oracle'' $\O_{\Pi^1}$ (played by us), we forward it to our oracle $\O_{\Pi'}$, which sends us back an encryption $c=\Enc'_{(k_1, k_2)}(m)=(c_1, c_2)=(\Enc^1_{k_1}(m), \Enc^2_{k_2}(m))$. We forward $c_1$ to $\A_{\Pi^1}$.
+		\item Challenge phase: $\A_{\Pi^1}$ outputs two messages $m_0, m_1 \in \M^1$. We output them to the challenger-oracle.
+		\item The challenger-oracle chooses $b \pick \{0, 1\}$ and returns $c^*=\Enc'_{(k_1, k_2)}(m_b)=(c^*_1, c^*_2)=(\Enc^1_{k_1}(m_b), \Enc^2_{k_2}(m_b))$ with $c_1$ and $c_2$ of equal length.
+		\item We return $c^*_1$ to $\A_{\Pi^1}$ as the challenge of the ``oracle'' $\O_{\Pi^1}$.
+		\item Second query phase, similar to the first one.
+		\item $\A_{\Pi^1}$ outputs its guess $b'$. We output $b'' \define b'$ to the challenger.
+	\end{enumerate}
+	From the point of view of $\A_{\Pi^1}$, it has communicated with an oracle for $\Pi^1$,
+	and so it has executed in the correct conditions and its advantage in guessing $b$ is $\negl$.
+	As our adversary $\A_{\Pi'}$ only executes PPT algorithms, it is PPT too.
+	We can compute the probability of success of $\A_{\Pi'}$:
+	\[ \Pr[\PrivKcpa[\A_{\Pi'}, \Pi'](n)=1] = \Pr[b''=b] = \Pr[b'=b] = \Pr[\PrivKcpa[\A_{\Pi^1}, \Pi^1](n)=1] = \frac12 + \negl \]
+	As we know that $\Pi'$ is CPA-secure, then $\negl$ must be negligible, and so $\Pi^1$ is also CPA-secure.
+
+	Intuition: $\Pi'$ effectively executes the two encryption schemes in parallel, with no communication between the two. If one of the two encryption scheme was not CPA-secure, then we could just focus on this scheme to break the whole $\Pi'$.
+
+	\item Similar to the previous one; the only difference is that we send $c_2$ instead of $c_1$.
+\end{enumerate}
+
 \end{solution}
+
