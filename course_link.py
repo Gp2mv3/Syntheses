@@ -23,7 +23,7 @@ with open(CONFIG_FILE_NAME, 'r') as stream:
         document = yaml.load(stream)
         stream.close()
         titre = document['name'][name]
-    except KeyError:
+    except:
         titre = name
 
 print(titre.encode('utf-8'))
