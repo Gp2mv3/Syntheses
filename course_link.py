@@ -7,16 +7,16 @@ Created on 24/08/2018
 """
 
 import os
-import sys  
-            
+import sys
+
 # Absolute path to the config file
 if len(sys.argv) == 3:
-    CONFIG_FILE_NAME = sys.argv[1] + 'src/config.yml' 
+    CONFIG_FILE_NAME = sys.argv[1] + 'src/config.yml'
     name = sys.argv[2]
 else:
-    CONFIG_FILE_NAME = 'src/config.yml' 
+    CONFIG_FILE_NAME = 'src/config.yml'
     name = sys.argv[1]
-    
+
 with open(CONFIG_FILE_NAME, 'r') as stream:
     try:
         import yaml
@@ -26,4 +26,7 @@ with open(CONFIG_FILE_NAME, 'r') as stream:
     except:
         titre = name
 
-print(titre.encode('utf-8'))
+if sys.version_info.major >= 3:
+    print(titre)
+else:
+    print(titre.encode('utf-8'))
