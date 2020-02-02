@@ -7,8 +7,7 @@ Created on 24/08/2018
 """
 
 import os
-import sys
-import yaml   
+import sys  
             
 # Absolute path to the config file
 if len(sys.argv) == 3:
@@ -19,9 +18,10 @@ else:
     name = sys.argv[1]
     
 with open(CONFIG_FILE_NAME, 'r') as stream:
-    document = yaml.load(stream)
-    stream.close()
     try:
+        import yaml
+        document = yaml.load(stream)
+        stream.close()
         titre = document['name'][name]
     except KeyError:
         titre = name
