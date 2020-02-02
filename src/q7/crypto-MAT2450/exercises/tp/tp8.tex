@@ -1,0 +1,115 @@
+
+\section{}
+
+% OK
+\subsection{Exercise 1 (Zero knowledge Petersen)}
+
+We work in a group $\mathbb{G}$ of prime order $q$ with generator $g$.
+The Schnorr protocol, used to prove the knowledge of discrete
+logarithm, is (honest-verifier) zero-knowledge. However, the value
+$y=g^x \pmod{p}$ (for a safe prime $p=2q+1$) leaks some information
+about the discrete logarithm $x$ (since for a given generator $g$ of
+order $q$ there is exactly one such $x$ in $\Z_q$). On the
+other hand, the Pedersen commitment is perfectly hiding and thus does
+not reveal information about the committed value. The following
+protocol attempts to merge the both properties i.e., to prove the
+knowledge of a commited value under the Pedersen commitment scheme in
+a zero-knowledge manner.
+
+\emph{The protocol.} The public inputs of the proof are the prime $p$,
+the Pedersen public key $(g, h)$, a security parameter $k$ and a
+(hypothetic) commitment $c\in QR(p)$. The prover's private intputs are
+$x$ and $r$ in $\mathbb{Z}_q$ s.t. $c=g^xh^r$ (mod $p$). The protocol executes as follows.
+\begin{itemize}
+	\item The prover randomly chooses $y,s \in_R \Z_q$ and sends $d=g^yh^s  \pmod{p}$ to the verifier.
+	\item The verifier randomly chooses $e\in_R \bset^k$ and sends it to the prover.
+	\item The prover computes $z=y-ex$ and  $t=s-er$ modulo $q$ and sends it to the verifier.
+	\item The verifier accepts the proof iff $d = c^e g^zh^t
+	\pmod{p}$.
+\end{itemize}
+If the verifier accepts the proof, we say that the conversation $\langle d,e,(z,t) \rangle$ is valid.
+%
+\begin{enumerate}
+	\item Prove the correctness property of this construction.
+
+	\item Assume that an adversary is able to produce two valid responses for two distinct challenges, under the same commit.
+	How can you use this faculty to extract an opening of $c$?
+	Discuss the soundness property of the protocol.
+
+	\item Assume you are able to ``rewind'' an adversarial prover
+	who tries to build a valid conversation. How can you use
+	this faculty to extract an opening of $c$. Which property
+	did you break ? Briefly discuss the soundness property of
+	the protocol.
+
+	\item Show how a valid conversation $\langle
+	d,e,(z,t) \rangle$ can be simulated from $c$, without the use of any
+	private inputs. (Assume that the valid conversation involves
+	honest parties.)
+
+	\item Generalize the process to prove the knowledge of an opening to
+	a multi-Pedersen commitment as in exercise 3.
+\end{enumerate}
+
+
+\begin{solution}
+	\begin{enumerate}
+		\item The construction is correct if $Pr[d \neq c^eg^zh^t] \leq \negl(n)$.
+		Let's evaluate this probability:
+		\[ \Pr[d \neq c^eg^zh^t] = \Pr[g^y h^s \neq (g^x h^r)^e g^{y-ex}h^{s-er}]  = Pr[g^yh^s \neq g^y h^r] = 0 \]
+		Then our construction is correct.
+
+		\item When using the same commitment $c=g^xh^r$, if we get two different conversations $(e, z, t)$ and $e', z', t')$, we can recover the private secret $(x, r)$ by doing the following:
+		\[ \begin{cases} z = y - ex \\ z' = y - e'x \end{cases} \Rightarrow x = \frac{z-z'}{e'-e} \]
+		\[ \begin{cases} t = s - er \\ t' = s - e'r \end{cases} \Rightarrow r = \frac{t-t'}{e'-e} \]
+		This means that the adversary $P^*$ should know $x$ and $r$, otherwise he could not build two valid responses for the same commit.
+
+		Does that break the zero-knowledge property?
+		In a sense, no, as in a practical scheme, the commit would be different each time due to a random $r$.
+
+		\item (This answer has not been verified, and looks wrong, but as the subquestion has not been asked this year, I can't verify it.)
+
+		When we get the conversation $(d, e, (z,t))$, we can ``rewind'' the conversation to submit another e' and get new z' and t'. Therefore we can obtain the private key (x,r) by doing those calculations:
+		\[ \begin{cases} z = y - ex \\ z' = y - e'x \end{cases} \Rightarrow x = \frac{z-z'}{e'-e} \]
+		\[ \begin{cases} t = s - er \\ t' = s - e'r \end{cases} \Rightarrow r = \frac{t-t'}{e'-e} \]
+		We broke the zero-knowledge property since the verifier can extract the private key using such power.
+
+		According to the assistants, since it is not zero-knowledge, there is no point of discussing the soundness property.
+
+		\item It is easy to show, with honest parties, how we can simulate from $c$ a new valid conversation:
+		\begin{enumerate}
+			\item We pick $e$, $z$ and $t$ randomly.
+			\item We evaluate $d \define c^e z^z h^t$.
+		\end{enumerate}
+
+		\item To generalize the process, we have:
+		\begin{itemize}
+			\item pk = $g^x_1$, ..., $g^x_n$, h
+			\item sk = $x_1$, ..., $x_n$, r
+			\item c = $g^x_1 \cdot ... \cdot g^x_n \cdot h^r$
+		\end{itemize}
+	\end{enumerate}
+\end{solution}
+
+
+
+\subsection{Exercise 2 (Schnorr ZKP with faulty PRG)}
+
+Let us study what happens when the prover of a Schnorr ZKP uses a faulty random generator. this generator is used to choose the secret $\alpha$ used to generate the commitment $c=g^\alpha$, where $g$ is a generator of the group. Assuming that the prover made two proofs, one with secret $\alpha_0$, and the other one with secret $\alpha_1=a \alpha_0 + b$, how can you reciver the secret witness, knowing the public values, the transcripts of the proofs, $a$ and $b$?
+
+
+\begin{solution}
+	We then have
+	\[ \begin{cases} g^r = g^{\alpha_0} \\ e \\ f = \alpha_0 + ex \pmod q \end{cases} \qquad \text{and} \qquad \begin{cases} g^{r'} = g^{\alpha_1}=g^{a\alpha_0+b} \\ e' \\ f' = a \alpha_0 + b + e'x \pmod q \end{cases} \]
+	Then, we can immediately infer
+	\[af-f' = aex - b - e'x\]
+	\[x=\frac{a\cdot f-f'+b}{a\cdot e-e'}.\]
+	And also, $\alpha_0=f-e\cdot x$.
+\end{solution}
+
+
+
+\subsection{Exercise 3 (Commitment scheme and batching)}
+
+\copypaste{9}{0}
+

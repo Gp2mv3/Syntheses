@@ -1,0 +1,128 @@
+
+\section{}
+
+% From TP4
+\subsection{Exercise 1 (Authenticated encryption, or not; August Exam)}
+
+Let $\Pi \define \langle \Gen, \Enc, \Dec\rangle$ be an authenticated encryption
+scheme such that $\Enc$ encrypts messages of $n$ bits.
+%
+Do the following systems provide authenticated encryption?  For those
+that do, briefly explain why.  For those that do not, present an
+attack that breaks one of the security properties of an authenticated
+encryption scheme.
+
+\begin{enumerate}
+	\item $\Pi' \define \langle \Gen, \Enc', \Dec'\rangle$ with
+	$\Enc'_k(m) = (\Enc_k(m), \Enc_k(m \oplus (0^{n-1}\|1)))$ and
+	$\Dec'_k(c_1, c_2) = \Dec_k(c_1)$ if
+	$\Dec_k(c_1) \oplus \Dec_k(c_2) = 0^{n-1}\|1$ and $\bot$ otherwise.
+
+	\item $\Pi' \define \langle \Gen, \Enc', \Dec'\rangle$ with
+	$\Enc'_k(m) = (\Enc_k(m), \Mac_k(m))$ and $\Dec'_k(c_1, c_2) = \Dec_k(c_1)$
+
+	if $\Vrfy_k(\Dec_k(c_1), c_2)=1$ and $\bot$ otherwise. Here, $\Mac$
+	and $\Vrfy$ are deterministic algorithms that are part of a secure
+	MAC scheme that is compatible with $\Gen$.
+\end{enumerate}
+
+\begin{solution}
+	$\Pi \define \langle \text{Gen, Enc, Dec} \rangle$ is an authenticated encryption scheme (AE) if it is CCA-secure and unforgeable.
+	\begin{enumerate}
+		\item The system $\Pi'$ is not AE because it is \textbf{forgeable} and we can show it with this example. If the adversary A asks for the message $m$ ($m'$ corresponds to the message m with the last bit changed) to the oracle access, he will receive the cipher text $(c_1, c_2)$, where $c_1 = \Enc_k(m)$ and $c_2 = \Enc_k(m\xor 0^{n-1}||1) = \Enc_k(m')$.
+
+		If $\A$ outputs the pair (m',$(c_2, c_1)$), this is a forgery.
+
+		$\Dec_k'(c_2,c_1) = \Dec_k(c_2) = \Dec_k(\Enc_k(m')) = m' \neq \bot $ because $\Dec_k(c_2) \oplus \Dec_k(c_1) = m' \oplus m = m \oplus 0^{n-1}||1 \oplus m = 0^{n-1}||1 $.
+		And $m'$ has not been requested before.
+
+		Then we have EncForge$_{A, \Pi'}$(n) = 1  and Pr[EncForge$_{A, \Pi'}$(n)] = 1. $\Pi'$ is then forgeable and it is not an AE.
+
+		With the same technique, an adversary can break the CCA-security of this scheme by querying two different messages $m_1$ and $m_2$, obtaining their encryption, sending \newline
+		($m'_1,m'_2$) = ($m_1 \oplus 0^{n-1}||1, m_2 \oplus 0^{n-1}||1$) for the challenge, and compare the encryption of $m'_b$ with the two previously received ciphertexts.
+
+		Note that this doesn't break CPA-security; indeed, the scheme is still CPA-secure.
+
+		\item The sytem $\Pi'$ is not AE because it is not \textbf{CCA-secure} and we can show it because $Mac_k(m)$ does not assure any security (only authentication). So if We use as Mac:
+		\[ \Mac_k(m) = m||\Mac'_k(m) \]
+		It is a good mac but it is trivial to show that it is not CCA-Secure. $\Pi'$ is then not an AE.
+
+		\strong{Stronger argument}:
+
+		The adversary can send two different messages $m_0$ and $m_1$ to the encryption oracle to get $(\Enc_k(m_0), \Mac_k(m_0))$ and $(\Enc_k(m_1), \Mac_k(m_1))$.
+
+		We then output the same $m_0$ and $m_1$, and receive $(\Enc_k(m_b), \Mac_k(m_b))$.
+
+		As $\Pi$ is an athenticated encryption scheme, we know that $\Enc$ is probabilistic and secure.
+		However, $\MAC$ is said to be deterministic, and this causes $\Mac_k(m_b)$ to be the same as one of the $\Mac_k(m_0)$, $\Mac_k(m_1)$ received earlier.
+		We can thus just compare the tags, and output the corresponding $b'$.
+
+		The probability of success is $\Pr[b'=b] = \Pr[\Mac_k(m0) \neq \Mac_k(m_1)]=1-\negl(n)$ which is clearly well above what it should be.
+	\end{enumerate}
+\end{solution}
+
+
+
+\subsection{Exercise 2 (Derandomizing signatures)}
+
+Let $S=(\Gen, \Sign, \Vrfy)$ be an EUF-CMA signature scheme defined over $(M, \Sigma)$, where the signing algorithm $\Sign$ is probabilistic.
+In particular, algorithm $\Sign$ uses randomness chosen from a space $R$.
+We let $\mathsf{S}(sk, m; r)$ denote the execution of algorithm $\mathsf{S}$ with randomness $r$.
+Let $F$ be a secure PRF defined over $(K, M, R)$.
+Show that the following signature scheme with deterministic signing $S'=(\Gen', \Sign', \Vrfy)$ is EUF-CMA:
+\[ \mathsf{G}'(1^n) \define \left\{ (pk, sk) \pick \G(1^n), \qquad k \pick K, \qquad sk' \define (sk, k), \qquad \text{output } (pk, sk') \right\}; \]
+\[ \Sign'((sk, k), m) \define \left\{ r \pick F_k(m), \qquad \sigma \pick \mathsf{S}(sk, m; r), \qquad \text{output } \sigma \right\}. \]
+
+\emph{(Hint: Define $S''$ which is like $S'$ byt uses a perfect random function. Make a reduction of the security of $S''$ to the security of $S$, then build a PRF distinguisher based on a adversary against the signature. Finally, compute the link of the advantages of three relevant games.)}
+
+
+\begin{solution}
+	We will prove this in two steps.
+	\begin{itemize}
+		\item The first step defines $S''$ so that the PRF is replaced by a true random function.
+		We will show that in this case, if $S$ is secure, then $S''$ is secure.
+		\item The second step proves by reduction that if $S''$ is secure and $F$ is a secure PRF, then $S'$ is secure.
+		The reduction proceeds by constructing an adversary $\A_{PRF}$ against the PRF, able to distinguish between the PRF and a random function, given an adversary $\A_{S'}$ against $S'$.
+	\end{itemize}
+
+	First, let's define $S''$.
+	The only change is that
+	\[ \Sign''((sk, k), m) \define \{ r \define f(m), \quad \sigma \define \mathsf{S}''(sk, m), \quad \text{output } \sigma \} \]
+	where $\mathsf{S}''(sk, m) = \mathsf{S}(sk, m; f(m))$.
+
+	If we have an adversary against $S''$, we can build an adversary against $S$, simply by relaying oracle calls to $\mathsf{S}_f''(sk, m)$ to our oracle $\mathsf{S}(sk, m; f(m))$.
+	As $f$ is a random function, $S$ sees the same randomness as with an $r$, so nothing changes.
+	The probabilities are exactly the same:
+	\[ \Pr[\Sigforge_{S''}=1] = \Pr[\Sigforge_{S}=1] = \negl(n) \]
+	for some $\negl$ negligible.
+
+	Now, let's do the reduction from $F$ to $S'$.
+	So, we have an adversary $\A_{S'}$ against $S'$, and we build an adversary against the PRF $\A_F$ as follows:
+	\begin{enumerate}
+		\item The oracle for the PRF problem $\O_F$ picks $k \pick \K$, kept secret.
+		\item $\O_F$ picks $b \pick \bset$, kept secret.
+		The oracle defines a challenge function $g=F_k$ if $b=1$, $g=f$ a random function if $b=0$.
+		\item $\A_F$ runs $\Gen'$ to create a public key $pk$ and a secret key $sk'=(sk, k)$.
+		It discards $k$ as it is not used by $\A_{S'}$ and is defined by $\O_F$.
+		It keeps $sk$ secret and sends $pk$ to $\A_{S'}$.
+		\item When $\A_{S'}$ asks for $\Sign'((sk, k), m)$, we ask the oracle for $w=g(m)$.
+		$w=F_k(m)$ if $b=1$, or $w=f(m)$ with $f$ a random function, if $b=0$.
+		We then run $\mathsf{S}(sk, m; r)$ and return the result to $\A_{S'}$.
+		\item When $\A_{S'}$ outputs $(m, \sigma)$, its forgery, we outputs $b'=1$ iff $(m, sigma)$ is a valid forgery (we can verify it using $\Vrfy_{pk}$), $b'=0$ otherwise.
+	\end{enumerate}
+	If $b=0$, we're playing against a true random function, and so we're actually running the scheme $S''$.
+	As $\A_{S'}$ is not designed to handle this scheme, its security is the same as the one of $S''$, which is the same as the one of $S$.
+
+	If $b=1$, we're playing the true game for $\A_{S'}$, and so its advantage $\negl'(n)$ is active.
+
+	Then, the difference in probabilities for the distinguishing is:
+	\[ |\Pr[\A_F^{F_k}(n)] - \Pr[\A_F^{f}(n)]| = |\negl'(n) - \frac12 \negl(n)| \ge \negl'(n)-\negl(n) \]
+	As this difference has to be negligible, as $F$ is a PRF, and $\negl$ is negligible, then $\negl'$ is negligible, and thus the scheme $S'$ is secure.
+\end{solution}
+
+
+
+\subsection{Exercise 3 (Jan 11 evaluation)}
+
+\copypaste{9}{1}
+
