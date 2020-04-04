@@ -1,4 +1,4 @@
-% Author: Francois Robinet
+% Author: Francois Robinet improved by Gauthier de Moffarts
 declare
 
 fun {NewPortObject Transition Init}
@@ -22,8 +22,9 @@ fun {NewQueue}
       case Msg
       of enqueue(X) then {Append Queue [X]}
       [] dequeue(?X) then
-	 if Queue==nil then X=nil nil
-	 else X=Queue.1 Queue.2 end
+         if Queue==nil then X=nil nil
+         else X=Queue.1 Queue.2 end
+      [] isEmpty(X) then X=(Queue==nil) Queue
       end
    end
 in
@@ -40,15 +41,22 @@ fun {Dequeue Q}
    X
 end
 fun {IsEmpty Q}
-   {Dequeue Q} == nil
+   X
+in
+   {Send Q isEmpty(X)}
+   {Wait X}
+   X
 end
 
 % Tests
 Q={NewQueue}
+{Browse {IsEmpty Q}}% true
 {Enqueue Q a}
+{Browse {IsEmpty Q}}% false
 {Enqueue Q b}
 {Browse {Dequeue Q}} % a
 {Browse {Dequeue Q}} % b
 {Browse {Dequeue Q}} % nil
+{Browse {IsEmpty Q}}% true
 
 

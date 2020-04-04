@@ -44,10 +44,10 @@ local
 
    fun {StreamMergerP S1 S2}
       proc {Sender S}
-	 case S of H|T then
-	    {Send P H}
-	    {Sender T}
-	 end
+         case S of H|T then
+            {Send P H}
+            {Sender T}
+         end
       end
 
       P S

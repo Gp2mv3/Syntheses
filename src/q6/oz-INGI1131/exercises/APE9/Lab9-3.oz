@@ -9,7 +9,7 @@ fun {NewPortObject Transition Init}
       case In
       of nil then skip
       [] Msg|Inr then
-	 {MsgLoop Inr {Transition Msg State}}
+	      {MsgLoop Inr {Transition Msg State}}
       end
    end
    In
@@ -23,8 +23,8 @@ fun {Porter}
       case Msg
       of getIn(N) then People+N
       [] getOut(N) then R=People-N in
-	 if R<0 then raise emptyRoomException(People) end 
-	 else R end
+         if R<0 then raise emptyRoomException(People) end 
+         else R end
       [] getCount(N) then N=People People
       else raise invalidMessage(Msg) end
       end
