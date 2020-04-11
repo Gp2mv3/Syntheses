@@ -50,4 +50,7 @@ with open(os.path.dirname(os.path.realpath(__file__)) + '/config.yml', 'r') as s
             out_path = abspath + '/' + cycle + '/' + option_map + '/Q' + str(quadri) + '/L' + option + str(code) \
                         + ' - ' + titre + '/' + type_map
         
-        print(out_path)
+        if sys.platform.startswith('win32'):
+            print(out_path.encode("latin-1").decode("utf-8"))
+        else:
+            print(out_path)
