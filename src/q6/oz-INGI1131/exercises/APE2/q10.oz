@@ -26,7 +26,7 @@ in
    {Browse {Flatten [a [b [c d]] e [[[f]]]]}} % -> [a b c d e f]
 end
 
-%%% Plus simple mais moins optimisée %%%
+%%% Simpler, but less optimized version %%%
 local
    fun {Flatten X}
       case X
