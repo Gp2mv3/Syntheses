@@ -15,6 +15,17 @@ S=0|{Sum2 S {Ints 1}}
 % Therefore
 % s_n = 1 + 2 + ... + n = (n * (n+1)) / 2
 
+%donne l'élément au i ème indice
+local
+    fun {Ieme I Acc}
+        if I<0 then Acc
+        else {Ieme I-1 Acc+I}
+        end
+    end
+in
+    {Browse {Ieme 2 0}}
+end
+
 % Kernel language
 declare
 proc {Ints N ?Y}

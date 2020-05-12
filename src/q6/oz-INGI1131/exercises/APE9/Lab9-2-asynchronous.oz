@@ -34,21 +34,21 @@ fun {CharlotteAsync University}
       case University
       of nil then NumberOfStudent
       [] Student|Rest then
-	 {Send Student ask(howmany:P)}
-	 {AskLoop Rest  NumberOfStudent+1}
+	      {Send Student ask(howmany:P)}
+	      {AskLoop Rest  NumberOfStudent+1}
       end
    end
    fun {PortLoop In State}
       case In#State
       of (Beers|Inr)#stats(students:S beers:B average:A min:MIN max:MAX)
-      then NewState in
-	 {Browse 'a student drank '#Beers#' beers'}
-	 NewState=stats(
-		     students:S+1 beers:B+Beers
-		     average:(A*{IntToFloat S}+{IntToFloat Beers})/{IntToFloat (S+1)}
-		     min:{Min MIN Beers} max:{Max MAX Beers})
-	 if NewState.students == NumberOfStudents then NewState
-	 else {PortLoop Inr NewState} end
+         then NewState in
+            {Browse 'a student drank '#Beers#' beers'}
+            NewState=stats(
+               students:S+1 beers:B+Beers
+               average:(A*{IntToFloat S}+{IntToFloat Beers})/{IntToFloat (S+1)}
+               min:{Min MIN Beers} max:{Max MAX Beers})
+            if NewState.students == NumberOfStudents then NewState
+            else {PortLoop Inr NewState} end
       end
    end
    P In NumberOfStudents R
