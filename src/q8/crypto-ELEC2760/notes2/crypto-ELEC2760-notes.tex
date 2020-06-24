@@ -2,7 +2,9 @@
 
 \hypertitle{Secure Electronic Circuits and Systems}{8}{ELEC}{2760}
 {Master students 2019}
-{François--Xavier Standaert}
+{François-Xavier Standaert}
+
+\newcommand{\xor}{\oplus} % XOR operation
 
 This document completes the holes in the slides.
 
@@ -113,7 +115,7 @@ But it is not efficient, we need $2n\textrm{ [1PRG]}\cdot n \textrm{ [nPRG]}\cdo
     \item \textbf{One DES round}: We can build an efficient attack to find the 32-bit key. First we obtain $f_k(R_0) = R_1 \oplus L_0$. Then, as the function is composed of 8 SBOX taking 4-bit keys, we can do exhaustive key search on this small key size, leading to a computation time of $8\cdot 2^4$ instead of $2^{32}$. 
     \item \textbf{Slide attack}: We generate some pairs $(x_0,y_0)$ and $(x_1,y_1)$, for each of them we check if it is a slid pair: we retrieve $k$ resulting from $f_k(x_0)=x_1$ and check if it also verifies $f_k(y_0)=y_1$. If it is the case, we have done a slide attack and retrieved the right key. This method is particularly efficient since it only requires to compute at most $2^{n/2}$ pairs (stated by the birthday paradox), and retrieving the key from the pair (via $f_k(x_0)=x_1$) is ultra fast ($8\cdot 2^4$ with the same assumptions as the last point). Finally, it is worth noting that the number of pairs is even reduced from $2^{n/2}$ to $2^{n/4}$ if the function $f$ is the Feistel function since $P=(R_0, L_0 \oplus f_{k}(R_0))$, only the right half depends on the key!
 \end{itemize}
-\section*{Lecture 3}
+\section*{Lecture 3: Block ciphers II: linear and differential cryptanalysis}
 
 \paragraph{Slide 3} 
 
@@ -203,7 +205,7 @@ $$ (x^6 + x^4 + x^2 + x + 1) \oplus (x^7 + x + 1) = x^7 + x^6 + x^4 + x^2 $$
 
 $$ a(x) \cdot b(x) \mod m(x) = x^7 + x^5 + x^4 + x^3 + 1 $$
 
-\section*{Lecture 4}
+\section*{Lecture 4: Hardware implementations}
 
 \paragraph{Slide 21} min memory S1 = $2^8 \times 8=2048$, min memory S2 = $(2^4\times 4) \times 6=384$
 $$S1 = 88\times LB1 = 8\times LB2$$
@@ -211,7 +213,7 @@ $$S2 = 12\times LB1 = 6\times LB2$$
 
 
 
-\section*{Lecture 5}
+\section*{Lecture 5: Software implementations}
 
 \paragraph{Slide 13} 
 \begin{itemize}
@@ -223,8 +225,33 @@ $$S2 = 12\times LB1 = 6\times LB2$$
 
 Remark: it is $T_0(a_0)\oplus T_1(a_1)\oplus T_2(a_2)\oplus T_3(a_3)$.
 
+\paragraph{Slide 15}
+Does it make sense to move the S-box in RAM?
 
-\section*{Lecture 6}
+Moving the S-box from ROM to RAM requires moving all 256 bytes one by one (3 cycles to read from ROM, 2 cycles to write to RAM), for a total of 1280 cycles.
+
+Then, AES requires accessing 16 times the S-box per round, for 10 rounds, or a total of 160 accesses.
+If we use ROM, it will take $3\cdot 160$ cycles per encryption operation.
+If we use RAM, it will take $2\cdot 160$ cycles.
+Thus, it is beneficial to use the RAM instead of the ROM if the number $N$ of encryptions done is such that
+\[ 1280 + 2 \cdot 160 \cdot N \le 3 \cdot 160 \cdot N \]
+or $N \ge 8$. For a microcontroller on an authentication chip, which usually performs only a few encryptions/decryptions, it is not worth it, and we can keep the S-box in ROM.
+
+\paragraph{Slide 16}
+With bitslicing, we need 17 cycles per bit, thus $17\cdot 8$ cycles. But, the bus is $n$ bits wide, so we can reduce it to:
+\[\frac{17\cdot 8}{n}\]
+With LUTs (i.e., access a table in memory), we need 5 cycles per 8 bits, independently of the bus width. Bit slicing is better if
+\[ \frac{17 \cdot 8}{n} \le 5 \]
+which happens if $n \ge 27.2$, or for a bus width of 32 bits.
+
+Note: an advantage of bitslicing over table lookup happens when considering that the table is stored inside memory, and so may be subject to caches and varying timing of access, which can leak information!
+
+\paragraph{Slide 17}
+Cost of precomputing xtime: essentially, uses memory (ROM) space of size $256\cdot 8=2048$ bits.
+Also, reading from ROM/RAM requires only 3/2 cycles.
+Doing this computation in software doesn't require using a LUT in memory, but may require more cycles and even branches.
+
+\section*{Lecture 6: Side-channel attack I}
 
 \paragraph{Slide 18}
 \begin{itemize}
@@ -249,7 +276,7 @@ This is not completely correct because the value of c will vary according to 2 t
 \end{itemize}
 
 
-\section*{Lecture 7}
+\section*{Lecture 7: Side-channel attack II: counter-measures}
 
 \paragraph{Slide 4} 
 \begin{itemize}
@@ -286,6 +313,84 @@ How to ensure sufficiently noise shares?
     \item By decreasing the signal (SNR)
 \end{itemize}
 
-\paragraph{Slide 10} $\epsilon =0$ 
+\paragraph{Slide 10} $\epsilon =0$
+
+
+
+\section{Lecture 8: fault attacks}
+% Added by J-M V
+
+\paragraph{Slide 3: How to introduce a fault?}
+\begin{itemize}
+    \item Reduce the supply voltage
+    \item Increase clock frequency
+    \item Increase the temperature
+    \item Insert glitches: in the I/O, in the power supply. The advantage of glitches is that they are well defined in time to insert precise faults
+\end{itemize}
+
+\paragraph{Slide 4: Drawbacks?}
+\begin{itemize}
+    \item Requires precise faults
+    \item Requires as much faults as the number of bits in the key
+\end{itemize}
+
+\paragraph{Slide 5: Where to inject? At the end}
+It's useless
+
+\paragraph{Slide 6: Where to inject? Between ShiftRow\#10 and AddRoundKey\#10}
+With fault model 3 (single bit set to zero), there is an attack by using a XOR to recover the bit
+
+With fault model 2 (single bit toggled) or 1 (single byte random), there is none: we only see a random bit independently of the value of the key.
+
+\paragraph{Slide 7: Where to inject? Between SubBytes\#10 and ShiftRow\#10}
+Nothing changes with the previous proposition.
+
+\paragraph{Slide 8: between ARK\#9 and SB\#10}
+There is an attack with model 2: one bit changed at the input of the S-box will manifest in multiple bits changed at the output.
+
+With $z=y\xor k = S(v) \xor k$ ($z$ output of ARK, $y$ output of S-box).
+We make a guess for the key $k^*$, then we go back from the two outputs:
+\begin{align*}
+    v  &= S^{-1}(z  \xor k^*) \\
+    v' &= S^{-1}(z' \xor k^*)
+\end{align*}
+Then, if $k^*$ is an incorrect key, we will see that $HD(v, v')=HW(v\xor v') > 1$.
+But for the correct key $k^*$, we will see that $HD(v, v')=1$ (only one bit changed).
+There are $8$ possible bits that have flipped, so there are 8 such keys out of $256$ that are possible.
+We went from $8$ bits of entropy to just $3$.
+With a second fault, we can reduce further and finally find one byte of the key.
+With $16\cdot 2=32$ faults, we can recover the whole $128$-bit key.
+
+There is no attack with model 1, as we just see a byte that is as random and as unrelated to anything else as the pseudo-random correct byte.
+
+\paragraph{Slide 9: between MC\#9 and ARK\#9}
+No difference with the previous.
+
+\paragraph{Slide 10: between SR\#9 and MC\#9}
+There is an attack for model 1 (random byte fault).
+
+MixColumn is linear, so $MC(a\xor \Delta, b, c, d)=MC(a, b, c, d) \xor MC(\Delta, 0, 0, 0)$.
+So, we can do the same thing as before: guess a part of the key for the column,
+then go backward in the cipher for the two outputs to arrive at the beginning of MC,
+then compare the two inputs: for the correct key there will be only one byte of difference.
+
+This reduces the key space from $2^{32}$ to $4\cdot (2^8-1)=1020$ keys, or $22$ bits of entropy reduced.
+A second fault will allow us to recover the keys for the full column, or $32$ bits.
+With $4\cdot 2=8$ faults, we can recover the whole $128$-bit key.
+
+\paragraph{Slide 11: between MC\#8 and SR\#9}
+Same as previous, but tracking the path of the S-box is hard.
+
+\paragraph{Slide 12: between SR\#8 and MC\#8}
+There is a better attack then, again for model 1.
+
+This time, a fault inserted before MixColumn\#8 will contaminate the whole column, which will then be shifted by ShiftRow into different columns, which will then contaminate all the S-box by MixColumn\#9.
+So, with a single fault, we will change all the bytes at the output; in effect, we have like 4 times in parallel the previous fault.
+
+This reduces the key space from $2^{128}$ to $2^8-1=255$. A second fault will recover the key.
+However, we somehow need to explorate all the keys.
+
+Farther up the cipher, we have the problem that there will be too much noise.
+Also, if the fault is before MixColumn\#7, we will not be able to distinguish it from a fault inserted after it, so the attack falls appart.
 
 \end{document}
