@@ -68,4 +68,20 @@
 
 \RequirePackage[eval]{../../../../../../eplqa}
 
+\RequirePackage{etoolbox}
+
+\AtBeginEnvironment{solution}{\@checksolution}
+
+\ifthenelse{\equal{\Sol}{false}}
+{\renewcommand{\nosolution}{\@checksolution}}
+{}
+
+\apptocmd{\ttl@labelling}{\ifttl@label\def\epleval@sectstr{section}\def\epleval@argi{#1}\ifx\epleval@sectstr\epleval@argi\@checkstatement\else\fi\fi}{\typeout{Success patching \\ttl@labelling}}{\typeout{FAILED PATCHING \\ttl@labelling - Contact repo administrators}}
+
+\AtEndDocument{%
+	\ifboolexpr{togl {eplqa@waitingforsolution} or not togl {eplqa@waitingforstatement}}{%
+		\PackageError{eplqa}{\@checkstatmt@errmsg{end of document}{Fin de document}}{\@help@rtfm}
+	}{}
+}
+
 \endinput
