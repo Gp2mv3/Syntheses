@@ -19,7 +19,7 @@ with open(os.path.dirname(os.path.realpath(__file__)) + '/config.yml', 'r') as s
     document = yaml.load(stream)
     stream.close()
     
-    a = document["type"]
+    a = document["doctype"]
     
     quadri = int(sys.argv[1])
     
@@ -31,8 +31,8 @@ with open(os.path.dirname(os.path.realpath(__file__)) + '/config.yml', 'r') as s
         code = int(sys.argv[4])
         typ = sys.argv[5]
     
-        titre = document['name'][name]
-        type_map = document['type'][typ]
+        titre = document['title'][name]
+        type_map = document['doctype'][typ]
         cycle = document['quadri'][quadri]
         
         option_map = document['option'][option]
