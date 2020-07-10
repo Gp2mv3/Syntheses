@@ -50,11 +50,9 @@
 {0.5ex} % sep
 {} % before-code
 
+\RequirePackage{../../../eplqa}
 
 \newcommand{\QAlabel}{\IfLanguageName{english}{Exercise}{l'Exercice}}
-\newcommand{\theQA}{\thesubsection}
-
-\RequirePackage{../../../eplqa}
 
 % \comment and \endcomment of the environment solution
 % does not work with newcommand

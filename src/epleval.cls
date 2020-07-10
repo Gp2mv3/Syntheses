@@ -63,9 +63,9 @@
 {0.5ex} % sep
 {} % before-code
 
-\newcommand{\QAlabel}{\IfLanguageName{english}{}{la }Question}
-\newcommand{\theQA}{\thesection}
-
 \RequirePackage[eval]{../../../../../../eplqa}
+
+\newcommand{\QAlabel}{\IfLanguageName{english}{}{la }Question}
+\renewcommand{\theQA}{\thesection}
 
 \endinput

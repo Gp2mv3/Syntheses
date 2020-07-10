@@ -41,9 +41,9 @@
 {} % before-code
 
 
-\newcommand{\QAlabel}{\IfLanguageName{english}{MCQ}{le QCM}}
-\newcommand{\theQA}{\thesubsection}
-
 \RequirePackage{../../../eplqa}
+
+\newcommand{\QAlabel}{\IfLanguageName{english}{MCQ}{le QCM}}
+\renewcommand{\theQA}{\thesubsection}
 
 \endinput
