@@ -34,7 +34,7 @@
 \titleformat
 {\section} % command
 [display] % shape
-{\bfseries\Large} % format
+{\sffamily\mdseries\upshape\Large} % format
 {APE \thesection} % label
 {0.5ex} % sep
 {} % before-code
@@ -45,7 +45,7 @@
 \titleformat
 {\subsection} % command
 [display] % shape
-{\bfseries\Large} % format
+{\sffamily\mdseries\upshape\large} % format
 {\IfLanguageName{english}{Exercise}{Exercice} \thesubsection} % label
 {0.5ex} % sep
 {} % before-code
