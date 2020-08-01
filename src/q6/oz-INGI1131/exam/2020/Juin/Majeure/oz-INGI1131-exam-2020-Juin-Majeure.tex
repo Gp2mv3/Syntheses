@@ -1,0 +1,176 @@
+\documentclass[fr]{../../../../../../eplexam}
+
+\usepackage{../../../../../../eplcode}
+
+\lstset{language={Oz},morekeywords={for,do,lazy}}
+
+\hypertitle{oz}{6}{INGI}{1131}{2020}{Juin}{Majeure}
+{Gauthier de Moffarts}
+{Peter Van Roy}
+
+
+\section{Question 1}
+Qu'est-il affiché?
+\begin{lstlisting}
+declare X Y in 
+X = Y+1
+{Browse X}
+\end{lstlisting}
+
+\begin{solution}
+Rien n'est affiché car l'addition est une opération bloquante.
+\end{solution}
+
+\section{Question 2}
+On défini la fonction CMap comme suit:
+\begin{lstlisting}
+declare
+fun {CMap L F}
+   case L of H|T then thread {F H} end|{CMap T F}
+   [] nil then nil
+   end
+end
+\end{lstlisting}
+
+Qu'affichent les codes suivants?
+\begin{enumerate}
+    \item
+        \begin{lstlisting}
+declare S1 T1 S2 in
+S1 = 1|2|3|T1
+S2 = {CMap S1 fun{$ X} X*X end}
+{Browse S2}
+        \end{lstlisting}
+        
+    \item
+        \begin{lstlisting}
+declare S1 T1 S2 in
+S1 = 1|2|3|T1
+S2 = thread {CMap S1 fun{$ X} X*X end} end
+{Browse S2}
+        \end{lstlisting}
+        
+    \item
+        \begin{lstlisting}
+declare S1 S2 A in
+S1 = 1|A|3|nil
+S2 = {CMap S1 fun{$ X} X*X end}
+{Browse S2}
+        \end{lstlisting}
+        % C'est FAUX
+    \item
+        \begin{lstlisting}
+declare S1 S2 F in
+S1 = 1|2|3|nil
+S2 = {CMap S1 F}
+{Browse S2}
+        \end{lstlisting}
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+    \item Rien n'est browsé car CMap attends T1
+    \item 1|4|9|\_ est affiché
+    \item CMap n'est plus bloqué, on a [1 \_ 9]
+    \item CMap n'est plus bloqué, [\_ \_ \_] est printé car les threads attendent F
+\end{enumerate}
+\end{solution}
+
+\section{Question 3}
+Qu'est-il affiché?
+
+\begin{lstlisting}
+declare C in
+C = {NewCell 0}
+thread C := @C+1 end
+thread C := @C+1 end
+{Browse @C}
+\end{lstlisting}
+
+\begin{solution}
+Ce programme est non déterministe, ça affiche souvent 0, mais ça pourrait afficher 1 ou 2!
+\end{solution}
+
+\section{Question 4}
+C'était une traduction de fonction en langage noyau. En voici une fonction a traduire:
+\begin{lstlisting}
+fun lazy {LAppend L1 L2}
+    case L1 of H|T then H|{LAppend T L2}
+    [] nil then L2
+    end
+end
+\end{lstlisting}
+\begin{solution}
+\begin{lstlisting}
+local
+    LAppend
+in
+    LAppend = proc {$ L1 L2 R}
+        thread % pour ne pas bloquer l execution apres l appel
+            {WaitNeeded R}
+            case L1 of H|T then
+                R = H|{LAppend T L2}
+            else case L1 of nil then R = L2 end
+            end
+        end
+    end
+end
+\end{lstlisting}
+\end{solution}
+
+\section{Question 5}
+Dire ce que font les thread producteur/consommateur font dans la fonction Sieve (of Erathostene)
+\begin{lstlisting}
+fun{Sieve L}
+    case L of H|T then
+        % Remove all multiples of H from stream T, return stream S:
+        thread S = {Filter T fun{$ X} X mod H \= 0 end} end % Create filter agent
+        H | {Sieve S}
+    [] nil then nil
+    end
+end
+\end{lstlisting}
+
+\nosolution
+
+\section{Question 6}
+Imaginons que tu dois implémenter un logiciel d'édition de dessins collaboratifs qui serait crash safe. Quels concepts (behaviors) de erlang pourais-tu utiliser et pourquoi?
+
+\nosolution
+
+\section{Question 7}
+Expliquer pourquoi le code suivant ne fonctionne pas, et le corriger
+\begin{lstlisting}
+proc{Server S1 S2}
+	case S1|S2
+	of (M1|T1)|(M2|T2) then 
+		...{Handle M1}
+		...{Handle M2}
+		{Server T1 T2}
+	end
+end
+\end{lstlisting}
+
+\nosolution
+
+\section{Question 8}
+Il défini une application qui utilise 2 transactions T1 et T2 qui partagent l'accès aux deux 
+mêmes cellulles C1 et C2. T1 et T2 demandent d'abord le lock pour C1 et C2 puis font qqes opérations 
+sur C1 et C2 puis release les deux locks. Le système respecte le two-phase locking.
+Donner une exécution en détail pourlaquelle ça fonctionne (slide 28 CM12). 
+Et donner une exécution dans laquelle ça provoque un deadlock. + définir deadlock
+
+\nosolution
+
+\section{Question 9}
+Pourquoi est-ce que définir la propriété safety sur une exécution complette est une mauvaise idée? Donner un exemple pour le montrer
+
+\nosolution
+
+\section{Question 10}
+Exprimer la propriété "Tous les messages envoyés seront délivrés exactement une fois"
+comme une conjonction de Liveness et de safety
+\nosolution
+
+\end{document}
+
