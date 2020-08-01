@@ -1,4 +1,3 @@
-% answer by Sophie Schorochoff
 declare
 
 % Port object with internal state

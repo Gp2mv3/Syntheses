@@ -1,10 +1,11 @@
-%Exo 3a
+% /!\ AVIS aux éditeurs de ce fichier, certaines lignes sont ignorées dans le doc .tex pour montrer les solutions alternatives de manière propre.
+%3a
 declare
 L1 L2 F
 L1 = [1 2 3]
 F = fun {$ X} {Delay 200} X*X end
 thread L2 = {Map L1 F} end
-{Wait L2} %affiche optimised|optimised 
+{Wait L2} %prints optimised|optimised 
 {Show L2}
 
 %autre solution exo3a, n'utilisant pas le Wait standard
@@ -21,7 +22,18 @@ end
 {MyWait L2}
 {Show L2}
 
-%Exo 3b
+%3b
+declare
+L1 L2 L3 L4
+X1 X2 X3
+L1= [1 2 3]
+thread L2={Map L1 fun{$ X} {Delay 200} X*X end} X1=unit end 
+thread L3={Map L1 fun{$ X} {Delay 200} 2*X end} X2=unit end 
+thread L4={Map L1 fun{$ X} {Delay 200} 3*X end} X3=unit end
+{Wait X1} {Wait X2} {Wait X3}
+{Show L2#L3#L4}
+
+%Autre solution exo 3b
 declare
 L1 L2 L3 L4 L5
 L1 = [1 2 3]
@@ -37,7 +49,7 @@ end
 {MyWait L5}
 {Show L5}
 
-%Exo 3c
+%3c
 declare
 fun {MapRecord R1 F R2 Fin}
     A={Record.arity R1}
@@ -61,5 +73,3 @@ R2 Fin D
 D={MapRecord '#'(a:1 b:2 c:3 d:4 e:5 f:6 g:7) fun {$ X} {Delay 1000} 2*X end R2 Fin}
 if Fin == 0 then skip % '=='' bloquant
 else {Show D} end
-
-%Exo4 TODO

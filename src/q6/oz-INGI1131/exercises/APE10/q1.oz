@@ -1,6 +1,4 @@
 declare
-% The following code is not asked in the statement but in practice, it is ask during the lab session...
-
 % Port object with internal state
 fun {NewPortObject Init Fun}
    P
