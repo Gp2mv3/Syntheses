@@ -57,8 +57,8 @@ tout le contenu que vous soumettez pour inclusion dans ce dépot.
 
 Si cette license vous pose problème, venez en discuter en ouvrant une [issue](https://github.com/Gp2mv3/Syntheses/issues/new).
 
-[pdf-url]: https://uclouvain-my.sharepoint.com/:f:/g/personal/mbraquet_oasis_uclouvain_be/EsZVP62vNgpHgo02HE7RMx8BkQdOgtVrPLe70BSTUoOfqQ
-[doc-url]: https://drive.google.com/file/d/0B1axlYz3_XXKRzdGVWdGdUZ6UGs/view?usp=sharing
+[pdf-url]: https://uclouvain-my.sharepoint.com/:f:/g/personal/midelecourt_oasis_uclouvain_be/ErNklAdPrRxMhivv3RRPEQABvHvHFqhBpATkxaDGa-OQNw
+[doc-url]: https://uclouvain-my.sharepoint.com/:b:/g/personal/midelecourt_oasis_uclouvain_be/EXQZ29jIlL5Jt8BBunLUjyABqfADPhEFmeMOThf0xP2xcQ?e=bsOaSi
 [chat-url]: https://gitter.im/Gp2mv3/Syntheses?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [forum-url]: http://forum-epl.be
 [git-url]: https://try.github.io
