@@ -1,275 +1,411 @@
 \section{}
-\subsection{Exercise 0 (Group order)}
-\copypaste{3}{5}
+\subsection{Exercise 1 (Authenticated encryption, August 2019 exam)}
 
-\subsection{Exercise 1 (ElGamal Public Key Encryption and CCA Security)}
 \begin{enumerate}
-	\item Write the security definition of CCA security for a public key encryption scheme.
-	\item Let $(c_1,c_2)$ and $(c_1',c_2')$ be two ElGamal ciphertexts, of plaintext $m$ and $m'$ respectively. Can $(c_1 c_1',c_2 c_2')$ be a ciphertext relatively to this scheme? 
-	\item From $(c_1,c_2)$ a ciphertext of $m$, can you build another ciphertext valid for $m$ (remember that the public key is $(\mathbb{G},g,q,h=g^x)$)? If yes, what is its decryption? 
+	\item Let $F\colon \K \times \bset^n \mapsto \bset^n$ be a PRF. Consider the following Authenticated Encryption scheme $\Pi=(\Gen, \Enc, \Dec)$ as follow:
+	\begin{itemize}
+		\item $\Gen$: pick a key uniformly at random in $\K$;
+		\item $\Enc$: on input $m$ and $k$:
+		\begin{itemize}
+			\item Parse $m$ in $l$ blocks $m_1,\dots,m_l$ with $|m_1|=\dots=|m_l|=n$
+			\item Pick $r$ uniformly at random in $\bset^{\frac{n}{2}}$
+			\item For $i=1,\dots,l$:
 
-	\item Show that ElGamal Public Key Encryption is not CCA secure.
+				\hspace{1cm} $c_i=F_k(r||i) \oplus m_i$
+			\item $c_{l+1}=F_k(r||l+1) \oplus \left(\oplus_{i=1}^l m_i\right)$
+			\item Return $(r, c)$ with $c=(c_1,\dots,c_l,c_{l+1})$.
+		\end{itemize}
+		\item $\Dec$ consequently.
+	\end{itemize}
+	[For simplicity we suppose that for every message all blocks are \emph{full}, that is, when parsed the last block has length $n$ (i.e., $|m_l|=n$).
+
+	When we write r||i we mean that the number $i$ is written in binary notation putting as many zeros on the left as necessary.]
+
+	\begin{enumerate}
+		\item Is $\Pi$ unforgeable? Prove or confute\footnote{*refute}.
+		\item Is $\Pi$ CCA-secure? Prove or confute with an attack. [Hint: the previous answer may be useful\dots]
+	\end{enumerate}
+
+	\item Let $\Pi'=(\Gen', \Enc', \Dec')$ be an authenticated encryption scheme with binary messages of length $n$. For two binary vectors of length $n$ we denote $\oplus$ the coordinate-wise XOR. $1_n$ denotes the all-$1$ vector of length $n$. Consider the following schemes:
+	\begin{itemize}
+		\item $\Pi^1 \define (\Gen^1, \Enc^1, \Dec^1)$:
+		\begin{itemize}
+			\item $\Gen^1 \define \Gen'$,
+			\item $\Enc^1_k(m) \define (c_1, c_2) = (\Enc'_k(m), \Enc'_k(m\oplus 1_n))$,
+			\item $\Dec^1_k((c_1, c_2)) \define \Dec'_k(c_1)$ if $\Dec'_k(c_1)\oplus \Dec'_k(c_2)=1_n$, $\bot$ otherwise.
+		\end{itemize}
+		\item $\Pi^2 \define (\Gen^2, \Enc^2, \Dec^2)$:
+		\begin{itemize}
+			\item $\Gen^2 \define \Gen'$,
+			\item $\Enc^2_k(m) \define \Enc'_k(m \oplus 1_n)$,
+			\item $\Dec^2_k(c) \define 1_n$ if $\Dec'_k(c)=\bot$, $\Dec'_k(c)\oplus 1_n$ otherwise.
+		\end{itemize}
+	\end{itemize}
+	\begin{enumerate}
+		\item Is $\Pi^1$ an authenticated encryption scheme? If not, explain which property you can break and how.
+		\item Is $\Pi^2$ an authenticated encryption scheme? If not, explain which property you can break and how.
+	\end{enumerate}
 \end{enumerate}
+
+% TODO
 \begin{solution}
-\begin{enumerate}
-    \item 
-    Given  $\Pi := \langle$ Gen, Enc, Dec$\rangle$, and adversary $A$, define the following experiment $\text{ PrivK}^{cca}_{A, \Pi}$ : 
-    \begin{enumerate}
-        \item Gen probabilistically selects ($pk$, $sk$) $\leftarrow$ Gen(1$^n$). $pk / sk$ are the public/private key.
-        \item $A$ is given oracle access to $Dec_{sk}(\cdot)$.
-        \item $A$ outputs $m_0, m_1$ of same length.
-        \item Choose $b \leftarrow$ \{0, 1\}, and send $c := Enc_{pk}(m_b)$ to $A$.
-        \item $A$ is again given access to $Dec_{sk}(\cdot)$ but he cannot ask $Dec_{sk}(c)$.
-        \item $A$ outputs $b'$.
-        \item Define $\text{PrivK}^{cca}_{A, \Pi}(n) := 1$ iff $b=b'$
-    \end{enumerate}
-    $\Pi := \langle$ Gen, Enc, Dec$\rangle$ is CCA-secure for a public key encryption scheme if $\forall$ PPT $A, \exists \epsilon$ :
-    $$ Pr[\text{ PrivK}^{cca}_{A, \Pi}(n)] \leq \frac{1}{2} + \epsilon(n) $$
-    
-    \item (c$_1$c$_1$', c$_2$c$_2$') is a valid ciphertext for the message : m $\cdot$ m'. \newline
-    We can prove this like : 
-    $$Dec_{sk}(c_1c_1',c_2c_2') = \frac{c_2c_2'}{c_1^xc_1'^x} = \frac{mh^{y_1}m'h^{y_2}}{g^{xy_1}g^{xy_2}} = m \cdot m'$$
-    
-    \item Yes, if we think about this property : $m \cdot 1 = m$ and we combine it with the property found last exercise : $Dec_{sk}(c_1c_1',c_2c_2') = m \cdot m'$, it is easy to produce a new valid ciphertext. \newline
-    If we compute $Enc_{pk}(1) := (c_1', c_2')$ (we can do it since we are in a \textbf{public key encryption scheme}), the ciphertext (c$_1$c$_1$', c$_2$c$_2$') will be a valid ciphertext and its decryption will give : m.
-    \newline
-    \textbf{Other possibility} \newline
-    We can also simply choose $y' \leftarrow \mathbb{Z}_q$ and build the ciphertext $(c_1.g^{y'},c_2.h^{y'})=(g^{y+y'},m.g^{x(y+y')})$. The decryption gives m.
-    
-    \item Now, we are able to see why ElGamal does not hold CCA-security with the 2 properties found. \newline
-    If the adversary $A$, after received $c := (c_1, c_2)$, compute $Enc_{pk}(1) := (c_1', c_2')$ and make the following oracle access $Dec_{sk}(c_1c_1',c_2c_2') := m_x$, he will now be able to (really) easily determine b from $m_x$. Then we can say that :
-    $$ Pr[\text{ PubK}^{cca}_{A, ElGamal}(n)] = 1$$
-    Which means ElGamal does not hold CCA-security with public key encryption.
-    \newline
-    \textbf{Other possibility} \newline
-    We build an attacker A as follows : 
-    \begin{enumerate}
-        \item A outputs $m_0$, $m_1$ $\in M$.
-        \item A receives $(c_1,c_2)=Enc_{pk}(m_b)=(g^y,m_b.g^{xy})$
-        \item A queries the decryption of the transformed ciphertext $(c_1.g^{y'},c_2.h^{y'})$ for some arbitrary chosen y' from $\mathbb{Z}_q$, and receives directly $m_b$ as a response from his oracle.
-    \end{enumerate}
-\end{enumerate}
+	Note: in the following adversary descriptions, we skip the description of the unused phases of the security games.
+	\begin{enumerate}
+		\item Notice that there is a constraint on the size of $l+1$: $|l+1| \le \frac{n}{2} \implies l < 2^{n/2}-1$ and thus $|m|=n\cdot l < n\cdot (2^{n/2}-1)$.
+		This constraint doesn't play a role in the proofs however.
+
+		\begin{enumerate}
+			\item Obviously, for two messages of the same length $m$ and $m'$, we have that \[\forall 1 \le i \le l\colon c'_i = m'_i \oplus F_k(r||i) = (m_i\oplus m'_i) \oplus m_i \oplus F_k(r||i) = (m_i\oplus m'_i) \oplus c_i.\]
+			And,
+			\begin{align*}
+				c'_{l+1} &= F_k(r||l+1) \oplus (\oplus_{i=1}^l m'_i) = F_k(r||l+1) \oplus (\oplus_{i=1}^l m_i) \oplus \left((\oplus_{i=1}^l m_i) \oplus (\oplus_{i=1}^l m'_i)\right) \\
+				&= c_{l+1} \oplus \oplus_{i=1}^l (m_i\oplus m'_i).
+			\end{align*}
+			So, we can build a forgery as follows:
+			\begin{enumerate}
+				\item Ask to the oracle for the encryption of a message, say, $m=0_n$ ($n$ times the bit $0$) so that it consists of only one block, and receive the answer $(r, c)$.
+				\item Output $(r, c^*)$ with $c^* = c \oplus (0_n \oplus 1_n) = c \oplus 1_n = c \oplus m^*$, which is the encryption of message $m^*=1_n$.
+			\end{enumerate}
+			By construction, it is a forgery with probability 1. So, the scheme is not unforgeable.
+
+			It is also possible to build a forgery by using a message such that $m_{l}=\oplus_{i=1}^{l-1} m_i$;
+			then, $c_{l+1}=F_k(r||l+1) \oplus 0^n$, while $c_l=F_k(r||(l-1)+1)\oplus \oplus_{i=1}^{l-1} m_i$,
+			and so we can send $(r, c^*)$ with $c^*=(c_1, c_2, \dots, c_{l})$: we drop the last $c_{l+1}$.
+
+			\item In a similar manner, we can build an adversary winning against the CCA game (adversary's viewpoint):
+			\begin{enumerate}
+				\item The challenger-oracle picks $k \define \Gen(1^n) \pick \bset^n$ uniformly at random.
+				\item Output the messages\footnote{We use the notation $m^0$ instead of $m_0$ to differenciate between a message and a message block.}
+				$m^0=0_n$ and $m^1=1_n$, and get the challenge ciphertext $(r, c)=\Enc_k(m_b)=(r, c_1, c_2)=(r, F_k(r||1)\oplus m_b, F_k(r||2)\oplus m_b)$.
+				\item Ask to the oracle the decryption of $(r, c^*)$ where $c^*=(c_1\oplus 0_{n-1}||1, c_2\oplus 0_{n-1}||1)$. We get its answer as $m^*$. This is of course not the same ciphertext as $c$.
+				\item If $m^*=0_{n-1}||1$, output $0$, else ($m^*=1_{n-1}||0$), output $1$.
+			\end{enumerate}
+			By construction, in building $c^*$ we have constructed the encryption of $m_b\oplus 0_{n-1}||1$, so we flipped the last bit of the encrypted message, allowing us to decrypt it.
+			So the probability $\Pr[\PrivKcca(n)=1]=1$, the adversary is PPT, and we have broken CCA security.
+
+			Could we also break CPA security? No (90\% sure), and we can proof it by reduction (distinguisher of $g$ between PRF $F_k$ and random function $f$, based on adversary $A_\Pi$ against $\Pi$).
+			Remark that, in the case that the ``PRF'' is a true random function, then each of the $g(r||i)$ are independent random values, and thus the $c_i$ are also independent random value, and so no relation can be found between them in a single message (the ciphertext is just purely random), and the only attack is to hope for a reused $r$.
+
+			Note that the fact that $c_{l+1}$ uses $F_k(r||l+1)$ and not $F_k(r||l)$ is important, because otherwise there would be a reuse of argument, and we can build an attack that even breaks eavesdropper security.
+		\end{enumerate}
+		\item \begin{enumerate}
+			\item $\Pi^1$ is not CCA-secure, and so is not an authenticated encryption scheme; our PPT adversary $\A$:
+			\begin{enumerate}
+				\item Key generation, as always.
+				\item Output $m_0=0_n$ and $m_1=1_n$.
+
+				Receive the challenge $c=(c_1, c_2)=(\Enc'_k(m_b), \Enc'_k(m_b\oplus 1_n))$.
+				\item Ask for the decryption of $c'=(c_2, c_1)\neq c$ and receive $m'$. Observe that
+				\begin{align*}
+					c' &= (\Enc'_k(m_b\oplus 1_n), \Enc'_k(m_b)) = (\Enc'_k(m_b\oplus 1_n), \Enc'_k((m_b\oplus 1_n)\oplus 1_n)) \\
+					&= \Enc^1_k(m_b\oplus 1_n) = \Enc^1_k(m_{1-b}).
+				\end{align*}
+				\item Output $0$ if $m'=m_1$, otherwise $1$ ($m'=m_0$).
+			\end{enumerate}
+			By construction, $\Pr[\PrivKcca[\A, \Pi^1](n)=1]=1$, which is a non-negligible advantage.
+
+			The scheme is also forgeable, in the same way: simply ask for encryption of $m_0$, receive $c$, then build $c'$ as above: this is a valid ciphertext.
+
+			\item $\Pi^2$ is forgeable, and so it not an authenticated encryption scheme; our PPT adversary $\A$:
+			\begin{enumerate}
+				\item Key generation, as usual.
+				\item Output a random ciphertext $c$.
+			\end{enumerate}
+			There are two cases:
+			\begin{itemize}
+				\item either $c$ is the encryption of some message $m$ by $\Enc'_k(\cdot)$, and so $\Dec^2_k(c)=m\oplus 1_n$, and thus it is a valid ciphertext;
+				\item or $c$ is not a valid ciphertext for $\Pi'$, in which case $\Dec'_k(c)=\bot$, and thus $\Dec_k(c)=1_n$, which means that $c$ is also a valid ciphertext for $\Pi^2$.
+			\end{itemize}
+			Thus, in both cases, this random $c$ is a valid ciphertext, and so $\Pr[\EncForge_{\A, \Pi^2}(n)=1]=1$: the scheme is forgeable.
+
+			The fact that, when $\Dec'_k(c)=\bot$, we return $1_n$ instead of a more correct $\bot$, allows us to break the unforgeability.
+
+			Is the scheme CCA-secure?
+			Other than this issue, $\Enc^2$ is the same as $\Enc$, and the only exploitable change in behaviour between $\Pi'$ and $\Pi^2$ is the fact that, on $\Pi'$ invalid encryptions, $\Pi^2$ returns $1_n$.
+			The only way an adversary could use this particularity would be if he asks for the decryption of an invalid ciphertext (generated at random by him, or by flipping a bit in a valid ciphertext), and he would always get the same $1_n$ answer, not very helpful.
+			So the scheme is CCA-secure, and we can further prove it by doing a proof by reduction.
+			% TODO do the proof by reduction; 95% sure it works
+		\end{enumerate}
+	\end{enumerate}
 \end{solution}
 
-\subsection{Exercise 2 (ElGamal in \texorpdfstring{$QR_p$}{QRp})}
-Let $p=2q+1$ with $q$ prime, let $\mathbb{G}=QR_p$ the group of squares modulo $p$, and $g$ be a generator of $\mathbb{G}$. 
-We define ElGamal encryption scheme in this group: The private key is $(\mathbb{G},g,q,x)$, the public key is $(\mathbb{G},g,q,h=g^x)$
-where $x \in \mathbb{Z}_{q}^*$ is chosen uniformly. To encrypt a message $m$ $\in \mathbb{Z}_{q}$, choose a uniform $r \in \mathbb{Z}_{q}$, compute $c_1=g^r \mod p$ and $c_2=h^r+m \mod p$ and let the ciphertext be $(c_1,c_2)$.
-
-\begin{enumerate}
-	\item What is the order of $g$?
-	\item Is this scheme CPA-secure? 
-
-	
-\end{enumerate}
-\begin{solution}
-\begin{enumerate}
-    \item As g is a generator of $\mathbb{G}$, then ord(g)=$|\mathbb{G}|$. According to \ref{subsec:4.6} and given the fact that $\mathbb{G}$ := $QR_p$, then $|\mathbb{G}| = \frac{p - 1}{2} = q =$  ord(g).
-    \item The scheme is CPA-Secure and we gonna prove it by assuming that $QR_p$ holds in DDH. \newline
-    Let's build a PPT adversary $\A$ which can solve $ElGamal$ in $QR_p$ with an advantage $\eta$. It works like this :
-    \begin{enumerate}
-        \item We send pk to $\A$ where pk = ($\mathbb{G}$, g, q, h = $g^x$).
-        \item $\A$ does q(n) queries to its oracle.
-        \item $\A$ is then doing the challenge : it outputs $m^*_0$, $m^*_1$ and send it to its $ElGamal$ oracle. 
-        \item The $ElGamal$ oracle picks a random $b \in \{0, 1\}$ and sends back $Enc_{pk}(m_b) = (c_1^b, c^b_2)$  to $\A$
-        \item $\A$ then outputs $b'$.
-    \end{enumerate}
-    We will use $\A$ to build a distinguisher $\D$ able to solve $DDH_{\D, \mathbb{G}}(n)$ : 
-    \begin{enumerate}
-        \item Run $\mathbb{G}$(n) to obtain ($\mathbb{G}$, q, g). 
-        \item We choose (x, y, z) $\xleftarrow{R} \mathbb{Z}^3_q$.
-        \item We set $h_1 = g^{x \cdot y}$, $h_0 = g^{z}$ and $b'' \leftarrow \{0, 1\}$. We forward then $((\mathbb{G}, q, g), (g^x, g^y, h_{b''}))$ to $\D$.
-        \item $\D$ will then build $pk  = (\mathbb{G}, q, g, g^x)$ and will forward $pk$ to $\A$.
-        \item $\A$ will then output its challenge queries $m^*_0$, $m^*_1$. $\D$ will pick $b \leftarrow \{0, 1\}$, and produce $c_b = (c_1^b, c^b_2) = (g^y, h_{b''} + m_b \text{ mod p})$. It will then forward $c_b$ to $\A$.
-        \item $\A$ will output $b'$.
-        \item $\D$ will output $ 1 \Leftrightarrow b = b'$.
-    \end{enumerate}
-    We analyse the chance of success to determine $Priv^{cpa}_{\A, ElGamal}$ : 
-    \begin{itemize}
-        \item if $b'' = 0$, then Pr[$\D$ outputs 1] = $\frac{1}{2}$.
-        \item if $b'' = 1$, then Pr[$\D$ outputs 1] = $\frac{1}{2}$ + $\eta(n)$.
-    \end{itemize}
-    It means that $\D$ will only has advantage $\eta(n)$ to solve DDH. But as it is assumed as hard, we can conclude that $\eta(n)$ is negligible. Therefore, $$Priv^{cpa}_{\A, ElGamal}(n) = \frac{1}{2} + negl(n) $$
-    By reduction, we just proved that this scheme is CPA-secure under DDH hardness assumption.
-\end{enumerate}
-\end{solution}
 
 
-\subsection{Exercise 3 (A Variation of ElGamal in \texorpdfstring{$PKE$}{PKE})}
-\label{subsec:varia-elgamal-pke}
-Let consider ElGamal public encryption scheme with Encryption algorithm modified in the following way, where $\mathcal{M}=\{0,1\}$:
+% OK
+% FIXME has been moved from TP5
+% Note : this is from TP5 2018-2019, but TP4 2019-2020.
+\subsection{Exercise 2 (Authenticated Encryption and sPRP)}
+
+Consider the following scheme $\Pi=(\Gen,\Enc,\Dec)$ based on the strong pseudorandom permutation $\F \colon \K \times \lbrace 0,1 \rbrace^n$, defined as follow:
 \begin{itemize}
-	\item If $b=0$ then choose a uniform $y\in \mathbb{Z}_{q}$ set $c_1=g^y$, $c_2=h^y$, and the ciphertext is $(c_1,c_2)$.
-	\item If $b=1$ then choose independent uniform $y,z \in \mathbb{Z}_{q}$ set $c_1=g^y$, $c_2=g^z$, and the ciphertext is $(c_1,c_2)$.
-\end{itemize}
-
-\begin{enumerate}
-	\item How is it possible to decrypt correctly such ciphertexts with the private key?
-	\item Show that this scheme is CPA secure if DDH holds in $\mathbb{G}$. 
-\end{enumerate}
-\begin{solution}
-\begin{enumerate}
-    \item We can define $Dec_{x}(c_1, c_2)$ as : $\begin{cases}
-    1 \textsc{ if } c_2 \neq c_1^x \\
-    0 \textsc{ if } c_2 = c_1^x\\
-\end{cases}$ 
-
-    We observe that Pr[$Dec_{x}(c_1, c_2)$ = 0 $|$ $(c_1, c_2) \leftarrow Enc(0)$] = 1 because the decryption is always correct.
-    
-    On the other hand, we observe that Pr[$ Dec_{x}(c_1, c_2) \neq 1$ $|$ $(c_1, c_2) \leftarrow Enc(1)$] = Pr[$ z = xy $] = $\frac{1}{|\mathbb{G}|}$ is negligible, then we conclude that the decryption is correct
-    
-    \item Assuming the DDH problem is hard in $\mathbb{G}$. \newline
-    Assume it exists a PPT adversary $\mathcal{A}$ for $\Pi$, we build a distinguisher D able to break DDH with non negligible probability as follows :
-    \begin{enumerate}
-        \item Run $(\mathbb{G},g,q) \leftarrow \mathcal{G}(1^n)$\\
-        Define $n:=|q|$\\
-        Choose uniformly at random $(x,y,z) \leftarrow \mathbb{Z}^3_q$\\
-        Choose at random $b\leftarrow\{0,1\}$\\
-        Compute $h_1:=g^{xy}\;h_0:=g^z$ and send $(\mathbb{G},g,q,g^x,g^y,h_b)$ to $\mathcal{A}'$
-        
-        \item $D$ defines $pk = (\mathbb{G},g,q,g^x)$ and sends it to $\mathcal{A}$
-        \item $\mathcal{A}$ sends $(m_0,m_1) = (0,1)$ to $D$
-        \item $D$ sends $c=(g^y,h_b)$ to $\mathcal{A}$
-        \item \textcolor{red}{Olivier : Pas d'accord à partir de là. C'est la probabilité de l'output b' qui varie en fonction de $h_b$ autrement dit b", je mets ma proposition en dessous.} $\mathcal{A}$ outputs $b'$ 
-            \begin{itemize}
-                \item if $b'=0\Rightarrow h_b=g^{xy}$
-                \item if $b'=1\Rightarrow h_b=g^z$
-            \end{itemize}
-            $D$ outputs $b''=\Bar{b'}$
-        \item Define : $$\text{PubK}^\text{cpa}_{\mathcal{A},\Pi}(n) = 1 \Leftrightarrow b'\neq b$$ $$\text{DDH}_{\mathcal{A}',\mathcal{G}}(n) = 1 \Leftrightarrow b''=b$$
-    \end{enumerate}
-    If we run the experiment, we have :
-    \begin{align*}
-        \text{Pr}[\text{PubK}^\text{cpa}_{\mathcal{A},\Pi}(n) = 1] &= \frac{1}{2}+\epsilon(n)\\
-        &= \text{Pr}[b'\neq b]\\
-        &= \text{Pr}[b''=b]\\
-        &= \text{Pr}[\text{DDH}_{\mathcal{A}',\mathcal{G}}(n) = 1]
-    \end{align*}
-    If $\epsilon(n)$ is non negligible, $\mathcal{A}'$ is a PPT adversary that can break DDH with non negligible probability, which contradicts the assumption. Therefore $\mathcal{A}$ is CPA secure if DDH is hard in $\mathbb{G}$.
-\end{enumerate}
-
-\textcolor{red}{Solution} 
-
-\begin{enumerate}
-    \item D outputs 1 $\Leftrightarrow b'=1$.
-    \item We observe : \newline
-    If $b=0 \Rightarrow Pr[D outputs 1]=\frac{1}{2}$ (as $g^z$ looks random in $\mathbb{G}$) \newline
-    If $b=1 \Rightarrow Pr[D outputs 1]=\frac{1}{2}+\eta(n)$.
-    \item We thus have D distinguishing between $g^z$ and $g^{xy}$ with advantage $\eta(n)$. As we assume that DDH holds in $\mathbb{G}$, $\eta(n)$ must be negligible and this scheme is CPA-secure.
-\end{enumerate}
-
-\end{solution}
-
-\subsection{Exercise 4 (Authenticated Encryption)}
-Consider the following scheme $\Pi=(\Gen,\Enc,\Dec)$ based on the strong pseudorandom permutation $\F:\mathcal{K} \times \lbrace 0,1 \rbrace^n$, defined as follow:
-\begin{itemize}
-\item $\mathcal{M}=\lbrace 0,1\rbrace^{\frac{n}{2}}$ (the message space)
-\item $\Gen$ picks a random key $k \in \mathcal{K}$
-\item $\Enc_k(m)$ picks a random value $r \in \lbrace 0,1\rbrace^{\frac{n}{2}}$, and computes $c \leftarrow \F_k(m \| r)$
-\item $\Dec_k(c)$ computes $(m\|r)=\F^{-1}_k(c)$ and outputs $m$ (the first half).
+	\item $\M=\bset^{\frac{n}{2}}$ (the message space)
+	\item $\Gen$ picks a random key $k \in \K$
+	\item $\Enc_k(m)$ picks a random value $r \in \bset^{\frac{n}{2}}$, and computes $c \define \F_k(m \| r)$
+	\item $\Dec_k(c)$ computes $(m\|r)=\F^{-1}_k(c)$ and outputs $m$ (the first half).
 \end{itemize}
 Answers the following questions:
 \begin{itemize}
-\item is $\Pi$ unforgeable?
-\item is $\Pi$ CCA-secure? (\emph{To do at home})
-\item is $\Pi$ an authenticated encryption scheme? (\emph{To do at home})
+	\item is $\Pi$ unforgeable?
+	\item is $\Pi$ CCA-secure? (\emph{To do at home})
+	\item is $\Pi$ an authenticated encryption scheme? (\emph{To do at home})
 \end{itemize}
-
-
 
 \paragraph{Definition 1} \label{def: sprp} (\emph{Strong PseudoRandom Permutation})
 
-A function $\F:\mathcal{K} \times \mathcal{M} \longmapsto \mathcal{M}$ is a $(q,t,\varepsilon)$-\emph{ strong pseudorandom permutation} ($\sprp$) if for any $(q,t)$-bounded adversary, the advantage:
-$$ \mathsf{Adv}^{\sprp}_{\adv}:=
+A function $\F \colon \K \times \M \mapsto \M$ is a $(q,t,\negl)$-\emph{ strong pseudorandom permutation} ($\sprp$) if for any $(q,t)$-bounded adversary, the advantage:
+\[ \mathsf{Adv}^{\sprp}_{\adv}\define
 \left| \Pr\left[ \adv^{\F_k(\cdot),\F_k^{-1}(\cdot)}\Rightarrow 1 \right] -
-	\Pr\left[ \adv^{\f(\cdot,\cdot),\f^{-1}(\cdot,\cdot)}\Rightarrow 1 \right] \right| 
-\leq \varepsilon $$
-with $k$  and $\f$ picked uniformly at random from their domains, respectively $\mathcal{K}$ and the set of permutations $\mathcal{M} \rightarrow \mathcal{M}$.
+\Pr\left[ \adv^{\f(\cdot,\cdot),\f^{-1}(\cdot,\cdot)}\Rightarrow 1 \right] \right|
+\leq \negl \]
+with $k$  and $\f$ picked uniformly at random from their domains, respectively $\K$ and the set of permutations $\M \mapsto \M$.
+
+
 \begin{solution}
-\begin{enumerate}
-    \item It is not unforgeable because since $F_k$ is a PRP, it is bijective. 
-    \newline Then $\forall u \in \{0, 1\}, F_k^{-1}(u) = (u_1 || u_2)$ and $EncForge_{\A, \Pi} = 1$.
-    \item It is CCA-secure and we will prove it by assuming that the PRP F is strong. 
-    If we build the distinguisher $\D$ using the PPT adversary $\A$ capable of breaking the scheme $\Pi$ with advantage $\eta(n)$. At the start of the game, a random key k and a random bit b are picked by the oracle.
-    \begin{enumerate}
-        \item When $\A$ asks for the encryption of message $m_i$, $\D$ picks a random $r_i \leftarrow \{0, 1\}^{\frac{n}{2}}$ and queries its oracle on input ($m_i || r_i$) obtaining, if b=0 $c_i = f(m_i || r_i)$, else $c_i = F_k(m_i || r_i)$. 
-        $\D$ forwards $c_i$ to $\A$. This is repeated for each message $m_i$ issued for the first query phase.
-        \newline Also, when $\A$ asks for the decryption of ciphertext $c_i'$, $\D$ queries its oracle on input $c_i'$ obtaining, if b=0 $(m_i'||r_i') = f^{-1}(c_i')$, else $(m_i'||r_i') = F^{-1}_k(c_i')$, which $\D$ forwards to $\A$. This is repeated for each ciphertext $c_i'$ issued for the first query phase
-        \item When $\A$ does the challenge query on output $m^*_0$, $m^*_1$ with $|m^*_0| = |m^*_1|=\frac{n}{2}$ and $m^*_0 \neq m^*_1$,  $\D$ picks a random $r^* \leftarrow \{0, 1\}^{\frac{n}{2}}$ and a random $b'\leftarrow \{0, 1\}$. $\D$ queries then its oracle on input ($m^*_b || r^*$) obtaining, if b=0, $c^* = f(m^*_b || r^*)$, else $c^* = F_k(m^*_b || r^*)$.  $\D$ forwards $c^*$ to $\A$.
-        \item When $\A$ asks for the encryption of message $m_i$, $\D$ picks a random $r_i \leftarrow \{0, 1\}^{\frac{n}{2}}$ and queries its oracle on input ($m_i || r_i$) obtaining, if b=0 $c_i = f(m_i || r_i)$, else $c_i = F_k(m_i || r_i)$. 
-        $\D$ forwards $c_i$ to $\A$. This is repeated for each message $m_i$ issued for the second query phase.
-        \newline Also, when $\A$ asks for the decryption of ciphertext $c_i'$, $\D$ queries its oracle on input $c_i'$ obtaining, if b=0 $(m_i'||r_i') = f^{-1}(c_i')$, else $(m_i'||r_i') = F^{-1}_k(c_i')$, which $\D$ forwards to $\A$. This is repeated for each ciphertext $c_i' \neq c$ issued for the second query phase
-        \item At the end of the game, $\A$ outputs a bit b''. $\D$ outputs a bit $1 \Leftrightarrow b'' = b'$. 
-    \end{enumerate}
-    Now, Pr[$\D$] will depend on b : 
-    \begin{itemize}
-        \item if b = 0, Pr[$\D$ outputs 1] = $\frac{1}{2} + \frac{q(n)}{2^{\frac{n}{2}}}$ ($m||r$ found twice !)
-        \item if b = 1, Pr[$\D$ outputs 1] $\leq \frac{1}{2} + \eta(n)$
-    \end{itemize}
-    We can see that if $F_k(m)$ is replaced by a true random function $f(m)$, the scheme is CCA-secure (since $\frac{q(n)}{2^{\frac{n}{2}}}$ is negligible). 
-    
-    So now we check if the scheme is insecure, we can distinguish $F_k(m)$ from a true random function. $|Pr[\D^{F_k(\cdot),F_k^{-1}(\cdot)}(1^n)=1]-Pr[\D^{f(\cdot),f^{-1}(\cdot)}(1^n)=1]| \leq \eta(n) - \frac{q(n)}{2^{n/2}}$. Since $F_k(\cdot)$ is a strong PRP, then $\eta(n)$ is negligible and the scheme $\Pi$ is CCA-secure.
-    \item Since the scheme $\Pi$ is CCA-Secure but not unforgeable, then it is not an authenticated encryption
-\end{enumerate}
+	\begin{enumerate}
+		\item It is not unforgeable because since $F_k$ is a PRP, it is bijective (i.e., every image has a pre-image). Then
+		\[ \forall c \in \bset, \exists m, r \colon F_k^{-1}(c) = (m || r) \]
+		and $\Pr[\EncForge_{\A, \Pi}(n)=1] = 1$.
+
+		\item It is CCA-secure and we will prove it by reduction, assuming that the PRP $F$ is strong.
+		Thus, assume we have a PPT adversary $\A$ against the scheme $\Pi$ with advantage $\negl_\A(n)$. Then, we can build a PPT distinguisher $\D$ between a sPRP and a random function, which plays the sPRP game as follows:
+		\begin{enumerate}
+			\item The challenger-oracle picks $k \define \Gen(1^n) \in \K$, and $b \pick \bset$. If $b=0$, then the challenger uses a true random function $f$ for $g$, if $b=1$, the challenger uses the sPRP $F_k(\cdot)$ for $g$.
+			\item First query phase:
+
+			When $\A$ asks for the encryption of a message $m$, $\D$ picks $r \pick \bset^{\frac{n}{2}}$ uniformly at random and queries its oracle on input $m || r$ obtaining, $c = g(m || r)$. $\D$ then forwards $c$ to $\A$.
+
+			When $\A$ asks for the decryption of ciphertext $c$, $\D$ queries its oracle on input $c$ obtaining $m||r=g^{-1}(c)$, and $\D$ answers $m$ to $\A$.
+
+			\item When $\A$ does the challenge query and outputs $m^*_0$, $m^*_1$ with $|m^*_0| = |m^*_1|=\frac{n}{2}$ and $m^*_0 \neq m^*_1$,
+			$\D$ picks $r^* \pick \bset^{\frac{n}{2}}$ uniformly at random, and $b' \pick \bset$ uniformly at random too.
+			$\D$ queries then its oracle on input $m^*_{b'} || r^*$ obtaining $c^*=g(m^*_{b'}||r^*)$. $\D$ forwards $c^*$ to $\A$.
+
+			\item Second query phase, like the first one, except that $\A$ cannot ask for $\Dec_k(c^*)$.
+
+			\item At the end of the game, $\A$ outputs its guess $b''$. $\D$ outputs $1$ iff $b''=b'$, $0$ otherwise: did the adversary $\A$ guess our correct pick of $b'$?.
+		\end{enumerate}
+		Let's compute the probability of success for $\D$:
+		\begin{itemize}
+			\item If $b=0$, then $g=f$, a random function, and so, each ciphertext generated by $g$ and each decrypted message generated by $g^{-1}$ is a random number, independent of each other. In this condition, the best thing the adversary $\A$ can do is wait for a collision on $m||r$ and thus $\Pr[\D \text{ outputs } 1 | b=0]=\Pr[b''=b']=\Pr[\PrivKcca(n)=1]=\frac12 + \frac{q(n)}{2^{n/2}}$.
+			\item If $b=1$, then $g=F_k$, and $\A$ is in the right conditions (its interface is respected) to have the advantage $\negl_\A$: $\Pr[\D \text{ outputs } 1 | b=1]=\Pr[b''=b']=\Pr[\PrivKcca(n)=1]=\frac12 + \negl_\A$.
+		\end{itemize}
+		Thus, the difference between the probabilities is
+		\[ \negl_\D(n) = \abs{ \Pr[\D^{F_k(\cdot), F^{-1}_k(\cdot)}(1^n)=1] - \Pr[\D^{f(\cdot), f^{-1}(\cdot)}(1^n)=1] } = \abs{ \negl_\A(n) - \frac{q(n)}{2^{n/2}} } \]
+		As we assume that $\F$ is a strong PRP, that the whole construction above is PPT, then $\negl_\D(n)$ must be negligible, and thus the right-hand side must be negligible, and thus $\negl_\A$ must be negligible. The scheme is thus CCA-secure.
+
+		\item Since the scheme $\Pi$ is CCA-Secure but not unforgeable, it is not an authenticated encryption
+	\end{enumerate}
 \end{solution}
 
 
-\subsection{Exercise 5 (Authenticated Encryption)}
-Let $\Pi=(\Gen,\Enc,\Dec)$ be an authenticated encryption scheme where $ 0 \not \in \mathcal{C}$ (that is, the string $``0"$ is not a possible ciphertext for $\Pi$). Consider the following scheme $\Pi':=(\Gen',\Enc',\Dec')$ with:
 
+\subsection{Exercise 3 (Hash functions from\ldots hash functions)}
+
+Let $H_2\colon\bset^{2l}\mapsto\bset^{l}$ and $H_3\colon\bset^{3l}\mapsto\bset^{l}$ be
+collision resistant hash functions. For $2l$-bit strings $x_i$'s, consider the following two constructions.
 \begin{itemize}
-\item $\Gen'=\Gen$
-\item $\Enc'=\Enc$
-\item 	$ \forall k: \left\{ 	\begin{array}{l l}
-\Dec'(c)=\Dec(c) &\quad \text{ if } c \neq 0,\\
- 0 &\quad  \text{ if } c = 0. 
-\end{array} \right.   $ 
-%\item $\Dec'(c)=\Dec(c)$ if $c \neq 0$, if $c=0$ $c \neq 0 ~ \forall$ key $k$.
+	\item $H_4\colon\bset^{4l}\mapsto\bset^{l}$;
+	$x=x_1||x_2\rightarrow H_2\left(H_2(x_1)||H_2(x_1\oplus x_2)\right)$
+	\smallskip
+	\item $H_6\colon\bset^{6l}\mapsto\bset^{l}$;
+	$x=x_1||x_2||x_3\rightarrow H_3\left(H_2(x_1\oplus x_2)||H_2(x_2\oplus x_3)||H_2(x_3\oplus x_1)\right)$
 \end{itemize}
+Determine whether these hash functions are still collision resistant or not.
 
-\begin{enumerate}
-\item Is $\Pi'$ unforgeable?
-\item Is $\Pi'$ CCA secure?
-\end{enumerate}
-\begin{solution}
-    \begin{enumerate}
-        \item This is CCA-secure, since $\Pi$ is CCA-secure. (Insert proof here but it is 100\% sure it is CCA-secure).
-        \item This is not unforgeable. We can forge a new valid ciphertext if the PPT adversary $\A$ outputs 0, then this ciphertext will be considered as valid and Pr[EncForge$_{\A, \Pi'}$(n) = 1] = 1.
-    \end{enumerate}
-\end{solution}
-
-\subsection{Exercise 6 (Commitment scheme)}
-\label{subsec:commit-scheme}
-Define the bit-commitment scheme $\langle \G, \Com, \Open \rangle$ with the following PPT 
-algorithms :
-\begin{itemize}
-\item $\Gen(1^n)$ sets $pk$ as $(\PRG,R)$, where
-  \begin{itemize}
-  \item $\PRG$ is a random generator $\lbrace 0,1 \rbrace^n \longmapsto \lbrace 0,1\rbrace^{3n}$
-  \item $R$ is a random $3n$-bit string
-  \end{itemize}
-\item $\Com_{pk}(b)$ with $b\in\{0,1\}$ provides $(c,d)$ where: 
-  \begin{itemize}
-  \item $Y$ is an $n$-bit string
-  \item  if $b=0$ $c=\PRG(Y)$
-  \item if $b=1$, $c=\PRG(Y) \oplus R$
-  \item $d=(b,Y)$
-  \end{itemize}
-\item $\Open_{pk}(c,d)$ outputs $b$ if it can recompute $c$ from $d$ and $pk$, or $\bot$ otherwise
-\end{itemize}
-
-\begin{enumerate}
-  \item Is this scheme perfectly hiding?
-	\item Is this scheme computationaly binding? 	
-	\item If the committer choose $R$ is the scheme secure?
-\end{enumerate}
 
 \begin{solution}
-\begin{enumerate}
-    \item To break the hiding property, an adversary would need to enumerate all possible outputs of G (requires $2^n$ steps) if $G(Y) \oplus R \notin \{x | \forall u : x = G(u)\}$. But this kind of event has a negligible chance of probability (Pr = $\frac{|G(Y)|}{|G(Y) \oplus R|} = \frac{2^n}{2^{3n}} = \frac{1}{2^{2n}} \in negl(n)$) so an adversary with an unbounded power of calculation can easily break the property of perfectly hiding.
-    \item It is computationally binding because : 
-    $$Pr[G(Y) = G(Y') \oplus R] = \frac{2^n\cdot2^n}{2^{3n}} = \frac{1}{2^n} \in negl(n)$$
-    Then we have Pr[Com$^{bind}_{\mathrm{A}, \Pi}$] $\leq \epsilon$, and the scheme is computationally secure. 
-    \item Not secure, because if $R = G(Y)$, then the opposite player can easily deduce the value of b. If c = 0, b = 1, else b = 0. 
-\end{enumerate}
+	\begin{itemize}
+		\item
+		Let's show that from a collision of $H_4$, we generate a collision for $H_2$
+		which prove that $H_4$ is collision resistant since $H_2$ is so.
+		Let's suppose that we have $x_1\|x_2 \neq y_1\|y_2$ are such that $H_4(x_1\|x_2) = H_4(y_1\|y_2)$.
+		\begin{itemize}
+			\item
+			If $H_2(x_1) \| H_2(x_1 \xor x_2) \neq H_2(y_1) \| H_2(y_1 \xor y_2)$,
+			we have a collision for $H_2$ since their image by $H_2$ is identical.
+			\item
+			If $H_2(x_1) \| H_2(x_1 \xor x_2) = H_2(y_1) \| H_2(y_1 \xor y_2)$,
+			we have $H_2(x_1) = H_2(y_1)$ \emph{and} $H_2(x_1 \xor x_2) = H_2(y_1 \xor y_2)$.
+			\begin{itemize}
+				\item If $x_1 \neq y_1$, we have a collision for $x_2$ since $H_2(x_1) = H_2(y_1)$.
+				\item If $x_1 = y_1$, then $x_2 \neq y_2$ since $x_1\|x_2 \neq y_1\|y_2$.
+				Therefore $x_1 \xor x_2 \neq y_1 \xor y_2$ and we have collision on $H_2$.
+			\end{itemize}
+		\end{itemize}
+		\item
+		$H_6$ is not collision resistant since $H_6(x_1\|x_2\|x_3) = H_6((x_1 \xor w)\|(x_2 \xor w)\|(x_3 \xor w))$
+		for all $w$ (collision if $w\neq 0^{2l}$).
+		Indeed, since $\xor$ is associative and commutative,
+		\begin{align*}
+		& = H_6((x_1 \xor w)\|(x_2 \xor w)\|(x_3 \xor w))\\
+		& = H_3(H_2((x_1 \xor w) \xor (x_2 \xor w))\|H_2((x_2 \xor w) \xor (x_3 \xor w))\|H_2((x_3 \xor w) \xor (x_1 \xor w)))\\
+		& = H_3(H_2(x_1 \xor (w \xor w) \xor x_2)\|H_2(x_2 \xor (w \xor w) \xor x_3)\|H_2(x_3 \xor (w \xor w) \xor x_1)))\\
+		& = H_3(H_2(x_1 \xor x_2)\|H_2(x_2 \xor x_3)\|H_2(x_3 \xor x_1)))\\
+		& = H_6(x_1\|x_2\|x_3).
+		\end{align*}
+	\end{itemize}
 \end{solution}
+
+
+
+\subsection{Exercise 4 (Block-cipher based hash function)}
+
+Considering a block cipher
+$E\colon\K\times\M\mapsto\C$; $(k,m)\rightarrow E(k,m)=\Enc_k(m)$
+with $\K=\M=\C=\bset^l$, one may try to construct
+a collision resistant compression function from $\bset^{2l}$ to $\bset^{l}$.
+Show that the following methods do not work :
+\[ f_1(x,y)=E(y,x)\oplus y \quad\text{ and }\quad f_2(x,y)=E(x,x)\oplus y \]
+That is, show an efficient algorithm for constructing collisions for $f_1$ and $f_2$.
+Recall that the block cipher $E$ and the corresponding decryption algorithm $D$ are both
+known to you (and they are bijective functions).
+
+
+\begin{solution}
+	We will give 2 collisions for $f_1$ and $f_2$.
+
+	We know that $E(k, \cdot)$ is surjective because it must be injective and $\M = \C$.
+	Therefore the decryption exists for all $c \in \C$! We will use it for the second collision of $f_1$.
+
+	For $f_1$, we have the 2 following collisions
+	\begin{align*}
+	f_1(D(E(y,x),y), E(y,x))
+	& = E(E(y,x), D(E(y,x), y)) \xor E(y,x)\\
+	& = y \xor E(y,x)\\
+	& = E(y,x) \xor y\\
+	& = f_1(x, y)\\
+	f_1(D(0, E(y,x) \xor y), 0)
+	& = E(0, D(0, E(y, x) \xor y)) \xor 0\\
+	& = E(y, x) \xor y\\
+	& = f_1(x, y).
+	\end{align*}
+	and for $f_2$ we have
+	\begin{align*}
+	f_2(x, E(x,x)) & = E(x,x) \xor E(x,x)\\
+	& = 0 & \forall x \in \{0,1\}^l\\
+	f_2(y, E(x,x)) & = E(y,y) \xor E(x,x)\\
+	& = E(x,x) \xor E(y,y)\\
+	& = f_2(x, E(y,y)).
+	\end{align*}
+
+	\textbf{Other approach:}
+
+	For $f_1$: Let's define $k_1$ and $k_2$ such that $k_2$ is equal to $k_1$ except for the last bit which is flipped. Let's now take an arbitrary $x_1$ for which we ask the encryption $T_{x_1} = E(k_1,x_1)$. Now let's flip the last bit of $T_{x_1}$ and call the result $T_{x_2}$. We can now ask for the decryption of $T_{x_2}$ given $k_2$ as input key, which we know exists since D is bijective and $\C = \bset^{l}$. We then obtain $x_2$. We can now observe that:
+	\begin{align*}
+	f_1(x_1, k_1) & = E(k_1,x_1) \xor k_1\\
+	& = T_{x_1}  \xor k_1\\
+	f_1(x_2, k_2) & = E(k_2,x_2) \xor k_2\\
+	& = T_{x_2} \xor k_2\\
+	& = (T_{x_1} \xor 0^{l-1}||1 )\:\xor\: (k_1 \xor 0^{l-1}||1)\\
+	& = T_{x_1}  \xor k_1
+	\end{align*}
+	For $f_2$: We can ask for $T_x = \:E(x,x)$ and $T_y = E(y,y)$ for two arbitrary (but different) $x$ and $y$.  We can see that:
+	\begin{align*}
+	f_2(y, T_x) & = E(y,y) \xor T_x\\
+	& = T_y  \xor T_x\\
+	f_2(x, T_y) & = E(x,x) \xor T_y\\
+	& = T_x \xor T_y
+	\end{align*}
+	Which are both equal with different input, this is a collision.
+\end{solution}
+
+
+
+% OK
+\subsection{Exercise 5 (Authenticated encryption, or not)}
+
+\copypaste{10}{1}
+
+
+
+\subsection{Exercise 6 (Variable-length MAC)}
+
+Considering a known hash function $h^s\colon\bset^{2l}\mapsto\bset^{l}$,
+let's note by $H^s$ the corresponding Merkle-Damg{\aa}rd transform hash function,
+\emph{i.e.}
+
+\begin{center}
+	\begin{tikzpicture}[scale=0.5]
+	\tikzstyle{every node}=[text centered, inner sep = 2pt]
+
+	\trapeze{$h^s$}{\position}
+	\draw [->] \position +(-3,0) node [left] {$IV$} -- +(-1,0);
+	\draw [<-] \position + (-1,1) -| ++(-2,3) node [above] {\mylabel};
+	\draw \position + (1,0) -- +(2,0) node {};
+	\renewcommand{\position}{(4,0)}
+	\renewcommand{\mylabel}{$x_2$}
+	\trapeze{$h^s$}{\position}
+	\draw [->] \position +(-2,0) node [below] {} -- +(-1,0);
+	\draw [<-] \position + (-1,1) -| ++(-2,3) node [above] {\mylabel};
+	\draw [->]\position + (1,0) -- +(2,0) node [right] {$\ldots$};
+	\renewcommand{\position}{(9.5,0)}
+	\renewcommand{\mylabel}{$x_n$}
+	\trapeze{$h^s$}{\position}
+	\draw [->] \position +(-2.2,0) node [below] {} -- +(-1,0);
+	\draw [<-] \position + (-1,1) -| ++(-2,3) node [above] {\mylabel};
+	\draw \position + (1,0) -- +(2,0) node {};
+	\renewcommand{\position}{(13.5,0)}
+	\renewcommand{\mylabel}{$\left|x\right|$}
+	\trapeze{$h^s$}{\position}
+	\draw [->] \position +(-2,0) node [below] {} -- +(-1,0);
+	\draw [<-] \position + (-1,1) -| ++(-2,2.95) node [above] {\mylabel};
+	\draw [->] \position + (1,0) -- +(2,0) node [right] {$H^s(x)$};
+	\end{tikzpicture}
+\end{center}
+%
+when $x=x_1||\cdots||x_n$ for some integer $n$ and when the $x_i$'s are
+$l$-bit strings.
+
+Show why, with a private key $k$ of length $l$, the MAC scheme
+\[t \define H^s(k||m),\]
+is \emph{not} existentially unforgeable under an adaptive chosen-message attack.
+
+
+\begin{solution}
+	If we have the tag of $p$, which is (let's consider that $k$ and $p$ are $l$ bits long for simplicity)
+	\[ t_p = H^s(k\|p) = h^s(h^s(h^s(IV \| k) \| p) \| 2l) \]
+	we can find the tag of $p\|2l\|w$ (where $w$ is $l$ bits long for simplicity)
+	without knowing $k$ since we know $h^s$ (it is public knowledge, only the secret $k$ is secret and requires an oracle).
+	It is
+	\begin{align*}
+		H^s(k\|p\|2l\|w)
+		& = h^s(h^s(h^s(h^s(h^s(IV \| k) \| p) \| 2l) \| w) \| 4l)\\
+		& = h^s(h^s(H^s(k \| p) \| w) \| 4l)\\
+		& = h^s(h^s(t_p \| w) \| 4l)
+	\end{align*}
+	Since $p\|2l\|w \neq p$, this gives us an existential forgery.
+\end{solution}
+
+
+
+% OK
+\subsection{Exercise 7 (Hash-MAC)}
+
+Suppose $H_0$ and $H_1$ are compression functions but only one is believed to be collision resistant.
+Besides, suppose $\textsc{Mac}_0$ and $\textsc{Mac}_1$ are message authentication codes but only one
+of the both schemes is known to be unforgeable. Is it possible to build a secure ''hash-MAC'' from these
+inputs? Justify your answer.
+
+%Homework 2 of Dan Boneh, Winter 2011, Problem 5 (DVD security)
+\begin{solution}
+	We build $H(m) = H_0(m)\|H_1(m)$.
+	If we have $m_1 \neq m_2$ such that $H(m_1) = H(m_2)$ then $H_0(m_1) = H_0(m_2)$ and
+	$H_1(m_1) = H_1(m_2)$ so the collision resistant hash function has a collision whichever it is.
+	However, $H$ is no more a compression function and we cannot use Merkle-Damg\aa{}rd.
+
+	The fact that we don't know the compressive factor also prevents us from building (simply) Merkle-Damg\aa{}rd or sponge constructions based on each of the functions.
+
+	The input of $H$ therefore cannot have arbitrary length but its output is twice the length of the output of $H_0$ and $H_1$ so it is twice the size of a tag.
+
+	The output of $\Mac_0$ and $\Mac_1$ are the size of a tag so we can use the tag
+	$H(\Mac_0(k,m)\|\Mac_1(k,m))$ for our Hash-MAC scheme.
+	If we are able to output an existential forgery $(m, t)$, since $H$ is collision resistant, that means that we have found $\Mac_0(k,m)\|\Mac_1(k,m)$ and therefore we have found an existential forgery for both $\Mac_0$ \emph{and} $\Mac_1$ which is absurd since one of them is believed to be unforgeable.
+
+	Our Hash-MAC scheme is therefore unforgeable.
+\end{solution}
+
+
+
+\subsection{Exercise 8 (Blue-ray security)}
+
+\copypaste{3}{7}

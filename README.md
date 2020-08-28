@@ -16,8 +16,7 @@ Les `.pdf` des synthèses et correctifs dans leur dernière version sont disponi
 Ce README donne quelques premières indications
 quant à l'utilisation de ce repository.
 Pour de plus amples informations,
-voir
-le document [How_to_Contribute][doc-url]
+voir le [guide pour les nouveaux contributeurs][doc-url]
 ou le [wiki](https://github.com/Gp2mv3/Syntheses/wiki).
 
 ## Comment contribuer
@@ -27,9 +26,8 @@ en soumettant une issue sur le
 Même pour une simple faute d'orthographe, ça vaut la peine de le signaler.
 
 Vous pouvez aussi directement modifier le code et nous le soumettre
-en utilisant `git`, voir le document
-[How_to_Contribute.pdf](https://www.dropbox.com/s/s48t7iv4n6xotya/How_to_Contribute.pdf?dl=0)
-pour une explication rapide.
+en utilisant `git`; le [guide pour les nouveaux contributeurs][doc-url]
+donne une explication rapide de comment faire cela.
 Pour une explication plus détaillée, lisez la partie *Utilisation linéaire de Git* de
 [ce tutoriel](http://sites.uclouvain.be/SystInfo/notes/Outils/html/git.html)
 écrit par Benoît Legat.
@@ -59,7 +57,7 @@ tout le contenu que vous soumettez pour inclusion dans ce dépot.
 
 Si cette license vous pose problème, venez en discuter en ouvrant une [issue](https://github.com/Gp2mv3/Syntheses/issues/new).
 
-[pdf-url]: https://uclouvain-my.sharepoint.com/:f:/g/personal/mbraquet_oasis_uclouvain_be/EsZVP62vNgpHgo02HE7RMx8BkQdOgtVrPLe70BSTUoOfqQ
+[pdf-url]: https://uclouvain-my.sharepoint.com/:f:/g/personal/midelecourt_oasis_uclouvain_be/ErNklAdPrRxMhivv3RRPEQABvHvHFqhBpATkxaDGa-OQNw
 [doc-url]: https://drive.google.com/file/d/0B1axlYz3_XXKRzdGVWdGdUZ6UGs/view?usp=sharing
 [chat-url]: https://gitter.im/Gp2mv3/Syntheses?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [forum-url]: http://forum-epl.be

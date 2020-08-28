@@ -1,226 +1,226 @@
-% This practical session was entirely corrected by the teaching assistants so, there is no need to correct the solutions.
 
 \section{}
-\subsection{Exercise 0}
-\copypaste{6}{2}
-\begin{solution}
-\begin{enumerate}
-	\item We show the correctness (if the signature is well formed, it is accepted).
-	\begin{align*}
- [g^{u_1} y^{u_2} \mod p] \mod q = &[g^{H(m)\cdot s^{-1}} (g^x)^{r
- 	\cdot s^{-1}} \mod p] \mod q,\\
-= &[g^{(H(m)+rx)	\cdot s^{-1}} \mod p] \mod q,\\
-= &[g^{k} \mod p] \mod q,\\
-= &r .\\
-	\end{align*}
-	
-	\item As the same $k$ was used for two signatures, we have the valid signatures $(r,s_1)$ where $s_1:=(H(m_1) + xr) \cdot k^{-1} \mod
-	q$ and $(r,s_2)$ where $s_1:=(H(m_2) + xr) \cdot k^{-1} \mod
-	q$. Now, we consider the quotient of $s_1$ divided by $s_2$ (the operations are modulo $q$), in order to cancel the part depending on $k$, note that we can do it with two signatures only because the same $k$ is reused:
-	\[\frac{s_1}{s_2}=\frac{(H(m_1) + xr) \cdot k^{-1}}{(H(m_2) + xr) \cdot k^{-1}}=\frac{H(m_1) + xr}{H(m_2) + xr} .\]
-	This is equivalent to: $s_1 (H(m_2) + xr)= s_2 (H(m_1) + xr)$, then: 
-	\[xr= \frac{s_1 H(m_2) - s_2 H(m_1)}{s_2-s_1}.\]
-	Finally, dividing by $r$ we get $x$ which is the secret key. As with non negligible probability (when the denominators are non null we can perform the operations described below) we can get $x$ and sign any other message, this variant of DSS is non secure.
-		
-\end{enumerate}
-
-\end{solution}
 
 
-\subsection{Exercise 1 (A variant of ElGamal Encryption.)}
-Let us consider the following variant of ElGamal encryption.  Let
+\subsection{Exercise 1 (Commitment scheme)}
+\label{subsec:commit-scheme}
+
+Define the bit-commitment scheme $\langle \G, \Com, \Open \rangle$ with the following PPT algorithms:
 \begin{itemize}
-	\item $\Gen$ output a pair
-	$\langle pk, sk \rangle := \langle(\Gr, q, g, h), (\Gr, q, g, x)
-	\rangle$ as in traditional ElGamal encryption, except that $x$ is selected in $\Z_q - \{0\}$; 
-	\item $\Enc_{pk}(m) := \langle m\cdot g^y, h^y\rangle$ with $y \leftarrow \Z_q$ and $m \in \Gr$. 
+	\item $\Gen(1^n)$ sets $pk$ as $(\PRG,R)$, where
+	\begin{itemize}
+		\item $\mathsf{G}$ is a random generator $\lbrace 0,1 \rbrace^n \longmapsto \lbrace 0,1\rbrace^{3n}$
+		\item $R$ is a random $3n$-bit string
+	\end{itemize}
+	\item $\Com_{pk}(b)$ with $b\in\{0,1\}$ provides $(c,d)$ where:
+	\begin{itemize}
+		\item $Y$ is an $n$-bit string
+		\item  if $b=0$ $c=\mathsf{G}(Y)$
+		\item if $b=1$, $c=\mathsf{G}(Y) \oplus R$
+		\item $d=(b,Y)$
+	\end{itemize}
+	\item $\Open_{pk}(c,d)$ outputs $b$ if it can recompute $c$ from $d$ and $pk$, or $\bot$ otherwise
 \end{itemize}
 
 \begin{enumerate}
-	\item Define the corresponding decryption operation. 	
-	\item Why did we exclude ``0'' from the set in which $x$ is selected? 	
-	\item Prove that this variant of ElGamal is CPA-secure if the DDH
-	problem is hard with respect to the group key generation algorithm $\Gr$. 
+	\item Is this scheme perfectly hiding?
+	\item Is this scheme computationaly binding?
+	\item If the committer choose $R$ is the scheme secure?
 \end{enumerate}
 
+
 \begin{solution}
-\begin{enumerate}
-	\item	$\D_{sk}(c_1, c_2) = \frac{c_1}{c_2^{1/x}}$, where $1/x$ is the inverse of $x \bmod q$. 
-	\item We exclude ``0'' as  $0 \not \in \Z_q^*$, so it has no inverse mod $q$. 
-	\item The reduction $A'$ proceeds as follows, using an attacker $A$ of
-	the modified ElGamal scheme:
 	\begin{enumerate}
-		\item $A'$ starts an instance of $A$ and gets
-		$\mathbb{G}, q, g, g^x, g^y, g^z$ from the DDH challenger (where $z$
-		is or is not $xy$)
-		\item $A'$ checks if $g^x = 1$ (that is, if $x=0$). If it is the
-		case, it claims that it received a DDH tuple if $g^y = g^z$ (by
-		returning 1) and a random tuple otherwise (by returning 0) and
-		stops. The claim will be always correct, but this event will only
-		happen with probability $1/q$.
-		\item $A'$ forwards $(\mathbb{G},q, g, g^x)$ as ElGamal public key
-		to $A'$.
-		\item When $A'$ outputs two messages $m_0, m_1$, $A'$ flips a coin
-		$b$ and returns $(m_b g^y, g^z)$. 
-		\item When $A$ outputs its guess $b'$, $A'$ claims that it received
-		a DDH tuple if and only if $b = b'$, and returns ''1'' in this case. 
-	\end{enumerate}
-	If $A$ runs in PPT, then so does $A'$ (its extra operations are
-	clearly PPT). 
-	Let $X$ be the event that $A'$ outputs 1 when receiving a DDH tuple,
-	and $Y$ be the event that $A'$ outputs 1 when receiving a random
-	tuple. 
-	%Since DDH is hard, we know that $|\Pr[X] - \Pr[Y]|$ is a negligible quantity. 
-	Let us assume that $A$ wins the CPA
-	game with probability $\frac 1 2 + \epsilon(n)$.
-	
-	We can see that
-	$\Pr[X] = \Pr[X \wedge (x=0)] + \Pr[X \wedge (x\neq 0)] = \frac 1 q +
-	\frac{q-1}{q}(\frac 1 2 + \epsilon(n))$.
-	Indeed, when $x \neq 0$, $A$ exactly sees inputs that are
-	distributed exactly as he expects them. Furthermore,
-	$\Pr[Y] = \Pr[Y \wedge (x=0)] + \Pr[Y \wedge (x\neq 0)] = 0 +
-	\frac{q-1}{q} \frac 1 2$.
-	Indeed, when $x \neq 0$, the inputs of $A$ are independent of $b$, and
-	therefore $A'$ wins with probability exactly $\frac 1 2$. 
-	
-	As a result,
-	$|\Pr[X] - \Pr[Y]| = \frac 1 q + \frac{q-1}{q}\epsilon(n) $. If $\epsilon(n)$ is non negligible (\textit{i.e.} this ElGamal variant is non CPA secure), then $|\Pr[X] - \Pr[Y]|$ is non negligible and DDH does not hold in $\Gr$. Reciprocally, if DDH holds in $\Gr$, this ElGamal variant is CPA secure.
-\end{enumerate}
+		\item For a scheme to be perfectly hiding, we need that $\forall \A$:
+		\[ \Pr[\ComHide_{\A,\Pi}=1]=\frac12 \Leftrightarrow \Pr[c|b=0] = \Pr[c|b=1] \]
+		If $b=0$, then $c$ has as much randomness as $\mathsf{G}$, which has as much randomness as $Y$, so $n$ bits of randomnes (=there are $2^n$ possible values for $c$).
 
+		If $b=1$, then $c$ has as much randomness as $\mathsf{G}$ and $R$, so basically $3n$ bits of randomness (=there are $2^{3n}$ possible values for $c$).
+
+		If we have unbounded computational power, then we could enumerate all possible outputs $\mathsf{G}(Y)$, and see if $c$ is in this set of values.
+		If $b=0$, we are sure they are in;
+		if $c=1$, there are $2^{2n}$ possible $R$ such that $\mathsf{G}(y) \oplus R$ cannot be distinguished from $\mathsf{G}(Y')$ (simply, $R=\mathsf{G}(Y)\oplus \mathsf{G}(Y')$), so there is a probability $\frac{2^{2n}}{2^{3n}}=\frac{1}{2^{n}}$ that $c \in \{\mathsf{G}(Y)\}$.
+		So the probability of success for an unbounded adversary is
+		\[ \frac{1}{2} \cdot 1 + \frac{1}{2} (1-\frac{1}{2^{n}}) = 1-\frac{1}{2^{n+1}} \]
+		So, an unbounded adversary has near-certainty of breaking the hiding property.
+
+		To break the hiding property, an adversary would need to enumerate all possible outputs of $\mathsf{G}$ (requires $2^n$ steps) if $G(Y) \oplus R \notin \{x | \forall u : x = G(u)\}$.
+
+		But this kind of event has a negligible chance of probability ($\Pr = \frac{|\mathsf{G}(Y)|}{|\mathsf{G}(Y) \oplus R|} = \frac{2^n}{2^{3n}} = \frac{1}{2^{2n}} = \negl(n)$) so an adversary with an unbounded power of calculation can easily break the property of perfectly hiding.
+
+		It is however simple to prove that the scheme is computationally hiding.
+
+		\item For the scheme to be computationally binding, it should be intractable to find $(c, d_0, d_1)$ such that $\Open_{pk}(c, d_0)=0$ and $\Open_{pk}(c, d_1)=1$.
+		If we replace, we find that it is equivalent to find $Y_0, Y_1$ such that
+		\[ c=\mathsf{G}(Y_0) = \mathsf{G}(Y_1) \oplus R \]
+		For this to be possible at all, we need to have $R=\mathsf{G}(Y_0) \oplus \mathsf{G}(Y_1)$ for some $Y_0, Y_1$.
+		But, we have that $|\{R\}|=2^{3n}$ while $|\{ \mathsf{G}(Y_0) \oplus \mathsf{G}(Y_1) \}| \le 2^{2n}$, so the probability of $R$ being correct for this to happen is at most $\frac{2^{2n}}{2^{3n}}=\frac{1}{2^n}$, which is negligible.
+		And so, \[ \Pr[\ComBind_{\A, \Pi}(n)=1] \le \frac{1}{2^n} \quad \forall \A. \]
+		So even if we have an adversary capable of finding $Y_0$ and $Y_1$ with near-certainty, the fact that $R$ can just be badly chosen for him causes its probability of success to be \emph{in all cases} negligible.
+		So, the scheme is computationally binding.
+
+		\item Not secure, because if the committer chooses $R = G(Y)$, then the opposite player can easily deduce the value of b. If $c = 0$, $b = 1$, else $b = 0$.
+	\end{enumerate}
 \end{solution}
 
-\subsection{Exercise 2}
-Let $F$ be a PRF. Below, we describe three \textit{insecure} \emph{variable-length} message authentication codes (\textit{a.k.a.} MACs), $\Pi_1$, $\Pi_2$ and $\Pi_3$, which all use the same key generation algorithm $\G$. The message space is \emph{any (non negative) number} of message blocks in $\{0,1\}^n$, where $n$ is the security parameter. 
-%
-\begin{description}
-	\item[$\G(1^n)$] outputs a random key $k\gets\{0,1\}^n$.
-\end{description}
-%
-The scheme $\Pi_3$ is built from $\Pi_2$ which is itself built from $\Pi_1$ as an (unsuccessful) attempt to ``patch'' the previous scheme:
-%
-\begin{description}
-	\item[$\Pi_1=(\Gen,\Mac^1,\Vrfy^1)$:]
-	\emph{``Deterministic MAC -- Chaining PRFs''}
-	
-	$\Mac^1_k(m_1,\ldots,m_\ell)$ computes $t_1=F_k(m_1)$ as well as
-	$t_i=F_k(m_i\oplus t_{i-1})$, for $i=2$ to $\ell$, and returns $t:=t_\ell$ (note that only the last block is returned).
-	
-	$\Vrfy^1_k((m_1,\ldots,m_{\ell}),t)$ outputs $1$ if
-	$\Mac^1_k(m_1,\ldots,m_{\ell})=t$, and 0 otherwise.
-	\item[$\Pi_2=(\Gen,\Mac^2,\Vrfy^2)$:]
-	\emph{``Padding a random message block in the end''}
-	
-	$\Mac^2_k(m_1,\ldots,m_\ell)$ first picks a random $r\gets\{0,1\}^n$ and
-	then runs $t=\Mac_k^1(m_1,\ldots,m_\ell,r)$ and outputs $(r,t)$.
-	
-	$\Vrfy^2_k((m_1,\ldots,m_{\ell}),(r,t))$ outputs $1$ if
-	$\Mac^1_k(m_1,\ldots,m_{\ell},r)=t$, and 0 otherwise.
-	
-	\item[$\Pi_3=(\Gen,\Mac^3,\Vrfy^3)$:]
-	\emph{``Padding a random message block in the beginning''}
-	
-	$\Mac^3_k(m_1,\ldots,m_\ell)$ first picks a random $s\gets\{0,1\}^n$ and
-	then runs $(r,t)=\Mac_k^2(s,m_1,\ldots,m_\ell)$ and outputs $(r,s,t)$.
-	
-	$\Vrfy^3_k((m_1,\ldots,m_{\ell}),(r,s,t))$ outputs $1$ if
-	$\Mac^1_k(s,m_1,\ldots,m_{\ell},r)=t$, and 0 otherwise.
-\end{description}
 
-\begin{enumerate}
-	\item Describe $\Mac_k^3(m_1,\ldots,m_\ell)$ explicitly in term of computations
-	of $F_k$ (and $\oplus$ of course).
-	\item Show the correctness of $\Pi_3$.
-	\item Mount a forgery attack on these MACs.
-\end{enumerate}
+
+\subsection{Exercise 2 (Commitment with DL)}
+
+Let $(\mathbb{G}, \cdot)$ be a group in which the discrete logarithm is difficult, with $|\mathbb{G}|=q$.
+Let $g$ be a generator of the group and $h$ be a random element of the group ($(g, h)$ may be seen as the key of the hash function).
+Define the following hash funtion $\mathsf{H}\colon \Z^*_q \times \Z^*_q \mapsto \mathsf{G}$:
+\[ \mathsf{H}_{g,h} (\alpha, \beta) \define g^\alpha h^\beta \]
+Prove that if the DL is difficult, then, the hash function is collision resistant.
+For simplicity we assume that $q$ is prime.
+
 
 \begin{solution}
-\begin{enumerate}
-		\item For random $r,s\leftarrow \{0,1\}^n$, 
-		$\Mac^3_k(m_1,\ldots,m_\ell)$ computes $t_0=F_k(s)$, then $t_i=F_k(m_i \oplus t_{i-1})$ for $i=1$ to $\ell$, and finally 
-		$t_{\ell+1}=F_k(r\oplus t_\ell)$. 
-		It outputs $(r,s,t)$ where $t:=t_{\ell+1}$.
-	
-		
-		\item Using the description of $\Mac^1_k$, on inputs $(s,m_1,\ldots,m_\ell,r)$ it gives $t'_1=F_k(s)$, for $i=1$ to $\ell$, $t'_{i+1}=F_k(m_i \oplus t'_i)$, and $t'_{\ell+2}=F_k(r \oplus t'_{\ell+1})$. $t'_{\ell+2}$ is the output, or equivalently:
+	I don't know, maybe a reduction might be useful? It's been such a long time!
+
+	For the reduction, let's assume that we have an adversary $\A$ that can break the collision resistance by finding a collision with advantage $\negl(2n)$.
+	We have $2n$ instead of $n$ because the seed of the hash function has $2n$ bits instead of $n$.
+	Then, we can build an adversary $\D$ that can solve the DL problem:
+	\begin{enumerate}
+		\item Run $\mathcal{G}(1^n)$ to obtain $(\mathbb{G}, q, g)$ where $g$ generates $\mathbb{G}$ of order $q$ with $|q|=n$.
+		\item Choose $h \pick \mathbb{G}$.
+		\item Send $(\mathbb{G}, q, g, h)$ to $\D$.
+		\item $\D$ uses $\A$: he sends $(g, h)$ as the seed.
+		Then, with probability $\negl(2n)$, $\A$ answers with $(\alpha, \beta)$ and $(\alpha', \beta')$ such that $\alpha\neq\alpha' \vee \beta\neq\beta'$ and
+		\[ g^\alpha h^\beta = g^{\alpha'} g^{\beta'} \]
+		From this, if we want to find $x$ such that $g^x=h$, then we just replace:
 		\begin{align*}
-		F_k(r \oplus t'_{\ell+1})&=F_k(r \oplus (F_k(m_\ell \oplus F_k( m_{\ell-1} \oplus( \cdots F_k(m_1\oplus F_k(s)) )^{\ldots}         )))),\\
-		&=t.
+		g^\alpha (g^x)^\beta &= g^{\alpha'} (g^x)^{\beta'} \\
+		\alpha + x \beta &= \alpha' + x \beta' \\
+		x &= \frac{\alpha'-\alpha}{\beta-\beta'}
 		\end{align*}
-		
-		
-		
-		\item These MACs are not even one-time secure:
-		\begin{description}
-			\item $\Pi_1$: (1) query $\Mac^1_k(m)$ on any $m\in\{0,1\}^n$ and get the tag $t=F_k(m)$; \\
-			(2) output $((m,m\oplus t),t)$. 
-			
-			$t_1=F_k(m)$, $t_2=F_k(m\oplus t \oplus t_1)= F_k(m \oplus 0)=t$.
-			
-			\item $\Pi_2$: (1) query $\Mac^2_k(m)$ on any $m\in\{0,1\}^n$ and get the tag $(r,t)$, where $t=F_k(F_k(m)\oplus r)$; \\
-			(2) output $((m,r,m\oplus t),(r,t))$.
-			
-			$t_1=F_k(m)$, $t_2=F_k(F_k(m)\oplus r)=t$, $t_3=F_k(t\oplus m \oplus t)=F_k(m)$, $t_4=F_k(F_k(m)\oplus r)=t$.
-			
-			\item $\Pi_3$: (1) query $\Mac^3_k(m)$ on any $m\in\{0,1\}^n$ and get the tag $(r,s,t)$, where $t=F_k( F_k(F_k(s) \oplus m)  \oplus r)$ \\
-			(2) output $((m,r,s\oplus t,m),(r,s,t))$.
-			
-			$t_1=F_k(s)$, $t_2=F_k(F_k(s) \oplus m)$, $t_3=F_k(F_k(F_k(s) \oplus m) \oplus r)=t$, $t_4=F_k(t \oplus s \oplus t)= F_k(s)$, $t_5=F_k(F_k(s)\oplus m)$, $t_6=F_k( F_k(F_k(s) \oplus m)  \oplus r)=t$.
-			
-		\end{description}
+	\end{enumerate}
+	We have
+	\[ \Pr[\DLog_{\D, \mathcal{G}}(n)=1] = \Pr[g^x=h] = \Pr[\HashColl_{\A, \mathsf{H}}(n)=1] = \negl(2n) \le \negl'(n)\]
+	And, as we know that the DL problem is hard is $\mathbb{G}$, then we know that these probabilities should be negligible, and so that finding a collision is also hard.
+\end{solution}
+
+
+
+% OK
+\subsection{Exercise 3 (Commitment scheme and batching)}
+
+\copypaste{9}{0}
+
+
+
+\subsection{Exercise 4 (Decisional Diffie-Hellman and \texorpdfstring{$\mathbb{Z}_p^\ast$}{Zp*})}
+
+The goals of this exercise are to define $QR_p$, prove some of its properties, and to show that in some groups DDH and CDH assumptions are conjectured not equivalent, as DDH is easy whereas CDH is conjectured to be hard.
+
+\begin{enumerate}
+	\item For all element $a$ of $\mathbb{Z}_{11}^*$, compute $a^2 \mod 11$.
+
+	For a prime number $p$, we denote $QR_p$ the set $\{x \in \mathbb{Z}_{p}^* \; | \; \exists a\in \mathbb{Z}_{p}^*, a^2=x\}$, such $x$ are called quadratic residues modulo $p$. Show that if $p$ is odd then $|QR_p|=\frac{p-1}{2}$.
+
+	\item Show that, if $p$ is odd, $QR_p$ is a cyclic group (therefore, $QR_p$ is a subgroup of $\Z^*_p$).
+
+	\item For all element $a$ of $\mathbb{Z}_{11}^*$, compute $a^5 \mod 11$. Show that for any odd prime $p$, $x \in QR_p \Leftrightarrow x^{\frac{p-1}{2}}= 1 \mod p$, and that $x \not \in QR_p \Leftrightarrow x^{\frac{p-1}{2}}= -1 \mod p$.
+
+	\item Show that $2$ is a generator of $\mathbb{Z}_{11}^*$. For the following pairs $(a,b)$, compute $g^a, g^b$ and $g^{ab}$ in $\mathbb{Z}_{11}^*$ where $g=2$:
+	\begin{itemize}
+		\item $(2,8)$,
+		\item $(1,4)$,
+		\item $(3,5)$.
+	\end{itemize}
+	Show that for $p$ an odd prime, $g^{ab} \not \in QR_p \Leftrightarrow g^a \not \in QR_p \text{ and } g^b \not \in QR_p$.
+
+	\item Show that DDH does not hold in $\mathbb{Z}_{p}^*$ with $p$ an odd prime.
+\end{enumerate}
+
+
+% TODO rewrite this to use the official proof
+\begin{solution}
+	An official solution was given in the exercise session.
+
+	For this exercise we will work with $\Z_{11}^* = \{1,2,3,4,5,6,7,8,9,10\}$
+	\begin{enumerate}
+		\item
+		For all element $a$ of $\Z_{11}^*$, I've calculated $a^2$ mod $11$.
+		\[1^2 = 1 \quad 2^2 = 4 \quad 3^2 = 9 \quad 4^2 = 5 \quad 5^2 = 3 \quad 6^2 = 3 \quad 7^2 = 5 \quad 8^2 = 9 \quad 9^2 = 4 \quad 10^2 = 1\]
+		We see that with $p$ odd, we have $\left|QR_p\right| = \frac{p-1}{2}$. We can show it with this development:
+
+		\item
+		\nosubsolution
+
+		\item
+		For all element $a$ of $\Z_{11}^*$, I've calculated $a^5$ mod $11$.
+		\[1^5 = 3^5 = 4^5 = 5^5 = 9^5 = 1 \qquad 2^5 = 6^5 = 7^5 = 8^5 = 10^5 = 10\]
+		We can see that for $p$ prime, we have $x \in QR_p \Leftrightarrow x^{\frac{p-1}{2}} = 1 \mod p$ and  $x \notin QR_p \Leftrightarrow x^{\frac{p-1}{2}} = p-1 \mod p$.
+		\begin{itemize}
+			\item $x \in QR_p \Leftrightarrow x^{\frac{p-1}{2}} = 1 \mod p$:\\
+			We know that \[x \in QR_p \Leftrightarrow \exists a \st x = a^2 \mod p\]
+			So we have now \[x = a^2 \mod p \Leftrightarrow x^{\frac{p-1}{2}} = 1 \mod p\]
+			If we replace $x$ by $a$ we obtain $a^{2^{(\frac{p-1}{2})}} = 1 \mod p$.\\
+			But also more simply $a^{p-1} = 1 \mod p$ which is true by the group theory.
+			\item $x \notin QR_p \Leftrightarrow x^{\frac{p-1}{2}} = p-1 \mod p$:\\
+			We know that \[x \notin QR_p \Leftrightarrow \exists a \st x = a^{1+2n} \mod p\]
+			So we have now \[x = a^{1+2n} \mod p \Leftrightarrow x^{\frac{p-1}{2}} = -1 \mod p\]
+			We replace $x$ by $a$ and we get \[a^{\frac{p-1}{2}} a^{n(p-1)} \mod p = -1 \mod p\]
+			We know that $ a^{n(p-1)} \mod p = 1$, thus we simplify the equation like \[a^{\frac{p-1}{2}} \mod p = -1 \mod p\]
+			We know that $g = a^{\frac{p-1}{2}} \mod p \ne 1 \mod p$ but $g^2 = a^{p-1} = 1 \mod p$. The only solution of these two equations is $g = -1 \mod p$ which is equivalent to
+			\[x^{\frac{p-1}{2}} = p-1 \mod p\]
+		\end{itemize}
+
+		\item
+		The number $2$ is a generator of $\Z_{11}^*$, because ord($2$) $= 10$. In fact, we have $2^1 = 2$, $2^2 = 4$, $2^5 = 10$ and $2^10 = 1$. (Fermat's little theorem)
+		We have $g = 2$ so:
+		\begin{itemize}
+			\item $(2,8):\quad g^2 = 4$, $g^8 = 3$ and $g^{16} = -2$
+			\item $(1,4):\quad g^1 = 2$, $g^4 = 5$ and $g^{4} = 5$
+			\item $(3,5):\quad g^3 = -3$, $g^5 = -1$ and $g^{15} = -1$ TODO
+		\end{itemize}
+		We have to show that $g^{ab} \notin QR_p \Leftrightarrow g^a \notin QR_p \text{ and } g^b \notin QR_p$.\\
+		We know by the definition of the $QR_p$ set that
+		\[g^n \notin QR_p \Leftrightarrow \exists m \st n = 2m+1\]
+		We can thus extract from $g^{ab} \notin QR_p$ that $\exists m \st ab = 2m+1$.
+
+		% not necessary
+		%We can do a proof by contradiction:\newline
+		%If $a = 2v$ then $ab = 2bv$ and can not be equal to $2m + 1$.\\
+		%If $b = 2v$ then $ab = 2av$ and can not be equal to $2m + 1$.\\
+
+		So we are assured that $a$ and $b$ are not pairs, so we have the relation $g^a \notin QR_p \text{ and } g^b \notin QR_p$ if and only if $ab = 2m+1$ which is equivalent to $g^{ab} \notin QR_p$. That was what we had to proof.
+
+		\item
+		We have to show that DDH does not hold in $\Z_p^*$ with p an odd prime number.
+
+		We define an attacker that can see $p$, $g$, $g^a$, $g^b$ and receive $h_b = g^{ab}$ or $g^z$.
+		The behaviour of the attacker will be this one:
+		\begin{itemize}
+			\item It receives $g^a \notin QR_p$ and $g^b \notin QR_p$:\\
+			It will answer in function of $h_b$:
+			\begin{itemize}
+				\item $h_b \notin QR_p$:\\
+				It answers $h_b = g^{ab}$
+				\item $h_b \in QR_p$:\\
+				It answers $h_b = g^z$
+			\end{itemize}
+			\item It receives $g^a \in QR_p$ or $g^b \in QR_p$:\\
+			It answers randomly.
+		\end{itemize}
+		We can identify four cases with their chances of success and appearance (we already know that $\left|QR_p\right|$ is of size $\frac{p-1}{2}$):
+		\begin{enumerate}[a)]
+			\item $g^a \in QR_p$ or $g^b \in QR_p$ appears $3/4$ of the time with success = $1/2$.
+			\item $g^a \notin QR_p$ and $g^b \notin QR_p$ with $h_b = g^{ab}$  appears $1/8$ of the time with success = $1$.
+			\item $g^a \notin QR_p$ and $g^b \notin QR_p$ with $h_b = g^z$ and $g^z \in QR_p$  appears $1/16$ of the time with success = $1$.
+			\item $g^a \notin QR_p$ and $g^b \notin QR_p$ with $h_b = g^z$ and $g^z \notin QR_p$  appears $1/16$ of the time with success = $0$.
+		\end{enumerate}
+		We can now recalculate the expected value of success of our attacker:
+		\begin{align*}
+		\mathbb{E}(success) &= \frac{3}{4}\cdot \frac{1}{2} +  \frac{1}{8}\cdot 1 + \frac{1}{16}\cdot 1 + \frac{1}{16}\cdot 0\\
+		&= \frac{1}{2} + \frac{1}{16}
+		\end{align*}
+		This attacker has one sixteenth of probability more than one half which is not a negligible function (in fact it is a constant function). It is not DDH secure.
 	\end{enumerate}
 \end{solution}
 
-\subsection{Exercise 3}
-Let $F$ be a pseudorandom function, $G$ be a pseudorandom permutation, $T$ be a public $n$-bit constant, $k$ be a $n$-bit secret key, $m$ be a $n$-bit message, $IV$ be a $n$-bit random value chosen by the party computing the encryption (resp.~MAC) before each operation. Among the following constructions, determine the ones that would be acceptable and justify your answer. (Your justifications can rely on results that have been presented during the class.)
 
-\begin{enumerate}
-	\item $E_k(m):=F_k(m \oplus T)$ as an encryption scheme secure against
-	eavesdropping.
+\subsection{Exercise 5}
 
-	\item $E_k(m):=G_k(m \oplus T)$ as an encryption scheme secure against eavesdropping.
-	
-	\item $E_k(m):=G_k(m \oplus T)$ as an encryption scheme secure against a CPA-adversary.
-	
-	\item $E_k(m):=(IV,G_k(m \oplus T \oplus IV))$ as an encryption scheme secure against a CPA-adversary.
-
-	\item $\Mac_k(m):=F_k(m \oplus T)$ as a MAC scheme existentially unforgeable under an
-	adaptive chosen-message attack.
-	
-	\item $\Mac_k(m):=(IV,G_k(m\oplus IV \oplus T))$ as a MAC scheme
-	existentially unforgeable under an adaptive chosen-message attack.
-	
-\end{enumerate}
-\begin{solution}
-\begin{enumerate}
-\item No, decryption does not work in general, as we do not
-	necessarily know how to invert a PRF.
-	
-\item 	Yes, it is secure.  The reduction to the PRP security can work as follows:
-	the reduction gets $m_0$ and $m_1$ from the eavesdropper
-	adversary, picks a random bit $b$, sends $m_b \oplus T$ to the
-	PRP and receives a value $c$ that it sends back the eavesdropper
-	adversary. This adversary has a probability exactly $1/2$ to
-	guess $b$ if $c$ comes from a random permutation, and a
-	probability $1/2 + \epsilon$ to guess $b$ if $c$ comes from a
-	pseudorandom permutation. The reduction can therefore claim that
-	it sees a PRP every time the adversary makes a successful
-	guess. So, if $F$ is a PRP, $\epsilon$ must be negligible.
-
-\item 	No: it is not probabilistic. CPA security is not achievable with deterministic encryption. 
-
-\item We first observe that the $\oplus T$ does not matter:
-since $T$ is public, the adversary has the possibility to adapt
-its choice of $m$ in order to cancel it.  Now, if we abstract
-from $T$, this is exactly the CBC encryption mode, which we know
-to be CPA-secure.
-\item Again, we observe that the $\oplus T$ does not matter: since
-$T$ is public, the adversary has the possibility to choose exactly
-on which value $F_k$ will be applied. Now, if we abstract from $T$,
-this is exactly the basic MAC scheme from the class, which is secure.
-\item This is insecure. Given one tag $(IV, t)$ on a message
-$m$, the adversary can produce a valid tag $(IV', t)$ on the
-message $m' = m \oplus IV \oplus IV'$ for any $IV'$.
-	
-\end{enumerate}
-\end{solution}
+\copypaste{8}{1}

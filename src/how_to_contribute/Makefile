@@ -10,6 +10,13 @@ MAIN_NAME=how_to_contribute
 PDF_NAME=$(MAIN_NAME).pdf
 OUT_MAIN_NAME=How_to_Contribute
 
+# Operating system
+ifeq ($(OS),Windows_NT)
+	MYPYTHON:=python
+else
+	MYPYTHON:=python3
+endif
+
 # You want latexmk to *always* run, because make does not have all the info.
 .PHONY: clean
 
@@ -48,5 +55,5 @@ release: $(PDF_NAME) clean prerelease
 	echo $(ALL_RELEASE)
 
 prerelease:
-	$(eval MYPATH:=$(shell python3 ../mysmartcp.py -1))
+	$(eval MYPATH:=$(shell $(MYPYTHON) ../mysmartcp.py -1))
 	mkdir -p "${MYPATH}"
