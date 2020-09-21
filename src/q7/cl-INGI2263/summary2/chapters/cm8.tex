@@ -1,0 +1,167 @@
+\section{Syntactic Parsing}
+\subsection{Parsing and Ambiguity}
+The problem we want to solve is the following: \emph{given} a formal grammar \(G\) and a sentence \(s\), \emph{build} a parse tree of \(s\) according to \(G\).
+In the standard case of interest, \(G\) is a \emph{context-free grammar} (CFG).
+There may be \emph{no solution} whenever \(s\) cannot be generated from \(G\), or \emph{many solutions} whenever it can (ambiguities).
+
+\emph{Production rules} in \(G\) take the form \(A \to \alpha\), where \(A\) is a single \emph{nonterminal symbol} and \(\alpha\) is a \emph{string of terminals and/or nonterminals}, which can be empty.
+By convention, nonterminals always start with uppercase letters, and terminals never do.
+The \emph{context-free nature} means that any rule can be used to replace its left-hand side by its corresponding right hand side no matter where it is used in a parse tree.
+
+\emph{Parsing} can be formulated as the search, among all possible parse trees that can be generated from \(S\) (the start symbol), for the one(s) generating the observed sentence \(s\).
+The search space can be explored
+\begin{itemize}
+	\item \emph{top-down}: \emph{goal-directed search}; or
+	\item \emph{bottom-up}: \emph{data-driven search}.
+\end{itemize}
+Top-down parsing never wastes time exploring trees that cannot result in an \(S\).
+Bottom-up parsing never wastes time on \(S\) trees that are not consistent.
+
+\emph{Ambiguity} occurs when several parses can be produced for a given sentence.
+They tend to correspond to \emph{different meanings} but are \emph{all syntactically correct}, by definition of a generative grammar.
+Some unambiguous sentences are \emph{locally ambiguous}.
+Programming languages, such as those defined by \(\mathrm{LL}(1)\) grammars, are designed to be \emph{unambiguous}.
+
+There are several types of ambiguities: POS ambiguities, PP attachment ambiguities, coordination ambiguities, etc.
+In the worst case, the number of parse trees is \emph{exponential} with respect to the \emph{sentence length}.
+There is thus a need for efficient parsing algorithms:
+\begin{itemize}
+	\item \emph{Parallel search} requires \emph{prohibitive storage}.
+	\item \emph{Backtracking search} rebuilds the same partial trees several times.
+	\item \emph{Dynamic programming} parsing algorithms make sure to avoid such duplications. 
+\end{itemize}
+
+\subsection{CYK Algorithm}
+\subsubsection{Conversion to Chomsky Normal Form}
+A CFG is in \textbf{Chomsky normal form} if it contains only rules of the forms \(A \to B C\) or \(A \to w\), with \(A, B, C\) nonterminals and \(w\) a terminal.
+Any \(\varepsilon\)-free\footnote{Which is not a problem, as in translation we never translate an empty sentence.} CFG \(G\) can be transformed into an \emph{equivalent \(G'\) in CNF}.
+
+This conversion is done as follows:
+\begin{enumerate}
+	\item Copy all conforming rules from \(G\) to the new grammar \(G'\).
+	\item Convert terminals within rules to dummy nonterminals in \(G'\).
+	\item \label{upr}Convert unit productions: if \(A \overset{*}{\to} B\) by a chain of unit productions and \(B \to \gamma\) is a non-unit production, then add \(A \to \gamma\) to \(G'\).
+	\item Make all rules binary and add them to \(G'\):
+	\begin{enumerate}
+		\item \label{r41}Replace any rule \(A \to BC\gamma\) by \(A \to X_1 \gamma\) and \(X_1 \to BC\).
+		\item Iterate \ref{r41} until all nonterminal rules are binary.
+	\end{enumerate}
+\end{enumerate}
+Note that the unit production removal (step~\ref{upr}) tends to \emph{flatten} the grammar with the promotion of terminals to high levels in the parse trees.
+
+\subsubsection{Cocke--Younger--Kasami Algorithm}
+The \textbf{Cocke--Younger--Kasami algorithm} requires the following definitions:
+\begin{itemize}
+	\item The input sentence of length \(n\) defines \(n+1\) positions, organised as
+	\[
+	[0]\ \textnormal{word}_1\ [1]\ \textnormal{word}_2\ [2]\ \dots\ [n-1]\ \textnormal{word}_n\ [n].
+	\]
+	\item \(\textnormal{table}[i, j]\) contains a set of nonterminals that span positions from \(i\) to \(j\).
+\end{itemize}
+The algorithm is then as follows:
+
+\begin{algorithm}[H]
+	\DontPrintSemicolon
+	\SetAlgoLined
+	\KwIn{\textnormal{words}, \textnormal{grammar} in CNF}
+	\KwOut{\textnormal{table}}
+	\For{\(j \gets 1\) \KwTo \(n\)}{
+		\(\textnormal{table}[j-1, j] \gets \{A \mid A \to \textnormal{words}[j] \in \textnormal{grammar}\}\)\;
+		\For{\(i \gets j-2\) \KwDownTo \(0\)}{
+			\For{\(k \gets i+1\) \KwTo \(j-1\)}{
+				\ForEach{\(\{A \mid A \to BC \in \textnormal{grammar}, B \in \textnormal{table}[i, k], C \in \textnormal{table}[k, j]\}\)}{
+					\(\textnormal{table}[i, j] \gets \textnormal{table}[i, j] \cup \{A\}\)\;
+				}
+			}
+		}
+	}
+	\Return{\textnormal{table}}
+	\caption{Cocke--Younger--Kasami algorithm}
+\end{algorithm}
+A sentence is \emph{accepted} if \(S\) appears in \(\textnormal{table}[0, n]\).
+In order to build a parse tree from this table,
+\begin{itemize}
+	\item add pointers from each nonterminal to the table entries it was derived from, and
+	\item backtrack pointers from \(S_i\)'s in \(\textnormal{table}[0, n]\).
+\end{itemize}
+Multiple parses of the same nonterminal in each cell are allowed to represent local or global \emph{ambiguities}.
+\emph{Duplications} of local structures are \emph{avoided}.
+The complexity of this algorithm is \(\Theta(n^3 \abs{\textnormal{grammar}})\) for a sentence of length \(n\) and a grammar containing \(\abs{\textnormal{grammar}}\) rules.
+The cubic factor of \(n\) is a consequence of requiring sentences to be in a CNF.
+
+\subsection{Earley Algorithm}
+The \textbf{Earley algorithm} uses \emph{top-down parsing} in order to fill an array, called a \emph{chart}, in a single \emph{left-to-right} pass.
+\(\textnormal{chart}[j]\) contains \emph{states} that span the input up to the \(j\)-th position.
+A \emph{state} is made of a \emph{dotted rule} and the input positions of the corresponding subtree.
+A state is \emph{complete} if the dot is at the end of the rule.
+
+Earley parsing uses three operators: \textsc{Predictor}, \textsc{Scanner}, and \textsc{Completer} derive new states from a given state.
+\textsc{Predictor} and \textsc{Completer} add states to the current \(\textnormal{chart}[j]\) whereas \textsc{Scanner} adds states to the next chart entry \(\textnormal{chart}[j+1]\).
+A state \(S \to \alpha\bullet,\ [0, n]\) in \(\textnormal{chart}[n]\), where \(\alpha\) denotes a sequence of (non-)terminals spanning the full sequence, indicates a successful parse.
+The Earley algorithm is the following:
+
+\begin{algorithm}[H]
+	\DontPrintSemicolon
+	\SetAlgoLined
+	\KwIn{\textnormal{words}, \textnormal{grammar}}
+	\KwOut{\textnormal{chart}}
+	\(\textsc{Enqueue}((\gamma \to \bullet S, [0, 0]), \textnormal{chart}[0])\) \tcp*[r]{initialize chart}
+	\For{\(j \gets 0\) \KwTo \(n\)}{
+		\ForEach{\(\textnormal{state} \in \textnormal{chart}[j]\)}{
+			\eIf{\(\textsc{Incomplete}(\textnormal{state})\)}{
+				\eIf{\(\textsc{Next-Cat}(\textnormal{state})\) is a POS}{
+					\(\textsc{Scanner}(\textnormal{state})\)\;
+				}{
+					\(\textsc{Predictor}(\textnormal{state})\)\;
+				}
+			}{
+				\(\textsc{Completer}(\textnormal{state})\)\;
+			}
+		}
+	}
+	\Return{\textnormal{chart}}
+	\caption{Earley algorithm}
+\end{algorithm}
+In this algorithm, we use the following procedures.
+
+\renewcommand{\algorithmcfname}{Procedure}
+\begin{algorithm}[H]
+	\DontPrintSemicolon
+	\SetAlgoLined
+	\ForEach{\(B \to \gamma \in \textnormal{grammar}\)}{
+		\(\textsc{Enqueue}((B \to \bullet \gamma, [j,j]), \textnormal{chart}[j])\)\;
+	}
+	\caption{\(\textsc{Predictor}((A \to \alpha \bullet B \beta, [i, j]))\)}
+\end{algorithm}
+\begin{algorithm}[H]
+	\DontPrintSemicolon
+	\SetAlgoLined
+	\If{\(B \in \textnormal{POS}(\textnormal{words}[j])\)}{
+		\(\textsc{Enqueue}((B \to \textnormal{words}[j]\bullet, [j,j+1]), \textnormal{chart}[j+1])\)\;
+	}
+	\caption{\(\textsc{Scanner}((A \to \alpha \bullet B \beta, [i, j]))\)}
+\end{algorithm}
+\begin{algorithm}[H]
+	\DontPrintSemicolon
+	\SetAlgoLined
+	\ForEach{\((A \to \alpha \bullet B \beta, [i, k]) \in \textnormal{chart}[k]\)}{
+		\(\textsc{Enqueue}((A \to \alpha B \bullet \beta, [i,j]), \textnormal{chart}[j])\)\;
+	}
+	\caption{\(\textsc{Completer}((B \to \gamma\bullet, [k, j]))\)}
+\end{algorithm}
+Note that the implementation of \(\textsc{Scanner}\) uses some bottom-up parsing, and that \(\textsc{Enqueue}\) makes sure that a state is added only if it is not already present.
+Also note that for a given grammar \(G\), the initial entries are all the same, and can hence be precomputed (and the dummy start state discarded).
+\renewcommand{\algorithmcfname}{Algorithm}
+
+The actual \emph{parse tree} can be recovered if, for each state, the \emph{completed states} that generated its constituents are \emph{stored}.
+The solution is not unique if the sentence is ambiguous.
+
+\subsection{Summary}
+CYK and Earley are both parsing algorithms with a complexity that is cubic in the length of the input sentence.
+CYK requires the sentence to be in CNF, but Earley does not.
+The \emph{table} and \emph{chart} avoid duplications of local structures but the total number of parses may still be \emph{exponential} if the sentence is ambiguous.
+
+Filling the chart or the table is \emph{statically defined} for both algorithms.
+Alternative \emph{chart parsing} algorithms use a \emph{dynamic strategy} to order the search depending on the input.
+A \emph{probabilistic parser} solves the exponential blow-up issue by computing a \emph{most likely parse tree}, or, possibly, the top-\(N\) most likely parses.
+

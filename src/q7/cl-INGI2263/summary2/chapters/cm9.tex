@@ -1,0 +1,63 @@
+\section{Parsing Algorithm Extensions}
+\subsection{Probabilistic Parsing}
+If we add \emph{probabilities} to rules in a grammar (note that the sum of probabilities for a given left-hand side should always add up to \(1\)), we can define a \emph{most likely parse tree} for a given sentence, if it is ambiguous.
+The probability of a parse tree for a given sentence and grammar, \(\Pr(s, T \mid G)\), is given by the product of the probabilities of the rules used to produce it.
+We want, \emph{given} a PCFG \(G\) and a sentence \(s\), to \emph{compute} a most likely parse tree \(\hat{T}\), defined as
+\begin{align*}
+\hat{T} &= \argmax_{T} \Pr(T \mid s, G)\\
+&= \argmax_{T} \frac{\Pr(s, T \mid G)}{\Pr(s \mid G)}\\
+&= \argmax_{T} \Pr(s, T \mid G).
+\end{align*}
+
+The algorithm we use for this is a probabilistic version of the CYK algorithm.
+
+\begin{algorithm}[H]
+	\DontPrintSemicolon
+	\SetAlgoLined
+	\KwIn{\textnormal{words}, probabilistic \textnormal{grammar} in CNF}
+	\KwOut{most likely parse tree and its probability}
+	\For{\(j \gets 1\) \KwTo \(n\)}{
+		\(\textnormal{table}[j-1, j, A] \gets \Pr(A \to \textnormal{words}[j])\) \tcp*[r]{initialization with terminal rules}
+		\For{\(i \gets j-2\) \KwDownTo \(0\)}{
+			\For{\(k \gets i+1\) \KwTo \(j-1\)}{
+				\ForEach{\(A \to BC \in \textnormal{grammar}\) \KwAnd \(\textnormal{table}[i, k, B] > 0\) \KwAnd \(\textnormal{table}[k, j, C] > 0\)}{
+					\If{\(\textnormal{table}[i, j, A] < \Pr(A \to BC) \cdot \textnormal{table}[i, k, B] \cdot \textnormal{table}[k, j, C]\)}{
+						\(\textnormal{table}[i, j, A] \gets \Pr(A \to BC) \cdot \textnormal{table}[i, k, B] \cdot \textnormal{table}[k, j, C]\)\;
+						\(\textnormal{back}[i, j, A] \gets \{k, B, C\}\) \tcp*[r]{backpointer}
+					}
+				}
+			}
+		}
+	}
+	\Return{\(\underbrace{\textsc{BuildTree}(\textnormal{back}[0, n, S])}_{\textnormal{most likely parse tree}}, \underbrace{\textnormal{table}[0, n, S]}_{\textnormal{probability}}\)}
+	\caption{Probabilistic Cocke--Younger--Kasami algorithm}
+\end{algorithm}
+Note that there also exist algorithms to compute \emph{\(N\)-best parsing alternatives}, which can be \emph{ranked} according to their respective parsing probabilities.
+Probabilistic parsing can also be made \emph{more efficient} by \emph{pruning} less likely parses from the search tree.
+
+In order to learn \emph{rule probabilities} from a treebank (a corpus of parsed sentences), we use the following estimate:
+\[
+\Prhat(A \to \beta) = \Prhat(A \to \beta \mid A) = \frac{C(A \to \beta)}{\sum_{\gamma} C(A \to \gamma)} = \frac{C(A \to \beta)}{C(A)},
+\]
+where
+\begin{itemize}
+	\item \(C(A \to \beta)\) is the number of times the rule \(A \to \beta\) is used, and
+	\item \(C(A)\) is the number of times \(A\) is used as a left-hand side of some rule.
+\end{itemize}
+Note that these estimates can (and should) be smoothed, and that when a treebank is not available, there exist \emph{unsupervised learning algorithms} such as the Inside-Outside algorithm to estimate probabilities from \emph{expected counts} rather than actual counts.
+
+\subsection{Partial Parsing}
+For some application, \emph{partial} or \emph{shallow parsing} is sufficient, as we simply want to identify \emph{some segments} that contain valuable information (e.g. noun phrases in \emph{information retrieval systems}).
+One type of partial parsing is \emph{chunking}: a simple bracketing without hierarchical structure (using \texttt{B\_X} for the beginning of \texttt{X} and \texttt{IN\_X} for an internal part of \texttt{X}).
+
+Chunking can be seen as a \emph{sequence labeling} problem.
+HMMs can thus be used, similarly to POS tagging.
+An alternative is to use local \emph{classifiers} from selected \emph{features} (e.g. a context of words and their associated POS tags, as well as previous \emph{chunk tags}).
+\emph{Iterated chunking} based on a hierarchy of chunk tags offers an \emph{approximation to full parsing}.
+In order to evaluate a chunking system, we define three metrics:
+\begin{align*}
+	P &= \frac{\textnormal{\# correctly predicted chunks}}{\textnormal{\# predicted chunks}}, \tag{Precision}\\
+	R &= \frac{\textnormal{\# correctly predicted chunks}}{\textnormal{\# actual chunks in text}}, \tag{Recall}\\
+	F_\beta &= \frac{(\beta^2 + 1) PR}{\beta^2 P + R} \implies F_1 = \frac{2PR}{P + R}. \tag{F-measure}
+\end{align*}
+Note that for the F-measure, \(\beta < 1\) favors precision, \(\beta = 1\) computes the harmonic mean of precision and recall, and \(\beta > 1\) favors recall.

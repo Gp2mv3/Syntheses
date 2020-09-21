@@ -1,0 +1,281 @@
+\section{\(N\)-grams}
+\subsection{Introduction}
+We now take a \emph{probabilistic approach} to language modeling.
+After appropriate preprocessing (\emph{tokenization}, \emph{capitalization} and \emph{standardization}), it is possible to consider each \emph{word occurrence} as a \emph{random event}.
+The probability of an event can then be \emph{estimated} from its \emph{count} or \emph{frequency of occurrence}.
+These notions can be generalized to \(N\) \emph{consecutive words types}, also called \textbf{\(N\)-grams}.
+
+\emph{Count histograms} show that
+\begin{itemize}
+	\item \emph{few} events occur \emph{very frequently};
+	\item \emph{most} events occur a \emph{few times};
+	\item \emph{many} possible events \emph{never} occur.
+\end{itemize}
+In fact, these histograms follow a specific distribution (Zipf's law).
+Indeed, a linear function in log-scale defines a \emph{power law}:
+\[
+\log y = -a \log x + b \iff \log y = \log bx^{-a} \iff y = bx^{-a}.
+\]
+
+\begin{mydef}[Conditional probability]
+	The \textbf{conditional probability} of observing a word \(w\) at a position \(i\) given a \emph{history} \(h = \cdots w_{i-2} w_{i-1}\) (or \emph{\(N\)-gram context}) of preceding words is
+	\[
+	\Pr(X_i = w_i \mid \dots, X_{i-2} = w_{i-2}, X_{i-1} = w_{i-1}) \overset{\textnormal{notation}}{=} \Pr(w_i \mid h),
+	\]
+	where the random variables \(X_i, X_{i-1}, X_{i-2}, \dots\) are implicit in the shorter notation \(\Pr(w_i \mid h)\) and take their values in a \emph{fixed vocabulary}: \(w_i, w_{i-1}, w_{i-2}, \ldots \in \mathcal{W}\).
+	
+	This model makes the assumption of \emph{stationarity}, i.e. the probability does \emph{not} depend on the position \(i\) in the text: \(\Pr(w_i \mid h) = \Pr(w \mid h)\), for all \(i\).
+	We also define that the history \(h\) for an \(N\)-gram is made of the \(N-1\) preceding words.
+	The word is then said to be \emph{predicted} given the known history \(h\).
+\end{mydef}
+Note that the term ``\(N\)-gram'' refers both to this probabilistic model and the \(N\)-tuples used to estimate it.
+
+The \(N\)-gram model is based on the idea of \emph{sentence probability}.
+For a general sentence of \(n\) words, we write
+\begin{align*}
+\Pr(w_1\cdots w_n) \overset{\textnormal{notation}}{=} \Pr\big(w_1^n\big) &= \Pr\big(w_1\big) \Pr(w_2 \mid w_1) \Pr\big(w_3 \mid w_1^2\big) \cdots \Pr\big(w_n \mid w_1^{n-1}\big),\\
+\intertext{which is a simple consequence of the chain rule.
+By making the \emph{\(N\)-gram assumption} (i.e. by taking histories of length at most \(N-1\)), we then find that}
+\prod_{k=1}^n \Pr\big(w_k \mid w_1^{k-1}\big) &\approx \prod_{k=1}^n \Pr\big(w_k \mid w_{k - N + 1}^{k-1}\big).
+\end{align*}
+This still holds when adding the start- and end-of-sentence markers.
+
+Many applications make use of \(N\)-grams: character or word \emph{completion}, \emph{handwriting} or \emph{speech recognition}, \emph{text categorization}, etc.
+
+\subsection{\(N\)-gram Estimation}
+\subsubsection{Maximum Likelihood}
+With \textbf{maximum likelihood estimation}, word probabilities are estimated using the following rule:
+\[
+\Prhat(w \mid h) = \left\{\begin{array}{l@{\quad}l}
+\frac{C(h, w)}{C(h)}, & \textnormal{if} \quad C(h) > 0,\\
+0, & \textnormal{otherwise,}
+\end{array}\right.
+\]
+where
+\begin{itemize}
+	\item \(C(h, w)\) is the number of times the history \(h\) followed by \(w\) has been observed in the training set;
+	\item \(C(h) = \sum_{w \in \mathcal{W}} C(h, w)\) is the number of times the history \(h\) has been observed in the training set.
+\end{itemize}
+This model satisfies the \emph{consistency property}
+\[
+\sum_{w' \in \mathcal{W}} \Prhat(w' \mid h) = 1, \quad \textnormal{for all } h.
+\]
+
+Note that in the case \(N=1\) (\(1\)-gram/unigram), the history \(h\) is empty.
+We then find that \(C(h, w) = C(w)\), and \(C(h) = \sum_{w' \in \mathcal{W}} C(h, w') = \sum_{w' \in \mathcal{W}} C(w') = M\), the total number of word tokens in the corpus.
+
+\subsubsection{Smoothed \(N\)-grams}
+MLE assigns a zero probability to events which have not been observed in the training set, as \(C(h, w) = 0\).
+An \(N\)-gram built on a vocabulary \(W\) defines \(\abs{\mathcal{W}}^N\) possible events.
+The number of parameters grows \emph{exponentially} with the model order.
+Even for large training sets, \emph{many possible events} are assigned a \emph{zero probability}, and the probability of \emph{observed events} is \emph{overestimated}.
+There is thus a need for \emph{smoothing techniques} to correct the ML estimation while still satisfying the \emph{consistency property}.
+
+In the framework of \emph{Bayesian estimation} or \emph{additive smoothing}, we introduce the \emph{a-priori pseudo-counts} \(C^*(h, w) > 0\) for any possible events, and update the probability estimate as
+\[
+\Prhat(w \mid h) = \frac{C(h, w) + C^*(h, w)}{C(h) + \sum_{w' \in \mathcal{W}} C^*(h, w')}.
+\]
+The \emph{prior probability} of the event \((h, w)\) is then defined as \(\frac{C^*(h, w)}{\sum_{w' \in \mathcal{W}} C^*(h, w')}\), and \(\Prhat(w \mid h)\) can be seen as a \emph{posterior estimate}.
+The simplest such smoothing is \emph{Laplace smoothing}, or the \emph{add one} method.
+We set \(C^*(h, w) = 1\) for all events, hence have uniform priors.
+The probability estimation then becomes
+\[
+\Prhat(w \mid h) = \frac{C(h, w) + 1}{C(h) + \abs{\mathcal{W}}}.
+\]
+
+\subsubsection{Linear Interpolation}
+With \textbf{linear interpolation}, we build ML estimators for \emph{several model orders}, by varying the history length, and combining them linearly:
+\[
+\Prhat(w \mid h) = \lambda_0 \Prhat_\textnormal{ML}(w \mid h) + \lambda_1 \Prhat_\textnormal{ML}(w \mid h_{-1}) + \dots + \lambda_p \Prhat_\textnormal{ML}(w \mid h_{-p}),
+\]
+where \(h = X_{i - N + 1}, \dots, X_{i-1}\) is the \(N\)-gram history, \(h_{-1} = X_{i - N + 2}, \dots, X_{i-1}\) is the \((N-1)\)-gram history, etc.
+Note that these models can also allow us to take care of the zero probability problem.
+
+This is also called a \textbf{mixture model}.
+Linear interpolation smoothing is a model combining \(K\) estimators:
+\[
+\Prhat(w \mid h) = \sum_{k = 1}^K \lambda _k \Prhat_k(w \mid h), \quad \textnormal{with} \quad \sum_{k = 1}^K \lambda_k = 1.
+\]
+The \emph{consistency property} is then satisfied.
+
+In order to find a value for each of the \(\lambda_k\)'s, we us an \emph{expectation-maximization} (EM) algorithm.
+This algorithm uses a \emph{validation corpus} \(S = \{w_1, \dots, w_{M'}\}\), which can be seen as a single sequence different from the \emph{training} corpus. In practice, both the training and validation corpora are disjoint splits of a given input corpus.
+This disjointness is necessary in order to avoid \emph{overfitting}, which occurs when the model is too close to the training data.
+This algorithm works as follows:
+\begin{enumerate}
+	\item Initialize \(\lambda_k = \frac{1}{K}\).
+	\item E-step: \(\displaystyle\mathbb{E}(\textnormal{Model}_k \mid S) = \sum_{j = 1}^{M'} \frac{\lambda_k \Prhat_k(w_j \mid h)}{\sum_{k' = 1}^K \lambda_{k'} \Prhat_{k'}(w_j \mid h)}\).
+	\item M-step: \(\displaystyle \lambda_k = \frac{\mathbb{E}(\textnormal{Model}_k \mid S)}{M'}\).
+\end{enumerate}
+The initialization step is only performed once at the beginning.
+The EM-step is performed several times, until convergence.
+
+\subsubsection{Backoff Smoothing}
+\textbf{Backoff smoothing} is based on the idea of \textbf{smoothing by discounting}:
+\[
+\Prhat(w \mid h) = \frac{C(h, w) - d_C}{C(h)}, \quad \textnormal{if} \quad C(h, w) > 0.
+\]
+By discounting a certain value \(d_C\) (which can depend on the value of \(C(h, w)\)), we want to compensate for the \emph{over-estimated probability} of \emph{observed} \(N\)-grams (\(C(h, w) > 0\)).
+The \emph{discounted probability mass} will be used to compensate for the \emph{under-estimated probability} of \emph{non-observed} \(N\)-grams in the training corpus, as without smoothing
+\[
+C(h, w) = 0 \implies \Prhat(w \mid h) = \frac{C(h, w)}{C(h)} = 0.
+\]
+
+\paragraph{Good--Turing discounting} One of the methods to compute the \emph{discounting coefficients} \(d_C\) deduces their values from performing ML estimation on \emph{leave-one-out} (LOO) samples (\(N\)-grams appearing once in the training set then become unobserved).
+The \textbf{Good--Turing} estimate derives from this principled approach:
+\[
+C - d_C = (C+1) \frac{n_{C+1}}{n_C},
+\]
+where \(n_C\) is the number of \(N\)-grams occurring \(C\) times.
+Note that this value depends on the \emph{model order}.
+When \(C\) increases, the ratio \(n_{C+1}/n_C\) can become greater than \(1\) (to see this, consider the count histograms mentioned earlier).
+For this reason, Good--Turing discounting is often limited to small values of \(C\), with ML estimates being used for larger values of \(C\).
+
+\paragraph{Absolute discounting} Another method makes the assumption that discounting is \emph{independent} of the value of \(C\): \(d_C \triangleq d_*\), for all \(C\).
+An optimal \textbf{absolute discounting} coefficient can be estimated from \(n_C\), the number of \(N\)-grams appearing \(C\) times:
+\[
+d_* = \frac{n_1}{n_1 + 2n_2}.
+\]
+In general, \(n_1, n_2 > 0\), hence \(0 < d_* < 1\).
+As for Good--Turing discounting, the discounted value depends on the \emph{model order}.
+This discounting strategy has the (nice) property that it will affect low counts relatively more heavily than higher counts, which makes sense as the low count \(N\)-grams are the ones most likely to be assigned an overestimated probability.
+
+We can then also define a \emph{total discounted probability mass}, which, for a given history \(h\), is
+\[
+\gamma(h) = \sum_{\{w \in \mathcal{W}: C(h, w) > 0\}} \frac{d_C}{C(h)},
+\]
+and should be redistributed over the unobserved \(N\)-grams.
+
+\paragraph{Katz Backoff Smoothing} One way of redistributing \(\gamma(h)\) is given by the \textbf{Katz backoff smoothing}:
+\[
+\Prhat(w \mid h) = \left\{\begin{array}{l@{\quad}l}
+\frac{C(h, w) - d_C}{C(h)}, & \textnormal{if} \quad C(h, w) > 0,\\
+\frac{1}{Z} \gamma(h) \Prhat_{\textnormal{backoff}}(w \mid h), & \textnormal{if} \quad C(h, w) = 0,
+\end{array}\right.
+\]
+where \(\gamma(h)\) is the \emph{total discounted probability mass} from \emph{observed} \(N\)-grams as defined earlier, \(\Prhat_{\textnormal{backoff}} = \Prhat(w \mid h_{-1})\) is a \emph{backoff distribution} used to determine how \(\gamma(h)\) is redistributed over \emph{unobserved} \(N\)-grams, and \(Z\) is a \emph{normalization factor} necessary to satisfy the consistency property \(\sum_{w \in \mathcal{W}} \Prhat(w \mid h) = 1\).
+
+In order to remove the choice of \(Z\), an alternative version of this model is
+\[
+\Prhat(w \mid h) = \left\{\begin{array}{l@{\quad}l}
+\frac{C(h, w) - d_C}{C(h)} + \gamma(h)\Prhat_{\textnormal{backoff}}(w \mid h), & \textnormal{if} \quad C(h, w) > 0,\\
+\gamma(h) \Prhat_{\textnormal{backoff}}(w \mid h), & \textnormal{if} \quad C(h, w) = 0,
+\end{array}\right.
+\]
+where the discounted probability mass \(\gamma(h)\) is distributed over \emph{all} \(N\)-grams.
+This makes sense, as it gives a \emph{complementary estimate} based on a \emph{lower order} model (which tends to be more robustly estimated): the backoff distribution.
+In this case, the normalization factor is \(Z = 1\).
+This can equivalently be written as
+\[
+\Prhat(w \mid h) = \max\left(0, \frac{C(h, w) - d_C}{C(h)}\right) + \gamma(h)\Prhat_{\textnormal{backoff}}(w \mid h).
+\]
+
+We can then write a complete formulation as follows, taking into account the possibility of \emph{unobserved histories}:
+\[
+\Prhat(w \mid h) = \left\{\begin{array}{l@{\quad}l}
+\max\left(0, \frac{C(h, w) - d_C}{C(h)}\right) + \gamma(h)\Prhat_{\textnormal{backoff}}(w \mid h), & \textnormal{if} \quad C(h) > 0,\\
+\Prhat_{\textnormal{backoff}}(w \mid h), & \textnormal{if} \quad C(h) = 0.
+\end{array}\right.
+\]
+Note that the backoff distribution should also be \emph{smoothed}, using the \emph{same formula, recursively}.
+However, the counts (and thus also the discounting coefficient) will \emph{change}.
+This recursion \emph{stops} on the unigram (\(\Prhat(w) = C(w) / M\), where \(M\) is the number of tokens in training) or zerogram (\(\Prhat(w) = 1/\abs{\mathcal{W}}\), where \(\abs{\mathcal{W}}\) is the \emph{vocabulary size}).
+
+\subsubsection{Kneser--Ney Backoff Distribution}
+Probability estimates are based on a \emph{ratio} between two counts, smoothed by discounting.
+The \emph{standard backoff distribution} relies on similar counts but for a shorter history.
+Kneser and Ney proposed a \textbf{modified backoff distribution} based on the following counts:
+\[
+\frac{C^*(h_{-1}, w) - d_C}{\sum_{w' \in \mathcal{W}} C^*(h_{-1}, w')},
+\]
+with \(C^*(h_{-1}, w)\) the \emph{number} of distinct shorter histories where the word \(w\) has been observed, \emph{ignoring} the frequency of these events.
+
+The complete formulation of the probability estimates then takes the form
+\[
+\Prhat(w \mid h) = \left\{\begin{array}{l@{\quad}l}
+\max\left(0, \frac{C(h, w) - d_C}{C(h)}\right) + \gamma(h)\Prhat_{\textnormal{backoff}^*}(w \mid h), & \textnormal{if} \quad C(h) > 0,\\
+\Prhat_{\textnormal{backoff}}(w \mid h), & \textnormal{if} \quad C(h) = 0,
+\end{array}\right.
+\]
+where \(\Prhat_{\textnormal{backoff}}(w \mid h)\) and \(\Prhat_{\textnormal{backoff}^*}(w \mid h)\) are smoothed using this \emph{same formula recursively} (but not with the \emph{same counts}).
+
+\subsection{Performance Assessment}
+\subsubsection{Data Splitting}
+We give three \emph{protocols} for \textbf{data splitting}:
+\begin{itemize}
+	\item \textbf{Basic protocol}.
+	Split the available corpus into \emph{training} and \emph{test} files.
+	\begin{itemize}
+		\item The \textbf{training set} is used to estimate the \emph{model} (including the definition of a \emph{vocabulary}).
+		\item The \textbf{test set} is used to evaluate its quality (through the \emph{perplexity} value).
+	\end{itemize}
+	\item \textbf{Refinement 1}.
+	Split the training set into an \emph{actual} training set and a \emph{validation set}.
+	The validation set is used to tune \emph{meta-parameters}: pseudo-counts for additive smoothing, \(\lambda_k\)'s for linear interpolation, none for backoff smoothing.
+	It can also be used to tune the \emph{optimal model order}.
+	Once the meta-parameters are fixed, the model can be re-trained on the complete training set.
+	\item \textbf{Refinement 2}.
+	Repeat the above using 10-fold cross validation.
+\end{itemize}
+
+\subsubsection{Perplexity}
+A \emph{test set} \(S = \{w_1, \dots, w_M\}\) can be seen as a single sequence:
+\[
+\underbrace{\stoken w_1 \dots w_n \etoken}_{\textnormal{sentence}_1} \underbrace{\stoken w_{1'} \dots w_{n'} \etoken}_{\textnormal{sentence}_2} \dots
+\]
+The \emph{per-word} likelihood LL can then be defined as
+\[
+\textnormal{LL} = \frac{1}{M} \lg\left(\prod_{i=1}^M \Prhat(w_i \mid h)\right) = \frac{1}{M} \sum_{i=1}^M \lg \Prhat(w_i \mid h).
+\]
+From this, we define the \textbf{test set perplexity} PP:
+\[
+\textnormal{PP} = 2^{-\textnormal{LL}} = 2^{-\frac{1}{M} \sum_{i=1}^M \lg \Prhat(w_i \mid h)},
+\]
+which should be as low as possible.
+
+This measure can only be used with \emph{consistent models}, i.e. \(\sum_{w' \in \mathcal{W}} \Prhat(w' \mid h) = 1\) for all \(h\).
+In order to check consistency, the sums of probabilities at each prediction must run over \emph{all word types} in the vocabulary, including \(\unktoken\) and \(\etoken\) but excluding \(\stoken\), as it is never predicted, but can be used as possible history.
+This check should ideally be performed for all \(\abs{\mathcal{W}}^{N-1}\) possible \(N\)-gram histories.
+When not possible, it should at least be checked for all \emph{observed histories in the test set}, which are the ones that are considered when computing the perplexity.
+
+In fact, \textbf{perplexity} is a measure of quality of an \emph{iterated Shannon game}, and can be seen as an \emph{average weighted branching factor} when predicting the next word, in the geometric sense:
+\[
+\textnormal{PP} = 2^{\left[\lg\left(\left(\prod_{i=1}^M \Prhat(w_i \mid h)\right)^{-\frac{1}{M}}\right)\right]} = \sqrt[M]{\prod_{i=1}^M \frac{1}{\Prhat(w_i \mid h)}}.
+\]
+For a zero-gram model, which predicts uniformly at random: \(\Prhat(w_i \mid h) = \Prhat(w_i) = \frac{1}{\abs{\mathcal{W}}}\), the perplexity is equal to
+\[
+\textnormal{PP} = \sqrt[M]{\prod_{i=1}^M \frac{1}{\Prhat(w_i)}} = \sqrt[M]{\abs{\mathcal{W}}^M} = \abs{\mathcal{W}}.
+\]
+This allows us to use perplexity values as tools with which to \emph{compare} estimation models: the perplexity score \(PP\) of a model can thus be interpreted as the performance of a zero-gram model for a vocabulary size equal to \(PP\).
+
+The perplexity measure has the following properties:
+\begin{itemize}
+	\item \emph{Better models} have a \emph{lower perplexity}, hence they are more predictive.
+	\item \emph{Unsmoothed models} can be much worse than random guessing, as \(PP = +\infty)\) if \(\Prhat(w_i \mid h) = 0\) for some \(i\).
+	\item The actual number \(M\) of predictions in a test set of \(k\) sentences, each with \(n_j\) words, is \(M = \sum_{j = 1}^k (n_j + 1)\) (because we also predict \(\etoken\) for each sentence).
+	\item The training set perplexity decreases with the model order (if smoothing is minimal or absent).
+	We must thus avoid \emph{overfitting}.
+	\item The test set perplexity is minimal for an optimal order (typically, \(3\)).
+\end{itemize}
+
+\subsubsection{Vocabulary and Unknown Words}
+The \textbf{vocabulary} or \textbf{lexicon} \(\mathcal{W}\) is defined
+\begin{itemize}
+	\item from the \emph{application domain}, or
+	\item from the observed word types in the \emph{training set}.
+\end{itemize}
+This means that some words in the test set may have never been observed before.
+A \emph{consistent} and \emph{smoothed} model will assign a zero probability to such new words, hence they are never predicted.
+This means the perplexity will be infinite.
+
+To solve this, we define a new symbol \unktoken{} as part of the vocabulary and rely on smoothing
+\begin{itemize}
+	\item from some OOV words in the training data, or
+	\item purely from the smoothing mechanism: \(\Prhat(\unktoken \mid h)\) is a function of \(C(h, \unktoken)\), possibly corrected with smoothing, or
+	\item with interpolation or a backoff to a zero-gram, where \(\Prhat(\unktoken) = \frac{1}{\abs{\mathcal{W}}}\).
+\end{itemize}
+
+\subsection{Conclusion}
+\(N\)-grams are simple \emph{probabilistic} models, which can achieve a high level of performance.
+The \emph{fewer} data we have, the \emph{better} our smoothing method must be, as increasing the \emph{model order} may result in less predictive models if smoothing is poor.
+Many \emph{extensions} and \emph{alternatives} to the \(N\)-gram model exist, but they \emph{rarely significantly outperform} a \textbf{well-smoothed trigram model}.
