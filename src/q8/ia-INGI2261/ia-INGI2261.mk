@@ -1,4 +1,4 @@
 NAME=ia
 OPTION=INGI
 CODE=2261
-include ../../q7.mk
+include ../../q8.mk
