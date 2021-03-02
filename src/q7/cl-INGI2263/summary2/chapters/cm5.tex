@@ -1,0 +1,194 @@
+\section{Part-of-Speech Tagging}
+\subsection{Introduction}
+\textbf{Part-of-speech tagging} is related to the problem of \emph{sequence labeling}.
+The goal is to assign a \emph{POS tag} to each \emph{word token} in a sentence.
+Two examples of broadly used \emph{tagsets} are the Penn TreeBank tagset and the Brown Corpus tagset.
+Experiments show that despite having coarser tags, the Penn TreeBank tagset, which is \emph{more commonly} used to evaluate automatic taggers, is \emph{more ambiguous}.
+
+\subsection{Three Approaches to POS Tagging}
+\subsubsection{Rule-Based Approach}
+The \textbf{rule-based approach} uses a \emph{large dictionary} to assign each word a set of possible POS tags.
+A large list of \emph{disambiguation rules} are then applied to this set in order to reduce it to a single tag for each word.
+
+This approach has two main drawbacks:
+\begin{itemize}
+	\item dictionaries and disambiguation rules are \emph{specific} to a \emph{given language};
+	\item linguistic resources need to be \emph{constantly updated} as the language evolves.
+\end{itemize}
+It can also be nontrivial to turn implicit expert knowledge into explicit rules which a computer can use.
+
+\subsubsection{Probabilistic Approach}
+Because tagging is \emph{ambiguous}, the \textbf{probabilistic approach} relies on the \emph{frequencies} of \emph{word-tag} associations in the \emph{training corpus} to assign the tag of each word in a \emph{new sentence}.
+
+However, always choosing the \emph{most likely tag} for a given word would always assign the same tag to a given word; we need to take into account the \emph{context}, which can be done using \textbf{HMM POS tagging}.
+When a new sentence needs to be tagged, the sequence of \emph{words} is \emph{observed}, whereas the sequence of \emph{tags} is \emph{hidden}.
+
+\subsubsection{Transformation-Based Tagging}
+The canonical example of a \textbf{transformation-based tagger} is the \emph{Brill tagger}.
+
+\paragraph{Brill tagger}
+It combines the \emph{rule-based approach} of tagging according to \emph{explicit rules}, while also \emph{learning} a disambiguation model from a corpus of tagged sentences (supervised learning).
+
+It gives an ordered list of transformation rules, \emph{given} a POS tagged training corpus \emph{and transformation templates} such as ``change tag \textbf{a} to \textbf{b} when the preceding (following) word is tagged \textbf{z}.''
+\begin{algorithm}[H]
+	\DontPrintSemicolon
+	\SetAlgoLined
+	\KwIn{Tagged corpus}
+	\KwOut{Ordered list of transformation rules}
+	Tag each word with its most likely tag\;
+	\While{Stopping criterion not met}{
+		Try every possible transformation by instantiating some template\;
+		Select the one that results in the most improved tagging\;
+		Relabel the corpus accordingly\;
+	}
+	\caption{Brill tagger}
+\end{algorithm}
+
+This approach has the following \emph{pros}:
+\begin{itemize}
+	\item Transformation rules can be interpreted ``\emph{linguistically}''.
+	\item \emph{Learning} those rules makes it possible to adapt the tagger to several languages.
+\end{itemize}
+It also has the following \emph{limitations}:
+\begin{itemize}
+	\item A transformation rule can be learned \emph{only} if it is an instance of an abstract transformation template.
+	\item Learning is \emph{supervised} only, hence a tagged corpus is \emph{mandatory}.
+	\item The \emph{computational complexity} of learning (and tagging) is high.
+\end{itemize}
+
+\subsection{HMM POS Tagging}
+\subsubsection{Model Definition}
+With \textbf{HMM POS tagging}, a \emph{probabilistic finite state model} is used, where each \emph{state} is associated to a specific \emph{POS tag}.
+Each state emits words according to a specific \emph{emission probability distribution}.
+When a new sentence needs to be tagged, the sequence of \emph{states} is \emph{hidden}, but the sequence of \emph{emitted words} is \emph{observed}.
+Tagging a sentence thus reduces to find \emph{the most likely state sequence given the observed word sequence}.
+This is thus a \emph{global criterion} to tag words.
+
+HMM taggers use a \textbf{first-order Markov chain structure}, which is equivalent to a bigram model for tags (where the start and end are \stoken{} and \etoken).
+Such a model's \emph{transition probabilities} can be estimated from a tagged corpus by counting the successive POS tags (taking into account some smoothing).
+However, tags are not observed when a new sentence needs to be tagged.
+On top of the Markov chain, HMM taggers also have a certain \emph{emission probability} at each state, which corresponds to the probability for each word of being the output of that state.
+
+We define the following notation:
+\begin{itemize}
+	\item \(\mathcal{W}\) is a finite \emph{vocabulary} (\textbf{a}, \textbf{b}, \dots{} represent the words).
+	\item \(\mathcal{Q}\) is a \emph{set of states}.
+	\item \(A\) is a \(\abs{\mathcal{Q}} \times \abs{\mathcal{Q}}\) \emph{transition probability} matrix, with each row summing to one.
+	\item \(B\) is a \(\abs{\mathcal{Q}} \times \abs{\mathcal{W}}\) \emph{emission probability} matrix, with each row summing to one.
+	\item \(\pi\) is an \emph{initial probability} distribution, with \(\sum_{q \in \mathcal{Q}} \pi_q = 1\).
+	Note that \(\pi_q = a_{0q}\) with state \(0\) the start state.
+\end{itemize}
+
+\begin{mydef}[Path likelihood]
+	The \textbf{path likelihood} \(\Pr(s, \nu \mid M)\) of a sequence \(s = s_1\dots s_{\abs{s}}\) along a \emph{path} or \emph{state sequence} \(\nu = q_1 \dots q_{\abs{s}}\) in a HMM \(M\) is given by
+	\[
+	\Pr(s, \nu \mid M) = \prod_{i=1}^{\abs{s}} \Pr(s_i, q_i \mid M) = \pi_{q_1} b_{q_1 s_1} \prod_{i = 2}^\abs{s} a_{q_{i-1}q_i} b_{q_i s_i}.
+	\]
+	This value can be interpreted as the probability of observing the sentence \(s\) generated by the sequence of POS tags \(\nu\).
+\end{mydef}
+
+\begin{mydef}[Sequence likelihood]
+	The \textbf{sequence likelihood} \(\Pr(s \mid M)\) of a sequence \(s = s_1\dots s_{\abs{s}}\) in a HMM \(M\) is given by
+	\[
+	\Pr(s \mid M) = \sum_{\nu \in \mathcal{Q}^{\abs{s}}} \Pr(s, \nu \mid M).
+	\]
+	This value can be interpreted as the probability of observing the sentence \(s\) generated by any sequence of POS tags \(\nu\) of length \(\abs{s}\).
+\end{mydef}
+
+\subsubsection{Viterbi Decoding}
+Our goal when tagging a sentence is to solve the ``inverse problem'', i.e. to find, \emph{given a sentence} \(s\) (a sequence of words assumed to have been produced by a HMM), which is the \emph{most likely state sequence} \(\nu^*\) (a sequence of POS tags) to have produced it:
+\[
+\nu^* = \argmax_{\nu} \Pr(s, \nu \mid M).
+\]
+However, naively computing all probabilities for every possible state sequence has \emph{exponential complexity}, as there are \(\mathcal{Q}^{\abs{s}}\) possible state sequences.
+
+The \textbf{Viterbi decoding} is more efficient.
+We define an \emph{auxiliary quantity}:
+\[
+\gamma(k, t) = \Pr(s_1, \dots, s_t, q_t^* = k \mid M),
+\]
+which represents the probability of the most likely path \(\nu^* = q_1^* \dots q_{\abs{s}}^*\) reaching state \(k\) at step \(t\).
+We can then use the following algorithm.
+
+\begin{algorithm}[H]
+	\DontPrintSemicolon
+	\SetAlgoLined
+	\KwIn{HMM tagger \(M\), input sequence \(s\)}
+	\KwOut{Most likely sequence of tags \(v^*\)}
+	\(t \gets 1\)\;
+	\(\gamma(k, 1) \gets \pi_{k} b_{ks_1}\) \tcp*[r]{initialize \(\gamma\)}
+	\While{\(t \leq \abs{s}\)}{
+		\(\gamma(k, t) \gets \max_{\ell} \big(\gamma(\ell, t-1) a_{\ell k}\big) b_{k s_t}\) \tcp*[r]{most likely state \(k\) at \(t\) depends on most likely state \(\ell\) at \(t-1\) multiplied by probability of going from \(\ell\) to \(k\) and emitting \(s_t\) at \(k\)}\;
+		\(\mathrm{back}(k, t) \gets \argmax_{\ell} (\gamma(\ell, t-1) a_{\ell k})\) \tcp*[r]{remember path}
+		\(t \gets t+1\)\;
+	}
+	\(\Pr(s, \nu^* \mid M) \gets \max_{\ell} \gamma(\ell, \abs{s})\) \tcp*[r]{probability of optimal path}
+	\(q_{\abs{s}}^* = \argmax_{\ell} \gamma(\ell, \abs{s})\)\;
+	\caption{Viterbi decoder}
+\end{algorithm}
+The most likely sequence of tags \(v^*\) can then be built in reverse from the \emph{backpointers} starting from \(q_\abs{s}^*\).
+Computations are usually done after taking logarithms, to reduce numerical errors.
+The main recurrence then becomes (where \(- \log\gamma(k, t)\) can be seen as a \emph{cost} rather than a probability)
+\[
+-\log \gamma(k, t) = \min_\ell \big(-\log \gamma(\ell, t-1) - \log a_{\ell k}\big) - \log b_{k s_t}.
+\]
+The time complexity of this algorithm is \(\Theta(m\abs{s})\), with \(m\) the number of HMM transitions.
+Note that the path \(\nu^*\) defines an \emph{alignment} between states and words.
+This alignment then defines a \emph{segmentation} of the sequence according to the state which produced a given set (possibly of size \(1\)) of consecutive words.
+
+Our goal was as follows: \emph{given} a sequence of \(n\) words \(w_1^n = w_1, \dots, w_n\), \emph{find} a sequence of \(n\) tags \(\hat{t}_1^n\) that maximises the \emph{posterior probability} (MAP decision rule):
+\begin{align*}
+\hat{t}_1^n &= \argmax_{t_1^n} \Pr(w_1^n \mid t_1^n)\\
+&= \argmax_{t_1^n} \underbrace{\Pr(w_1^n \mid t_1^n)}_{\textnormal{likelihood}} \underbrace{\Pr(t_1^n)}_{\textnormal{prior}}\\
+&\approx \argmax_{t_1^n} \underbrace{\prod_{i=1}^n \Pr(w_i \mid t_i)}_{\textnormal{hypothesis 1}} \underbrace{\prod_{i=1}^n \Pr(t_i \mid t_{i-1})}_{\textnormal{hypothesis 2}}\\
+&= \argmax_{t_1^n} \prod_{i=1}^n \underbrace{\Pr(w_i \mid t_1)}_{\textnormal{emission}} \underbrace{\Pr(t_i \mid t_{i-1})}_{\textnormal{transition}},
+\end{align*}
+where
+\begin{itemize}
+	\item hypothesis 1 is that each word \(w_i\) given its tag \(t_i\) is independent of the other words and tags;
+	\item hypothesis 2 is that \(t_i\) only depends on \(t_{i-1}\) (bigram model).
+\end{itemize}
+
+\subsubsection{HMM Parameter Estimation}
+In order to find the optimal parameters for the HMM tagger, we must solve the following \emph{supervised learning} problem: \emph{given} a HMM structure (by default, a fully connected graph of POS tags) and several sentences (a training corpus) to model, \emph{estimate} the HMM parameters \(A\) and \(B\) (since \(\pi_q = a_{0q}\)).
+
+The learning sentences are \emph{annotated} with their respective states.
+We then build the probability estimates
+\begin{align*}
+	b_{ki} &= \Prhat(w_k \mid t_i) = \frac{C(t_i, w_k)}{C(t_i)},\\
+	a_{kl} &= \Prhat(t_\ell \mid t_k) = \frac{C(t_k, t_\ell)}{C(t_k)},
+\end{align*}
+where
+\begin{itemize}
+	\item \(C(w_k, t_i)\) is the number of times the word \(w_k\) is observed on the POS tag \(t_i\);
+	\item \(C(t_k, t_\ell)\) is the number of times POS tag \(t_k\) is followed by POS tag \(t_\ell\);
+	\item \(C(t_k)\) is the total number of times POS tag \(t_k\) appears.
+\end{itemize}
+These probability estimates can be smoothed according to the techniques of the previous sections, though in practice, additive smoothing with \(10^{-6} \leq \varepsilon \leq 1\) is enough.
+
+As before, OOV words can cause problems even with smoothed probability estimates, as they are assigned a zero probability.
+There is thus \emph{no Viterbi path} because there is no path producing the observed sequence to be tagged.
+The solution is again to use an \unktoken{} to replace words that appear very rarely in the training set, which after smoothing and reducing the vocabulary appropriately solves the problem.
+
+\subsection{Evaluation}
+To \textbf{evaluate the performance} of our tagger, we introduce the \(n \times n\) \emph{tag confusion matrix} \(T\).
+In it, each \emph{row} corresponds to an \emph{actual tag}, whereas each \emph{column} corresponds to a \emph{predicted tag}.
+Each \emph{entry} of the tag confusion matrix defines the \emph{error percentage} w.r.t. an actual tag \emph{frequency} \(f(i)\).
+Three main performance metrics are then used:
+\begin{itemize}
+	\item \emph{Average error rate per tag}: \(\displaystyle\frac{1}{n} \sum_{i} T_{i:}\).
+	\item \emph{Tagging error rate}: \(\displaystyle\frac{\sum_{i} f(i) T_{i:}}{\sum_{i} f(i)}\).
+	\item \emph{Tagging accuracy}: \(\SI{100}{\percent} - \textnormal{tagging error rate}\).
+\end{itemize}
+
+\subsection{Conclusion}
+\begin{itemize}
+	\item \emph{Rule-based approaches} are not adaptive to other languages or their evolutions.
+	\item \emph{Transformation-based approaches} include a learning component, but require a tagged corpus.
+	The rules are also restricted to a set of provided templates, and the computation time during training and tagging is an issue.
+	Finally, there is no easy extension to \(N\)-best tagging alternatives.
+	\item \emph{HMM tagging} offers a powerful statistical method for POS tagging.
+	They can be built automatically (random initialization, and iterating until convergence\footnote{Note that the ``tags'' obtained in this way are not necessarily related to linguistic aspects.}), but are usually built from a tagged corpus.
+	\(N\)-best alternatives can be computed using specific data structures in the Viterbi decoder.
+	However, note that some care needs to be taken w.r.t. smoothing.
+\end{itemize}
