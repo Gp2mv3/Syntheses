@@ -7,9 +7,9 @@ fun {GenericServer P}
    Sin in
    thread
       proc {Loop Xs}
-	 case Xs
-	 of Msg|Xr then {P Msg} {Loop Xr}
-	 end
+         case Xs
+         of Msg|Xr then {P Msg} {Loop Xr}
+         end
       end
    in
       {Loop Sin}

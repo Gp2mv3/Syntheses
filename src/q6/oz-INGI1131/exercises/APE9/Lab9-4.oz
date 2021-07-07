@@ -1,4 +1,4 @@
-% Author: Francois Robinet
+% Author: Francois Robinet improved by Gauthier de Moffarts
 declare
 
 fun {NewPortObject Transition Init}
@@ -20,8 +20,9 @@ fun {NewStack}
       case Msg
       of push(X) then X|Stack
       [] pop(?X) then
-	 if Stack==nil then X=nil Stack
-	 else X=Stack.1 Stack.2 end
+         if Stack==nil then X=nil Stack
+         else X=Stack.1 Stack.2 end
+      [] isEmpty(X) then X=(Stack==nil) Stack
       end
    end
 in
@@ -40,7 +41,11 @@ fun {Pop S}
 end
 
 fun {IsEmpty S}
-   {Pop S} == nil
+   X
+in
+   {Send S isEmpty(X)}
+   {Wait X}
+   X
 end
 
 % Tests
@@ -48,8 +53,7 @@ S={NewStack}
 {Push S a}
 {Push S b}
 {Browse {Pop S}} % b
+{Browse {IsEmpty S}} % false
 {Browse {Pop S}} % a
 {Browse {Pop S}} % nil
 {Browse {IsEmpty S}} % true
-
-
