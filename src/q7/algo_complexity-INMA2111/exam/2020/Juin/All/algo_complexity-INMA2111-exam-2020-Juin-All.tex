@@ -1,0 +1,178 @@
+\documentclass[en]{../../../../../../eplexam}
+
+\usepackage{parskip}
+\usepackage{physics}
+
+\hypertitle{Discrete mathematics II - Algorithms and complexity}{7}{INMA}{2111}{2020}{June}{All}
+{Adrien Banse}
+{Jean-Charles Delvenne}
+
+\section{Question 1}
+
+A very common operation in classical computing is to copy a bit from one memory cell to another empty cell. In other words, we map the 2-bit string $b0$ to $bb$ where $b \in \{0, 1\}$.
+
+We investigate how to achieve this, if possible, in quantum computing. In other words, we want to achieve a 4-by-4 unitary matrix $U$ that maps the input $\ket{b0}$ to $\ket{bb}$ for every value of the qu-bit $\ket{b}$. Build such a matrix, or prove that there is no one.
+
+Remember that a qu-bit $\ket{b}$ is a unit-norm vector in $\mathbb{C}^2$, and a pair of qu-bits $\ket{bc}$ is a unit-norm vector in $\mathbb{C}^4$. Classical states are encoded by vectors with a single 1 entry (and zeroes otherwise). E.g. $\ket{00}$ is the vector (1 0 0 0)$^*$ and $\ket{10}$ is the vector (0 1 0 0)$^*$ thus $\ket{b0}$ is of the form ($a$ $b$ 0 0)$^*$ for $|a|^2 + |b|^2 = 1$.
+
+\begin{solution}
+This is the No-Cloning theorem. Let $\ket{b}$ be ($a$ $b$)$^*$ with $|a|^2 + |b|^2 = 1$. Then $\ket{b0}$ is as described in the statement, and $\ket{bb}$ is
+\begin{equation}
+	\ket{bb} = \ket{b} \otimes \ket{b} = \begin{pmatrix} a^2 \\ ab \\ ab \\ b^2 \end{pmatrix}.
+\end{equation}
+
+We claim that there is no matrix $U$ such that $U\ket{b0} = \ket{bb}$. Indeed,
+\begin{equation}
+\begin{aligned}
+	b_1 = \begin{pmatrix} 1 \\ 0 \end{pmatrix} \text{ implies } U \ket{b_10} = \begin{pmatrix} 1 \\ 0 \\ 0 \\ 0 \end{pmatrix},& \quad
+	b_2 = \begin{pmatrix} 0 \\ 1 \end{pmatrix} \text{ implies } U \ket{b_20} = \begin{pmatrix} 0 \\ 0 \\ 0 \\ 1 \end{pmatrix} \\
+	\text{and }
+	b_3 = \frac{1}{\sqrt{2}} \begin{pmatrix} 1 \\ 1 \end{pmatrix}& \text{ implies } U \ket{b_30} = \begin{pmatrix} \frac{1}{2} \\ \frac{1}{2} \\ \frac{1}{2} \\ \frac{1}{2} \end{pmatrix}.
+\end{aligned}
+\end{equation} 
+
+Noticing that $\ket{b_30} = \frac{1}{\sqrt{2}} (\ket{b_10} + \ket{b_20})$ does not imply $U\ket{b_30} = \frac{1}{\sqrt{2}} (U\ket{b_10} + U\ket{b_20})$, the operator $U$ cannot be linear.
+
+\end{solution}
+
+\section{Question 2}
+
+Remember that an undirected, unweighted graph is given by a set of nodes $V$, a set of edges $E$, and an incidence relation, relating every edge to two nodes. In this question we allow multiple edges between 2 nodes but not loops (edges incident to only one node), as they are irrelevant for the question.
+
+In such a connected graph of at least two nodes, we look for a minimum cutset, i.e. a set of edges of minimal cardinality whose removal disconnects the graph. 
+
+This can be done with a deterministic algorithm in polynomial time. We explore here an elegant and fast Monte Carlo algorithm, found by Karger in 1993.
+
+The algorithm consists in repeatedly choosing a random edge (uniformly across all edges) and contracting it (i.e. merging the two extremities ; the edge is removed, as well as all edges between the two extremities), until only two nodes remain. The algorithm then outputs the set of edges between those two nodes as the claimed minimum cutset.
+
+\begin{enumerate}
+\item Prove that the output of the algorithm is always a cutset of the original graph indeed, albeit not necessarily of minimum size.
+\item Prove that, given a minimum cutset $C$ of $c$ edges, the probability that an edge chosen uniformly is in $C$ is at most $2/n$, where $n$ is the number of nodes of the graph. Hints: remember the handshaking lemma, stating that $2m$ is the sum of degrees, where $m$ is the number of edges; also remember that the set of edges incident to any given node is a cutset. 
+\item Prove that the output is correct (i.e., is a minimum cutset) with probability at least $\frac{2}{|V|(|V|-1)}$. 
+\item Explain how to reach a probability of success of at least $1-\epsilon$ (for any given small tolerance $\epsilon > 0$ provided by the user) by repeating the algorithm several times (how many times?). Hint: $(1-1/x)^{ax}$ converges to $e^{-a}$ from below as $x \to + \infty$, for any given $a > 0$.
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+
+% 2.1
+\item 
+We can say that the remaining nodes (two last nodes) are respectively the successive contractions of a partition of nodes $P_1 \subseteq V$ and $P_2 \subseteq V$ such that $P_1 \cup P_2 = V$ and $P_1 \cap P_2 = \emptyset$. We claime that the edges that are left at the end of the execution of Karger's algorithm are the one that linked nodes from $P_1$ to $P_2$. Indeed, say an edge $e$ linking $(u, v)$ with $u, v \in P_i$ is in the original graph, then it was either chosen at some point of the execution, or was removed because another edge $e'$ was chosen such that $e$ and $e'$ were mutiple edges at some point of the execution.
+
+Knowing that, if the edges remaining are removed, then they create two connected components $P_1$ and $P_2$, and they therefore form a cutset.
+
+% 2.2
+\item 
+Since every set of edges incident to a given node is a cutset, then $c \leq d_{\min}$ where $d_{\min}$ is the minimal degree of the graph. We know that the probability of drawing an edge in $C$ is $c/m$ with $m$ the number of edges. Using the handshaking lemma, it yields
+\begin{equation}
+	\frac{c}{m} = \frac{2c}{\sum_{i = 1}^n d_i} \leq \frac{2d_{\min}}{n d_{\min}} = \frac{2}{n}
+\end{equation} 
+where $d_i$ is the degree of the $i$-th node in $V$.
+
+% 2.3
+\item
+The probability of succes is the probability of never picking an edge in $C$. The edges are picked successively within a set of edges from a graph composed of $n$ nodes, then $n-1$ nodes, etc. until $3$ nodes.
+Since the probability not to pick an edge in $C$ from a graph composed of $k$ nodes is at least $1 - \frac{2}{k} = \frac{k-2}{k}$, it yields 
+\begin{equation}
+\begin{aligned}
+\mathbb{P}(\text{never draw an edge in $C$}) &\geq \left( \frac{n-2}{n} \right) \left( \frac{n-3}{n-1} \right) \dots \left( \frac{1}{3} \right) \\
+&= \frac{(n-2)(n-1)\dots 1}{n(n-1)\dots3} \\
+&= \frac{2}{n(n-1)}.
+\end{aligned}
+\end{equation}
+
+% 2.4
+\item 
+The goal is to reach a probability of failure of at most $\epsilon$. We propose to repeat the algorithm $k$ times, and take the cutset whose cardinality is minimal. Let us now compute the number $k$ necessary to reach the user defined tolerance. We know that
+\begin{equation}
+\begin{aligned}
+	\mathbb{P}(\text{$k$ failures}) 	&= \mathbb{P}(\text{failure})^k \\
+							&\leq \left( 1 - \frac{2}{n(n-1)} \right)^k \\
+							&\leq \left( 1 - \frac{1}{n(n-1)/2} \right)^k.
+\end{aligned}
+\end{equation}
+Assuming $n$ is large, and using the fact that $(1 - 1/x)^{ax}$ converges to $e^{-a}$ \textbf{from below} as $x \to + \infty$, it follows that
+\begin{equation}
+	\mathbb{P}(\text{$k$ failures}) \leq e^{-2k/n(n-1)}
+\end{equation}
+
+We set the upper bound to $\epsilon$ in order to reach the tolerance, it gives $ \left( 1 - \frac{2}{n(n-1)} \right)^k = \epsilon$. Since $k$ is an integer, to reach the bound, we set $k = \left\lceil \frac{n(n-1)}{2} \ln\left( \frac{1}{\epsilon} \right) \right\rceil$.
+
+\end{enumerate}
+\end{solution}
+
+\section{Question 3}
+You arrive at a party gathering $n$ persons (not including yourself) in a room.
+
+You are told that there may be a celebrity in the room. A celebrity is defined as a person knowing no one, but known by all other $n-1$ participants. Your goal is to dtermine whether there is a celebrity in the room, in which case you want to identify the celebrity. You can go to any person and ask "Do you know that person over there?". 
+
+In other words, your algorithm can query whether $i$ knows $j$, for any $i \neq j$ in the set of $n$ persons, and must output whether there is a celebrity, and who the celebrity is.
+
+The trivial solution is to ask all possible $n(n-1)$ questions and determine who is the celebrity, if any.
+
+\begin{enumerate}
+\item Prove that there is at most one celebrity in the room.
+\item Prove that any such algorithm must ask $\Omega(n)$ questions.
+\item Describe an algorithm that finds a celebrity, or conclude that there is none, in at most $3n - 4$ questions. 
+\item Bonus: Describe an algorithm that finds a celebrity, or conclude that there is none, in at most $3n - \lfloor \log_2 n \rfloor - 3$ questions. 
+\end{enumerate}
+
+NB: This gives an interesting example of problem where we don't need to scan all the data of the instance (namely, the $n(n-1)$ bits encoding all 'who knows whom' relationships).
+
+\begin{solution}
+\begin{enumerate}
+
+% 3.1
+\item
+Suppose there are two celebrities. The first one is known by everyone, including the second celebrity, which contredits the definition of a celebrity.
+
+% 3.2
+\item
+
+% 3.3
+\item
+Intialize an array $\{ 1, \dots, n \}$ with all the persons present at the party. Take one pair $(i, j)$ in it. Ask if $i$ knows $j$. If it is the case, remove $i$ from the array, otherwise remove $j$. Do that until there are 2 persons left, say $p$ and $q$: they are the potential celebrities. Ask $p$ if he knows $q$. If so, $q$ is the only potential celebrity, and remember that $p$ knows $q$. Otherwise, $p$ is the only potential celebrity, and remember that $p$ does not know $q$. So far we have done $n-1$ queries.
+
+Now ask all the other ones if they know the potential celebrity. If at some point it is not the case, there are no celebrities. Then ask the potential celebrity if he/she knows the other people present at the party. Again, if at some point it is not the case, then there are no celebrities. This step requires at most $2n-3$ queries. Indeed, we have to ask $2n-2$ persons, but we have remembered at least the last query of the first phase (either that some person knows the celebrity or that the potential celebrity does not know some person), so it is unnecessary to ask it a second time, which removes one query from the $2n-2$ ones. 
+
+To conclude, we needed at most $3n-4$ queries in total to be able to find the celebrity or conclude that there a none.
+
+% 3.4
+\item
+Do the same as above but make pairs and solve the first phase by eleminating persons such as in a tournament. It forms an execution tree. Again, the second phase will cost $2n-2$ informations, but we can remove the ones that we already know from the execution of the first phase. Indeed the potential celebrity appeared at each level of the tree. Since there are $\lfloor \log_2 n\rfloor$ levels to this tree, we already know $\lfloor \log_2 n\rfloor$ relationships that we do not need to ask again.
+
+So this strategy costs in total $3n - 3 - \lfloor \log_2 n\rfloor$ queries.
+
+\end{enumerate}
+\end{solution}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
