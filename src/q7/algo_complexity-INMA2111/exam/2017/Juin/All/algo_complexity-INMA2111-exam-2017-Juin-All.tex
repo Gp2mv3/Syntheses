@@ -1,0 +1,241 @@
+\documentclass[en]{../../../../../../eplexam}
+
+\usepackage{pythonhighlight}
+\usepackage{parskip}
+
+\hypertitle{Discrete mathematics II - Algorithms and complexity}{7}{INMA}{2111}{2017}{June}{All}
+{Adrien Banse}
+{Jean-Charles Delvenne}
+
+\section{Question 1}
+We want to multiply two one-variable polynomials $P_1(x)$ and $P_2(x)$, bot of degree $n$. We assume that all scalar additions and multiplications are performed at unit cost $\Theta(1)$.
+\begin{enumerate}
+\item Show how to compute the product polynomial $P_1P_2$ in $\mathcal{O}(n^2)$ time. 
+\item Using divide-and-conquer, show how to compute $P_1P_2$ in $o(n^2)$ time. What is the complexity of your algorithm?
+\item We suspect that $P_1P_2 = Q$, for some polynomial $Q(x)$ of degree $2n$, and we would like to check whether it is true. One could compute $P_1P_2$, e.g. by the algorithm in 2., and compare with $Q$. We would like however a faster, probabilistic, method. We choose an arbitrary set $S$ of numbers. We now pick a random element $s \in S$ and we test whether $P_1(s)P_2(s) = Q(s)$. If so, we conclude that $P_1P_2 = Q$, otherwise we conclude the contrary. Show that this algorithm returns a wrong answer with probability at most $2n/|S|$.
+\item Given a small $\epsilon > 0$ and a fixed set $S$ of $|S| = 4n$ elements, design a probabilistic algorithm testing whether $P_1P_2 = Q$ and returning a correct answer with probability at least $1-\epsilon$. What is the time complexity of this algorithm (as a function of $n$ and $\epsilon$)? 
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+
+% 1.1
+\item
+Assume $P_1(x) = p_n x^n + \dots + p_1 x + p_0$ and $P_2(x) = q_n x^n + \dots + q_1 x + q_0$. Since the product is a polynomial of degree $2n$, assume $(P_1P_2)(x) = r_{2n}x^{2n} + \dots + r_1x + r_0$. We can compute $P_1P_2$ with the following algorithm. 
+
+Intitialize $\{ r_0, \dots, r_{2n} \}$ to all zeros. Then, for each combination $(i, j) \in \{0, \dots, n\}^2$ ($(n+1)^2$ combinations), increment $r_{i + j}$ with $p_iq_j$. 
+
+% 1.2
+\item
+Let $\tilde{n} = \lceil n/2 \rceil$. We can write $P_1(x) = a(x) x^{\tilde{n}} + b(x)$ and $P_2(x) = c(x) x^{\tilde{n}} + d(x)$, with $a, b, c$ and $d$ all polynomials of degree at most $\tilde{n}$. In order to lighten the equations, we remove the $x$ dependency when it is unambiguous that the polynomial is evaluated at this point. Now, in order to compute $P_1P_2$, we notice
+\begin{equation}
+\begin{aligned}
+	(P_1P_2)(x) 	&= P_1(x)P_2(x) \\
+				&= \left(a x^{\tilde{n}} + b\right) \left(c x^{\tilde{n}} + d\right) \\ 
+				&= ac x^{2\tilde{n}} + \left( bc + ad \right) x^{\tilde{n}} + bd \\
+				&= ac x^{2\tilde{n}} + \left((a + b)(c + d) - ac - bd\right)x^{\tilde{n}} + bd
+\end{aligned}
+\label{3prod}
+\end{equation}
+
+So computing a product of two polynomials of degree $n$ can be done by computing 3 products of polynomials of degree $\tilde{n} = \lceil n/2 \rceil$. We can thus recursively compute $P_1P_2$ by computing the coefficients of sub-problems of half length, and then recover the coefficients of the product up to some additions described in equation~\ref{3prod}. Note that the recursion is ended when the degree of both polynomials is 1, then compute the product is done in $\mathcal{O}(1)$.
+
+Assuming $n = 2^k$, noting $T(n)$ the time complexity of this algorithm, it gives the recurrence
+\begin{equation}
+	T(n) = 3T\left( \frac{n}{2} \right) = 3T(2^{k-1}) = \dots = 3^k T(1).
+\end{equation}
+We know that $T(1) = \mathcal{O}(1)$, so there exists $\alpha \in \mathbb{R}$ such that $T(n) = \alpha3^k$. And noticing that $3^k = 2^{\log_2 3^k} = 2^{k\log_2 3} = n^{\log_2 3}$, it yields that the time complexity of this algorithm is $\mathcal{O}(n^{\log_2 3})$. Since $\log_2 3 < 2$, we indeed have $T(n) \in o(n^2)$. 
+
+% 1.3
+\item 
+Two different polynomials of degree $d$ intersect at at most $d$ distinct points. The proof of this claim goes as follows: if two polynomials of degree $d$ have $d+1$ distinct points in common, then their coefficients is the solution of the linear system $Vc = p$ where $V$ is a Vandermonde matrix, $c$ is the vector of coefficients and $p$ is the vector of $d+1$ points. Since $V$ is invertible for $d+1$ distinct points, then the solution is unique and the polynomials both have $V^{-1}p$ as coefficients. 
+
+Thus, knowing that both polynomials $P_1P_2$ and $Q$ are not the same, there is at most $2n$ points in $S$ such that both polynomials can be evaluated at the same value. Thus the probability of drawing such $s$ is at most $2n/|S|$.
+
+% 1.4
+\item
+The goal is to reach a probability of error of at most $\epsilon$. 
+
+We propose the strategy to draw $k$ times a value of $S$. Doing so, we have an error if we drawed $k$ times a value $s$ such that there is an error. Since $|S| = 4n$, we know that drawing such $s$ happens with probability at most $1/2$. So the probability to draw $k$ times such $s$ is at most $(1/2)^k$.
+
+In order to reach a bound of $\epsilon$, we want $(1/2)^k = \epsilon$. Since $k$ only takes on integer values, it happens when $k = \lceil \log_2\left( \frac{1}{\epsilon} \right) \rceil$.
+
+\end{enumerate}
+\end{solution}
+
+\section{Question 2}
+
+For any integer $k>0$, we define the following $k$-SUM problem. Given a set of $n$ integers and an integer $s$, one wants to check whether there is a subset of $k$ numbers (taken without repetition) whose sum is $s$.
+\begin{enumerate}
+\item Describe an algorithm solving the $k$-SUM problem in $\mathcal{O}(n^k)$.
+\item For $k=2$, describe a $\mathcal{O}(n \log n)$-time algorithm.
+\item For $k=3$, describe a $\mathcal{O}(n^2)$-time algorithm. 
+\end{enumerate}
+A related problem is SUBSET-SUM problem: given a set of $n$ integers and an integer $s$, one wants to check whether there is a subset (of any cardinality) summing to $s$.
+\begin{enumerate}[resume]
+\item Show that SUBSET-SUM is NP-complete. We accept that SET-PARTITION (the problem of checking whether a given set of $n$ integers can be partitioned into two subsets of equal sum) is NP-COMPLETE. Justify carefully.
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+
+% 2.1
+\item
+Given a set $S$ of $n$ numbers, for each combination $(i_1, \dots, i_k) \in \{1, \dots, n\}^k$, check wheter $S_{i_1} + \dots + S_{i_n} = s$ if are indices $(i_1, \dots, i_k)$ are disjoint, ignore otherwise. There are $n^k$ such combinations.
+
+% 2.2
+\item
+The following piece of code answers the question. 
+\begin{python}
+def two_sum(S, s):
+    S = sorted(S)
+    n = len(S)
+    left, right = 0, n-1
+    while left < right:
+        ssf = S[left] + S[right]
+        if ssf < s:
+            left += 1
+        elif ssf > s:
+            right -= 1
+        else:
+            return True
+    return False
+\end{python} 
+We just need to notice that it is possible to do it in linear time once the array is sorted by storing two pointers. It follows that the time complexity of this algorithm is the same as sorting, i.e. $\mathcal{O}(n\log n)$.
+
+% 2.3
+\item
+The following piece of codes answers the question. 
+\begin{python}
+def two_sum_nosort(S, s):
+    n = len(S)
+    left, right = 0, n-1
+    while left < right:
+        ssf = S[left] + S[right]
+        if ssf < s:
+            left += 1
+        elif ssf > s:
+            right -= 1
+        else:
+            return True
+    return False
+
+def three_sum(S, s):
+    S = sorted(S)
+    n = len(S)
+    for i in range(n):
+        newS = []
+        for j in range(n):                  # second for in linear time
+            if j == i:
+                continue
+            newS.append(S[j])
+        if two_sum_nosort(newS, s - S[i]):  # two_sum_nosort in linear time
+            return True
+    return False
+\end{python}
+For each element $S_i \in S$ , we solve a 2-SUM problem with the sum being $s - S_i$ in $\tilde{S} = S \setminus \{S_i\}$. Constructing $\tilde{S}$ is done in linear time, just as solving the 2-SUM problem for $\tilde{S}$ already sorted. It yields that the time complexity of this algorithm goes beyond sorting and is $\mathcal{O}(n^2)$.
+
+% 2.4
+\item
+It is straightforward that SUBSET-SUM belongs to NP. Indeed, let the NP algorithm that solves the problem be as follows: take any subset of any length randomly (i.e. for each element draw a random bit and taking if it is 1), sum them, and return 'Yes' if the sum of the elements of the subset is $s$. If the real answer is 'Yes', there is an execution that will return 'Yes'. Otherwise it will always return 'No'.
+
+Now we show that we can solve the SET-PARTITION problem thanks to SUBSET-SUM (i.e. SET-PARTITION $\leq_p$ SUBSET-SUM). The algorithm using SUBSET-SUM goes as follows. We compute the sum of the elements of the array $S$, say $m$. Then we call SUBSET-SUM$(S, m/2)$. If it returns 'Yes', we return 'Yes' for the SET-PARTITION problem. Indeed if there is a subset summing to $m/2$, then necessarily the rest of the array will sum to $m/2$.
+
+Thus, SUBSET-SUM $\leq_p$ SET-PARTITION since SUBSET-SUM belongs to NP by defitinion of NP-complete, and SET-PARTITION  $\leq_p$ SUBSET-SUM as it is shown above. It yields that they are equivalent, which implies that SUBSET-SUM belongs to NP-complete.
+
+\end{enumerate}
+\end{solution}
+
+\section{Question 3}
+A Young tableau is an $m$-by-$n$ table where every row is sorted in no-decreasing order (from left to right), and so is every column (from top to bottom). Empty entries are considered filled with $+ \infty$. For simplicity, we assume all finite entries to be pairwise distinct. 
+\begin{enumerate}
+\item Fill a 4-by-4 Young tableau with the entries $\{12, 8, 9, 5, 3, 4, 2, 16, 14\}$.
+\item Prove that the tableau $Y$ is empty if and only if $Y(1, 1) = +\infty$. Prove that $Y$ is non-full if and only if $Y(m, n) = + \infty$. 
+\item Show how to find and remove the smallest entry, while maintaining the Young tableau property, in $\mathcal{O}(m + n)$ time. Prove the correctness of your algorithm.
+\item Show how to insert a new entry in a non-full tableau while maintaining the Young tableau property in $\mathcal{O}(m + n)$ time. No detailed justification needed.  
+\item Propose a sorting algorithm for $n$ distinct numbers using Young tableaux and the operations above, that performs in $\mathcal{O}(n^{3/2})$ time.
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+
+% 3.1
+\item
+For instance
+\begin{equation}
+\begin{pmatrix}
+2 & 5 & 12 & +\infty \\
+3 & 8 & 14 & +\infty \\
+4 & 9 & 16 & +\infty \\
++\infty & +\infty & +\infty & +\infty
+\end{pmatrix}.
+\end{equation}
+
+% 3.2
+\item
+To prove the first claim, one implication is trivial. It remains to show that $Y(1, 1) = + \infty$ implies that $Y$ is empty. We just have to notice that $Y(1, 1) = + \infty$ implies $Y(1, j) = +\infty$ for any $1 \leq j \leq n$ by definition of the tableau. Again, for any $1 \leq j \leq n$, $Y(1, j) = +\infty$ implies $Y(i, j) = +\infty$ for any $1 \leq i \leq m$ by definition of the tableau. This proves the first claim.
+
+To prove the second claim, again, one implication is trivial, and it remains to show that the fact that $Y$ is non-full implies $Y(m, n) = +\infty$. $Y$ is non-full means there is at least one $(i, j)$, $1 \leq i \leq m$, $1 \leq j \leq n$ such that $Y(i, j) = +\infty$. By definition of the tableau, it implies that $Y(i, n) = +\infty$ (since it implies that $Y(i, j+k) = +\infty$ for any $0 \leq k \leq n-j$). Using the same argument but for the rows ($Y(i, j) = +\infty$ implies $Y(i+k, j) = +\infty$ for any $0 \leq k \leq m-i$), it yields $Y(m, n) = + \infty$.
+
+% 3.3
+\item
+We claim that the smallest entry is $Y(1, 1)$. The proof is an extension of the proof in item 2.. Assume $Y(i, j)$ is the minimum, with the same arguments as above, we know that $Y(1, 1) \leq Y(1, j) \leq Y(i, j)$. It contradicts the fact that $Y(i, j)$ is the minimum since elements are distinct. 
+
+Now, consider the following part of the tableau, where $Y(i, j) = + \infty$:
+\begin{equation}
+\begin{pmatrix}
+	\ddots & \vdots \\
+	\hdots & + \infty & a & \hdots \\
+	 & b & x \\
+	 & \vdots & & \ddots
+\end{pmatrix}
+.
+\end{equation}
+Suppose all rows from $1$ to $i-1$ are legal, and so are columns $1$ to $j-1$. We propose the following swapping strategy: swap $Y(i, j)$ with $a$ if $a < b$ and swap $Y(i, j)$ with $b$ otherwise. In the first case, column $j$ is now legal, and in the second case the row $i$ becomes legal. To handle the edge cases (when $i = m$ or $j = n$), consider that the tableau is padded with $+\infty$ values. In such way, if the $Y(i, j) = +\infty$ element has reached the bottom of the tableau, then it will always swap to the right, and if it reaches the rightmost column of the tableau, then it will always swap to the bottom. 
+
+The algorithm that we propose is the following: we save $Y(1, 1)$, which is the smallest value, then we put $Y(1, 1) = +\infty$, and we perform swaps described above until we have reached $Y(m, n)$. By doing so, we have the guarantee that, first, the algorithm will stop (thanks to the edge case handling), and second, that the whole Young tableau will be left as legal (proven above if we begin with the $(1, 1)$ element).
+
+The worst case is when we performed $m$ swaps until it has reached the bottom and $n$ swaps until it has reached the rightmost column. Since swaps are performed in $\mathcal{O}(1)$ time, the time complexity of this algorithm is $\mathcal{O}(m + n)$. 
+
+% 3.4
+\item 
+If the tableau is non-full, then $Y(m, n) = +\infty$ and we set $Y(m, n) = e$ where $e$ is the element we want to insert. Otherwise we add a column to the tableau with $+\infty$, and we increment $n$. 
+
+Suppose $Y(i, j) = e$. If $Y(i, j-1) > Y(i-1, j)$, swap $e$ and $Y(i, j-1)$, otherwise swap $e$ and $Y(i-1, j)$. Stop if $e \geq Y(i, j-1)$ and $e \geq Y(i-1, j)$. To handle edge cases, consider that the tableau is padded with $-\infty$ values. 
+
+% 3.5
+\item
+Let $\tilde{n} = \lceil n^{1/2} \rceil$. Initialize an empty $\tilde{n}$-by-$\tilde{n}$ Young tableau. Add the $n$ entries to it. Remove $n$ times the smallest value, it gives the order of the array. 
+
+Adding $n$ elements is done in $\mathcal{O}(n(2\tilde{n})) = \mathcal{O}(n^{3/2})$ by definition of $\tilde{n}$. Since taking the smallest element is done in the same time complexity, the removing phase is also done in $\mathcal{O}(n^{3/2})$. Thus the time complexity of this algorithm is $\mathcal{O}(n^{3/2})$.
+
+\end{enumerate}
+\end{solution}
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
