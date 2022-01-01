@@ -25,9 +25,16 @@ Le 18 Août 2018, le rôle a été transmis à Martin Braquet ([MartinBraquet](h
 Le projet est à ce jour **sans maintainer** !
 Nous sommes à la recherche d'étudiants motivés pour prendre une des composantes suivantes de ce rôle:
 1. Mettre à jours les pdfs sur le [drive](pdf-url).
-2. Reviewer les pull requests des autres étudiants.
+2. Reviewer les pull requests des autres étudiants, voir [Processus de review](#processus-de-review).
 
 Pour vous récompenser de ce travail, vous serez rémunérés copieusement en visibilité.
+
+### Processus de review
+
+Voici les règles régissant la review des pull requests:
+1. Tout le monde est encouragé à laisser des commentaires.
+2. Si c'est un ajout ou une modification d'un contenu par l'auteur original, les maintainers ne doivent pas vérifer l'exactitude, ils doivent uniquement vérifier que ça compile et que les fichiers ont été ajoutés au bon endroit. Un maintainer a le droit de faire de l'excès de zèle et faire une review plus approfondie car les maintainers ont tout pouvoir.
+3. Si c'est une modification d'un auteur différent que l'auteur original et qu'un maintainer est confiant, il peut merger. Sinon, il peut tagger l'auteur original et/ou demander à l'auteur du pull request de donner plus de précision pour l'aider à confirmer que la modification est bien correcte.
 
 ## Documentation
 Ce README donne quelques premières indications
