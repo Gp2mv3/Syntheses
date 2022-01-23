@@ -58,8 +58,8 @@
 \titleformat
 {\section} % command
 [hang] % shape
-{\bfseries} % format
-{\shadowbox{~\thesection~}} % label
+{\mdseries\Large\sffamily\upshape} % format
+{\raisebox{-\shadowsize}{\shadowbox{\bfseries\rmfamily\normalsize~\thesection~}}} % label ; note: \fboxsep is the padding
 {0.5ex} % sep
 {} % before-code
 
