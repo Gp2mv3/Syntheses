@@ -22,7 +22,7 @@ with open(CONFIG_FILE_NAME, 'r') as stream:
         import yaml
         document = yaml.load(stream)
         stream.close()
-        titre = document['name'][name]
+        titre = document['title'][name]
     except:
         titre = name
 
