@@ -1,4 +1,4 @@
 NAME=info
-OPTION=LINFO
+OPTION=INFO
 CODE=1104
 include $(BASE_DIR)../../q4.mk

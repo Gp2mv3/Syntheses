@@ -1,6 +1,34 @@
 \documentclass[fr]{../../../../../../eplexam}
+\usepackage{listings}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{1.0,1.0,1.0}
+\definecolor{codeblue}{rgb}{0,0,0.8}
 
-\hypertitle{Concepts des langages de programmation}{4}{INFO}{1104}{2020}{Juin}{All}
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegray},
+    keywordstyle=\color{codeblue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codeblue},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=shadowbox
+}
+\lstset{style=mystyle}
+\lstset{language=Oz}
+
+\hypertitle{Concepts des langages de programmation}{4}{LINFO}{1104}{2020}{Juin}{All}
 {Norah \and Thomas Debelle}
 {P. Van Roy}
 
@@ -24,6 +52,13 @@ nondeterminism)? Select all that apply, multiple responses are possible
 This question concerns free identifiers in a program. Given the following program fragment
 What are the free identifiers in this fragment ? Select all that applyn multiple responses are possible.
 
+\begin{lstlisting}
+local Z in
+  fun {F X} Z+X end
+  fun {G X} fun {$ Y} X+Y end end
+end
+\end{lstlisting}
+
 
 \begin{solution}
     Identificateur libre correspond à un élément déclaré en dehors d'une fonction/procédure mais utilisé dedans. Dans notre cas \textbf{X} et \textbf{Z}.
@@ -43,6 +78,10 @@ course. Which of the following terms are lists? Select all that apply, multiple 
     \end{tabular}
 \end{solution}
 
+\begin{lstlisting}
+ abc
+\end{lstlisting}
+
 \section{Ordered binary trees}
 This question concerns ordered binary trees. Given the three tree operations defined in the course
 to operate on ordered binary trees, namely \{Lookup K T\}, \{Insert K V T\}, and \{Delete K T\}. Assume they are defined correctly
@@ -56,6 +95,33 @@ A=\{Delete dog \{Insert mouse souris \{Insert cat chat \{Insert dog chien leaf\}
 \section{Abstract machine semantics}
 The following two questions concern the abstract machine semantics we have seen in the course. 
 We will investigate the following program's semantics.
+
+\begin{lstlisting}
+local F G A B C in
+  A=5
+  fun {G X} A*X end
+  fun {F X}
+    local A in
+      A={G X}
+      {G A}
+    end
+  end
+  B=10
+  C={F B}
+  {Browse C}
+end
+\end{lstlisting}
+Assume the program executes until just before the call C=\{F B\}. At this point, the execution state is the following:
+\begin{lstlisting}
+([(C={F B},E1), ({Browse C},E1)],
+ {f=(proc {$ X R} local A in A={G X} R={G A} end end,{G->g)),
+ g=(proc {$ X R} R=A*X end,{A->a}), a=5, b=10, c}
+\end{lstlisting}
+Here E1 has a particular value that we do not specify further, and variables f and g are bound to procedure values. Now do one
+execution step according to the abstract machine semantics. This starts the execution of procedure F.\\
+
+Which of the following choices best describes the execution state after this one step? Select only one
+choice.
 
 \begin{solution}
     On met le corps de F en haute de la pile. Réponse E ou F. Ce n'est pas encore calculé à ce moment là. E2=\{X $\rightarrow$ b; R $\rightarrow$ c; G $\rightarrow$ g\}
@@ -106,7 +172,16 @@ client/server application with two clients and one server. Each client puts its 
 and services both clients. Whenever a client sends a message to the server, the server must respond to the message and send a
 reply back to the client in a reasonable time that depends only on the message travel time between client and server, and the
 server's computation time. Assume the client/server is written in deterministic dataflow, and the server code is as follows. In this
-code, S1 is a stream of requests from client 1 and S2 is a stream of requests from client 2.\\
+code, S1 is a stream of requests from client 1 and S2 is a stream of requests from client 2.
+\begin{lstlisting}
+proc {Server S1 S2}
+  case (S1|S2) of (M1|T1)|(M2|T2) then
+    ... (handle M1)
+    ... (handle M2)
+   {Server T1 T2}
+  end
+end
+\end{lstlisting}
 
 Explain in detail why this server code does not satisfy the specification of the client/server, as it is given
 above. Give a precise sequence of operations (client requests and server actions) to show what can go
@@ -120,7 +195,39 @@ wrong.
 \section{Message protocols}
 The following two questions are about message protocols. We will do an RMI with callback between a client
 object and a server object. We will use the following implementation. You can assume that NewPortObject2 is defined in the same
-way as in the course, namely to create port objects with no internal state.\\
+way as in the course, namely to create port objects with no internal state.
+
+\begin{center}
+\begin{minipage}{0.45\linewidth}
+\begin{lstlisting}
+declare
+proc {ServerProc Msg}
+  case Msg of calc(X Y Client) 
+    then D in
+    {Send Client delta(D)}
+    Y=X*X+2.0*D*X+D*D+23.0
+  end
+end
+
+Server={NewPortObject2 ServerProc}
+\end{lstlisting}
+\end{minipage}
+%
+\begin{minipage}{0.45\linewidth}
+\begin{lstlisting}
+declare
+proc {ClientProc Msg}
+  case Msg of work(Z) then Y in
+    {Send Server calc(10.0 Y Client)}
+    Z=Y+10.0
+    [] delta(D) then
+    D=0.1
+  end
+end
+Client={NewPortObject2 ClientProc}
+\end{lstlisting}
+\end{minipage}
+\end{center}
 
 Explain what an "RMI with callback" is supposed to do: what is the precise sequence of messages that
 should be exchanged between the client and server.
@@ -141,6 +248,32 @@ to fix the code (you can give a code fragment in your answer).
 \end{solution}
 
 \section{Memory management}
+
+\begin{center}
+\begin{minipage}{0.45\linewidth}
+\begin{lstlisting}
+%Program 1:
+declare S P Loop in
+P={NewPort S}
+proc {Loop N} 
+  {Send P N} {Loop N+1} 
+end
+{Loop 1}
+\end{lstlisting}
+\end{minipage}
+%
+\begin{minipage}{0.45\linewidth}
+\begin{lstlisting}
+%Program 2:
+declare P Loop in
+local S in
+P={NewPort S}
+end
+proc {Loop N} {Send P N} {Loop N+1} end
+{Loop 1}
+\end{lstlisting}
+\end{minipage}
+\end{center}
 
 One of these programs has constant active memory size and the other has a memory leak where the active memory size grows
 without bounds (which may crash the computer eventually if the process is not terminated)\\
@@ -164,6 +297,30 @@ between the declare and local statements.
 \section{Deterministic dataflow with ports}
 This question is about concurrent programming with deterministic dataflow and ports. Given
 the following program which does dynamic concurrent composition. It defines a thread creation abstraction in which threads can create threads recursively, and the top level call to NewThread terminates when all subthreads have terminated.
+
+\begin{lstlisting}
+proc {NewThread P SubThread}
+  proc {ZeroExit N S}
+    case S of X|S2 then
+      if N+X\=0 then
+        {ZeroExit N+X S2}
+      end
+    end
+  end
+  S Pt={NewPort S}
+in
+  proc {SubThread P}
+    thread
+      {Send Pt 1} % This should be done before the thread creation
+      {P}
+      {Send Pt ~1}
+    end
+  end
+  {SubThread P}
+  {ZeroExit 0 S}
+end
+\end{lstlisting}
+
 This program deliberately has a bug: the {Send Pt 1} call is done inside the new thread (to avoid a bug, it should be done before the
 thread creation).\\
 
@@ -183,6 +340,22 @@ In your explanation, you should make explicit all the scheduler decisions that r
 
     En mettant l'incrémentation du compteur avant le thread éviterait ce problème.
 \end{solution}
+
+\section{Erlang/OTP}
+  This question is about building resilient distributed applications with Erlang/OTP. The
+Erlang/OTP platform has many abstractions to construct resilient distributed applications. Assume you are
+building a resilient distributed collaborative graphic editor, in which many users can work simultaneously
+on the same document. This editor should always maintain a consistent document view for all users, it
+should be completely robust against any kind of failure, and it should have high performance with low
+perceived latency. Explain as best you can how you would structure this editor using the Erlang/OTP
+abstractions we have seen in the course. Try to explain the role of as many Erlang/OTP abstractions as
+possible in your answer. You will be graded on the completeness of your answer (mentioning as many as
+possible the relevant Erlang abstractions among the ones we have seen in the course) and on the
+coherence of your answer (how clearly you can explain the overall architecture of your editor, how all the
+Erlang abstractions work together to achieve the overall goals, and what is the role of each abstraction in
+achieving the overall goals). To achieve coherence, think about your answer before writing it down and
+reread it before submitting the final version.
+\nosolution
 
 % Ajouter \nosolution s'il n'y a pas de solution disponible pour cette question
 
