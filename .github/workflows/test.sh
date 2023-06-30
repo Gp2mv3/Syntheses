@@ -16,10 +16,19 @@ IFS=" "
 
 # Print the array elements
 for part in "${parts[@]}"; do
-  if echo "$part" | grep -q "$pattern"; then
-    # Print the matched argument
-    pdflatex "$part"
-  fi
-  cd "$part"
   ls
+done
+
+test="1 2 3 4"
+Done=false
+
+for arg in $test; do
+    echo $arg
+    if [ $arg == 3 ]; then
+        echo "Three"
+        Done=true
+    fi
+    if $Done; then 
+        echo "Already found my three"
+    fi 
 done
