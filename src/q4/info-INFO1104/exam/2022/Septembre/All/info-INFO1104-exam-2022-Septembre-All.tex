@@ -50,27 +50,114 @@ end
 \end{minipage}
 \end{center}
 
+\begin{solution}
+\begin{lstlisting}[escapechar=µ]
+local F C One C1 in One=1
+  {NewCell One C}
+  F=proc {$ A ?R1}
+    R1=@A
+  end
+  {F C ?R2}
+  C1=R2+One
+  C:=C1
+end
+\end{lstlisting}
+\end{solution}
+
 \section{Basic concepts}
 \subsection{Scope}
 Define "scope" in a programming language. Give an example.
 
-\subsection{Contextual environnment}
-Define "contextual environnment" of a procedure. Give an example
+\begin{solution}
+La portée d'un identificateur est la partie où l'occurrence se réfère à la même déclaration de variable
+\begin{lstlisting}[escapechar=µ]
+local
+  X
+in
+  X=42 {Browse X} %Affiche 42
+  local
+    X
+  in
+    X=11 {Browse X} %Affiche 11
+  end 
+  {Browse X} %Affiche 42
+end
+\end{lstlisting}
+\end{solution}
 
+\subsection{Contextual environment}
+Define "contextual environment" of a procedure. Give an example
+
+\begin{solution}
+L'environnement contextuel une fonction (ou procédure) contient tous les identificateurs qui sont utilisés dans la fonction mais déclarés en dehors.
+\begin{lstlisting}[escapechar=µ]
+declare
+fun {Compose F G}
+  fun {$ X}{F {G X}} end
+end
+\end{lstlisting}
+Où E = \{F $\rightarrow$ f, G $\rightarrow$ g\}
+\end{solution}
 
 \section{Lambda calculus}
 Reduce the expression (PLUS 1 (IFTHENELSE (ISZERO 1) O I)) to its simplest form. Show all reduction steps. To make your answer easier to understand, you must only replace a function by its definition when you need it for a reduction step. If you do not do this, there wüll be a penalty.
 
+\begin{solution}
+\begin{itemize}
+\item (ISZERO 1) $\longrightarrow$ ($\lambda n.(n(\lambda x.$FALSE) TRUE 1) $\longrightarrow$ (1 ($\lambda x.$FALSE) TRUE) $\longrightarrow$ ($\lambda f.(\lambda x$(f x))($\lambda x.$FALSE) TRUE) $\longrightarrow$ (($\lambda x.$ FALSE) TRUE) $\longrightarrow$ (($\lambda x. \lambda x. \lambda y.y$) TRUE) $\longrightarrow$ $\lambda x. \lambda y.y$  $\longrightarrow$ FALSE
+\item (IFTHENELSE (ISZERO 1) 0 1) $\longrightarrow$ (IFTHENELSE FALSE 0 1) $\longrightarrow$ ($\lambda p. \lambda a. \lambda b.$(p a b) FALSE 0 1) $\longrightarrow$ (FALSE 0 1) $\longrightarrow$ ($\lambda x. \lambda y.y$ 0 1) $\longrightarrow$ 1
+\item (PLUS 1 (IFTHENELSE (ISZERO 1) 0 1)) $\longrightarrow$ (PLUS 1 1) $\longrightarrow$ ($\lambda m. \lambda n. \lambda f. \lambda x.$(m f)((n f) x) 1 1) $\longrightarrow$ ($\lambda f. \lambda x.$(1 f)((1 f) x)) $\longrightarrow$ ($\lambda f. \lambda x.$(f (f x))) $\longrightarrow$ 2
+\end{itemize}
+\end{solution}
+
 \section{Functional object}
 Give a code example of a functional Object. Calling a functional Object returns another Object with a new value inside. For example, creates the counter object Cl with initial count 0. Then returns a new counter Object C2 with count 1, and returns a new counter Object C3 with count 2. Hints: A functional Object is purely declarative; cells are not allowed. You need to define an auxiliary function \{CounterObject I\} that returns a counter Object with count I. A counter Object is a record with an 'inc' field that contains an increment function.
+
+\begin{solution}
+\begin{lstlisting}[escapechar=µ]
+declare
+fun {NewCounter}
+  fun {CounterObject I}
+    fun {Inc} {CounterObject I+1} end
+    fun {Get} I end %Optionnel
+  in
+    counter(inc:Inc get:Get)
+  end
+in
+  {CounterObject 0}
+end
+\end{lstlisting}
+\end{solution}
+
 
 \section{Nondeterminism}
 \subsection{Definition of nondeterminism}
 Define the concept of nondeterminism in a programming language. Be careful to give a precise definition! It is a bit subtle. Give an example of a program that shows nondeterminism.
 
+\begin{solution}
+Non-déterminisme correspond à la capacité d'un système à faire des  décisions indépendamment du développeur.
+\begin{lstlisting}
+declare X1 X2
+X1=1 X2=2
+thread {Browse X1} end
+thread {Browse X2} end
+\end{lstlisting}
+On ne sait pas si X1 va être affiché en premier ou non.
+\end{solution}
+
 
 \subsection{Overcoming the limitation of deterministic dataflow}
 Deterministic dataflow has the strong property that it has no observable nondeterminism. For this question, first give a specification of a client/server application, second use this specification to explain Why the client/server be written as a deterministic dataflow program. Third, briefly define the concept of a port and fourth show in a few lines of code how to write a client/server with a port.
+
+\begin{solution}
+Sans non-déterminisme observable, le résultat est toujours le même. Or, dans une application Client|Serveur, le résultat dépend de quand on reçoit le message. On reçoit un message, on compile et on répond. Il y a donc d'office du non-déterminisme. Le résultat est choisi par le scheduler et non par le développeur.\par
+Un port est un stream:
+\begin{lstlisting}[escapechar=µ]
+P={NewPort S} %Crµ\textcolor{gray}{é}µe un port avec un stream
+{Send P N} %Ajoute N au stream
+\end{lstlisting}
+Client Serveur avec un port. Les clients envoient et reçoivent des message. Les clients sont des agents concurrents. Le serveur reçoit un message, fait un calcul en local et envoie une réponse immédiate.
+\end{solution}
 
 \section{Erlang mechanisms for long-lived programs}
 
