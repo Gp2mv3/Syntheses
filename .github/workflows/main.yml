@@ -15,15 +15,25 @@ jobs:
       - name: Setting Up
 # Install textlive
         run: |
-          sudo apt-get install texlive-latex-base
-          sudo apt-get install texlive-fonts-recommended
-          sudo apt-get install texlive-fonts-extra
-          sudo apt-get install texlive-latex-extra
+          sudo apt-get install texlive-full
           sudo apt install texlive-lang-french
-      - name: Compiling
-        run: |    
-          ls
-          make -f Makefile
+      - name: File Diff Check
+        shell: bash
+        id: check_file_changed
+        run: |
+          Diff=$(git diff --name-only HEAD^ HEAD)
+          Pattern=".tex"
+          # We can change the pattern easily
+
+          echo $Diff
+
+          for arg in "$Diff"; do
+              echo $arg
+              if echo "$arg" | grep -q "$Pattern"; then
+                  echo "$arg"
+                  pdflatex $arg
+              fi
+          done
       - name: Storing
         uses: actions/upload-artifact@v3
         with:
