@@ -1,8 +1,8 @@
 # Synthèses de l'EPL
 
-| **Documentation**  | **PDF** | **Chat** |**Git** | **Build** |
-|:------------------:|:-------:|:--------:|:-------:|:---------:|
-| [<img src="https://cdn.pixabay.com/photo/2013/04/01/21/32/reading-99244_960_720.png" width="48">][doc-url] | [<img src="https://image.freepik.com/free-icon/pdf-file-format-symbol_318-45340.jpg" width="48">][pdf-url] | [![Join the chat at https://gitter.im/Gp2mv3/Syntheses](https://badges.gitter.im/Gp2mv3/Syntheses.svg)][chat-url] | [<img src="https://gitforwindows.org/img/git_logo.png" width="48">][git-url] | [<img src="https://github.com/Tfloow/Syntheses/actions/workflows/main.yml/badge.svg" width="128">][build-url] |
+| **Documentation**  | **PDF** | **Chat** |**Git** | **Build** | **Discord**|
+|:------------------:|:-------:|:--------:|:------:|:---------:|:----------:|
+| [<img src="https://cdn.pixabay.com/photo/2013/04/01/21/32/reading-99244_960_720.png" width="48">][doc-url] | [<img src="https://image.freepik.com/free-icon/pdf-file-format-symbol_318-45340.jpg" width="48">][pdf-url] | [![Join the chat at https://gitter.im/Gp2mv3/Syntheses](https://badges.gitter.im/Gp2mv3/Syntheses.svg)][chat-url] | [<img src="https://gitforwindows.org/img/git_logo.png" width="48">][git-url] | [<img src="https://github.com/Tfloow/Syntheses/actions/workflows/main.yml/badge.svg" width="128">][build-url] | [<img src="https://upload.wikimedia.org/wikipedia/fr/thumb/4/4f/Discord_Logo_sans_texte.svg/106px-Discord_Logo_sans_texte.svg.png?20210527094128" width="64">][discord-url]
 
 Les documents présents sur ce repository sont des documents
 mis à disposition pour les étudiants de l'EPL.
@@ -87,3 +87,4 @@ Si cette license vous pose problème, venez en discuter en ouvrant une [issue](h
 [forum-url]: http://forum-epl.be
 [git-url]: https://try.github.io
 [build-url]: https://github.com/Tfloow/Syntheses/actions
+[discord-url]: https://discord.gg/WUuu38vtET
