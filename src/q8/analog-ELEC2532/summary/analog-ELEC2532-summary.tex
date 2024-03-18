@@ -46,7 +46,7 @@ the variance can more rigorously be obtained by
 \end{equation}
 where $S(f)$ is again the power spectral density and the bandwidth of
 interest $\Delta f = 2F$. Intuitively, we see that $S(f)$ (expressed either
-in either \SI{}{\volt\squared\per\hertz} or \SI{}{\ampere\per\hertz}) gives
+in either \SI{}{\volt\squared\per\hertz} or \SI{}{\ampere\squared\per\hertz}) gives
 how energy is distributed in the frequency domain.
 From equation~\eqref{eq:psd}, we can see that equation~\eqref{eq:var-psd}
 is only valid if
@@ -101,7 +101,7 @@ Finally, the instantaneous amplitude distribution of thermal noise is
 
 \begin{figure}[ht]
     \centering
-    \begin{tikzpicture}
+    \begin{tikzpicture}[american]
         \draw
         (0,0) to[short, o-] (0,-0.5)
         (0,-0.5) to[R, l=$R$] (0,-2)
@@ -141,7 +141,7 @@ and thermal noise are both Gaussian, this means that they are independent.
 %TODO: why polarity of the source doesn't matter
 \begin{figure}[ht]
     \centering
-    \begin{tikzpicture}
+    \begin{tikzpicture}[american]
         \draw
         (2,0) to[short, o-] (2,-0.5)
         (2,-0.5) to[D, i=$I_D$] (2,-2.5)
@@ -401,7 +401,8 @@ A complete example can be found in~\cite[section~11.4.1]{gray}.
 \subsection{Equivalent input noise and the minimum detectable signal}
 \todo[inline]{This section could be improved. One idea would be to use the
 complete example of the slides to explain concepts with an example. Also
-need to define SNR, noise figure, noise temperature.}
+need to define noise temperature.}
+%Did not see any reference to noise temperature in the slides
 The previous section showed us how to compute the output noise. The significance
 of the noise performance of a circuit is, however, the limitation it places on
 the smallest input signal the circuit can handle before the noise degrades the
@@ -438,6 +439,22 @@ Examples can be found in~\cite[sections~11.5.1-2]{gray} or in the slides.
     voltage and current generators.}
     \label{fig:eq-input-noise}
 \end{figure}
+
+\begin{mydef}[Signal noise ratio]
+	The signal noise ration (abbreviated SNR) is the ratio of the power related signal over to the noise power in input signal source.
+	$$\text{SNR}_{\text{IN}} = \frac{S_{sig}}{N_s} = \frac{i_{in}^2}{i_s^2}$$
+	We can also compute the SNR at the output.
+	$$\text{SNR}_{\text{IN}} = \frac{A_p S_{sig}}{A_pN_s + A_p N_Q} = \frac{i_{in}^2}{i_s^2 + i_q^2}$$
+	With
+	\begin{itemize}
+		\item $A_P$: the power gain
+		\item $N_Q$: Quadripole own noise related to its input
+	\end{itemize}
+\end{mydef}
+
+\begin{mydef}[Noise Figure]
+	The noise Figure ($F$) is the ratio of the $\text{SNR}_{\text{IN}}$ to the $\text{SNR}_{\text{OUT}}$. If $F=1$ it means that there is no contribution of the quadripole.
+\end{mydef}
 
 \begin{mydef}[Minimum detectable signal]
     The minimum detectable signal (abbreviated MDS) can be taken as equal to
@@ -726,15 +743,55 @@ figure~\ref{fig:bessel}.
 \section{Other implementations}
 \subsection{Integrator-based filters}
 \subsubsection{Two integrators based filters}
-The two-integrator-loop topology allows to realize second-order filters
+The two-integrator-loop topology  allows to realize second-order filters
 using two integrators connected in cascade and a feedback loop. They are
 particularly interesting because they provide at the same time a low-pass,
-an high-pass and a bandpass filter.
+an high-pass and a bandpass filter. The schematic is given in figure \ref{tikz:double_integ}.
 
-\todo[inline]{Tikz circuit of the two-integrator loop filter.}
+\begin{figure}[!ht]
+	\centering
+	\begin{circuitikz}
+		\draw (0,0) node [op amp] (op1) {};
+		\draw (op1.+) ++ (6,0) node [op amp] (op2) {};
+		\draw (op2.+) ++ (6,0) node [op amp] (op3) {};
+		\draw (op1.-) -- ++ (-0.5,0) -- ++ (0, 1.5) to [R] ++ (3,0) -- ++ (0, -2) -- (op1.out) to[R] (op2.-);
+		\draw (op1.-) ++ (2.5,1.5) to[short,-*] ++ (0.5,0) node[right]{$V_{out}$};
+		\draw (op2.-) -- ++ (-0.5,0) -- ++ (0, 1.5) to [C] ++ (3,0) -- ++ (0, -2) to (op2.out) to [R] (op3.-);
+		\draw (op3.-) -- ++ (-0.5,0) -- ++ (0, 1.5) to [C] ++ (3,0) -- ++ (0, -2) to (op3.out);
+		\draw (op3.-) ++ (2.5,1.5) -- ++ (0,2) to[R] ++ (-12.6,0) -- ++(0,-1.1);
+		%\draw -- ++ (1,0) -- ++ (0,1) -- ++ (2,-1) -- ++ (-2, -1) -- ++ (0,1);
+		%\draw (op2.out) ++ (3,0) -- ++ (0.5,0) -- ++ (0,5) to [R]  ++ (-11.2,0)  -- ++ (0, -1.1);
+
+		\draw (op2.+) -- ++ (-0.5,0) node[ground]{};
+		\draw (op1.+) -- ++ (-0.5,0) to [R] ++ (-2,0) node[left]{$V_{in}$};
+		\draw (op2.-) ++ (2.5,-0.5) -- ++ (0, -2) to[R] ++ (-7.5,0) -- ++ (0, 2);
+	\end{circuitikz}
+	\caption{Two-integrator loop filter}
+	\label{tikz:double_integ}
+\end{figure}
+
 
 \subsubsection{Tow-Thomas}
-\todo[inline]{Tikz circuit of the Tow-Thomas filter.}
+
+The schematic is given in figure \ref{tikz:towthomas}.
+
+\begin{figure}[!ht]
+	\centering
+	\begin{circuitikz}
+		\draw (0,0) node [op amp] (op1) {};
+		\draw (op1.+) ++ (6,0) node [op amp] (op2) {};
+		\draw (op1.-) -- ++ (-0.5,0) -- ++ (0, 1.5) to [R] ++ (3,0) -- ++ (0, -2) -- (op1.out) to[R] (op2.-);
+		\draw (op2.-) -- ++ (-0.5,0) -- ++ (0, 1.5) to [C] ++ (3,0) -- ++ (0, -2) to (op2.out) -- ++ (1,0) -- ++ (0,1) -- ++ (2,-1) -- ++ (-2, -1) -- ++ (0,1);
+		\draw (op2.out) ++ (3,0) -- ++ (0.5,0) -- ++ (0,5) to [R]  ++ (-11.2,0)  -- ++ (0, -1.1);
+		\draw (op1.-)  ++ (-0.5,1.5) -- ++ (0,1.5) to [C] ++ (3,0) -- ++ (0,-1.5);
+		\draw (op2.out) ++ (1.7,0)node[]{-1};
+		\draw (op2.+) -- ++ (-0.5,0) node[ground]{};
+		\draw (op1.+) -- ++ (-0.5,0) node[ground]{};
+		\draw (op1.-) ++ (-0.5,0) to [R] ++ (-2,0) node[left]{$V_{in}$};
+	\end{circuitikz}
+	\caption{Tow-Thomas filter}
+	\label{tikz:towthomas}
+\end{figure}
 
 \subsection{Boctor cells}
 \todo[inline]{Do we need to discuss this one?}
@@ -956,8 +1013,118 @@ be used to avoid the circuit to stay at this point.
 \end{figure}
 
 \part{DAC}
+\section{Signal construction}
+\subsection{Numerical Coding}
+We will represent the value to encode the signal by a vector \(A\). we can use different coding conventions
+\begin{itemize}
+	\item Pure binary
+	\[A = a_{n-1} * 2^{n-1} + \dots + a_0 * 2^0 \]
+	\item Sign and amplitude
+	\[A = (-1)^{a_n} a_{n-1} * 2^{n-1} + \dots + a_0 * 2^0 \]
+	\item Two's complement
+	\begin{align*}
+	A &= a_{n-1} * 2^{n-1} + \dots + a_0 * 2^0  \\
+	-A &= \bar{a_{n-1}} * 2^{n-1} + \dots + \bar{a_0} * 2^0 +1
+	\end{align*}
+	\item Binary shifted
+	\[A = 2^{n-1} + a_{n-2} * 2^{n-2} + \dots + a_0 * 2^0 \]
+	\item Unary
+	\[A = a_{m-1} + a_{m-2} + \dots + a_0\]
+	with \(m = 2^n\qquad a_i = 1 \quad \forall i \le A\qquad a_i = 0 \quad \forall i > A \)
+\end{itemize}
+
+with \(a_n\) the MSB and \(a_0\) the LSB. The analogue value is computed as 
+\[V_A = \frac{1}{2^n}AV_{FS}\]
+We must also define the quantization step Q which si related to the resolution
+\[ Q = 2^{-n} V_{FS}\]
+
+\subsection{DNL}
+Difference between real step between 2 codes and the ideal step Q
+\[\text{DNL}(A) = \frac{V_A(A) - V_A(A-1)}{Q} - 1 \]
+
+We need to have
+\[\text{DNL}_{max} < \frac{1}{2}\]
+to be able to bound the output value.
+
+If the DNL < -1 it leads to a non-monotonicity.
+
+\subsection{INL}
+
+First we need the define the linearised value adjusted by mean squares regression or interpolation
+
+\[V_{LIN}(A) = V_{AO} + GAQ \]
+with:
+\begin{itemize}
+	\item \(V_{AO}\) the offset voltage (ideal \(V_{AO} = 0\))
+	\item \(G\) the gain (ideal \(G = 1\))
+\end{itemize}
+
+The integral non-linearity (INL) error is the difference between real value and linearised characteristics
+
+\[\text{INL}(A) = \frac{V_A(A) - V_{Lin}(A)}{Q}\]
+
+We also want
+\[\text{INL}_{max} < \frac{1}{2}\]
+
+\subsection{SNR}
+The full scale signal power for a sine amplitude of \(2^n-1)Q/2\) is defined as
+\[P_S = \frac{1}{2} \left[\frac{2^n}{2}Q\right]^2\]
+
+The quantization noise e has a uniform distribution within \(\left[-Q/2,Q/2\right]\) and a probability density \(p = 1/Q/\)
+\[P_n = \int^{Q/2}_{Q/2} e^2 \frac{1}{Q}de = \frac{Q^2}{12}\]
+
+So the SNR is equal to
+\[SNR = \frac{P_S}{P_N} = 1.52^{2n} = 6.02n + 1.76\quad \left[\text{dB}\right]\]
+
+
+\section{Voltage domain}
+\subsection{Binary with resistors}
+...
+
+
+Cons:
+\begin{itemize}
+	\item No size advantage (the size of a resistor is important)
+	\item Not used in integrated circuits \(\rightarrow\) MOSFETs
+\end{itemize}
+
+\subsection{Unary with resistors}
+Pros:
+\begin{itemize}
+	\item Identical resistors
+	\subitem tolerance < R/2 for DNL < Q/2
+	\subitem INL depending on statistical distribution
+	\item Monotonicity guaranteed
+\end{itemize}
+
+Cons:
+\begin{itemize}
+	\item Number of resistors and switches: \(2^n\)
+	\item No size advantage (the size of a resistor is important)
+	\item Not used in integrated circuits \(\rightarrow\) MOSFETs
+\end{itemize}
+
+\subsection{Cascaded cells: R - 2R scale}
+
+Pros:
+\begin{itemize}
+	\item Resistors are all identical
+	\item Number of resistors and switches $\propto n$
+\end{itemize}
+
+Cons:
+\begin{itemize}
+	\item Tolerance on R
+	\subitem MSB cell: \(2^{-(n+1))}\)
+	\subitem LSB cell:
+	\(2^-1\)
+	\item No size advantage (the size of a resistor is important)
+	\item Not used in integrated circuits \(\rightarrow\) MOSFETs
+\end{itemize}
 
 \part{ADC}
+
+\part{Oscillators}
 
 \nocite{*}
 \bibliographystyle{plain}
