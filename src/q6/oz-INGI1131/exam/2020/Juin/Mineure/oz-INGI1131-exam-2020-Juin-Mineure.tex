@@ -1,0 +1,188 @@
+\documentclass[fr]{../../../../../../eplexam}
+
+\usepackage{../../../../../../eplcode}
+
+\lstset{language={Oz},morekeywords={for,do,lazy}}
+
+\hypertitle{oz}{6}{INGI}{1131}{2020}{Juin}{Mineure}
+{Gauthier de Moffarts}
+{Peter Van Roy}
+
+
+\section{Question 1}
+Qu'est-il affiché?
+\begin{lstlisting}
+declare X Y in 
+X = Y+1
+{Browse X}
+\end{lstlisting}
+
+\begin{solution}
+Rien n'est affiché car l'addition est une opération bloquante.
+\end{solution}
+
+\section{Question 2}
+On défini la fonction CMap comme suit:
+\begin{lstlisting}
+declare
+fun {CMap L F}
+   case L of H|T then thread {F H} end|{CMap T F}
+   [] nil then nil
+   end
+end
+\end{lstlisting}
+
+Qu'affichent les codes suivants?
+\begin{enumerate}
+    \item
+        \begin{lstlisting}
+declare S1 T1 S2 in
+S1 = 1|2|3|T1
+S2 = {CMap S1 fun{$ X} X*X end}
+{Browse S2}
+        \end{lstlisting}
+        
+    \item
+        \begin{lstlisting}
+declare S1 T1 S2 in
+S1 = 1|2|3|T1
+S2 = thread {CMap S1 fun{$ X} X*X end} end
+{Browse S2}
+        \end{lstlisting}
+        
+    \item
+        \begin{lstlisting}
+declare S1 S2 A in
+S1 = 1|A|3|nil
+S2 = {CMap S1 fun{$ X} X*X end}
+{Browse S2}
+        \end{lstlisting}
+        % C'est FAUX
+    \item
+        \begin{lstlisting}
+declare S1 S2 F in
+S1 = 1|2|3|nil
+S2 = {CMap S1 F}
+{Browse S2}
+        \end{lstlisting}
+\end{enumerate}
+
+\begin{solution}
+\begin{enumerate}
+    \item Rien n'est browsé car CMap attends T1
+    \item 1|4|9|\_ est affiché
+    \item CMap n'est plus bloqué, on a [1 \_ 9]
+    \item CMap n'est plus bloqué, [\_ \_ \_] est printé car les threads attendent F
+\end{enumerate}
+\end{solution}
+
+\section{Question 3}
+Ce programme affiche souvent 0, cependant il peut afficher d'autres choses. Donne les autres sorties de ce programme ainsi que les choix du scheduler pour chacun d'eux.
+
+\begin{lstlisting}
+declare C in
+C = {NewCell 1}
+thread C := @C-2 end %thread1
+thread C := @C+1 end %thread2
+{Browse @C}
+\end{lstlisting}
+
+\begin{solution}
+\begin{itemize}
+    \item ~1 si le scheduler lance la thread1, le laisse lire le contenu de la cell, puis l'arrête et lance le thread2. Celui ci termine, puis le thread 1 recommence.
+    \item 2 si le scheduler lance la thread2, le laisse lire le contenu de la cell, puis l'arrête et lance le thread1. Celui ci termine, puis le thread2 recommence.
+    \item 0 si les deux threads sont exécutés séquentiellement.
+\end{itemize}
+\end{solution}
+
+
+
+\section{Question 4}
+Quel est l'environnement contextuel de la fonction anonyme dans le code suivant?
+\begin{lstlisting}
+fun{Sieve L}
+    case L of H|T then
+        % Remove all multiples of H from stream T, return stream S:
+        thread S = {Filter T fun{$ X} X mod H \= 0 end} end % Create filter agent
+        H | {Sieve S}
+    [] nil then nil
+    end
+end
+\end{lstlisting}
+
+\nosolution
+
+
+\section{Question 5}
+Expliquer pourquoi le code suivant ne fonctionne pas, et le corriger
+\begin{lstlisting}
+proc{Server S1 S2}
+	case S1|S2
+	of S1|(M2|T2) then 
+	    ...
+	    {Handle M2}
+	    {Serveur S1 T2}
+	[] (M1|T1)|S2 then
+	    ...
+	    {Handle M1}
+	    {Serveur T1 S2}
+	end
+end
+\end{lstlisting}
+
+\nosolution
+
+\section{Question 6}
+Pourquoi ne peut-on pas faire de serveur correct en deterministic dataflow? Quel concept ajouter? Donnez une implémentation simple d'un serveur avec ce concept
+\begin{solution}
+Car on doit pouvoir attendre deux variable simultatément. Avec ce concept on introduit le non-déterminisme. Il faut donc ajouter la fonction \{WaitTwo X Y\} qui retourne 1 si X est lié, 2 si y est lié, et 1 ou 2 si X et Y sont liés.
+En Oz, WaitTwo peu être implémenté comme ceci:
+\begin{lstlisting}
+declare
+fun {WaitTwo X Y}
+   {Record.waitOr X#Y}
+end
+\end{lstlisting}
+Et on peut donc implémenter notre serveur comme ceci:
+\begin{lstlisting}
+proc{Server S1 S2}
+	case {WaitTwo S1 S2}
+	of 2 then 
+	    ...
+	    {Handle S2.1}
+	    {Serveur S1 S2.2}
+	[] 1 then
+	    ...
+	    {Handle S1.1}
+	    {Serveur S1.2 S2}
+	end
+end
+\end{lstlisting}
+\end{solution}
+
+\section{Question 7}
+Donner une exécution utilisant des transactions dans laquelle ça provoque un deadlock. Et définir ce qu'est une deadlock.
+
+\nosolution
+
+\section{Question 8}
+On peut impélementer une port object à l'aide de la fonction foldL. Expliquer comment cette variante fonctionne. Utilisez la définition de FoldL dans votre explication.
+\begin{lstlisting}
+fun {NewPortObject Init Fun}
+   P
+in
+   thread Sin Sout in
+      {NewPort Sin P}
+      {FoldL Sin Fun Init Sout}
+   end
+   P
+end
+\end{lstlisting}
+\begin{solution}
+L'appel à FoldL fait \begin{lstlisting}
+Sout = {Fun {Fun {Fun {Fun Init S1} S2} S3} S4}
+\end{lstlisting}. L'appel \{Fun état Si\} retournant un état.
+\end{solution}
+
+\end{document}
+
