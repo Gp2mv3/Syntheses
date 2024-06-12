@@ -1,3 +1,3 @@
 SOL=both
-MINMAJ=Maj
+MINMAJ=Majeure
 include ../Janvier.mk
