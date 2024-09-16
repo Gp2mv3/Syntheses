@@ -183,7 +183,7 @@ echo $(git log -1 --pretty=format:\%h "$(basename $(ls *.stderr) .stderr).tex")
    \IfLanguageName{english}{at the }{à l'}%
    EPL (École Polytechnique de Louvain),
    \IfLanguageName{english}{faculty of the }{faculté de l'}%
-   UCL (Université Catholique de Louvain).
+   \hyphenation{Catho-lique}UCL (Université Catholique de Louvain).
    \IfLanguageName{english}
    {It has been written by the aforementioned authors with the help of all other students,
    yours is therefore welcome as well.
