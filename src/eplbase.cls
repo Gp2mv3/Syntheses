@@ -57,6 +57,7 @@
 
 %%% SECTION TITLE APPEARANCE
 \RequirePackage{sectsty}
+% Section title sizes are by default: Large for section, large for subsection, normalsize for subsubsection, paragraph, subparagraph.
 \allsectionsfont{\sffamily\mdseries\upshape} % (See the fntguide.pdf for font help)
 % (This matches ConTeXt defaults)
 
