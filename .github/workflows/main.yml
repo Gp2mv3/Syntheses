@@ -1,0 +1,65 @@
+name: Compiling & Checking
+run-name: Compiling all files
+on:
+  push:
+    branches:
+      - master
+      - master_clean
+jobs:
+  compiling:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Setting Up
+# Install textlive
+        run: |
+          sudo apt-get install texlive-latex-base
+          sudo apt-get install texlive-fonts-recommended
+          sudo apt-get install texlive-fonts-extra
+          sudo apt-get install texlive-latex-extra
+          sudo apt install texlive-lang-french
+      - name: File Diff Check
+        shell: bash
+        id: check_file_changed
+        run: |
+          Diff=$(git diff --name-only HEAD^ HEAD)
+          Pattern=".tex"
+          # We can change the pattern easily
+
+          echo $Diff
+
+          for arg in $Diff; do
+              echo $arg
+              # If the file is a .tex
+              if echo "$arg" | grep -q "$Pattern"; then
+                  echo -e "\e[32m___START COMPILE___\e[0m"
+
+                  IFS="/"
+                  read -ra parts <<< "$arg"
+                  IFS=" "
+
+                  # Going to the right directory
+                  Done=false
+
+                  Back=""
+                  for part in "${parts[@]}"; do
+                    if echo "$part" | grep -q "$Pattern"; then
+                        # Compile the document
+                        ls
+                        pdflatex "$part"
+                        Done=true
+                    fi
+
+                    if !($Done); then
+                      ls
+                      cd "$part"
+                      Back=$Back"../"
+                    fi
+                  done
+
+                  cd $Back
+                  echo -e "\e[32m___FINISH COMPILE___\e[0m"
+              fi
+          done
