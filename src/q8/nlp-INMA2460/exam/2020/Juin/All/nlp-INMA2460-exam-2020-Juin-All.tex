@@ -1,0 +1,542 @@
+\documentclass[en]{../../../../../../eplexam}
+
+\usepackage{bm}
+
+\DeclarePairedDelimiterX{\inp}[2]{\langle}{\rangle}{#1, #2}
+
+\DeclareMathOperator{\interior}{int}
+\DeclareMathOperator{\dom}{dom}
+\DeclareMathOperator{\Dom}{Dom}
+\DeclareMathOperator{\closure}{cl}
+
+\newcommand{\xbar}{\bar{x}}
+
+\hypertitle{Nonlinear programming}{8}{INMA}{2460}{2020}{Juin}{All}
+{Gilles Peiffer}
+{Yurii Nesterov}
+
+\section{Nonlinear optimization}
+Relaxation and approximation.
+Optimality conditions.
+
+\begin{solution}
+The majority of general nonlinear optimization methods are based on the idea of relaxation.
+A sequence \(\{a_k\}_{k=0}^\infty\) is called a relaxation sequence if
+\[
+a_{k+1} \leqslant a_k \quad \forall k \geqslant 0.
+\]
+In unconstrained minimization, i.e. \(\min_{x \in \Rn} f(x)\), where \(f\) is a smooth function, we try to construct a relaxation sequence \(\{f(x_k)\}_{k=0}^\infty\):
+\[
+f(x_{k+1}) \leqslant f(x_k) \quad k = 0, 1, \dots
+\]
+This strategy has the following immediate benefits:
+\begin{itemize}
+	\item if \(f\) is bounded below on \(\Rn\), this sequence converges,
+	\item in any case, we improve the initial value of the objective function.
+\end{itemize}
+Relaxation is based on the idea of approximation, which can be defined as replacing a complex object by a simpler one with similar properties.
+In nonlinear optimization, we usually apply local approximations based on derivatives of nonlinear functions (first- and second-order approximations, or linear and quadratic).
+
+Let \(f\) be differentiable at \(\xbar \in \Rn\).
+Then for any \(y \in \Rn\), the first-order approximation can be given as
+\[
+f(y) = f(\xbar) + \inp{f'(\xbar)}{y - \xbar} + o(\norm{y - \xbar}),
+\]
+where the first two terms of the sum are a linear approximation of \(f\) at \(\xbar\), and where \(o(r)\) denotes some function of \(r \geqslant 0\) such that
+\[
+\lim_{r \downarrow 0} \frac{1}{r} o(r) = 0, \quad o(0) = 0.
+\]
+The vector \(f'(\xbar) = \left(\fpart{f(\xbar)}{x_1}, \dots, \fpart{f(\xbar)}{x_n}\right)^T\) is called the gradient of \(f\) at point \(\xbar\), where the coordinate representation has been obtained by considering the points \(y_i = \xbar + \varepsilon e_i\), with \(e_i\) the \(i\)th coordinate vector in \(\Rn\).
+
+Let us mention two important properties of the gradient.
+Denote by \(\mathcal{L}_f(\alpha)\) the level set of \(f\):
+\[
+\mathcal{L}_f(\alpha) = \{x \in \Rn \suchthat f(x) \leqslant \alpha\}.
+\]
+Consider the set of directions that are tangent to \(\mathcal{L}_f(f(\xbar))\) at \(\xbar\):
+\[
+S_f(\xbar) = \left\{s \in \Rn \suchthat s = \lim_{\substack{y_k \to \xbar\\f(y_k) = f(\xbar)}} \frac{y_k - \xbar}{\norm{y_k - \xbar}}\right\}.
+\]
+\begin{mylem}
+	If \(s \in S_f(\xbar)\), then \(\inp{f'(\xbar)}{s} = 0\).
+\end{mylem}
+\begin{proof}
+	Since \(f(y_k) = f(\xbar)\), we can deduce from the first-order approximation that
+	\[
+	f(y_k) = f(\xbar) + \inp{f'(\xbar)}{y_k - \xbar} + o(\norm{y_k - \xbar}) = f(\xbar).
+	\]
+	This entails that \(\inp{f'(\xbar)}{y_k - \xbar} + o(\norm{y_k - \xbar}) = 0\).
+	Dividing by \(\norm{y_k - \xbar}\) in the last equation, and taking the limit as \(y_k \to \xbar\), we obtain the desired result.
+\end{proof}
+
+Another useful property is the following: let \(s\) be a direction in \(\Rn\), \(\norm{s} = 1\).
+Consider the local decrease of \(f(x)\) along \(s\):
+\[
+\Delta(s) = \lim_{\alpha \downarrow 0} \frac{1}{\alpha} [f(\xbar + \alpha s) - f(\xbar)].
+\]
+Note that \(f(\xbar + \alpha s) - f(\xbar) = \alpha \inp{f'(\xbar)}{s} + o(\alpha)\).
+Therefore, \(\Delta(s) = \inp{f'(\xbar)}{s}\), by the definition of \(o(\cdot)\).
+Using the Cauchy-Schwarz inequality:
+\[
+- \norm{x} \norm{y} \leqslant \inp{x}{y} \leqslant \norm{x}\norm{y},
+\]
+we find \(\Delta(s) = \inp{f'(\xbar)}{s} \geqslant - \norm{f'(\xbar)}\), as \(\norm{s} = 1\).
+One notices that the choice \(\bar{s} = -f'(\xbar) / \norm{f'(\xbar)}\) leads to
+\[
+\Delta(\bar{s}) = -\inp{f'(\xbar)}{f'(\xbar)} / \norm{f'(\xbar)} = -\norm{f'(\xbar)},
+\]
+meaning the antigradient \(-f'(\xbar)\) is the direction of the fastest local decrease of \(f\) at point \(\xbar\).
+
+We have the following first-order optimality condition, given by Theorem~\ref{thm:1stopt}.
+\begin{mytheo}[First-order optimality condition]
+	\label{thm:1stopt}
+	Let \(x^*\) be a local minimum of a differentiable function \(f(x)\).
+	Then
+	\[
+	f'(x^*) = 0.
+	\]
+\end{mytheo}
+\begin{proof}
+	Since \(x^*\) is a local minimum of \(f\), there exists \(r > 0\) such that for all \(y \in \Rn\), \(\norm{y - x^*} \leqslant r\), we have \(f(y) \geqslant f(x^*)\).
+	By differentiability of \(f\), this implies that
+	\[
+	f(y) = f(x^*) + \inp{f'(x^*)}{y - x^*} + o(\norm{y - x^*}) \geqslant f(x^*),
+	\]
+	where we have replaced \(f(y)\) by its first-order approximation. 
+	Thus, for all \(s\), \(\norm{s} = 1\), we have \(\inp{f'(x^*)}{s} \geqslant 0\).
+	If we take two opposite directions for \(s\), this must still hold, hence \(\inp{f'(x^*)}{s} = 0\), for any \(s\) such that \(\norm{s} = 1\).
+	In this last observation, we take all \(n\) coordinate vectors in \(\Rn\) for \(s\), for which the observation holds, allowing us to conclude that \(f'(x^*) = 0\).
+\end{proof}
+Note that the optimality condition of Theorem~\ref{thm:1stopt} only gives a necessary condition for optimality.
+Points satisfying it are called stationary points, and one only needs to look at \(f(x) = x^3\), \(x \in \R\), at point \(x = 0\), to see why it is not sufficient.
+
+We can also introduce a second-order approximation, provided that \(f\) is twice differentiable at \(\xbar\):
+\[
+f(y) = \underbrace{f(\xbar) + \inp{f'(\xbar)}{y - \xbar} + \frac{1}{2} \inp{f''(\xbar) (y - \xbar)}{y - \xbar}}_{\textnormal{Quadratic approximation of \(f\) at \(\xbar\).}} + o(\norm{y - \xbar}^2).
+\]
+The symmetric \(n \times n\) matrix \(f''(\xbar): (f''(\xbar))_{i, j} = \fdpart{f(\xbar)}{x_i}{x_j}\) is called the Hessian of \(f\) at \(\xbar\).
+It can be seen as a derivative of the gradient:
+\[
+f'(y) = f'(\xbar) + f''(\xbar) (y - \xbar) + \bm{o}(\norm{y - \xbar}),
+\]
+where \(\bm{o}\) is a vector function such that \(\lim_{x \downarrow 0} \frac{1}{r} \norm{\bm{o}(r)} = 0\) and \(\bm{o}(0) = 0\).
+
+We can then formulate the second-order optimality conditions.
+\begin{mytheo}[Second-order optimality condition]
+	Let \(x^*\) be a local minimum of twice differentiable function \(f\).
+	Then
+	\[
+	f'(x^*) = 0, \quad f''(x^*) \succeq 0,
+	\]
+	where the last condition means \(f''\) is positive semidefinite.
+\end{mytheo}
+\begin{proof}
+	Since \(x^*\) is a local minimum of \(f\), there exists \(r > 0\) such that for all \(y\), \(\norm{y - x^*} \leqslant r\), we have \(f(y) \geqslant f(x^*)\).
+	In view of the first-order optimality condition, \(f'(x^*) = 0\).
+	Therefore, for any such \(y\):
+	\[
+	f(y) = f(x^*) + \frac{1}{2} \inp{f''(x^*) (y - x^*)}{y - x^*} + o(\norm{y - x^*}^2) \geqslant f(x^*),
+	\]
+	where we have replaced \(f(y)\) by its second-order approximation (and removed terms equal to zero).
+	Upon division by \(\norm{y - x^*}^2\), one then easily sees that \(\inp{f''(x^*)s}{s} \geqslant 0\), for all \(s\), \(\norm{s} = 1\).
+\end{proof}
+As with the first-order optimality condition, this is only a necessary characteristic of a local minimum.
+
+Theorem~\ref{thm:2ndsuff} gives a sufficient condition.
+\begin{mytheo}
+	\label{thm:2ndsuff}
+	Let \(f\) be a twice differentiable function on \(\Rn\) and let \(x^*\) satisfy the following conditions:
+	\[
+	f'(x^*) = 0, \quad f''(x^*) \succ 0,
+	\]
+	where the last condition means \(f''\) is positive definite.
+	Then \(x^*\) is a strict local minimum.
+\end{mytheo}
+\begin{proof}
+	In a small neighborhood of \(x^*\), the function can be represented as
+	\[
+	f(y) = f(x^*) + \frac{1}{2} \inp{f''(x^*) (y - x^*)}{y - x^*} + o(\norm{y - x^*}^2).
+	\]
+	Since \(\frac{1}{r^2} o(r^2) \to 0\) as \(r \downarrow 0\), there exists a value \(\bar{r} > 0\) such that for all \(r \in [0, \bar{r}]\),
+	\[
+	\abs{o(r^2)} \leqslant \frac{r^2}{4} \lambda_{\textnormal{min}}(f''(x^*)),
+	\]
+	where \(\lambda_{\textnormal{min}}(f''(x^*))\) is the smallest eigenvalue of the Hessian at \(x^*\) (and is strictly positive by the assumption of positive definiteness).
+	We remember from linear algebra that for any matrix \(A\),
+	\[
+	\lambda_{\textnormal{min}} I_n \preceq A \preceq \lambda_{\textnormal{max}} I_n,
+	\]
+	where \(I_n\) is the identity matrix in \(\Rn\).
+	Therefore, for any \(y\) such that \(0 < \norm{y - x^*} \leqslant r\), we have
+	\begin{align*}
+	f(y) &\geqslant f(x^*) + \frac{1}{2} \lambda_{\textnormal{min}}(f''(x^*)) \norm{y - x^*}^2 + o(\norm{y-x^*}^2)\\
+	&\geqslant f(x^*) + \frac{1}{4} \lambda_{\textnormal{min}}(f''(x^*)) \norm{y - x^*}^2\\
+	&> f(x^*).
+	\end{align*}
+\end{proof}
+\end{solution}
+
+\section{Smooth convex optimization}
+Gradient method.
+Rate of convergence.
+
+\nosolution
+
+\section{Nonsmooth convex optimization}
+Subgradient method (simple sets).
+Rate of convergence.
+
+\begin{solution}
+We consider the problem
+\[
+\min\{f(x) \suchthat x \in Q\},
+\]
+where \(f\) is a convex function on \(\Rn\) and \(Q\) is a simple closed convex set.
+The term simple means that we can explicitly solve some simple minimization problems over \(Q\).
+We can thus find a Euclidean projection of any point onto \(Q\) relatively cheaply.
+
+We assume that the problem is equipped with a first-order oracle, which at any test point \(\xbar\) provides us with the value of the objective function, \(f(\xbar)\), and one of its subgradients \(g(\xbar)\).
+
+For nonsmooth problems, the norm of the subgradient, \(\norm{g(x)}\), is not very informative.
+In the subgradient scheme, we use a normalized direction \(g(\xbar) / \norm{g(\xbar)}\).
+
+The iterative scheme for the subgradient method is then given by
+\begin{enumerate}
+	\item Choose \(x_0 \in Q\) and a sequence \(\{h_k\}_{k = 0}^{\infty}\):
+	\[
+	h_k > 0, \quad h_k \to 0, \quad \sum_{k=0}^\infty h_k = \infty.
+	\]
+	\item At the \(k\)th iteration (\(k \geqslant 0\)), compute \(f(x_k), g(x_k)\) and set
+	\[
+	x_{k+1} = \pi_Q\left(x_k - h_k \frac{g(x_k)}{\norm{g(x_k)}}\right),
+	\]
+	where \(\pi_Q\) denotes a projection on \(Q\).
+\end{enumerate}
+
+The rate of convergence of this scheme is given by Theorem~\ref{thm:3.2.2}.
+\begin{mytheo}
+	\label{thm:3.2.2}
+	Let \(f\) be Lipschitz continuous on the ball \(B_2(x^*, R)\) with constant \(M\) and where \(x_0 \in B(x^*, R)\) (which is equivalent to \(R \geqslant \norm{x_0 - x^*}\)).
+	Then
+	\[
+	f_k^* - f^* \equiv \min_{0 \leqslant i \leqslant k} f(x_i) - f^* \leqslant M \frac{R^2 + \sum_{i=0}^k h_i^2}{2 \sum_{i=0}^k h_i}.
+	\]
+\end{mytheo}
+\begin{proof}
+	Denote \(r_i = \norm{x_i - x^*}\).
+	Then, in view of Lemma~3.1.5 in the book, one can show that
+	\begin{align*}
+	r_{i+1}^2 &= \norm{\pi_Q\left(x_i - h_i \frac{g(x_i)}{\norm{g(x_i)}}\right) - x^*}^2\\
+	&\leqslant \norm{x_i - h_i \frac{g(x_i)}{\norm{g(x_i)}} - x^*}^2 = r_i^2 - 2h_i v_i + h_i^2,
+	\end{align*}
+	where we use the notation
+	\[
+	v_i = v_f(x^*; x_i) (\geqslant 0), \quad v_k^* = \min_{0 \leqslant i \leqslant k} v_i.
+	\]
+	Summing up these inequalities for \(i = 0, \dots, k\), we get
+	\[
+	r_0^2 + \sum_{i=0}^{k} h_i^2 \geqslant 2 \sum_{i=0}^k h_i v_i + r_{k+1}^2 \geqslant 2 v_k^* \sum_{i=0}^{k} h_i,
+	\]
+	which gives
+	\[
+	v_k^* \leqslant \frac{R^2 + \sum_{i=0}^k h_i^2}{2 \sum_{i=0}^k h_i}.
+	\]
+	Since \(v_k^* \leqslant v_0 \leqslant \norm{x_0 - x^*} \leqslant R\), we can use Lemma~3.2.2 in the book, which gives the desired result.
+\end{proof}
+
+Theorem~\ref{thm:3.2.2} demonstrates that the rate of convergence of the subgradient method as we defined it depends on the values
+\[
+\Delta_k = \frac{R^2 + \sum_{i=0}^k h_i^2}{2 \sum_{i=0}^k h_i}.
+\]
+We can see easily that \(\Delta_k \to 0\) if the series \(\sum_{i=0}^\infty h_i\) diverges.
+Several step-size strategies are possible; let us try to choose \(h_k\) in an optimal way.
+Note that \(\Delta_k\) is a symmetric convex function of \(\{h_i\}\), hence its minimum is achieved at the point having the same value for all variables.
+
+Let us first assume we have to perform a fixed number of steps of the subgradient method, say, \(N\).
+Then, minimizing \(\Delta_k\) as a function of \(\{h_k\}_{k=0}^N\), we find that the optimal strategy is as follows:
+\[
+h_i = \frac{R}{\sqrt{N+1}}, \quad i = 0, \dots, N.
+\]
+In this case, \(\Delta_N = \frac{R}{\sqrt{N+1}}\) and we obtain the following rate of convergence:
+\[
+f_N^* - f^* \leqslant \frac{MR}{\sqrt{N+1}}.
+\]
+Comparing this result with the known lower bound of Theorem~3.2.1, we conclude that the subgradient method with this step-size strategy is optimal for the problem we are trying to solve (uniformly in the number of variables \(n\)).
+
+If we do not wish to fix the number of iterations in advance, we can choose
+\[
+h_i = \frac{r}{\sqrt{i+1}}, \quad i = 0, \dots
+\]
+Then it is easy to see that
+\[
+\Delta_k \propto \frac{R^2 + r^2 \ln (k+1)}{4r \sqrt{k+1}},
+\]
+and we can classify this rate of convergence as sub-optimal.
+
+Thus, the simplest method for solving our problem appears to be optimal.
+This indicates that the problems from this class are too complicated to be solved efficiently.
+However, one should remember that this conclusion is valid uniformly in the dimension of the problem.
+Other schemes which are able to take a moderate problem dimension into account in a proper way can be much more efficient.
+
+Note also that there is no guarantee of decrease at every iteration, which we were able to observe when doing the second exercise of the course.
+\end{solution}
+
+\section{Structural optimization}
+Definition of self-concordant barriers.
+Main properties.
+
+\begin{solution}
+We write \(\Dom F\) to mean \(\closure \dom F\).
+\begin{mydef}[Self-concordant barrier]
+	Let \(F(x)\) be a standard self-concordant function.
+	We call it a \(\nu\)-self-concordant barrier for set \(\Dom F\), if
+	\[
+	\sup_{u \in \Rn} [2 \inp{F'(x)}{u} - \inp{F''(x)u}{u}] \leqslant \nu
+	\]
+	for all \(x \in \dom F\).
+	The value \(\nu\) is called the parameter of the barrier.
+\end{mydef}
+Note that
+\begin{itemize}
+	\item We do not assume \(F''(x)\) to be nondegenerate.
+	However, if it is, then the inequality in the definition is equivalent to
+	\[
+	\inp{[F''(x)]^{-1} F'(x)}{F'(x)} \leqslant \nu.
+	\]
+	\item We have the following consequence of the inequality:
+	\[
+	\inp{F'(x)}{u}^2 \leqslant \nu \inp{F''(x)u}{u}, \quad \forall u \in \Rn.
+	\]
+	(To see that for \(u\) with \(\inp{F''(x)u}{u} > 0\), replace \(u\) in the definition by \(\lambda u\) and find the maximum of the left-hand side in \(\lambda\)).
+	This can also be written in matrix notation:
+	\[
+	F''(x) \succeq \frac{1}{\nu} F'(x) F'(x)^T.
+	\]
+\end{itemize}
+
+It is interesting to investigate several known self-concordant functions, to see whether they are also self-concordant barriers.
+\begin{enumerate}
+	\item Linear function: \(f(x) = \alpha + \inp{a}{x}\), \(\dom f = \Rn\).
+	Clearly, this function is not a self-concordant barrier if \(a \ne 0\), as \(f''(x) = 0\).
+	\item Convex quadratic function: \(f(x) = \alpha + \inp{a}{x} + \frac{1}{2}\inp{Ax}{x}\), \(\dom f = \Rn, A = A^T \succ 0\).
+	Then \(f'(x) = a + Ax\) and \(f''(x) = A\).
+	Substituting this into the definition, we find
+	\begin{align*}
+	\inp{[f''(x)]^{-1} f'(x)}{f'(x)} &= \inp{A^{-1} (Ax + a)}{Ax + a}\\
+	&= \inp{Ax}{x} + 2 \inp{a}{x} + \inp{A^{-1}a}{a},
+	\end{align*}
+	which is unbounded from above on \(\Rn\).
+	The function \(f\) is thus not a self-concordant barrier.
+	\item Logarithmic barrier for a ray.
+	Consider the following function of one variable:
+	\[
+	F(x) = -\ln x, \quad \dom F = \{x \in \R \suchthat x > 0\}.
+	\]
+	Then \(F'(x) = - \frac{1}{x}\) and \(F''(x) = \frac{1}{x^2} > 0\).
+	Therefore,
+	\[
+	\inp{[F''(x)]^{-1} F'(x)}{F'(x)} = \frac{1}{x^2} x^2 = 1.
+	\]
+	Thus, \(F(x)\) is a \(\nu\)-self-concordant barrier for \(\{x > 0\}\) with \(\nu = 1\).
+	\item Logarithmic barrier for a second-order region.
+	Consider the concave quadratic function
+	\[
+	\phi(x) = \alpha + \inp{a}{x} - \frac{1}{2} \inp{Ax}{x},
+	\]
+	with \(A = A^T \succeq 0\).
+	Define \(F(x) = -\ln \phi(x)\), \(\dom f = \{x \in \Rn \suchthat \phi(x) > 0\}\).
+	Then
+	\begin{align*}
+	\inp{F'(x)}{u} &= -\frac{1}{\phi(x)} [\inp{a}{u} - \inp{Ax}{u}],\\
+	\inp{F''(x)u}{u} &= \frac{1}{\phi^2(x)} [\inp{a}{u} - \inp{Ax}{u}]^2 + \frac{1}{\phi(x)} \inp{Au}{u}.
+	\end{align*}
+	Denote \(\omega_1 = \inp{F'(x)}{u}\) and \(\omega_2 = \frac{1}{\phi(x)} \inp{Au}{u}\).
+	Then
+	\[
+	\inp{F''(x)u}{u} = \omega_1^2 + \omega_2 \geqslant \omega_1^2.
+	\]
+	Therefore,
+	\[
+	2 \inp{F'(x)}{u} - \inp{F''(x)u}{u} \leqslant 2 \omega_1 - \omega_1^2 \leqslant 1.
+	\]
+	Thus, \(F(x)\) is a \(\nu\)-self-concordant barrier with \(\nu = 1\).
+\end{enumerate}
+
+The following theorems give some properties of self-concordant barriers.
+\begin{mytheo}
+	Let \(F(x)\) be a self-concordant barrier.
+	Then the function \(\inp{c}{x} + F(x)\) is a standard self-concordant function on \(\dom F\).
+\end{mytheo}
+\begin{proof}
+	Since \(F(x)\) is a self-concordant function, we simply apply Corollary~4.1.1 of the book.
+\end{proof}
+This property will be important for justifying path-following schemes.
+
+\begin{mytheo}
+	Let \(F_i\) be \(\nu_i\)-self-concordant barriers, \(i = 1, 2\).
+	Then the function
+	\[
+	F(x) = F_1(x) + F_2(x)
+	\]
+	is a self-concordant barrier for convex set \(\Dom F = \Dom F_1 \cap \Dom F_2\) with the parameter \(\nu = \nu_1 + \nu_2\).
+\end{mytheo}
+\begin{proof}
+	In view of Theorem~4.1.1 in the book, \(F\) is a standard self-concordant function.
+	Let us fix \(x \in \dom F\).
+	Then, we substitute in the inequality of the definition:
+	\begin{align*}
+	\max_{u \in \Rn} [2 \inp{F'(x)u}{u} - \inp{F''(x)u}{u}] &= \max_{u \in \Rn} [2 \inp{F_1'(x)u}{u} - \inp{F_1''(x)u}{u}] + [2 \inp{F_2'(x)u}{u} - \inp{F_2''(x)u}{u}]\\
+	&\leqslant \max_{u \in \Rn} [2 \inp{F_1'(x)u}{u} - \inp{F_1''(x)u}{u}] + \max_{u \in \Rn} [2 \inp{F_2'(x)u}{u} - \inp{F_2''(x)u}{u}]\\
+	&\leqslant \nu_1 + \nu_2.
+	\end{align*}
+\end{proof}
+
+Finally, let us show that the value of a parameter of a self-concordant barrier is invariant with respect to affine transformations of variables.
+\begin{mytheo}
+	Let \(\mathcal{A}(x) = Ax + b\) be a linear operator, \(\mathcal{A}(x) \colon \Rn \to \R^m\).
+	Assume that function \(F(y)\) is a \(\nu\)-self-concordant barrier with \(\Dom F \subset \R^m\).
+	Then the function \(\Phi(x) = F(\mathcal{A}(x))\) is a \(\nu\)-self-concordant barrier for the set
+	\[
+	\Dom \Phi = \{x \in \Rn \suchthat \mathcal{A}(x) \in \Dom F\}.
+	\]
+\end{mytheo}
+\begin{proof}
+	Function \(\Phi(x)\) is a standard self-concordant function in view of Theorem~4.1.2 in the book.
+	Let us fix \(x \in \dom \Phi\).
+	Then \(y = \mathcal{A}(x) \in \dom F\).
+	Note that for any \(u \in \Rn\) we have
+	\[
+	\inp{\Phi'(x)}{u} = \inp{F'(y)}{Au}, \quad \inp{\Phi''(x)u}{u} = \inp{F''(y)Au}{Au},
+	\]
+	by their respective definitions.
+	Therefore, substituting this into the inequality of the definition of self-concordant barrier, we get
+	\begin{align*}
+	\max_{u \in \Rn} [2 \inp{\Phi'(x)}{u} - \inp{\Phi''(x)u}{u}] &= \max_{u \in \Rn} [2 \inp{F'(y)}{Au} - \inp{F''(y)Au}{Au}]\\
+	&\leqslant \max_{v \in \R^m} [2 \inp{F'(y)}{v} - \inp{F''(y)v}{v}] \leqslant \nu.
+	\end{align*}
+\end{proof}
+
+Let us show now that the local characteristics of a self-concordant barrier (the gradient and Hessian) provide us with global information about the structure of its domain.
+
+\begin{mytheo}
+	\label{thm:4.2.4.1}
+	Let \(F(x)\) be a \(\nu\)-self-concordant barrier.
+	For any \(x \in \dom F, y \in \Dom F\), we have
+	\[
+	\inp{F'(x)}{y - x} \leqslant \nu.
+	\]
+\end{mytheo}
+\begin{proof}
+	Let \(x \in \dom F, y \in \Dom F\).
+	Consider the function
+	\[
+	\phi(t) = \inp{F'(x + t(y - x))}{y - x}, \quad t \in [0, 1).
+	\]
+	If \(\phi(0) \leqslant 0\), then the theorem is trivially true by the bounds on \(\nu\).
+	Otherwise, if \(\phi(0) > 0\), we note that in view of the inequality in the definition of self-concordant barriers, we have
+	\begin{align*}
+	\phi'(t) &= \inp*{F''\big(x + t(y - x)\big)(y - x)}{y - x}\\
+	&\geqslant \frac{1}{\nu} \inp{F'\big(x + t(y - x)\big)}{y - x}^2 = \frac{1}{\nu} \phi^2(t).
+	\end{align*}
+	Therefore, \(\phi(t)\) is increasing and positive for \(t \in [0, 1)\).
+	Moreover, for any \(t \in [0, 1)\), we have
+	\[
+	-\frac{1}{\phi(t)} + \frac{1}{\phi(0)}  = \int_0^t \frac{\phi'(\tau)}{\phi^2(\tau)} \dif \tau \geqslant \frac{1}{\nu} t,
+	\]
+	with the inequality coming from the definition of self-concordant barriers.
+	This implies that \(\inp{F'(x)}{y - x} = \phi(0) \leqslant \frac{\nu}{t}\) for all \(t \in [0, 1)\).
+\end{proof}
+
+\begin{mytheo}
+	\label{thm:4.2.5}
+	Let \(F(x)\) be a \(\nu\)-self-concordant barrier.
+	For any \(x \in \dom F\), \(y \in \Dom F\), such that
+	\[
+	\inp{F'(x)}{y - x} \geqslant 0,
+	\]
+	we have
+	\[
+	\norm{y - x}_x \leqslant \nu + 2 \sqrt{\nu}.
+	\]
+\end{mytheo}
+\begin{proof}
+	Denote \(r = \norm{y - x}_x\).
+	Let \(r > \sqrt{\nu}\) (otherwise, the statement is trivially true).
+	Consider
+	\[
+	y_\alpha = x + \alpha(y - x), \quad \alpha = \frac{\sqrt{\nu}}{r} < 1.
+	\]
+	In view of the assumption of the theorem and of (4.1.7) in the book,
+	\begin{align*}
+	\omega \equiv \inp{F'(y_\alpha)}{y - x} &\geqslant \inp{F'(y_\alpha) - F'(x)}{y - x}\\
+	&= \frac{1}{\alpha} \inp{F'(y_\alpha) - F'(x)}{y_\alpha - x}\\
+	&\geqslant \frac{1}{\alpha}\, \frac{\norm{y_\alpha - x}_x^2}{1 + \norm{y_\alpha - x}_x} = \frac{\alpha \norm{y - x}^2_x}{1 + \alpha \norm{y - x}_x} = \frac{r \sqrt{\nu}}{1 + \sqrt{\nu}}.
+	\end{align*}
+	On the other hand, in view of Theorem~\ref{thm:4.2.4.1}, we obtain
+	\[
+	(1 - \alpha) \omega = \inp{F'(y_\alpha)}{y - y_\alpha} \leqslant \nu.
+	\]
+	Thus,
+	\[
+	\left(1 - \frac{\sqrt{\nu}}{r}\right) \frac{r \sqrt{\nu}}{1 + \sqrt{\nu}} \leqslant \nu,
+	\]
+	which proves the theorem after substituting \(r\) and some algebraic manipulations.
+\end{proof}
+
+We conclude by studying the properties of one special point of a convex set.
+\begin{mydef}
+	Let \(F(x)\) be a \(\nu\)-self-concordant barrier for the set \(\Dom F\).
+	The point
+	\[
+	x_F^* = \argmin_{x \in \dom F} F(x)
+	\]
+	is called the analytic center of convex set \(\Dom F\), generated by the barrier \(F(x)\).
+\end{mydef}
+\begin{mytheo}
+	\label{thm:4.2.6}
+	Assume that the analytic center of a \(\nu\)-self-concordant barrier \(F(x)\) exists.
+	Then for any \(x \in \Dom F\), we have
+	\[
+	\norm{x - x_F^*}_{x_F^*} \leqslant \nu + 2 \sqrt{\nu}.
+	\]
+	Moreover, for any \(x \in \Rn\) such that \(\norm{x - x_F^*}_{x_F^*} \leqslant 1\), we have \(x \in \Dom F\).
+\end{mytheo}
+\begin{proof}
+	The first statement follows from Theorem~\ref{thm:4.2.5}, as \(F'(x_F^*) = 0\).
+	The second statement follows from Theorem~4.1.5 in the book.
+\end{proof}
+
+Thus, the asphericity of the set \(\Dom F\) w.r.t. \(x_F^*\), computed in the metric \(\norm{\:\cdot\:}_{x_F^*}\), does not exceed \(\nu + 2\sqrt{\nu}\).
+John's Theorem states that for any convex set in \(\Rn\), there exists a metric in which the asphericity of this set is less than or equal to \(n\).
+However, we estimated it in terms of the parameter of the self-concordant barrier, independently of the dimension of the space of variables.
+Note also that if \(\Dom F\) contains no straight lines, then the existence of the analytic center implies the boundedness of \(\Dom F\), as in that case \(F''(x_F^*)\) is nondegenerate (see Theorem~4.1.3 in the book).
+
+We give one final corollary.
+\begin{mycorr}
+	Let \(\Dom F\) be bounded.
+	Then for any \(x \in \dom F\) and \(v \in \Rn\) we have
+	\[
+	\norm{v}_x^* \leqslant (\nu + 2 \sqrt{\nu}) \norm{v}_{x_F^*}^*.
+	\]
+\end{mycorr}
+\begin{proof}
+	By Lemma~3.1.12 in the book, we get the representation
+	\[
+	\norm{v}_x^* \equiv \inp{[F''(x)]^{-1}v}{v}^{1/2} = \max\{\inp{v}{u}, \inp{F''(x)u}{u} \leqslant 1\}.
+	\]
+	On the other hand, in view of Theorem~4.1.5 in the book and Theorem~\ref{thm:4.2.6}, we have
+	\begin{align*}
+	B &\equiv \{y \in \Rn \suchthat \norm{y - x}_x \leqslant 1\} \subseteq \Dom F\\
+	&\subseteq \{y \in \Rn \suchthat \norm{y - x_F^*}_{x_F^*} \leqslant \nu + 2 \sqrt{\nu}\} \equiv B_*.
+	\end{align*}
+	Therefore, using Theorem~\ref{thm:4.2.6} again, we get
+	\begin{align*}
+	\norm{v}_x^* &= \max\{\inp{v}{y - x} \suchthat y \in B\} \leqslant \max\{\inp{v}{y - x} \suchthat y \in B_*\}\\
+	&= \inp{v}{x_F^* - x} + (\nu + 2 \sqrt{\nu}) \norm{v}_{x_F^*}^*.
+	\end{align*}
+	Note that \(\norm{v}_x^* = \norm{-v}_x^*\).
+	Therefore, we can always ensure that \(\inp{v}{x_F^* - x} \leqslant 0\).
+\end{proof}
+\end{solution}
+
+\end{document}

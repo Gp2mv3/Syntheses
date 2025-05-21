@@ -1,25 +1,521 @@
 \documentclass[en]{../../../../../../eplexam}
 
+\DeclarePairedDelimiterX{\inp}[2]{\langle}{\rangle}{#1, #2}
+
+\DeclareMathOperator{\interior}{int}
+\DeclareMathOperator{\lin}{Lin}
+\DeclareMathOperator{\dom}{dom}
+\DeclareMathOperator{\Dom}{Dom}
+\DeclareMathOperator{\epi}{epi}
+\DeclareMathOperator{\closure}{cl}
+
+\newcommand{\xbar}{\bar{x}}
+\newcommand{\ckpl}[3]{C^{#1, #2}_{#3}}
+
 \hypertitle{Nonlinear programming}{8}{INMA}{2460}{2015}{Juin}{All}
-{Beno\^it Legat}
+{Beno\^it Legat \and Gilles Peiffer}
 {Yurii Nesterov}
 
 \section{Nonlinear optimization}
 Uniform grid method.
 Lower complexity bounds for global optimization.
 
+\begin{solution}
+We are concerned here with the following problem:
+\[
+\min_{x \in \mathbb{B}_n} f(x),
+\]
+where
+\[
+\mathbb{B}_n = \left\{x \in \Rn: 0 \leqslant x^{(i)} \leqslant 1, i = 1, \dots, n\right\}.
+\]
+We assume that the objective function is Lipschitz continuous on \(\mathbb{B}_n\) with parameter \(L\):
+\[
+\abs{f(x) - f(y)} \leqslant L \norm{x - y}_{\infty}, \quad \forall x,y \in \mathbb{B}_n,
+\]
+where \(\norm{\:\cdot\:}_\infty\) is the infinity norm on \(\Rn\), defined as
+\[
+\norm{x}_\infty = \max_{1 \leqslant i \leqslant n} \abs{x^{i}}.
+\]
+
+We can then define the uniform grid method \(\mathcal{UG}(p)\) as follows (where \(p\) is an integer input parameter).
+\begin{myalgo}[Uniform grid method]
+	\hfill
+	\begin{enumerate}
+		\item Form \(p^n\) points \(x_{(i_1, \dots, i_n)} = \left(\frac{1}{2p} + \frac{i_1}{p}, \dots, \frac{1}{2p} + \frac{i_n}{p}\right)\), where \(i_1 = 0, \dots, p-1; \dots; i_n = 0, \dots, p-1\).
+		\item Among all points \(x_{(\dots)}\) find the point \(\bar{x}\) find the point with the minimal value of the objective function.
+		\item Return the pair \((\bar{x}, f(\bar{x}))\) as the result.
+	\end{enumerate}
+	This method forms a uniform grid of the test points inside the box, computes the minimum value of the objective function over this grid and returns this value as an approximate solution to the problem.
+	It can thus be treated as an iterative process with no influence of the accumulated information on the sequence of test points, and is hence a zero-order method.
+\end{myalgo}
+One can then find its efficiency estimate.
+\begin{mytheo}
+	\label{thm:ugopt}
+	Let \(f^*\) be the global optimal value of the problem.
+	Then
+	\[
+	f(\bar{x}) - f^* \leqslant \frac{L}{2p}.
+	\]
+\end{mytheo}
+\begin{proof}
+	It is possible to view the box as a union of balls\footnote{Which in our case, due to the infinity norm, ``look'' like boxes too.}, i.e.
+	\[
+	\mathbb{B}_n = \bigcup_{i \in (i_1, \dots, i_n)} \mathfrak{B}_\infty\left((x_{(i)}, \frac{1}{2p}\right),
+	\]
+	where
+	\[
+	\mathfrak{B}_{\infty}(x, r) = \{y \in \Rn: \norm{y - x}_{\infty} \leqslant r\}.
+	\]
+	One then sees immediately that if \(x^*\) denotes the global minimum of the problem, then there exists \(i^* = (i_1^*, \dots, i_n^*)\) such that
+	\[
+	\norm{x^* - x_{(i^*)}}_\infty \leqslant \frac{1}{2p},
+	\]
+	by the definition of the balls above.
+	Applying Lipschitz continuity, this yields
+	\[
+	f(x_{(i^*)}) - f(x^*) \leqslant \frac{L}{2p},
+	\]
+	which proves the theorem, as by definition, \(f(\bar{x}) \leqslant f(x_{(i^*)})\).
+\end{proof}
+
+The analytical complexity of the uniform grid method is then given by the following corollary.
+\begin{mycorr}
+	The analytical complexity of the uniform gradient method is as follows:
+	\[
+	\mathcal{A}(\mathcal{UG}) = \left(\floor{\frac{L}{2 \varepsilon}} + 1\right)^n.
+	\]
+\end{mycorr}
+\begin{proof}
+	Take \(p = \floor{\frac{L}{2 \varepsilon}} + 1\).
+	Then we have
+	\[
+	p \geqslant \frac{L}{2\varepsilon},
+	\]
+	hence by Theorem~\ref{thm:ugopt}, \(f(\bar{x}) - f^* \leqslant \frac{L}{2p} \leqslant \varepsilon\).
+\end{proof}
+This gives an upper bound on the performance of the uniform grid method, but in practice, it can be much better.
+
+One can give lower bounds on the analytical complexity of a method, with the following properties:
+\begin{enumerate}
+	\item They are based on the black box concept.
+	\item They can be derived for a specific class of problems \(\mathcal{F}\) equipped by an oracle \(\mathcal{O}\).
+	\item They are valid for any reasonable iterative scheme.
+	\item They provide us with a lower bound for the analytical complexity of the class \(\mathcal{F}\).
+	\item They use the idea of a resisting oracle.
+\end{enumerate}
+A resisting oracle is an oracle which tries to create a worst possible problem for each particular method.
+It starts with an ``empty'' function and it tries to answer each call of the method in the worst possible way.
+However, the answers must be compatible with the previous answers and with the description of the problem class.
+After the termination of the method, it is then possible to reconstruct a problem which completely fits the the final information set accumulated by the algorithm.
+Moreover, if we launch this method on this problem, it will reproduce the same sequence of test points since it will have the same resisting oracle.
+
+Let us try to find these bounds for the problem class \(\mathcal{C}\) defined by
+\[
+\min_{x \in \mathbb{B}_n} f(x),
+\]
+with Lipschitz continuous objective function on \(\mathbb{B}_n\).
+\begin{mytheo}
+	\label{thm:lb}
+	For \(\varepsilon < \frac{L}{2}\), the analytical complexity of \(\mathcal{C}\) for zero-order methods is at least \(\floor{\frac{L}{2\varepsilon}}^n\) calls of the oracle.
+\end{mytheo}
+\begin{proof}
+	Let us write \(p = \floor{\frac{L}{2\varepsilon}}\) (\(\geqslant 1\)).
+	Assume there exists a method which needs \(N < p^n\) calls of the oracle to solve any problem in \(\mathcal{C}\), and let the resisting oracle return \(f(x) = 0\) at any test point \(x\).
+	Therefore, this method can find only \(\bar{x} \in \mathbb{B}_n\) with \(f(\bar{x}) = 0\).
+	Since \(N < p^n\), there exists \(i^* = (i_1^*, \dots, i_n^*)\) such that in the box \(\mathfrak{B}_\infty(x_{(i^*)}, \frac{1}{2p})\), there is no test point.
+	If we construct a function \(\bar{f}(x) = \min\left\{0, L\left(\norm{x - x_{(i^*)}}_{\infty} - \frac{1}{2p}\right)\right\}\).
+	One can see easily that this function satisfies the Lipschitz continuity condition, and has optimal value \(f^* = -\varepsilon\).
+	It differs from \(0\) only inside \(\mathfrak{B}_\infty(x_{(i^*)}, \frac{1}{2p})\), meaning at all test points of the function (and thus also in the final returned value), the accuracy of our result was \(\varepsilon\).
+	This leads us to the following conclusion: if the number of calls of the oracle is less than \(p^n\), then the accuracy of the result cannot be better than \(\varepsilon\).
+\end{proof}
+
+Comparing this lower bound with the analytical complexity of the uniform grid method, one finds that the latter is an optimal method for the class \(\mathcal{C}\).
+Sadly, we can also deduce from Theorem~\ref{thm:lb} that general optimization problems are unsolvable in practice, which can be seen when estimating the time needed to solve even a very small example.
+However, we know that for example, in numerical analysis, quadrature rules, which follow the uniform grid method, are quite standard and perform well.
+This can be explained by the fact that numerical integration is done on low-dimensional problems, whereas optimization has problems with a dimension that is orders of magnitude higher.
+\end{solution}
+
 \section{Smooth convex optimization}
 Gradient method.
 Rate of convergence.
+
+\nosolution
 
 \section{Nonsmooth convex optimization}
 Ellipsoid method.
 Rate of convergence.
 
+\nosolution
+
 \section{Structural optimization}
 Definition of self-concordant functions.
-Main properties.%
-\footnote{It wasn't clear exactly what he meant by Main properties,
-whole \cite[\S~4.1.3 and \S~4.1.4]{nesterov2004introductory} with proof wasn't required I guess}.
+Main properties.
+
+\begin{solution}
+Let us consider a closed convex function \(f \in C^3(\dom f)\) with open domain.
+Let us fix a point \(x \in \dom f\) and a direction \(u \in \Rn\).
+Consider the function
+\[
+\phi(x; t) = f(x + tu),
+\]
+as a function of variable \(t \in \dom \phi(x;\cdot) \subseteq \R\).
+Denote
+\begin{align*}
+Df(x)[u] &= \phi'(x; t) = \inp{f'(x)}{u},\\
+D^2f(x)[u, u] &= \phi''(x; t) = \inp{f''(x)u}{u} = \norm{u}^2_{f''(x)}\\
+D^3f(x)[u, u, u] &= \phi'''(x; t) = \inp{f'''(x)[u]u}{u}.
+\end{align*}
+\begin{mydef}[Self-concordant function]
+	We call function \(f\) self-concordant if there exists a constant \(M_f \geqslant 0\) such that the inequality
+	\[
+	D^3f(x)[u, u, u] \leqslant M_f\norm{u}^{3/2}_{f''(x)}
+	\]
+	holds for any \(x \in \dom f\) and \(u \in \Rn\).
+\end{mydef}
+
+Note that we cannot expect these functions to be widespread, but as we only need them to construct a barrier model of our problem, this is not a problem.
+They are easily minimized by the Newton method.
+
+An equivalent definition of self-concordant functions is the following.
+\begin{mylem}
+	\label{lem:4.1.2}
+	A function \(f\) is self-concordant if and only if for any \(x \in \dom f\) and any \(u_1, u_2, u_3 \in \Rn\) we have
+	\[
+	\abs{D^3 f(x)[u_1, u_2, u_3]} \leqslant M_f \prod_{i=1}^3 \norm{u_i}_{f''(x)}.
+	\]
+\end{mylem}
+Often, the definition is used to prove that some \(f\) is self-concordant, whereas the lemma is used to establish properties of self-concordant functions.
+
+\begin{mytheo}
+	Let functions \(f_i\) be self-concordant with constants \(M_i\), \(i = 1,2\), and let \(\alpha, \beta > 0\).
+	Then the function \(f(x) = \alpha f_1(x) + \beta f_2(x)\) is self-concordant with constant
+	\[
+	M_f = \max\left\{\frac{1}{\sqrt{a}} M_1, \frac{1}{\sqrt{\beta}} M2\right\}
+	\]
+	and \(\dom f = \dom f_1 \cap \dom f_2\).
+\end{mytheo}
+\begin{proof}
+	In view of Theorem~3.1.5 in the book, \(f\) is a closed convex function.
+	Let us fix some \(x \in \dom f\) and \(u \in \Rn\).
+	Then
+	\[
+	\abs{D^3f_i(x)[u, u, u]} \leqslant M_i \left[D^2 f_i(x)[u, u]\right]^{3/2}, \quad i = 1, 2,
+	\]
+	by the fact that \(\inp{f'''(x)[u]u}{u} \leqslant M \norm{u}^3\) and \(\inp{f''(x)u}{u} = \norm{u}^2_{f''(x)}\) if the assumption \(f \in C^3(\dom f)\) is satisfied (which it is for \(f_i\)).
+	Denote \(\omega_i = D^2f_i(x)[u, u] \geqslant 0\).
+	Then, by the fact that \(f_i\) are self-concordant functions,
+	\begin{align*}
+	\frac{\abs{D^3f(x)[u, u, u]}}{[D^2f(x)[u, u]]^{3/2}} &\leqslant \frac{\alpha \abs{D^3f_1(x)[u, u, u]} + \beta \abs{D^3f_2(x)[u, u, u]}}{[\alpha D^2f_1(x)[u, u] + \beta D^2f_2(x)[u, u]]^{3/2}}\\
+	&\leqslant \frac{\alpha M_1 \omega_1^{3/2} + \beta M_2 \omega_2^{3/2}}{[\alpha \omega_1 + \beta \omega_2]^{3/2}}.
+	\end{align*}
+	The right-hand side of this inequality does not change when we replace \((\omega_1, \omega_2)\) by \((t\omega_1, t\omega_2)\) with \(t>0\).
+	Therefore, we can assume that
+	\[
+	\alpha \omega_1 + \beta \omega_2 = 1.
+	\]
+	
+	Denote \(\xi = \alpha \omega_1\).
+	Then the right-hand side of the above inequality becomes
+	\[
+	\frac{M_1}{\sqrt{\alpha}} \xi^{3/2} + \frac{M_2}{\sqrt{\beta}} (1 - \xi)^{3/2}, \quad \xi \in [0, 1].
+	\]
+	This functions is convex in \(\xi\), hence it attains its maximum at the end points of the interval (by Corollary~3.1.1 in the book).
+	Upon substituting these values, we find the results of the theorem statement.
+\end{proof}
+
+\begin{mycorr}
+	Let function \(f\) be self-concordant with some constant \(M_f\).
+	If \(A = A^T \succeq 0\), then the function
+	\[
+	\phi(x) = \alpha + \inp{a}{x} + \frac{1}{2} \inp{Ax}{x} + f(x)
+	\]
+	is also self-concordant with constant \(M_\phi = M_f\).
+\end{mycorr}
+\begin{proof}
+	We have seen that any convex quadratic function is self-concordant with the constant equal to zero.
+	Hence by the previous theorem, we find the result we want.
+\end{proof}
+
+\begin{mycorr}
+	Let function \(f\) be self-concordant with some constant \(M_f\) and \(\alpha > 0\).
+	Then the function \(\phi(x) = \alpha f(x)\) is also self-concordant with the constant \(M_\phi = \frac{1}{\sqrt{\alpha}} M_f\).
+\end{mycorr}
+\begin{proof}
+	Apply the theorem with \(f_2(x) = 0\).
+\end{proof}
+
+We now prove that self-concordance is an affine-invariant property.
+\begin{mytheo}
+	Let \(\mathcal{A}  = Ax + b \colon \Rn \to \R^m\) be a linear operator.
+	Assume that \(f\) is a self-concordant function with constant \(M_f\).
+	Then the function \(\phi(x) = f(\mathcal{A}(x))\) is also self-concordant with \(M_\phi = M_f\).
+\end{mytheo}
+\begin{proof}
+	\(\phi\) is closed an convex in view of Theorem~3.1.6 of the book.
+	Let us fix some \(x \in \dom \phi = \{x : \mathcal{A}(x) \in \dom f\}\) and \(u \in \Rn\).
+	Denote \(y = \mathcal{A}(x), v = Au\).
+	Then, by substitution,
+	\begin{align*}
+	D\phi(x)[u] &= \inp{f'(\mathcal{A}(x))}{Au} = \inp{f'(y)}{v},\\
+	D^2\phi(x)[u, u] &= \inp{f''(\mathcal{A}(x))Au}{Au} = \inp{f''(y)v}{v},
+	D^3\phi(x)[u, u, u] &= D^3f(\mathcal{A}(x))[Au, Au, Au] = D^3f(y)[v, v, v].
+	\end{align*}
+	Therefore,
+	\begin{align*}
+	\abs{D^3\phi(x)[u, u, u]} &= \abs{D^3f(y)[v, v, v]} \leqslant M_f \inp{f''(y)v}{v}^{3/2}\\
+	&= M_f (D^2\phi(x)[u, u])^{3/2},
+	\end{align*}
+	which is obtained by applying the Lipschitz continuity and the definition of the norm defined by the Hessian.
+\end{proof}
+
+Let us now describe the behaviour of self-concordant functions near the boundary of their domain.
+\begin{mytheo}
+	\label{thm:4.1.4}
+	Let \(f\) be a self-concordant function.
+	Then for any point \(\xbar \in \partial(\dom f)\) and any sequence
+	\[
+	\{x_k\} \subset \dom f \colon x_k \to \xbar,
+	\]
+	we have \(f(x_k) \to +\infty\).
+\end{mytheo}
+\begin{proof}
+	Note that the sequence \(\{f(x_k)\}\) is bounded below:
+	\[
+	f(x_k) \geqslant f(x_0) + \inp{f'(x_0)}{x_k - x_0}.
+	\]
+	Assume by contradiction that it is bounded from above; then it has a limit point \(\bar{f}\).
+	W.l.o.g., assume this point is unique.
+	Therefore,
+	\[
+	z_k = (x_k, f(x_k)) \to \bar{z} = (\xbar, \bar{f}).
+	\]
+	Note that \(z_k \in \epi f\), but \(\bar{z} \notin \epi f\), since \(\xbar \notin \dom f\).
+	This is a contradiction, since \(f\) is closed.
+\end{proof}
+Thus, we have proved that \(f\) is a barrier function for \(\closure \dom f\).
+
+The next statement demonstrates that some local properties of a self-concordant function reflect somehow the global properties of its domain.
+\begin{mytheo}
+	Let function \(f\) be self-concordant.
+	If \(\dom f\) contains no straight line, then the Hessian \(f''(x)\) is nondegenerate at any \(x\) from \(\dom f\).
+\end{mytheo}
+\begin{proof}
+	Let us fix some \(x \in \dom f\) and direction \(u \in \Rn\).
+	Consider the function \(\phi(\alpha) = \inp{f''(x + \alpha u)u}{u}\).
+	Assume that there exist two values, \(\alpha_0, \alpha_1 \in \dom \phi\), such that \(\alpha_0 < \alpha_1\), \(\phi(\alpha_0) = 0\), and \(\phi(\alpha_1) > 0\).
+	W.l.o.g., assume that \(\phi(\alpha) > 0\) for \(\alpha_0 < \alpha \leqslant \alpha_1\).
+	Define \(\frac{\psi(\alpha)} = \frac{1}{\phi^{1/2}(\alpha)}\).
+	Then, we have
+	\begin{align*}
+	\psi(\alpha_1) &= \int_\alpha^{\alpha_1} \psi'(\tau) \dif \tau\\
+	&= -\frac{1}{2} \int_\alpha^{\alpha_1} \frac{D^3f(x + \tau u)[u, u, u]}{\inp{f''(x + \tau u)u}{u}^{3/2}} \dif \tau\\
+	&\geqslant -\frac{1}{2}\int_\alpha^{\alpha_1} M_f \dif \tau\\
+	&= -\frac{1}{2}M_f (\alpha_1 - \alpha),
+	\end{align*}
+	where the inequality follows from Lipschitz continuity.
+	Thus, \(\frac{1}{\inp{f''(x + \alpha u)u}{u}^{1/2}} \leqslant \frac{1}{\inp{f''(x + \alpha_1 u)u}{u}}^{1/2} + \frac{1}{2} M_f (\alpha_1 - \alpha)\).
+	Since \(f''(x)\) is continuous, we arrive at a contradiction.
+	
+	Hence, if \(\inp{f''(x)u}{u} = 0\), then \(f(x + \alpha u)\) is a linear function, and cannot intersect the boundary of \(\dom f\) by Theorem~\ref{thm:4.1.4}.
+\end{proof}
+
+For the following inequalities:
+\begin{itemize}
+	\item We fix some self-concordant function \(f(x)\).
+	\item We assume without loss of generality that \(M_f=2\).
+	\item We assume that \(\dom f\) contains no straight line, and hence have a nondegenerate Hessian.
+	\item We denote
+	\begin{align*}
+	\norm{u}_x &= \inp{f''(x)u}{u}^{1/2}\\
+	\norm{v}^*_x &= \inp{[f''(x)]^{-1v}}{v}^{1/2},\\
+	\lambda_f(x) &= \norm{f'(x)}_x^* = \inp{[f''(x)]^{-1} f'(x)}{f'(x)}^{1/2}.
+	\end{align*}
+	Clearly, \(\abs{\inp{v}{u}} \leqslant \norm{v}_x^* \norm{u}_x\).
+\end{itemize}
+
+Let us fix \(x \in \dom f\) and \(u \in \Rn\), \(u \ne 0\).
+Consider the function of one variable
+\[
+\phi(t) = \frac{1}{\inp{f''(x + tu)u}{u}^{1/2}},
+\]
+with the domain \(\dom \phi = \{t \in \R: x + tu \in \dom f\}\).
+
+\begin{mylem}
+	\label{lem:4.1.3}
+	For all feasible \(t\) we have \(\abs{\phi'(t)} \leqslant 1\).
+\end{mylem}
+\begin{proof}
+	We compute
+	\[
+	\phi'(t) = -\frac{D^3f(x  +tu)[u, u, u]}{2 \inp{f''(x + tu)u}{u}^{1/2}}.
+	\]
+	As we know \(f\) is self-concordant, the definition of self-concordance can be used to show that this implies \(\abs{\phi'(t)} \leqslant 1\).
+\end{proof}
+\begin{mycorr}
+	\label{cor:4.1.3}
+	The domain of \(\phi\) contains the interval
+	\[
+	(-\phi(0), \phi(0)).
+	\]
+\end{mycorr}
+\begin{proof}
+	Since \(f(x + tu) \to \infty\) as \(x + tu\) approaches the boundary of \(\dom f\) in view of Theorem~\ref{thm:4.1.4}, the function \(\inp{f''(x + tu)u}{u}\) cannot be bounded.
+	Therefore, \(\dom \phi \equiv \{t \suchthat \phi(t) > 0\}\).
+	It remains to note that
+	\[
+	\phi(t) \geqslant \phi(0) - \abs{t},
+	\]
+	in view of the lemma above, which yields the result we want for \(t\) at the end points of the interval.
+\end{proof}
+
+Let us consider the following ellipsoid:
+\begin{align*}
+W^0(x; r) &= \{y \in \Rn \suchthat \norm{y-x}_x < r\},\\
+W(x; r) &= \closure (W^0(x; r)) \equiv \{y \in \Rn \suchthat \norm{y - x}_x \leqslant r\}.
+\end{align*}
+This ellipsoid is the Dikin ellipsoid of \(f\) at \(x\).
+
+\begin{mytheo}
+	\label{thm:4.1.5}
+	\hfill
+	
+	\begin{enumerate}
+		\item For any \(x \in \dom f\), we have \(W^0(x; 1) \subseteq \dom f\).
+		\item For all \(x, y \in \dom f\), the following inequality holds:
+		\[
+		\norm{y -x}_y \geqslant \frac{\norm{y - x}_x}{1 + \norm{y - x}_x}.
+		\]
+		\item If \(\norm{y - x}_x < 1\), then
+		\[
+		\norm{y - x}_y \leqslant \frac{\norm{y - x}_x}{1 - \norm{y - x}_x}.
+		\]
+	\end{enumerate}
+\end{mytheo}
+\begin{proof}
+	For the first part, we know that \(\dom f\) contains the set in view of Corollary~\ref{cor:4.1.3}
+	\[
+	\{y = x + tu \suchthat t^2 \norm{u}_x^2 < 1\}
+	\]
+	(since \(\phi(0) = 1/\norm{u}_x\)).
+	This is exactly \(W^0(x; 1)\).
+	
+	For the second part, let us choose \(u = y-x\).
+	Then
+	\[
+	\phi(1) = \frac{1}{\norm{y - x}_x}, \quad \phi(0) = \frac{1}{\norm{y - x}_x},
+	\]
+	and \(\phi(1) \leqslant \phi(0) + 1\) in view of Lemma~\ref{lem:4.1.3}, which is exactly the second part of the theorem if we take the reciprocal.
+	
+	Finally, if \(\norm{y - x}_x < 1\), then \(\phi()0 > 1\), and in view of Lemma~\ref{lem:4.1.3}, \(\phi(1) \geqslant \phi(0) - 1\), which is the third part of the theorem, again upon taking the reciprocal.
+\end{proof}
+
+\begin{mytheo}
+	Let \(x \in \dom f\).
+	Then for any \(y \in W^*(x; 1)\), we have
+	\[
+	(1 - \norm{y - x}_x)^2 f''(x) \preceq f''(y) \preceq \frac{1}{(1 - \norm{y - x}_x)} f''(x).
+	\]
+\end{mytheo}
+\begin{proof}
+	Let us fix some \(u \in \Rn\), \(u \ne 0\).
+	Consider the function
+	\[
+	\psi(t) = \inp{f''(x + t(y - x))u}{u}, \quad t \in [0, 1].
+	\]
+	Denote \(y_t = x + t(y-x)\).
+	Then, in view of Lemma~\ref{lem:4.1.2} and the third condition of Theorem~\ref{thm:4.1.5}, we have
+	\begin{align*}
+	\abs{\psi'(t)} &= \abs{D^3f(y_t)[y - x, u, u]} \leqslant 2 \norm{y - x}_{y_t} \norm{u}^2_{y_t}\\
+	&= \frac{2}{t} \norm{y_t - x}_{y_t} \psi(t) \leqslant \frac{2}{t} \frac{\norm{y_t - x}_x}{1 - \norm{y_t - x}_x} \psi(t)\\
+	&= \frac{2\norm{y - x}_x}{1 - t \norm{y - x}_x} \psi(t).
+	\end{align*}
+	
+	Therefore,
+	\[
+	2 (\ln(1 - t\norm{y - x}_x))' \leqslant (\ln \psi(t))' \leqslant -2 (\ln(1 - t \norm{y - x}_x))'.
+	\]
+	Integrating in \(t \in [0, 1]\), we get
+	\[
+	(1 - \norm{y - x}_x)^2 \leqslant \frac{\psi(1)}{\psi(0)} \leqslant \frac{1}{(1 - \norm{y - x}_x)^2},
+	\]
+	which is exactly the theorem statement.
+\end{proof}
+
+\begin{mycorr}
+	Let \(x \in \dom f\) and \(r = \norm{y - x}_x < 1\).
+	Then we can estimate the matrix
+	\[
+	G = \int_0^1 f''(x + \tau(y - x)) \dif \tau
+	\]
+	as follows:
+	\[
+	(1 - r + \frac{r^2}{3}) f''(x) \preceq G \preceq \frac{1}{1 - r}{f''(x)}.
+	\]
+\end{mycorr}
+\begin{proof}
+	In view of the theorem, we have
+	\begin{align*}
+	G &= \int_0^1 f''(x + \tau(y - x)) \dif \tau \succeq f''(x) \int_0^1 (1 - \tau r)^2 \dif \tau\\
+	&= (1 - r + \frac{r^2}{3}) f''(x),\\
+	G &\preceq f''(x) \int_{0}^1 \frac{\dif \tau}{(1 - \tau r)^2} = \frac{1}{1 - r} f''(x).
+	\end{align*}
+\end{proof}
+
+The two most important facts we have proved are thus
+\begin{itemize}
+	\item At any point \(x \in \dom f\), we can point out an ellipsod
+	\[
+	W^0(x; 1) = \{x \in \Rn \suchthat \inp{f''(x)(y - x)}{y - x} < 1\},
+	\]
+	belonging to \(\dom f\).
+	\item Inside the ellipsoid \(W(x; r)\) with \(r \in [0, 1)\), \(f\) is almost quadratic:
+	\[
+	(1 - r)^2 f''(x) \succeq f''(y) \succeq \frac{1}{(1 - r)^2} f''(x)
+	\]
+	for all \(y \in W(x; r)\).
+	Choosing \(r\) small enough, we can make the quality of the quadratic approximation acceptable for our goals.
+\end{itemize}
+These facts can then be used to prove various other results.
+Note that in convex optimization, we were never in such a favorable position.
+
+% TODO depending on the exact question, add other ``main inequalities''.
+
+Let us consider the following minimization problem:
+\[
+\min_{x \in \dom f} f(x).
+\]
+The next theorem provides us with a sufficient condition for existence of its solution.
+Recall that we assume that \(f\) is a standard self-concordant function and \(\dom f\) contains no straight line.
+\begin{mytheo}
+	Let \(\lambda_f(x) < 1\) for some \(x \in \dom f\).
+	Then the solution \(x_f^*\) of the minimization problem exists and is unique.
+\end{mytheo}
+\begin{proof}
+	In view of Theorem~4.1.7, (4.1.8) in the book, for any \(y \in \dom f\), we have
+	\begin{align*}
+	f(y) &\geqslant f(x) + \inp{f'(x)}{y - x} + \omega(\norm{y - x}_x)\\
+	&= f(x) + \norm{f'(x)}_x^* \norm{y - x}_x + \omega(\norm{y - x}_x)\\
+	&= f(x) - \lambda_f(x) \norm{y - x}_x + \omega(\norm{y - x}_x).
+	\end{align*}
+	Therefore, for any \(y \in \mathcal{L}_f(f(x)) = \{y \in \Rn \suchthat f(y) \leqslant f(x)\}\) we have
+	\[
+	\frac{1}{\norm{y - x}_x} \omega(\norm{y - x}_x) \leqslant \lambda_f(x) < 1.
+	\]
+	Note however that \(\frac{1}{t} \omega(t) = 1 - \frac{1}{t} \ln(1 + t)\) is strictly increasing in \(t\).
+	Hence, \(\norm{y - x}_x \leqslant \bar{t}\), where \(\bar{t}\) is a unique positive root of the equation
+	\[
+	(1 - \lambda_f(x))t = \ln(1 + t).
+	\]
+	Thus, \(\mathcal{L}_f(f(x))\) is bounded and therefore the solution exists.
+	It is unique since, again using (4.1.8) from the book, we have
+	\[
+	f(y) \geqslant f(x_f^*) + \omega(\norm{y - x_f^*}_{x_f^*})
+	\]
+	for all \(y \in \dom f\).
+\end{proof}
+We have thus proved that a local condition \(\lambda_f(x) < 1\) provides us with some global information on function \(f\), that is the existence of the minimum \(x_f^*\).
+This result cannot be strengthened. % TODO give the example
+\end{solution}
 
 \end{document}
