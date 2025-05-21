@@ -1,4 +1,4 @@
-% Author: Francois Robinet
+% Author: Francois Robinet improved by Gauthier de Moffarts
 declare
 
 fun {NewPortObject Transition Init}
@@ -15,19 +15,27 @@ in
    {Port.new In}
 end
 
-% This queue is quite inefficient because
-% enqueue takes theta(n) where n is the queue's size
+%          A | B | C | D | E | _
+% old back '   |   |       |   ' cur front
+% cur back     '   |       '  old front
+% next back        '
 fun {NewQueue}
    fun {Transition Msg Queue}
+      Queue = Front#Back#Num
+   in
       case Msg
-      of enqueue(X) then {Append Queue [X]}
+      of enqueue(X) then NewFront in
+         Front=X|NewFront
+         NewFront#Back#(Num+1)
       [] dequeue(?X) then
-	 if Queue==nil then X=nil nil
-	 else X=Queue.1 Queue.2 end
+         if Num==0 then X=nil Queue % In an ideal world we could just do Front==Back but this will block
+         else X=Back.1 Front#(Back.2)#(Num-1)
+      [] isEmpty(X) then X=(Num==0) Queue
       end
    end
+   Init
 in
-   {NewPortObject Transition nil}
+   {NewPortObject Transition Init#Init#0}
 end
 
 proc {Enqueue Q X}
@@ -40,15 +48,22 @@ fun {Dequeue Q}
    X
 end
 fun {IsEmpty Q}
-   {Dequeue Q} == nil
+   X
+in
+   {Send Q isEmpty(X)}
+   {Wait X}
+   X
 end
 
 % Tests
 Q={NewQueue}
+{Browse {IsEmpty Q}}% true
 {Enqueue Q a}
+{Browse {IsEmpty Q}}% false
 {Enqueue Q b}
 {Browse {Dequeue Q}} % a
 {Browse {Dequeue Q}} % b
 {Browse {Dequeue Q}} % nil
+{Browse {IsEmpty Q}}% true
 
 
